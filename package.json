@@ -1,0 +1,17 @@
+{
+	"name": "bp-rest",
+	"title": "BP-REST",
+	"version": "0.1.0",
+	"description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
+	"author": {
+		"name": "BuddyPress",
+		"url": "http://buddypress.org"
+	},
+	"license": "GPLv2",
+	"devDependencies": {
+	    "grunt": "latest",
+	    "grunt-contrib-watch": "latest",
+	    "grunt-wp-i18n": "latest",
+	    "load-grunt-tasks": "latest"
+	}
+}
