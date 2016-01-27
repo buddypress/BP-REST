@@ -1,0 +1,7 @@
+# Files and folders related to build/test tools
+/phpunit.xml
+/node_modules
+/npm-debug.log
+
+# Operating system specific files
+.DS_Store
