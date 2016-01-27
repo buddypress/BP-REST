@@ -23,7 +23,7 @@ There's no fixed timeline for integration into BuddyPress core at this time, the
 
 ## Installation
 
-Drop this directory in and activate it. You need [WordPress 4.4](https://wordpress.org/news/2015/12/clifford/) to use the plugin.
+Drop this directory in and activate it. You need at least [WordPress 4.4](https://wordpress.org/download/) to use the plugin.
 
 ## Issue Tracking
 
