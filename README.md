@@ -23,7 +23,7 @@ There's no fixed timeline for integration into BuddyPress core at this time, the
 
 ## Installation
 
-Drop this directory in and activate it. You need WordPress 4.4
+Drop this directory in and activate it. You need [WordPress 4.4](https://wordpress.org/news/2015/12/clifford/).
 to use the plugin.
 
 ## Issue Tracking
@@ -32,12 +32,12 @@ All tickets for the project are being tracked via [GitHub Issues](https://github
 
 ## Get Involved
 
-Weekly BP REST API dev chat Wednesdays at 22:00 UTC in WordPress Slack channel #buddypress
+Weekly BP REST API dev chat are held on Wednesdays at 22:00 UTC in WordPress Slack channel [#buddypress](https://wordpress.slack.com/archives/buddypress)
 
 
 ## License
 
 [GPLv2+](http://www.gnu.org/licenses/gpl-2.0.html)
 
-[GitHub](https://github.com/buddypress/BP-REST/issues)
-[recent updates](https://bpdevel.wordpress.com/category/rest-api/)
+* [GitHub](https://github.com/buddypress/BP-REST/issues)
+* [Recent Updates](https://bpdevel.wordpress.com/category/rest-api/)
