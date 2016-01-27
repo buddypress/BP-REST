@@ -28,7 +28,7 @@ to use the plugin.
 
 ## Issue Tracking
 
-All tickets for the project are being tracked on [GitHub][].
+All tickets for the project are being tracked via [GitHub Issues](https://github.com/buddypress/BP-REST/issues).
 
 ## Get Involved
 
