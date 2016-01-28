@@ -216,10 +216,11 @@ class BP_REST {
 	 * @return void
 	 */
 	public function requirements_not_met_notice() {
-		// Output our error
-		echo '<div id="message" class="error">';
-		echo '<p>' . sprintf( __( 'BP REST is missing requirements and has been <a href="%s">deactivated</a>. Please make sure all requirements are available.', 'bp-rest' ), admin_url( 'plugins.php' ) ) . '</p>';
-		echo '</div>';
+		// Output our error ?>
+		<div id="message" class="error">
+			<p><?php echo sprintf( __( 'BP REST is missing requirements and has been <a href="%s">deactivated</a>. Please make sure all requirements are available.', 'bp-rest' ), esc_url( admin_url( 'plugins.php' ) ) ); ?></p>
+		</div>
+		<?php
 	}
 
 	/**

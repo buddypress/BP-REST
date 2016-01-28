@@ -7,5 +7,5 @@
 	<rule ref="WordPress-Core"/>
 
 	<rule ref="WordPress-VIP"/>
-	
+
 </ruleset>
