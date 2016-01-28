@@ -5,7 +5,6 @@
 	<exclude-pattern>*/core/*</exclude-pattern>
 
 	<rule ref="WordPress-Core"/>
-
-	<rule ref="WordPress-VIP"/>
+	<rule ref="WordPress.VIP"/>
 
 </ruleset>
