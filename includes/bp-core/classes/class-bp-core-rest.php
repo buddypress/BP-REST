@@ -1,2 +1,2 @@
-<?php 
+<?php
 // Coming soon
