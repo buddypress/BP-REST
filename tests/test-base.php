@@ -8,7 +8,7 @@ class BaseTest extends WP_UnitTestCase {
 	}
 
 	function test_class_exists() {
-		$this->assertTrue( class_exists( 'BP_REST') );
+		$this->assertTrue( class_exists( 'BP_REST' ) );
 	}
 
 	function test_get_instance() {
