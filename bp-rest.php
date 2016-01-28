@@ -1,12 +1,12 @@
 <?php
 /**
  * Plugin Name: BP REST
- * Plugin URI:  http://buddypress.org
+ * Plugin URI:  https://buddypress.org
  * Description: Access your BuddyPress site's data through an easy-to-use HTTP REST API.
  * Version:	 0.1.0
  * Author:	  BuddyPress
- * Author URI:  http://buddypress.org
- * Donate link: http://buddypress.org
+ * Author URI:  https://buddypress.org
+ * Donate link: https://buddypress.org
  * License:	 GPLv2
  * Text Domain: bp-rest
  * Domain Path: /languages
