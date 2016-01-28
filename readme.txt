@@ -1,6 +1,6 @@
 === BP-REST ===
 Contributors:      BuddyPress
-Donate link:       http://buddypress.org
+Donate link:       https://buddypress.org
 Tags:
 Requires at least: 4.3
 Tested up to:      4.3
