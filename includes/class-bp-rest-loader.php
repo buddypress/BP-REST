@@ -5,7 +5,7 @@
  */
 class BP_REST_LOADER {
 
-		protected $plugin = null;
+	protected $plugin = null;
 
 	/**
 	 * __construct function.
@@ -40,9 +40,8 @@ class BP_REST_LOADER {
 	 */
 	public function includes() {
 		// to include a file place it in the inc directory
-		foreach( glob(  plugin_dir_path(__FILE__) . '*/classes/*.php' ) as $filename ) {
+		foreach ( glob( plugin_dir_path( __FILE__ ) . '*/classes/*.php' ) as $filename ) {
 			include $filename;
 		}
 	}
-
 }
