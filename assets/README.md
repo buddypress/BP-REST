@@ -1,5 +1,5 @@
 # BP-REST Assets #
-http://buddypress.org
+https://buddypress.org
 Copyright (c) 2016 BuddyPress
 Licensed under the GPLv2 license.
 
