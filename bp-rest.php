@@ -3,17 +3,17 @@
  * Plugin Name: BP REST
  * Plugin URI:  https://buddypress.org
  * Description: Access your BuddyPress site's data through an easy-to-use HTTP REST API.
- * Version:	 0.1.0
- * Author:	  BuddyPress
+ * Version:	    0.1.0
+ * Author:	    BuddyPress
  * Author URI:  https://buddypress.org
  * Donate link: https://buddypress.org
- * License:	 GPLv2
+ * License:	    GPLv2 or later
  * Text Domain: bp-rest
  * Domain Path: /languages
  */
 
 /**
- * Copyright (c) 2016 BuddyPress (email : contact@buddypress.org)
+ * Copyright (c) 2016 BuddyPress (email: contact@buddypress.org)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2 or, at
