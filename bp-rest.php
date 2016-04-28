@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: BP REST
+ * Plugin Name: BuddyPress REST API
  * Plugin URI:  https://buddypress.org
- * Description: Access your BuddyPress site's data through an easy-to-use HTTP REST API.
+ * Description: BuddyPress extension for WordPress' JSON-based REST API.
  * Version:	    0.1.0
  * Author:	    BuddyPress
  * Author URI:  https://buddypress.org
@@ -30,10 +30,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-// Exit if accessed directly.
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Register BuddyPress endpoints.
