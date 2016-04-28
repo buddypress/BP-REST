@@ -38,6 +38,11 @@ defined( 'ABSPATH' ) || exit;
  * @since 0.1.0
  */
 function bp_rest_api_endpoints() {
+	// Requires https://wordpress.org/plugins/rest-api/
+	if ( ! class_exists( 'WP_REST_Controller' ) ) {
+		return;
+	}
+
 	if ( bp_is_active( 'activity' ) ) {
 		require_once( dirname( __FILE__ ) . '/includes/bp-activity/classes/class-bp-activity-endpoints.php' );
 		$controller = new BP_REST_Activity_Controller();
