@@ -39,7 +39,7 @@ defined( 'ABSPATH' ) || exit;
  */
 function bp_rest_api_endpoints() {
 	if ( bp_is_active( 'activity' ) ) {
-		require_once( dirname( __FILE__ ) . '/lib/endpoints/class-bp-activity-endpoints.php' );
+		require_once( dirname( __FILE__ ) . '/includes/bp-activity/classes/class-bp-activity-endpoints.php' );
 		$controller = new BP_REST_Activity_Controller();
 		$controller->register_routes();
 	}
