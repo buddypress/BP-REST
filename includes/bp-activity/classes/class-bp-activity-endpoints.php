@@ -167,55 +167,60 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params = parent::get_collection_params();
-
+		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
-		$params['after'] = array(
-			'description'        => __( 'Limit response to resources published after a given ISO8601 compliant date.' ),
-			'type'               => 'string',
-			'format'             => 'date-time',
-			'validate_callback'  => 'rest_validate_request_arg',
-		);
-
 		$params['exclude'] = array(
-			'description'        => __( 'Ensure result set excludes specific ids.' ),
+			'description'        => __( 'Ensure result set excludes specific IDs.', 'buddypress' ),
 			'type'               => 'array',
 			'default'            => array(),
 			'sanitize_callback'  => 'wp_parse_id_list',
 		);
 
-		$params['offset'] = array(
-			'description'        => __( 'Offset the result set by a specific number of items.' ),
-			'type'               => 'integer',
-			'sanitize_callback'  => 'absint',
-			'validate_callback'  => 'rest_validate_request_arg',
+		$params['include'] = array(
+			'description'        => __( 'Ensure result set includes specific IDs.', 'buddypress' ),
+			'type'               => 'array',
+			'default'            => array(),
+			'sanitize_callback'  => 'wp_parse_id_list',
 		);
 
 		$params['order'] = array(
-			'description'        => __( 'Order sort attribute ascending or descending.' ),
+			'description'        => __( 'Order sort attribute ascending or descending.', 'buddypress' ),
 			'type'               => 'string',
 			'default'            => 'desc',
 			'enum'               => array( 'asc', 'desc' ),
 			'validate_callback'  => 'rest_validate_request_arg',
 		);
 
-		$params['orderby'] = array(
-			'description'        => __( 'Sort collection by object attribute.' ),
+		$params['after'] = array(
+			'description'        => __( 'Limit result set to items published after a given ISO8601 compliant date.', 'buddypress' ),
 			'type'               => 'string',
-			'default'            => 'date',
-			'enum'               => array(
-				'date',
-				'id',
-			),
+			'format'             => 'date-time',
 			'validate_callback'  => 'rest_validate_request_arg',
 		);
 
-		$params['parent'] = array(
-			'description'       => __( 'Limit result set to those of particular parent ids.' ),
-			'type'              => 'array',
-			'sanitize_callback' => 'wp_parse_id_list',
-			'default'           => array(),
+		$params['per_page'] = array(
+			'description'        => __( 'Maximum number of results returned per result set.', 'buddypress' ),
+			'default'            => 20,
+			'type'               => 'integer',
+			'sanitize_callback'  => 'absint',
+			'validate_callback'  => 'rest_validate_request_arg',
+		);
+
+		$params['page'] = array(
+			'description'        => __( 'Offset the result set by a specific number of pages of results.', 'buddypress' ),
+			'default'            => 1,
+			'type'               => 'integer',
+			'sanitize_callback'  => 'absint',
+			'validate_callback'  => 'rest_validate_request_arg',
+		);
+
+		$params['author'] = array(
+			'description'         => __( 'Limit result set to items created by specific authors.', 'buddypress' ),
+			'type'                => 'array',
+			'default'             => array(),
+			'sanitize_callback'   => 'wp_parse_id_list',
+			'validate_callback'   => 'rest_validate_request_arg',
 		);
 
 		return $params;
