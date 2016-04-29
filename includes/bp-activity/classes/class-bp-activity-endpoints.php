@@ -34,8 +34,17 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'schema' => array( $this, 'get_public_item_schema' ),
 		) );
 
-		//register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
-		//) );
+		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_item' ),
+				'permission_callback' => array( $this, 'get_item_permissions_check' ),
+				'args'                => array(
+					'context' => $this->get_context_param( array( 'default' => 'view' ) ),
+				),
+			),
+			'schema' => array( $this, 'get_public_item_schema' ),
+		) );
 	}
 
 	/**
@@ -100,38 +109,14 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 
 				'title' => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The title of the object.', 'buddypress' ),
-					'type'        => 'object',
-					'properties'  => array(
-						'raw' => array(
-							'description' => __( 'The title of the object, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'edit' ),
-						),
-						'rendered' => array(
-							'description' => __( 'HTML title for the object, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-						),
-					),
+					'description' => __( 'HTML title of the object.', 'buddypress' ),
+					'type'        => 'string',
 				),
 
 				'content' => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The content of the object.', 'buddypress' ),
-					'type'        => 'object',
-					'properties'  => array(
-						'raw' => array(
-							'description' => __( 'The content of the object, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'edit' ),
-						),
-						'rendered' => array(
-							'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-						),
-					),
+					'description' => __( 'HTML content of the object.', 'buddypress' ),
+					'type'        => 'string',
 				),
 
 				'date' => array(
@@ -281,6 +266,18 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Request List of activity object data.
 	 */
 	public function get_items( $request ) {
+		$retval = array();
+
+		// TODO: query logic. and permissions. and other parameters that might need to be set. etc
+		$activities = bp_activity_get();
+
+		foreach ( $activities['activities'] as $activity ) {
+			$retval[] = $this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $activity, $request )
+			);
+		}
+
+		return rest_ensure_response( $retval );
 	}
 
 	/**
@@ -292,6 +289,17 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function get_item( $request ) {
+		// TODO: query logic. and permissions. and other parameters that might need to be set. etc
+		$activity = bp_activity_get( array(
+			'in' => (int) $request['id'],
+		) );
+
+		$retval = array( $this->prepare_response_for_collection(
+			$this->prepare_item_for_response( $activity['activities'][0], $request )
+		) );
+
+		return rest_ensure_response( $retval );
+
 	}
 
 	/**
@@ -331,6 +339,18 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $activity, $request, $is_raw = false ) {
 		$data = array(
+			'author'                => $activity->user_id,
+			'component'             => $activity->component,
+			'content'               => $activity->content,
+			'date'                  => $this->prepare_date_response( $activity->date_recorded ),
+			'id'                    => $activity->id,
+			'link'                  => $activity->primary_link,
+			'parent'                => $activity->type === 'activity_comment' ? $activity->item_id : 0,
+			'prime_association'     => $activity->item_id,
+			'secondary_association' => $activity->secondary_item_id,
+			'status'                => $activity->is_spam ? 'spam' : 'published',
+			'title'                 => $activity->action,
+			'type'                  => $activity->type,
 		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -341,12 +361,10 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		$response->add_links( $this->prepare_links( $activity ) );
 
 		/**
-		 * Filter a plugin value returned from the API.
-		 *
-		 * Allows modification of the plugin value right before it is returned.
+		 * Filter an activity value returned from the API.
 		 *
 		 * @param array           $response
-		 * @param WP_REST_Request $request  Request used to generate the response.
+		 * @param WP_REST_Request $request Request used to generate the response.
 		 */
 		return apply_filters( 'rest_prepare_buddypress_activity_value', $response, $request );
 	}
@@ -365,24 +383,41 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		// Entity meta.
 		$links = array(
 			'self' => array(
-				'href' => rest_url( $base . wp_strip_all_tags( $post['id'] ) ),
+				'href' => rest_url( $base . $activity->id ),
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
 			'author' => array(
-				'href'       => rest_url( '/wp/v2/users/' . $post->post_author ),
-				'embeddable' => true,
+				'href' => rest_url( '/wp/v2/users/' . $activity->user_id ),
 			)
 		);
 
-		if ( $post_type_obj->hierarchical && ! empty( $post->post_parent ) ) {
+		if ( $activity->type === 'activity_comment' ) {
 			$links['up'] = array(
-				'href'       => rest_url( trailingslashit( $base ) . (int) $post->post_parent ),
-				'embeddable' => true,
+				'href' => rest_url( $base . $activity->item_id ),
 			);
 		}
 
 		return $links;
+	}
+
+	/**
+	 * Convert the input date to RFC3339 format.
+	 *
+	 * @param string $date_gmt
+	 * @param string|null $date Optional. Date object.
+	 * @return string|null ISO8601/RFC3339 formatted datetime.
+	 */
+	protected function prepare_date_response( $date_gmt, $date = null ) {
+		if ( isset( $date ) ) {
+			return mysql_to_rfc3339( $date );
+		}
+
+		if ( $date_gmt === '0000-00-00 00:00:00' ) {
+			return null;
+		}
+
+		return mysql_to_rfc3339( $date_gmt );
 	}
 }
