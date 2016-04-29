@@ -171,56 +171,102 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		$params['context']['default'] = 'view';
 
 		$params['exclude'] = array(
-			'description'        => __( 'Ensure result set excludes specific IDs.', 'buddypress' ),
-			'type'               => 'array',
-			'default'            => array(),
-			'sanitize_callback'  => 'wp_parse_id_list',
+			'description'       => __( 'Ensure result set excludes specific IDs.', 'buddypress' ),
+			'type'              => 'array',
+			'default'           => array(),
+			'sanitize_callback' => 'wp_parse_id_list',
 		);
 
 		$params['include'] = array(
-			'description'        => __( 'Ensure result set includes specific IDs.', 'buddypress' ),
-			'type'               => 'array',
-			'default'            => array(),
-			'sanitize_callback'  => 'wp_parse_id_list',
+			'description'       => __( 'Ensure result set includes specific IDs.', 'buddypress' ),
+			'type'              => 'array',
+			'default'           => array(),
+			'sanitize_callback' => 'wp_parse_id_list',
 		);
 
 		$params['order'] = array(
-			'description'        => __( 'Order sort attribute ascending or descending.', 'buddypress' ),
-			'type'               => 'string',
-			'default'            => 'desc',
-			'enum'               => array( 'asc', 'desc' ),
-			'validate_callback'  => 'rest_validate_request_arg',
+			'description'       => __( 'Order sort attribute ascending or descending.', 'buddypress' ),
+			'type'              => 'string',
+			'default'           => 'desc',
+			'enum'              => array( 'asc', 'desc' ),
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['after'] = array(
-			'description'        => __( 'Limit result set to items published after a given ISO8601 compliant date.', 'buddypress' ),
-			'type'               => 'string',
-			'format'             => 'date-time',
-			'validate_callback'  => 'rest_validate_request_arg',
+			'description'       => __( 'Limit result set to items published after a given ISO8601 compliant date.', 'buddypress' ),
+			'type'              => 'string',
+			'format'            => 'date-time',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['per_page'] = array(
-			'description'        => __( 'Maximum number of results returned per result set.', 'buddypress' ),
-			'default'            => 20,
-			'type'               => 'integer',
-			'sanitize_callback'  => 'absint',
-			'validate_callback'  => 'rest_validate_request_arg',
+			'description'       => __( 'Maximum number of results returned per result set.', 'buddypress' ),
+			'default'           => 20,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['page'] = array(
-			'description'        => __( 'Offset the result set by a specific number of pages of results.', 'buddypress' ),
-			'default'            => 1,
-			'type'               => 'integer',
-			'sanitize_callback'  => 'absint',
-			'validate_callback'  => 'rest_validate_request_arg',
+			'description'       => __( 'Offset the result set by a specific number of pages of results.', 'buddypress' ),
+			'default'           => 1,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['author'] = array(
-			'description'         => __( 'Limit result set to items created by specific authors.', 'buddypress' ),
-			'type'                => 'array',
-			'default'             => array(),
-			'sanitize_callback'   => 'wp_parse_id_list',
-			'validate_callback'   => 'rest_validate_request_arg',
+			'description'       => __( 'Limit result set to items created by specific authors.', 'buddypress' ),
+			'type'              => 'array',
+			'default'           => array(),
+			'sanitize_callback' => 'wp_parse_id_list',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['status'] = array(
+			'default'           => 'published',
+			'description'       => __( 'Limit result set to items with a specific status.', 'buddypress' ),
+			'type'              => 'string',
+			'enum'              => array( 'published', 'spam' ),
+			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['primary_id'] = array(
+			'description'       => __( 'Limit result set to items with a specific prime assocation.', 'buddypress' ),
+			'type'              => 'array',
+			'default'           => array(),
+			'sanitize_callback' => 'wp_parse_id_list',
+		);
+
+		$params['secondary_id'] = array(
+			'description'       => __( 'Limit result set to items with a specific secondary assocation.', 'buddypress' ),
+			'type'              => 'array',
+			'default'           => array(),
+			'sanitize_callback' => 'wp_parse_id_list',
+		);
+
+		$params['component'] = array(
+			'description'       => __( 'Limit result set to items with a specific BuddyPress component.', 'buddypress' ),
+			'type'              => 'string',
+			'enum'              => array_keys( bp_core_admin_get_components() ),
+			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['type'] = array(
+			'description'       => __( 'Limit result set to items with a specific activity type.', 'buddypress' ),
+			'type'              => 'string',
+			'enum'              => array_keys( bp_activity_get_types() ),
+			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['search'] = array(
+			'description'       => __( 'Limit result set to items that match this search query.', 'buddypress' ),
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		return $params;
