@@ -278,7 +278,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request
-	 * @return WP_REST_Request List of plugin object data.
+	 * @return WP_REST_Request List of activity object data.
 	 */
 	public function get_items( $request ) {
 	}
@@ -365,10 +365,10 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		// Entity meta.
 		$links = array(
 			'self' => array(
-				'href'   => rest_url( $base . wp_strip_all_tags( $post['id'] ) ),
+				'href' => rest_url( $base . wp_strip_all_tags( $post['id'] ) ),
 			),
 			'collection' => array(
-				'href'   => rest_url( $base ),
+				'href' => rest_url( $base ),
 			),
 			'author' = array(
 				'href'       => rest_url( '/wp/v2/users/' . $post->post_author ),
