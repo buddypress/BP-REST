@@ -1,11 +1,10 @@
 === BP-REST ===
 Contributors:      BuddyPress
 Donate link:       https://buddypress.org
-Tags:
-Requires at least: 4.3
-Tested up to:      4.3
+Requires at least: 4.5
+Tested up to:      4.5
 Stable tag:        0.1.0
-License:           GPLv2
+License:           GPLv2 or later
 License URI:       http://www.gnu.org/licenses/gpl-2.0.html
 
 
@@ -19,12 +18,6 @@ Access your BuddyPress site's data through an easy-to-use HTTP REST API.
 
 1. Upload the entire `/bp-rest` directory to the `/wp-content/plugins/` directory.
 2. Activate BP-REST through the 'Plugins' menu in WordPress.
-
-== Frequently Asked Questions ==
-
-
-== Screenshots ==
-
 
 == Changelog ==
 
