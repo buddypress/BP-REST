@@ -370,7 +370,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'author' = array(
+			'author' => array(
 				'href'       => rest_url( '/wp/v2/users/' . $post->post_author ),
 				'embeddable' => true,
 			)
