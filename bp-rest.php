@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: BP REST
+ * Plugin Name: BuddyPress REST API
  * Plugin URI:  https://buddypress.org
- * Description: Access your BuddyPress site's data through an easy-to-use HTTP REST API.
+ * Description: BuddyPress extension for WordPress' JSON-based REST API.
  * Version:	    0.1.0
  * Author:	    BuddyPress
  * Author URI:  https://buddypress.org
@@ -30,10 +30,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-// Exit if accessed directly.
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Register BuddyPress endpoints.
@@ -41,10 +38,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 0.1.0
  */
 function bp_rest_api_endpoints() {
+	// Requires https://wordpress.org/plugins/rest-api/
+	if ( ! class_exists( 'WP_REST_Controller' ) ) {
+		return;
+	}
+
 	if ( bp_is_active( 'activity' ) ) {
-		require_once( dirname( __FILE__ ) . '/lib/endpoints/class-bp-activity-endpoints.php' );
+		require_once( dirname( __FILE__ ) . '/includes/bp-activity/classes/class-bp-activity-endpoints.php' );
 		$controller = new BP_REST_Activity_Controller();
 		$controller->register_routes();
 	}
 }
-add_action( 'bp_rest_api_init', 'bp_rest_api_endpoints', 11 );
+add_action( 'bp_rest_api_init', 'bp_rest_api_endpoints' );
