@@ -88,7 +88,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The BuddyPress component the object relates to.', 'buddypress' ),
 					'type'        => 'string',
-					'enum'        => array_keys( bp_core_admin_get_components() ),
+					'enum'        => array_keys( bp_core_get_components() ),
 				),
 
 				'type' => array(
@@ -249,7 +249,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		$params['component'] = array(
 			'description'       => __( 'Limit result set to items with a specific BuddyPress component.', 'buddypress' ),
 			'type'              => 'string',
-			'enum'              => array_keys( bp_core_admin_get_components() ),
+			'enum'              => array_keys( bp_core_get_components() ),
 			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
