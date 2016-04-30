@@ -249,6 +249,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 
 		$params['search'] = array(
 			'description'       => __( 'Limit result set to items that match this search query.', 'buddypress' ),
+			'default'           => '',
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_text_field',
 			'validate_callback' => 'rest_validate_request_arg',
@@ -266,10 +267,63 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Request List of activity object data.
 	 */
 	public function get_items( $request ) {
-		$retval = array();
+		$args = array(
+			'exclude'           => $request['exclude'],
+			'in'                => $request['include'],
+			'page'              => $request['page'],
+			'per_page'          => $request['per_page'],
+			'primary_id'        => $request['primary_id'],
+			'search_terms'      => $request['search'],
+			'secondary_id'      => $request['secondary_id'],
+			'sort'              => $request['order'],
+			'spam'              => $request['status'] === 'spam' ? 'spam_only' : 'ham_only',
+			'user_id'           => $request['author'],
 
-		// TODO: query logic. and permissions. and other parameters that might need to be set. etc
-		$activities = bp_activity_get();
+			// Set optimised defaults.
+			'count_total'       => true,
+			'fields'            => 'all',
+			'show_hidden'       => false,
+			'update_meta_cache' => true,
+		);
+
+		if ( isset( $request['after'] ) ) {
+			$args['since'] = $request['after'];
+		}
+
+		if ( isset( $request['component'] ) ) {
+			if ( ! isset( $args['filter'] ) ) {
+				$args['filter'] = array( 'object' => $request['component'] );
+			} else {
+				$args['filter']['object'] = $request['component'];
+			}
+		}
+
+		if ( isset( $request['type'] ) ) {
+			if ( ! isset( $args['filter'] ) ) {
+				$args['filter'] = array( 'action' => $request['type'] );
+			} else {
+				$args['filter']['action'] = $request['type'];
+			}
+		}
+
+		if ( $args['in'] ) {
+			$args['count_total'] = false;
+		}
+
+		// Override certain options for security.
+		// @TODO: Verify and confirm this show_hidden logic, and check core for other edge cases.
+		if ( $request['component'] === 'groups' &&
+			(
+				groups_is_user_member( get_current_user_id(), $request['primary_id'] ) ||
+				bp_current_user_can( 'bp_moderate' )
+			)
+		) {
+			$args['show_hidden'] = true;
+		}
+
+
+		$retval     = array();
+		$activities = bp_activity_get( $args );
 
 		foreach ( $activities['activities'] as $activity ) {
 			$retval[] = $this->prepare_response_for_collection(
