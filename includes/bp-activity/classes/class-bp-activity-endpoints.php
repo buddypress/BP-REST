@@ -324,7 +324,6 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 
 		$retval     = array();
 		$activities = bp_activity_get( $args );
-die(var_dump($args, $activities));
 
 		foreach ( $activities['activities'] as $activity ) {
 			$retval[] = $this->prepare_response_for_collection(
