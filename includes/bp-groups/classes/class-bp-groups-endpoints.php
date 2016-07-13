@@ -344,16 +344,21 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function get_item( $request ) {
-		// @TODO: This shows hidden groups to anyone.
+
 		$group = groups_get_group( array(
 			'group_id'          => (int) $request['id'],
 			'load_users'        => false,
 			'populate_extras'   => false,
 		) );
 
-		$retval = array( $this->prepare_response_for_collection(
-			$this->prepare_item_for_response( $group, $request )
-		) );
+		// Prevent non-members from seeing hidden groups.
+		if ( 'hidden' == $group->status && ( ! bp_current_user_can( 'bp_moderate' ) && ! groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) ) {
+			$retval = array();
+		} else {
+			$retval = array( $this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $group, $request )
+			) );
+		}
 
 		return rest_ensure_response( $retval );
 	}
