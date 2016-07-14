@@ -54,5 +54,9 @@ function bp_rest_api_endpoints() {
 		$controller = new BP_REST_Groups_Controller();
 		$controller->register_routes();
 	}
+
+	// Member response filters
+	require_once( dirname( __FILE__ ) . '/includes/bp-members/bp-members-filters.php' );
+
 }
 add_action( 'bp_rest_api_init', 'bp_rest_api_endpoints' );
