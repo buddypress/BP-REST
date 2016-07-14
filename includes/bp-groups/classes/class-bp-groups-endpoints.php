@@ -344,20 +344,24 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function get_item( $request ) {
+		$group_id = (int) $request['id'];
 
 		$group = groups_get_group( array(
-			'group_id'          => (int) $request['id'],
+			'group_id'          => $group_id,
 			'load_users'        => false,
 			'populate_extras'   => false,
 		) );
 
 		// Prevent non-members from seeing hidden groups.
 		if ( 'hidden' == $group->status && ( ! bp_current_user_can( 'bp_moderate' ) && ! groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) ) {
-			$retval = array();
+			// Unset the group ID to ensure our error condition fires.
+			$group->id = 0;
 		} else {
-			$retval = array( $this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $group, $request )
-			) );
+			$retval = $this->prepare_item_for_response( $group, $request );
+		}
+
+		if ( empty( $group_id ) || empty( $group->id ) ) {
+			return new WP_Error( 'bp_rest_invalid_group_id', __( 'Invalid resource id.' ), array( 'status' => 404 ) );
 		}
 
 		return rest_ensure_response( $retval );
