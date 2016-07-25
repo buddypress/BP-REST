@@ -380,7 +380,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check if a given request has access to activity items.
+	 * Check if a given request has access to group items.
 	 *
 	 * @since 0.1.0
 	 *
@@ -405,11 +405,11 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Prepares activity data for return as an object.
+	 * Prepares group data for return as an object.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass $activity Activity data.
+	 * @param stdClass $group Group data.
 	 * @param WP_REST_Request $request
 	 * @param boolean $is_raw Optional, not used. Defaults to false.
 	 * @return WP_REST_Response
@@ -471,12 +471,12 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 		$response->add_links( $this->prepare_links( $item ) );
 
 		/**
-		 * Filter an activity value returned from the API.
+		 * Filter a group value returned from the API.
 		 *
 		 * @param array           $response
 		 * @param WP_REST_Request $request Request used to generate the response.
 		 */
-		return apply_filters( 'rest_prepare_buddypress_activity_value', $response, $request );
+		return apply_filters( 'rest_prepare_buddypress_group_value', $response, $request );
 	}
 
 	/**
@@ -484,7 +484,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $activity Activity.
+	 * @param array $item Group.
 	 * @return array Links for the given plugin.
 	 */
 	protected function prepare_links( $item ) {
