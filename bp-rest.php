@@ -48,5 +48,16 @@ function bp_rest_api_endpoints() {
 		$controller = new BP_REST_Activity_Controller();
 		$controller->register_routes();
 	}
+
+	if ( bp_is_active( 'xprofile' ) ) {
+		require_once( dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-xprofile-groups-endpoints.php' );
+		$controller = new BP_REST_XProfile_Groups_Controller();
+		$controller->register_routes();
+
+		require_once( dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-xprofile-fields-endpoints.php' );
+		$controller = new BP_REST_XProfile_Fields_Controller();
+		$controller->register_routes();
+	}
+
 }
 add_action( 'bp_rest_api_init', 'bp_rest_api_endpoints' );
