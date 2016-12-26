@@ -43,9 +43,16 @@ function bp_rest_api_endpoints() {
 		return;
 	}
 
-	if ( bp_is_active( 'activity' ) ) {
-		require_once( dirname( __FILE__ ) . '/includes/bp-activity/classes/class-bp-activity-endpoints.php' );
-		$controller = new BP_REST_Activity_Controller();
+    if ( bp_is_active( 'activity' ) ) {
+        require_once( dirname( __FILE__ ) . '/includes/bp-activity/classes/class-bp-activity-endpoints.php' );
+        $controller = new BP_REST_Activity_Controller();
+        $controller->register_routes();
+    }
+
+	if ( bp_is_active( 'members' ) ) {
+		require_once( dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-members-endpoints.php' );
+        // Register General Member Type Endpoint
+		$controller = new BP_REST_Members_Controller();
 		$controller->register_routes();
 	}
 }
