@@ -1,5 +1,6 @@
 <?php
-defined( 'ABSPATH' ) || exit;
+
+defined('ABSPATH') || exit;
 
 /**
  * Members endpoints.
@@ -9,318 +10,316 @@ defined( 'ABSPATH' ) || exit;
  */
 class BP_REST_Members_Controller extends WP_REST_Controller {
 
-	protected $member_type;
+    protected $member_type;
 
-	public function __construct( $member_type = false ) {
-		$this->namespace = 'buddypress/v1';
-		$this->rest_base = buddypress()->members->id;
+    public function __construct($member_type = false) {
+        $this->namespace = 'buddypress/v1';
+        $this->rest_base = buddypress()->members->id;
 
-		if($member_type) {
-			// Member type support for member endpoint.
-			$this->member_type = $member_type;
-			$obj = bp_get_member_type_object($member_type);
-			$this->rest_base = (isset($obj->rest_base) && ! empty( $obj->rest_base )) ? $obj->rest_base : $member_type;
-		}
+        if ($member_type) {
+            // Member type support for member endpoint.
+            $this->member_type = $member_type;
+            $obj = bp_get_member_type_object($member_type);
+            $this->rest_base = (isset($obj->rest_base) && !empty($obj->rest_base)) ? $obj->rest_base : $member_type;
+        }
 
-		//@todo member meta field registeration..
+        //@todo member meta field registeration..
+    }
 
-	}
+    /**
+     * Register the plugin routes.
+     *
+     * @since 0.1.0
+     */
+    public function register_routes() {
 
-	/**
-	 * Register the plugin routes.
-	 *
-	 * @since 0.1.0
-	 */
-	public function register_routes() {
+        register_rest_route($this->namespace, '/' . $this->rest_base, array(
+            array(
+                'methods' => WP_REST_Server::READABLE,
+                'callback' => array($this, 'get_items'),
+                'permission_callback' => array($this, 'get_items_permissions_check'),
+                'args' => $this->get_collection_params(),
+            ),
+            array(
+                'methods' => WP_REST_Server::CREATABLE,
+                'callback' => array($this, 'create_item'),
+                'permission_callback' => array($this, 'create_item_permissions_check'),
+                'args' => $this->get_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
+            ),
+            'schema' => array($this, 'get_public_item_schema'),
+        ));
+    }
 
-		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
-			array(
-				'methods'         => WP_REST_Server::READABLE,
-				'callback'        => array( $this, 'get_items' ),
-				'permission_callback' => array( $this, 'get_items_permissions_check' ),
-				'args'            => $this->get_collection_params(),
-			),
-			array(
-				'methods'         => WP_REST_Server::CREATABLE,
-				'callback'        => array( $this, 'create_item' ),
-				'permission_callback' => array( $this, 'create_item_permissions_check' ),
-				'args'            => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
-			),
-			'schema' => array( $this, 'get_public_item_schema' ),
-		) );
+    /**
+     * Get the plugin schema, conforming to JSON Schema.
+     *
+     * @since 0.1.0
+     *
+     * @return array
+     */
+    public function get_item_schema() {
 
-	}
+        // @todo: Make sure to write schema.
 
-	/**
-	 * Get the plugin schema, conforming to JSON Schema.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return array
-	 */
-	public function get_item_schema() {
+        $schema = array(
+            '$schema' => 'http://json-schema.org/draft-04/schema#',
+            'title' => 'activity',
+            'type' => 'object',
+            'properties' => array(
+                'id' => array(
+                    'context' => array('view', 'edit'),
+                    'description' => __('A unique alphanumeric ID for the object.', 'buddypress'),
+                    'readonly' => true,
+                    'type' => 'integer',
+                )
+            )
+        );
 
-		// @todo: Make sure to write schema.
+        return $schema;
+    }
 
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'activity',
-			'type'       => 'object',
+    /**
+     * Get the query params for collections of plugins.
+     *
+     * @since 0.1.0
+     *
+     * @return array
+     */
+    public function get_collection_params() {
+        $params = parent::get_collection_params();
+        $params['context']['default'] = 'view';
 
-			'properties' => array(
-				'id' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				)
-			)
-		);
+        $params['exclude'] = array(
+            'description' => __('Ensure result set excludes specific IDs.', 'buddypress'),
+            'type' => 'array',
+            'default' => array(),
+            'sanitize_callback' => 'wp_parse_id_list',
+        );
 
-		return $schema;
-	}
+        $params['include'] = array(
+            'description' => __('Ensure result set includes specific IDs.', 'buddypress'),
+            'type' => 'array',
+            'default' => array(),
+            'sanitize_callback' => 'wp_parse_id_list',
+        );
 
-	/**
-	 * Get the query params for collections of plugins.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return array
-	 */
-	public function get_collection_params() {
-		$params                       = parent::get_collection_params();
-		$params['context']['default'] = 'view';
+        $params['type'] = array(
+            'description' => __('Determines sort order. Select from newest, active, online, random, popular, alphabetical.', 'buddypress'),
+            'type' => 'string',
+            'default' => 'newest',
+            'enum' => array('newest', 'active', 'online', 'random', 'popular', 'alphabetical'),
+            'validate_callback' => 'rest_validate_request_arg',
+        );
 
-		$params['exclude'] = array(
-			'description'       => __( 'Ensure result set excludes specific IDs.', 'buddypress' ),
-			'type'              => 'array',
-			'default'           => array(),
-			'sanitize_callback' => 'wp_parse_id_list',
-		);
+        $params['per_page'] = array(
+            'description' => __('Maximum number of results returned per result set.', 'buddypress'),
+            'default' => 20,
+            'type' => 'integer',
+            'sanitize_callback' => 'absint',
+            'validate_callback' => 'rest_validate_request_arg',
+        );
 
-		$params['include'] = array(
-			'description'       => __( 'Ensure result set includes specific IDs.', 'buddypress' ),
-			'type'              => 'array',
-			'default'           => array(),
-			'sanitize_callback' => 'wp_parse_id_list',
-		);
+        $params['page'] = array(
+            'description' => __('Offset the result set by a specific number of pages of results.', 'buddypress'),
+            'default' => 1,
+            'type' => 'integer',
+            'sanitize_callback' => 'absint',
+            'validate_callback' => 'rest_validate_request_arg',
+        );
 
-		$params['type'] = array(
-			'description'       => __( 'Determines sort order. Select from newest, active, online, random, popular, alphabetical.', 'buddypress' ),
-			'type'              => 'string',
-			'default'           => 'newest',
-			'enum'              => array( 'newest', 'active', 'online', 'random', 'popular', 'alphabetical' ),
-			'validate_callback' => 'rest_validate_request_arg',
-		);
+        $params['search'] = array(
+            'description' => __('Limit result set to items that match this search query.', 'buddypress'),
+            'type' => 'string',
+            'default' => '',
+            'sanitize_callback' => 'sanitize_text_field',
+            'validate_callback' => 'rest_validate_request_arg',
+        );
 
-		$params['per_page'] = array(
-			'description'       => __( 'Maximum number of results returned per result set.', 'buddypress' ),
-			'default'           => 20,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
+        if (bp_is_active('friends')) { // only availble when friends component is activate
+            $params['user_id'] = array(
+                'description' => __('Limit result by connections of specific user.', 'buddypress'),
+                'type' => 'integer',
+                'default' => 0,
+                'sanitize_callback' => 'absint',
+                'validate_callback' => 'rest_validate_request_arg',
+            );
+        }
 
-		$params['page'] = array(
-			'description'       => __( 'Offset the result set by a specific number of pages of results.', 'buddypress' ),
-			'default'           => 1,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
+        return $params;
+    }
 
-		$params['search'] = array(
-			'description'       => __( 'Limit result set to items that match this search query.', 'buddypress' ),
-			'type'              => 'string',
-			'default'           => '',
-			'sanitize_callback' => 'sanitize_text_field',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
+    /**
+     * Retrieve members.
+     *
+     * @since 0.1.0
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Request List of activity object data.
+     */
+    public function get_items($request) {
+        global $bp, $wpdb;
+        $args = array(
+            'type' => $request['type'],
+            'user_id' => false,
+           // 'exclude' => $request['exclude'],
+           // 'include' => $request['include'],
+            'search_terms' => $request['search'],
+            'member_type' => '',
+            'per_page' => $request['per_page'],
+            'page' => $request['page'],
+            'populate_extras' => true,
+            'meta_key' => false, // Limit to users who have this piece of usermeta.
+            'meta_value' => false,
+            'count_total' => 'count_query'
+        );
 
-		if(bp_is_active( 'friends' )) { // only availble when friends component is activate
+        if ($this->member_type != "") {
+            $args['member_type'] = $this->member_type;
+        }
 
-			$params['user_id'] = array(
-				'description'       => __( 'Limit result by connections of specific user.', 'buddypress' ),
-				'type'              => 'integer',
-				'default'           => 0,
-				'sanitize_callback' => 'absint',
-				'validate_callback' => 'rest_validate_request_arg',
-			);
+        if (!empty($request['user_id'])) {
+            $args['user_id'] = $request['user_id'];
+        }
+        //var_dump($args);
+        $retval = array();
+        
+        $members = new BP_User_Query($args);
 
-		}
+        foreach ($members->results as $member) {
 
-		return $params;
-	}
+            //@todo: Passing the member object into prepare response
 
-	/**
-	 * Retrieve members.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request
-	 * @return WP_REST_Request List of activity object data.
-	 */
-	public function get_items( $request ) {
+            $retval[] = $this->prepare_response_for_collection(
+                    $this->prepare_item_for_response($member, $request)
+            );
+        }
 
-		$args = array(
-			'type'           	=> $request['type'],
-			'user_id'           => false,
-			'exclude'           => $request['exclude'],
-			'include'           => $request['include'],
-			'search_terms'      => $request['search'],
-			'member_type'       => '',
-			'per_page'      	=> $request['per_page'],
-			'page'              => $request['page'],
-			'populate_extras'   => true,
-			'meta_key'          => false, // Limit to users who have this piece of usermeta.
-			'meta_value'        => false,
-			'count_total'   	=> 'count_query'
-		);
+        return rest_ensure_response($retval);
+    }
 
-		if($this->member_type != "") {
-			$args['member_type'] = $this->member_type;
-		}
+    /**
+     * Retrieve member.
+     *
+     * @since 0.1.0
+     *
+     * @param WP_REST_Request $request
+     * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
+     */
+    public function get_item($request) {
 
-		if(!empty($request['user_id'])) {
-			$args['user_id'] = $request['user_id'];
-		}
-		var_dump($args);
-		$retval     = array();
-		$members = new BP_User_Query( $args );
+        // @todo: Member singlular query logics
 
-		foreach ( $members->results as $member ) {
+        $members = array();
 
-			//@todo: Passing the member object into prepare response
+        $retval = array(
+            $this->prepare_response_for_collection(
+                $this->prepare_item_for_response($members, $request)
+            )
+        );
 
-			// $retval[] = $this->prepare_response_for_collection(
-			// 	$this->prepare_item_for_response( $member, $request )
-			// );
-		}
+        return rest_ensure_response($retval);
+    }
 
-		return rest_ensure_response( $retval );
-	}
+    /**
+     * Check if a given request has access to get information about a specific member.
+     *
+     * @since 0.1.0
+     *
+     * @param WP_REST_Request $request Full data about the request.
+     * @return bool
+     */
+    public function get_item_permissions_check($request) {
+        return $this->get_items_permissions_check($request);
+    }
 
-	/**
-	 * Retrieve member.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request
-	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
-	 */
-	public function get_item( $request ) {
+    /**
+     * Check if a given request has access to member items.
+     *
+     * @since 0.1.0
+     *
+     * @param WP_REST_Request $request Full data about the request.
+     * @return WP_Error|bool
+     */
+    public function get_items_permissions_check($request) {
+        // @todo: have to look what permission we can check here.
+        return true;
+    }
 
-		// @todo: Member singlular query logics
+    /**
+     * Prepares member data for return as an object.
+     *
+     * @since 0.1.0
+     *
+     * @param stdClass $activity Activity data.
+     * @param WP_REST_Request $request
+     * @param boolean $is_raw Optional, not used. Defaults to false.
+     * @return WP_REST_Response
+     */
+    public function prepare_item_for_response($member, $request, $is_raw = false) {
 
-		$members = array();
+        //@todo define the data structure of rest single object.
 
-		$retval = array( $this->prepare_response_for_collection(
-			$this->prepare_item_for_response( $members, $request )
-		) );
+        $data = array(
+            //"id" => $member->ID,
+        );
 
-		return rest_ensure_response( $retval );
+        $context = !empty($request['context']) ? $request['context'] : 'view';
+        $data = $this->add_additional_fields_to_object($data, $request);
+        $data = $this->filter_response_by_context($data, $context);
 
-	}
+        $response = rest_ensure_response($data);
+        $response->add_links($this->prepare_links($activity));
 
-	/**
-	 * Check if a given request has access to get information about a specific member.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return bool
-	 */
-	public function get_item_permissions_check( $request ) {
-		return $this->get_items_permissions_check( $request );
-	}
+        /**
+         * Filter an member value returned from the API.
+         *
+         * @param array           $response
+         * @param WP_REST_Request $request Request used to generate the response.
+         */
+        return apply_filters('rest_prepare_buddypress_member_value', $response, $request);
+    }
 
-	/**
-	 * Check if a given request has access to member items.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_Error|bool
-	 */
-	public function get_items_permissions_check( $request ) {
-		// @todo: have to look what permission we can check here.
-		return true;
-	}
+    /**
+     * Prepare links for the request.
+     *
+     * @since 0.1.0
+     *
+     * @param array $member Member.
+     * @return array Links for the given plugin.
+     */
+    protected function prepare_links($member) {
+        $base = sprintf('/%s/%s/', $this->namespace, $this->rest_base);
 
-	/**
-	 * Prepares member data for return as an object.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param stdClass $activity Activity data.
-	 * @param WP_REST_Request $request
-	 * @param boolean $is_raw Optional, not used. Defaults to false.
-	 * @return WP_REST_Response
-	 */
-	public function prepare_item_for_response( $member, $request, $is_raw = false ) {
+        // Entity meta.
+        $links = array(
+            'self' => array(
+                'href' => rest_url($base . $member->id), //@todo: Need to test
+            ),
+            'collection' => array(
+                'href' => rest_url($base),
+            )
+        );
 
-		//@todo define the data structure of rest single object.
+        return $links;
+    }
 
-		$data = array(
-			//"id" => $member->id
-		);
+    /**
+     * Convert the input date to RFC3339 format.
+     *
+     * @param string $date_gmt
+     * @param string|null $date Optional. Date object.
+     * @return string|null ISO8601/RFC3339 formatted datetime.
+     */
+    protected function prepare_date_response($date_gmt, $date = null) {
+        if (isset($date)) {
+            return mysql_to_rfc3339($date);
+        }
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
+        if ($date_gmt === '0000-00-00 00:00:00') {
+            return null;
+        }
 
-		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $activity ) );
+        return mysql_to_rfc3339($date_gmt);
+    }
 
-		/**
-		 * Filter an member value returned from the API.
-		 *
-		 * @param array           $response
-		 * @param WP_REST_Request $request Request used to generate the response.
-		 */
-		return apply_filters( 'rest_prepare_buddypress_member_value', $response, $request );
-	}
-
-	/**
-	 * Prepare links for the request.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param array $member Member.
-	 * @return array Links for the given plugin.
-	 */
-	protected function prepare_links( $member ) {
-		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-
-		// Entity meta.
-		$links = array(
-			'self' => array(
-				'href' => rest_url( $base . $member->id ), //@todo: Need to test
-			),
-			'collection' => array(
-				'href' => rest_url( $base ),
-			)
-		);
-
-		return $links;
-	}
-
-	/**
-	 * Convert the input date to RFC3339 format.
-	 *
-	 * @param string $date_gmt
-	 * @param string|null $date Optional. Date object.
-	 * @return string|null ISO8601/RFC3339 formatted datetime.
-	 */
-	protected function prepare_date_response( $date_gmt, $date = null ) {
-		if ( isset( $date ) ) {
-			return mysql_to_rfc3339( $date );
-		}
-
-		if ( $date_gmt === '0000-00-00 00:00:00' ) {
-			return null;
-		}
-
-		return mysql_to_rfc3339( $date_gmt );
-	}
 }
