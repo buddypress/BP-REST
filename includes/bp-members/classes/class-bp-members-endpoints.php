@@ -75,7 +75,7 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
                 'username'    => array(
                     'description' => __( 'Login name for the resource.', 'buddypress' ),
                     'type'        => 'string',
-                    'context'     => array( 'edit' ),
+                    'context'     => array( 'embed', 'edit', 'view' ),
                     'required'    => true,
                     'arg_options' => array(
                         'sanitize_callback' => 'sanitize_user',
@@ -92,7 +92,7 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
                 'fullname'  => array(
                     'description' => __( 'Full First name for the resource.' ),
                     'type'        => 'string',
-                    'context'     => array( 'edit' ),
+                    'context'     => array( 'embed', 'edit', 'view' ),
                     'arg_options' => array(
                         'sanitize_callback' => 'sanitize_text_field',
                     ),
@@ -107,7 +107,7 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
                 'nickname'    => array(
                     'description' => __( 'The nickname for the resource.' ),
                     'type'        => 'string',
-                    'context'     => array( 'edit' ),
+                    'context'     => array( 'embed', 'edit', 'view' ),
                     'arg_options' => array(
                         'sanitize_callback' => 'sanitize_text_field',
                     ),
@@ -308,27 +308,27 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
         $schema = $this->get_item_schema();
 
         if ( ! empty( $schema['properties']['id'] ) ) {
-            $data['id'] = $user->ID;
+            $data['id'] = $member->ID;
         }
 
         if ( ! empty( $schema['properties']['username'] ) ) {
-            $data['username'] = $user->user_login;
+            $data['username'] = $member->user_login;
         }
 
         if ( ! empty( $schema['properties']['name'] ) ) {
-            $data['name'] = $user->display_name;
+            $data['name'] = $member->display_name;
         }
 
         if ( ! empty( $schema['properties']['fullname'] ) ) {
-            $data['fullname'] = $user->fullname;
+            $data['fullname'] = $member->fullname;
         }
 
         if ( ! empty( $schema['properties']['registered_date'] ) ) {
-            $data['registered_date'] = $user->user_registered;
+            $data['registered_date'] = $member->user_registered;
         }
 
         if ( ! empty( $schema['properties']['nickname'] ) ) {
-            $data['nickname'] = $user->user_nicename;
+            $data['nickname'] = $member->user_nicename;
         }
 
         $context = ! empty( $request['context'] ) ? $request['context'] : 'embed';
