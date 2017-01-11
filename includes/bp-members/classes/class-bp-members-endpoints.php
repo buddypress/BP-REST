@@ -59,6 +59,8 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
                     'context'          => $this->get_context_param( array( 'default' => 'view' ) ),
                 ),
             ),
+
+            // Uncomment them while go finishing it.
             // array(
             //     'methods'         => WP_REST_Server::EDITABLE,
             //     'callback'        => array( $this, 'update_item' ),
