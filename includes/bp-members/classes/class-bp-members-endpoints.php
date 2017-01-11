@@ -67,19 +67,24 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
             //     'permission_callback' => array( $this, 'update_item_permissions_check' ),
             //     'args'            => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
             // ),
-            // array(
-            //     'methods' => WP_REST_Server::DELETABLE,
-            //     'callback' => array( $this, 'delete_item' ),
-            //     'permission_callback' => array( $this, 'delete_item_permissions_check' ),
-            //     'args' => array(
-            //         'force'    => array(
-            //             'default'     => false,
-            //             'description' => __( 'Required to be true, as resource does not support trashing.' ),
-            //         ),
-            //         'reassign' => array(),
-            //     ),
-            // ),
-            'schema' => array( $this, 'get_public_item_schema' ),
+            //
+
+            /**
+             * Redirect to WP Rest User Endpoint.
+             */
+            array(
+                'methods' => WP_REST_Server::DELETABLE,
+                'callback' => array( 'WP_REST_Users_Controller', 'delete_item' ),
+                'permission_callback' => array( 'WP_REST_Users_Controller', 'delete_item_permissions_check' ),
+                'args' => array(
+                    'force'    => array(
+                        'default'     => false,
+                        'description' => __( 'Required to be true, as resource does not support trashing.' ),
+                    ),
+                    'reassign' => array(),
+                ),
+            ),
+            'schema' => array( 'WP_REST_Users_Controller', 'get_public_item_schema' ),
         ) );
 
     }
@@ -297,15 +302,18 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
 
         $id = (int) $request['id'];
 
-        $member = new BP_User_Query($id);
+        $member = new BP_User_Query(array(
+                                        'user_ids' => array($id)
+                                        ));
 
-        if(!isset($member->results) && empty($member->results)) {
+
+        if(empty($id) || !isset($member->results) || empty($member->results)) {
             return new WP_Error( 'rest_member_invalid_id', __( 'Invalid resource id.', 'buddypress' ), array( 'status' => 404 ) );
         }
 
         $retval = array(
             $this->prepare_response_for_collection(
-                $this->prepare_item_for_response($member->results[1], $request)
+                $this->prepare_item_for_response($member->results[$id], $request)
             )
         );
 
