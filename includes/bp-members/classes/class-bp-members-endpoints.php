@@ -71,6 +71,12 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
                     'description' => __('A unique alphanumeric ID for the object.', 'buddypress'),
                     'readonly' => true,
                     'type' => 'integer',
+                ),
+                'id' => array(
+                    'context' => array('view', 'edit'),
+                    'description' => __('A unique alphanumeric ID for the object.', 'buddypress'),
+                    'readonly' => true,
+                    'type' => 'integer',
                 )
             )
         );
@@ -158,11 +164,10 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
      */
     public function get_items($request) {
         global $bp, $wpdb;
+
         $args = array(
             'type' => $request['type'],
             'user_id' => false,
-           // 'exclude' => $request['exclude'],
-           // 'include' => $request['include'],
             'search_terms' => $request['search'],
             'member_type' => '',
             'per_page' => $request['per_page'],
@@ -173,6 +178,14 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
             'count_total' => 'count_query'
         );
 
+        if(!empty($request['exclude'])) {
+            $args['exclude'] = $request['exclude'];
+        }
+
+        if(!empty($request['include'])) {
+            $args['include'] = $request['include'];
+        }
+
         if ($this->member_type != "") {
             $args['member_type'] = $this->member_type;
         }
@@ -180,9 +193,9 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
         if (!empty($request['user_id'])) {
             $args['user_id'] = $request['user_id'];
         }
-        //var_dump($args);
+
         $retval = array();
-        
+
         $members = new BP_User_Query($args);
 
         foreach ($members->results as $member) {
