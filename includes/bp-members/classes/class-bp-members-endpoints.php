@@ -112,6 +112,13 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
                         'sanitize_callback' => 'sanitize_text_field',
                     ),
                 ),
+                'link'        => array(
+                    'description' => __( 'Member Profile URL to the resource.' ),
+                    'type'        => 'string',
+                    'format'      => 'uri',
+                    'context'     => array( 'embed', 'view', 'edit' ),
+                    'readonly'    => true,
+                )
             )
         );
 
@@ -331,12 +338,16 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
             $data['nickname'] = $member->user_nicename;
         }
 
+        if ( ! empty( $schema['properties']['link'] ) ) {
+            $data['link'] = bp_core_get_user_domain($member->ID);
+        }
+
         $context = ! empty( $request['context'] ) ? $request['context'] : 'embed';
         $data = $this->add_additional_fields_to_object( $data, $request );
         $data = $this->filter_response_by_context( $data, $context );
 
         $response = rest_ensure_response($data);
-        $response->add_links($this->prepare_links($activity));
+        $response->add_links($this->prepare_links($member));
 
         /**
          * Filter an member value returned from the API.
@@ -356,12 +367,13 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
      * @return array Links for the given plugin.
      */
     protected function prepare_links($member) {
+
         $base = sprintf('/%s/%s/', $this->namespace, $this->rest_base);
 
         // Entity meta.
         $links = array(
             'self' => array(
-                'href' => rest_url($base . $member->id), //@todo: Need to test
+                'href' => rest_url($base . $member->ID), //@todo: Need to test
             ),
             'collection' => array(
                 'href' => rest_url($base),
