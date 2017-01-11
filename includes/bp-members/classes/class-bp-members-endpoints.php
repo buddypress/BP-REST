@@ -48,6 +48,38 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
             ),
             'schema' => array($this, 'get_public_item_schema'),
         ));
+
+
+        register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
+            array(
+                'methods'         => WP_REST_Server::READABLE,
+                'callback'        => array( $this, 'get_item' ),
+                'permission_callback' => array( $this, 'get_item_permissions_check' ),
+                'args'            => array(
+                    'context'          => $this->get_context_param( array( 'default' => 'view' ) ),
+                ),
+            ),
+            // array(
+            //     'methods'         => WP_REST_Server::EDITABLE,
+            //     'callback'        => array( $this, 'update_item' ),
+            //     'permission_callback' => array( $this, 'update_item_permissions_check' ),
+            //     'args'            => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
+            // ),
+            // array(
+            //     'methods' => WP_REST_Server::DELETABLE,
+            //     'callback' => array( $this, 'delete_item' ),
+            //     'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+            //     'args' => array(
+            //         'force'    => array(
+            //             'default'     => false,
+            //             'description' => __( 'Required to be true, as resource does not support trashing.' ),
+            //         ),
+            //         'reassign' => array(),
+            //     ),
+            // ),
+            'schema' => array( $this, 'get_public_item_schema' ),
+        ) );
+
     }
 
     /**
@@ -261,17 +293,22 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
      */
     public function get_item($request) {
 
-        // @todo: Member singlular query logics
+        $id = (int) $request['id'];
 
-        $members = array();
+        $member = new BP_User_Query($id);
+
+        if(!isset($member->results) && empty($member->results)) {
+            return new WP_Error( 'rest_member_invalid_id', __( 'Invalid resource id.', 'buddypress' ), array( 'status' => 404 ) );
+        }
 
         $retval = array(
             $this->prepare_response_for_collection(
-                $this->prepare_item_for_response($members, $request)
+                $this->prepare_item_for_response($member->results[1], $request)
             )
         );
 
         return rest_ensure_response($retval);
+
     }
 
     /**
