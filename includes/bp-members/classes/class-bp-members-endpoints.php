@@ -72,12 +72,46 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
                     'readonly' => true,
                     'type' => 'integer',
                 ),
-                'id' => array(
-                    'context' => array('view', 'edit'),
-                    'description' => __('A unique alphanumeric ID for the object.', 'buddypress'),
-                    'readonly' => true,
-                    'type' => 'integer',
-                )
+                'username'    => array(
+                    'description' => __( 'Login name for the resource.', 'buddypress' ),
+                    'type'        => 'string',
+                    'context'     => array( 'edit' ),
+                    'required'    => true,
+                    'arg_options' => array(
+                        'sanitize_callback' => 'sanitize_user',
+                    ),
+                ),
+                'name'        => array(
+                    'description' => __( 'Display name for the resource.' ),
+                    'type'        => 'string',
+                    'context'     => array( 'embed', 'view', 'edit' ),
+                    'arg_options' => array(
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ),
+                ),
+                'fullname'  => array(
+                    'description' => __( 'Full First name for the resource.' ),
+                    'type'        => 'string',
+                    'context'     => array( 'edit' ),
+                    'arg_options' => array(
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ),
+                ),
+                'registered_date' => array(
+                    'description' => __( 'Registration date for the resource.' ),
+                    'type'        => 'string',
+                    'format'      => 'date-time',
+                    'context'     => array( 'edit' ),
+                    'readonly'    => true,
+                ),
+                'nickname'    => array(
+                    'description' => __( 'The nickname for the resource.' ),
+                    'type'        => 'string',
+                    'context'     => array( 'edit' ),
+                    'arg_options' => array(
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ),
+                ),
             )
         );
 
