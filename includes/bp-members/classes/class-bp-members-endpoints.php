@@ -304,15 +304,36 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
      */
     public function prepare_item_for_response($member, $request, $is_raw = false) {
 
-        //@todo define the data structure of rest single object.
+        $data = array();
+        $schema = $this->get_item_schema();
 
-        $data = array(
-            //"id" => $member->ID,
-        );
+        if ( ! empty( $schema['properties']['id'] ) ) {
+            $data['id'] = $user->ID;
+        }
 
-        $context = !empty($request['context']) ? $request['context'] : 'view';
-        $data = $this->add_additional_fields_to_object($data, $request);
-        $data = $this->filter_response_by_context($data, $context);
+        if ( ! empty( $schema['properties']['username'] ) ) {
+            $data['username'] = $user->user_login;
+        }
+
+        if ( ! empty( $schema['properties']['name'] ) ) {
+            $data['name'] = $user->display_name;
+        }
+
+        if ( ! empty( $schema['properties']['fullname'] ) ) {
+            $data['fullname'] = $user->fullname;
+        }
+
+        if ( ! empty( $schema['properties']['registered_date'] ) ) {
+            $data['registered_date'] = $user->user_registered;
+        }
+
+        if ( ! empty( $schema['properties']['nickname'] ) ) {
+            $data['nickname'] = $user->user_nicename;
+        }
+
+        $context = ! empty( $request['context'] ) ? $request['context'] : 'embed';
+        $data = $this->add_additional_fields_to_object( $data, $request );
+        $data = $this->filter_response_by_context( $data, $context );
 
         $response = rest_ensure_response($data);
         $response->add_links($this->prepare_links($activity));
