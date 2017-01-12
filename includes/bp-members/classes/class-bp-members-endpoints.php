@@ -157,7 +157,14 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
                     'format'      => 'uri',
                     'context'     => array( 'embed', 'view', 'edit' ),
                     'readonly'    => true,
+                ),
+                'avatar_urls'   => array(
+                    'description' => __( 'Avatar URLs for the user.' ),
+                    'type'        => 'object',
+                    'context'     => array( 'embed', 'view', 'edit' ),
+                    'readonly'    => true,
                 )
+                
             )
         );
 
@@ -387,6 +394,10 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
 
         if ( ! empty( $schema['properties']['link'] ) ) {
             $data['link'] = bp_core_get_user_domain($member->ID);
+        }
+        
+        if ( ! empty( $schema['properties']['avatar_urls'] ) ) {
+            $data['avatar_urls'] = bp_core_fetch_avatar( array( 'item_id' => $member->ID, 'type' => 'full', 'html'=>false ) );
         }
 
         $context = ! empty( $request['context'] ) ? $request['context'] : 'embed';
