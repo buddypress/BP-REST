@@ -12,6 +12,10 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
 
     protected $member_type;
 
+	/**
+	 * BP_REST_Members_Controller constructor.
+	 * @param bool $member_type
+	 */
     public function __construct($member_type = false) {
         $this->namespace = 'buddypress/v1';
         $this->rest_base = buddypress()->members->id;
@@ -397,7 +401,14 @@ class BP_REST_Members_Controller extends WP_REST_Controller {
         }
         
         if ( ! empty( $schema['properties']['avatar_urls'] ) ) {
-            $data['avatar_urls'] = bp_core_fetch_avatar( array( 'item_id' => $member->ID, 'type' => 'full', 'html'=>false ) );
+
+            $urls = array();
+
+			$urls[ 'full' ] = bp_core_fetch_avatar( array( 'item_id' => $member->ID, 'type' => 'full', 'html'=>false ) );
+			$urls[ 'thumb' ] = bp_core_fetch_avatar( array( 'item_id' => $member->ID, 'type' => 'thumb', 'html'=>false ) );
+
+            $data['avatar_urls'] = $urls;
+
         }
 
         $context = ! empty( $request['context'] ) ? $request['context'] : 'embed';
