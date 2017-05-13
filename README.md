@@ -8,7 +8,7 @@ The **"master"** branch is undergoing substantial changes and is **NOT COMPLETE 
 
 The **"beta"** branch represents a **BETA** of our next version release.
 
-The latest **stable** version will be available from the [WordPress Plugin Directory](https://wordpress.org/plugins).
+The latest **stable** version will be available from the [WordPress Plugin Directory](https://wordpress.org/plugins). (plugin not available yet)
 
 ## About
 
