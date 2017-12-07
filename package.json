@@ -8,15 +8,13 @@
     "homepage": "https://github.com/buddypress/BP-REST#readme",
     "bugs": "https://github.com/buddypress/BP-REST/issues",
     "license": "GPL-2.0+",
-    "authors": [
-    {
-      "name": "The BuddyPress Community",
-      "homepage": "https://buddypress.org/"
-    }
-    ],
+    "authors": {
+        "name": "The BuddyPress Community",
+        "homepage": "https://buddypress.org/"
+    },
     "support": {
-        "issues": "https://github.com/buddypress/wp-cli-buddypress/issues",
-        "source": "https://github.com/buddypress/wp-cli-buddypress"
+        "issues": "https://github.com/buddypress/BP-REST/issues",
+        "source": "https://github.com/buddypress/BP-REST"
     },
     "repository" : {
         "type" : "git",
