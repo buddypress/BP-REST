@@ -1,23 +1,25 @@
 {
-  "name": "bp-rest",
-  "title": "BP-REST",
-  "version": "0.1.0",
-  "description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
-  "repository" : {
-    "type" : "git",
-    "url" : "buddypress/BP-REST"
-  },
-  "author": {
-    "name": "BuddyPress",
-    "url": "https://buddypress.org"
-  },
-  "license": "GPL-2.0+",
-  "keywords": [
-    "API",
-    "BuddyPress",
-    "REST API",
-    "WordPress"
-  ],
-  "homepage": "https://github.com/buddypress/BP-REST#readme",
-  "bugs": "https://github.com/buddypress/BP-REST/issues"
+    "name": "bp-rest",
+    "title": "BP-REST",
+    "version": "0.1.0",
+    "type": "plugin",
+    "description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
+    "keywords": [ "API", "BuddyPress", "REST API", "REST", "API", "bp", "WordPress" ],
+    "homepage": "https://github.com/buddypress/BP-REST#readme",
+    "bugs": "https://github.com/buddypress/BP-REST/issues",
+    "license": "GPL-2.0+",
+    "authors": [
+    {
+      "name": "The BuddyPress Community",
+      "homepage": "https://buddypress.org/"
+    }
+    ],
+    "support": {
+        "issues": "https://github.com/buddypress/wp-cli-buddypress/issues",
+        "source": "https://github.com/buddypress/wp-cli-buddypress"
+    },
+    "repository" : {
+        "type" : "git",
+        "url" : "buddypress/BP-REST"
+    },
 }
