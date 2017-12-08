@@ -154,7 +154,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params                       = parent::get_collection_params();
+		$params = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
 		$params['exclude'] = array(
@@ -342,13 +342,14 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	/**
 	 * Retrieve activity.
 	 *
+	 * @todo Query logic, permissions, other parameters that might need to be set. etc.
+	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Rest Request.
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function get_item( $request ) {
-		// TODO: query logic. and permissions. and other parameters that might need to be set. etc.
 		$activity = bp_activity_get( array(
 			'in' => (int) $request['id'],
 		) );
@@ -360,7 +361,6 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		);
 
 		return rest_ensure_response( $retval );
-
 	}
 
 	/**
@@ -378,13 +378,14 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	/**
 	 * Check if a given request has access to activity items.
 	 *
+	 * @todo Handle private activities etc.
+	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		// TODO: handle private activities etc.
 		return true;
 	}
 
@@ -405,7 +406,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'content'               => $activity->content,
 			'date'                  => $this->prepare_date_response( $activity->date_recorded ),
 			'id'                    => $activity->id,
-			'link'                  => $activity->primary_link,
+			'link'                  => bp_activity_get_permalink( $activity->id ),
 			'parent'                => 'activity_comment' === $activity->type ? $activity->item_id : 0,
 			'prime_association'     => $activity->item_id,
 			'secondary_association' => $activity->secondary_item_id,
@@ -414,9 +415,12 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'type'                  => $activity->type,
 		);
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
+		$context = ! empty( $request['context'] )
+			? $request['context']
+			: 'view';
+
+		$data = $this->add_additional_fields_to_object( $data, $request );
+		$data = $this->filter_response_by_context( $data, $context );
 
 		$response = rest_ensure_response( $data );
 		$response->add_links( $this->prepare_links( $activity ) );
