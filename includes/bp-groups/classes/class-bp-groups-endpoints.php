@@ -218,7 +218,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 		$params['include'] = array(
 			'description'       => __( 'Ensure result set includes groups with specific IDs.', 'buddypress' ),
 			'type'              => 'array',
-			'default'           => false,
+			'default'           => array(),
 			'sanitize_callback' => 'wp_parse_id_list',
 		);
 
@@ -328,7 +328,8 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 
 		$retval = array();
 		$groups = groups_get_groups( $args );
-		foreach ( $groups as $group ) {
+
+		foreach ( $groups['groups'] as $group ) {
 			$retval[] = $this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $group, $request )
 			);
