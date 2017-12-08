@@ -40,7 +40,9 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 				'callback'            => array( $this, 'get_item' ),
 				'permission_callback' => array( $this, 'get_item_permissions_check' ),
 				'args'                => array(
-					'context' => $this->get_context_param( array( 'default' => 'view' ) ),
+					'context' => $this->get_context_param( array(
+						'default' => 'view',
+					) ),
 				),
 			),
 			'schema' => array( $this, 'get_public_item_schema' ),
@@ -138,7 +140,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 					'type'         => 'integer',
 					'context'      => array( 'view', 'edit' ),
 				),
-			)
+			),
 		);
 
 		return $schema;
@@ -263,7 +265,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Rest Request.
 	 * @return WP_REST_Request List of activity object data.
 	 */
 	public function get_items( $request ) {
@@ -276,7 +278,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'search_terms'      => $request['search'],
 			'secondary_id'      => $request['secondary_id'],
 			'sort'              => $request['order'],
-			'spam'              => $request['status'] === 'spam' ? 'spam_only' : 'ham_only',
+			'spam'              => 'spam' === $request['status'] ? 'spam_only' : 'ham_only',
 			'user_id'           => $request['author'],
 
 			// Set optimised defaults.
@@ -292,7 +294,9 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 
 		if ( isset( $request['component'] ) ) {
 			if ( ! isset( $args['filter'] ) ) {
-				$args['filter'] = array( 'object' => $request['component'] );
+				$args['filter'] = array(
+					'object' => $request['component'],
+				);
 			} else {
 				$args['filter']['object'] = $request['component'];
 			}
@@ -300,7 +304,9 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 
 		if ( isset( $request['type'] ) ) {
 			if ( ! isset( $args['filter'] ) ) {
-				$args['filter'] = array( 'action' => $request['type'] );
+				$args['filter'] = array(
+					'action' => $request['type'],
+				);
 			} else {
 				$args['filter']['action'] = $request['type'];
 			}
@@ -312,7 +318,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 
 		// Override certain options for security.
 		// @TODO: Verify and confirm this show_hidden logic, and check core for other edge cases.
-		if ( $request['component'] === 'groups' &&
+		if ( 'groups' === $request['component'] &&
 			(
 				groups_is_user_member( get_current_user_id(), $request['primary_id'] ) ||
 				bp_current_user_can( 'bp_moderate' )
@@ -320,7 +326,6 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		) {
 			$args['show_hidden'] = true;
 		}
-
 
 		$retval     = array();
 		$activities = bp_activity_get( $args );
@@ -339,18 +344,20 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Rest Request.
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function get_item( $request ) {
-		// TODO: query logic. and permissions. and other parameters that might need to be set. etc
+		// TODO: query logic. and permissions. and other parameters that might need to be set. etc.
 		$activity = bp_activity_get( array(
 			'in' => (int) $request['id'],
 		) );
 
-		$retval = array( $this->prepare_response_for_collection(
-			$this->prepare_item_for_response( $activity['activities'][0], $request )
-		) );
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $activity['activities'][0], $request )
+			),
+		);
 
 		return rest_ensure_response( $retval );
 
@@ -377,7 +384,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		// TODO: handle private activities etc
+		// TODO: handle private activities etc.
 		return true;
 	}
 
@@ -386,9 +393,9 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass $activity Activity data.
-	 * @param WP_REST_Request $request
-	 * @param boolean $is_raw Optional, not used. Defaults to false.
+	 * @param stdClass        $activity Activity data.
+	 * @param WP_REST_Request $request Rest Request.
+	 * @param boolean         $is_raw Optional, not used. Defaults to false.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $activity, $request, $is_raw = false ) {
@@ -399,7 +406,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'date'                  => $this->prepare_date_response( $activity->date_recorded ),
 			'id'                    => $activity->id,
 			'link'                  => $activity->primary_link,
-			'parent'                => $activity->type === 'activity_comment' ? $activity->item_id : 0,
+			'parent'                => 'activity_comment' === $activity->type ? $activity->item_id : 0,
 			'prime_association'     => $activity->item_id,
 			'secondary_association' => $activity->secondary_item_id,
 			'status'                => $activity->is_spam ? 'spam' : 'published',
@@ -444,10 +451,10 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			),
 			'author' => array(
 				'href' => rest_url( '/wp/v2/users/' . $activity->user_id ),
-			)
+			),
 		);
 
-		if ( $activity->type === 'activity_comment' ) {
+		if ( 'activity_comment' === $activity->type ) {
 			$links['up'] = array(
 				'href' => rest_url( $base . $activity->item_id ),
 			);
@@ -459,7 +466,9 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	/**
 	 * Convert the input date to RFC3339 format.
 	 *
-	 * @param string $date_gmt
+	 * @since 0.1.0
+	 *
+	 * @param string      $date_gmt Date GMT format.
 	 * @param string|null $date Optional. Date object.
 	 * @return string|null ISO8601/RFC3339 formatted datetime.
 	 */
@@ -468,7 +477,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			return mysql_to_rfc3339( $date );
 		}
 
-		if ( $date_gmt === '0000-00-00 00:00:00' ) {
+		if ( '0000-00-00 00:00:00' === $date_gmt ) {
 			return null;
 		}
 
