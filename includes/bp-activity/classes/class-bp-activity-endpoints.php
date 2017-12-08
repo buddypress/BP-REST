@@ -265,7 +265,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Rest Request.
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Request List of activity object data.
 	 */
 	public function get_items( $request ) {
@@ -346,7 +346,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Rest Request.
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function get_item( $request ) {
@@ -369,7 +369,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return bool
+	 * @return WP_Error|bool
 	 */
 	public function get_item_permissions_check( $request ) {
 		return $this->get_items_permissions_check( $request );
@@ -386,7 +386,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		return true;
+		return $this->can_see( $request );
 	}
 
 	/**
@@ -395,7 +395,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param stdClass        $activity Activity data.
-	 * @param WP_REST_Request $request Rest Request.
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @param boolean         $is_raw Optional, not used. Defaults to false.
 	 * @return WP_REST_Response
 	 */
@@ -465,6 +465,48 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		}
 
 		return $links;
+	}
+
+	/**
+	 * Can this user see the activity?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return boolean
+	 */
+	protected function can_see( $request ) {
+		$retval = true;
+
+		$activity = bp_activity_get( array(
+			'in' => (int) $request['id'],
+		) );
+
+		$activity = $activity['activities'][0];
+
+		$bp = buddypress();
+
+		// If activity is from a group, do an extra cap check.
+		if ( isset( $bp->groups->id ) && $activity->component === $bp->groups->id ) {
+
+			// Activity is from a group, but groups is currently disabled.
+			if ( ! bp_is_active( 'groups' ) ) {
+				return false;
+			}
+
+			// Check to see if the user has access to to the activity's parent group.
+			$group = groups_get_group( $activity->item_id );
+			if ( $group ) {
+				$retval = $group->user_has_access;
+			}
+		}
+
+		// If activity author does not match logged_in user, block access.
+		if ( true === $retval && bp_loggedin_user_id() !== $activity->user_id ) {
+			$retval = false;
+		}
+
+		return $retval;
 	}
 
 	/**
