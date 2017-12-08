@@ -1,19 +1,22 @@
 <?php
 /**
  * Plugin Name: BuddyPress REST API
- * Plugin URI:  https://buddypress.org
+ * Plugin URI: https://buddypress.org
  * Description: BuddyPress extension for WordPress' JSON-based REST API.
- * Version:	    0.1.0
- * Author:	    BuddyPress
- * Author URI:  https://buddypress.org
- * Donate link: https://buddypress.org
- * License:	    GPLv2 or later
+ * Author: The BuddyPress Community
+ * Author URI: https://buddypress.org/
+ * Version: 0.1.0
  * Text Domain: bp-rest
- * Domain Path: /languages
+ * Domain Path: /languages/
+ * Requires at least: 4.7.0
+ * Tested up to: 4.9.1
+ * Requires PHP: 5.5
+ * License: GPLv2
+ * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  */
 
 /**
- * Copyright (c) 2016 BuddyPress (email: contact@buddypress.org)
+ * Copyright (c) 2018 BuddyPress (email: contact@buddypress.org)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2 or, at
@@ -38,7 +41,7 @@ defined( 'ABSPATH' ) || exit;
  * @since 0.1.0
  */
 function bp_rest_api_endpoints() {
-	// Requires https://wordpress.org/plugins/rest-api/
+	// Bail early if no core rest support.
 	if ( ! class_exists( 'WP_REST_Controller' ) ) {
 		return;
 	}
