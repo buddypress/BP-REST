@@ -40,7 +40,9 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 				'callback'            => array( $this, 'get_item' ),
 				'permission_callback' => array( $this, 'get_item_permissions_check' ),
 				'args'                => array(
-					'context' => $this->get_context_param( array( 'default' => 'view' ) ),
+					'context' => $this->get_context_param( array(
+						'default' => 'view',
+					) ),
 				),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
@@ -157,14 +159,14 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 							'context'     => array( 'embed', 'view', 'edit' ),
 						),
 						'full' => array(
-							'description' =>  __( 'Full-sized avatar URL.' ),
+							'description' => __( 'Full-sized avatar URL.' ),
 							'type'        => 'string',
 							'format'      => 'uri',
 							'context'     => array( 'embed', 'view', 'edit' ),
 						),
 					),
 				),
-			)
+			),
 		);
 
 		return $schema;
@@ -178,7 +180,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params                       = parent::get_collection_params();
+		$params = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
 		$params['type'] = array(
@@ -259,9 +261,9 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 			'validate_callback' => array( $this, 'validate_group_types' ),
 		);
 
-		$params['meta_query'] = array(
-			// @TODO: how to handle this?
-			'description'       => __( 'Perform a meta query', 'buddypress' ),
+		// @todo: how to handle this?
+		$params['meta_query'] = array( // WPCS: slow query ok.
+			'description'       => __( 'Perform a meta query.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
@@ -299,7 +301,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Request List of activity object data.
 	 */
 	public function get_items( $request ) {
@@ -315,7 +317,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 			'group_type'         => $request['group_type'],
 			'group_type__in'     => $request['group_type__in'],
 			'group_type__not_in' => $request['group_type__not_in'],
-			'meta_query'         => $request['meta_query'],
+			'meta_query'         => $request['meta_query'], // WPCS: slow query ok.
 			'show_hidden'        => $request['show_hidden'],
 			'per_page'           => $request['per_page'],
 			'page'               => $request['page'],
@@ -340,7 +342,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function get_item( $request ) {
@@ -353,7 +355,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 		) );
 
 		// Prevent non-members from seeing hidden groups.
-		if ( 'hidden' == $group->status && ( ! bp_current_user_can( 'bp_moderate' ) && ! groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) ) {
+		if ( 'hidden' === $group->status && ( ! bp_current_user_can( 'bp_moderate' ) && ! groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) ) {
 			// Unset the group ID to ensure our error condition fires.
 			$group->id = 0;
 		} else {
@@ -361,18 +363,20 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 		}
 
 		if ( empty( $group_id ) || empty( $group->id ) ) {
-			return new WP_Error( 'bp_rest_invalid_group_id', __( 'Invalid resource id.' ), array( 'status' => 404 ) );
+			return new WP_Error( 'bp_rest_invalid_group_id', __( 'Invalid resource id.' ), array(
+				'status' => 404,
+			) );
 		}
 
 		return rest_ensure_response( $retval );
 	}
 
 	/**
-	 * Check if a given request has access to get information about a specific activity.
+	 * Check if a given request has access to get information about a specific group.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request.
+	 * @param WP_REST_Request $request Full details about the request. Full data about the request.
 	 * @return bool
 	 */
 	public function get_item_permissions_check( $request ) {
@@ -384,21 +388,23 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request.
+	 * @param WP_REST_Request $request Full details about the request. Full data about the request.
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
 		// Only bp_moderators and logged in users (viewing their own groups) can see hidden groups.
-		if ( ! empty( $request['show_hidden'] ) &&
-				(   ! bp_current_user_can( 'bp_moderate' ) &&
-				 	! ( ! empty( $request['user_id'] ) && $request['user_id'] == bp_loggedin_user_id() )
-			   	)
-			) {
-			return new WP_Error( 'rest_user_cannot_view', __( 'Sorry, you cannot view hidden groups.'), array( 'status' => rest_authorization_required_code() ) );
-			}
+		if ( ! empty( $request['show_hidden'] ) && ( ! bp_current_user_can( 'bp_moderate' ) &&
+			! ( ! empty( $request['user_id'] ) && bp_loggedin_user_id() === $request['user_id'] ) )
+		) {
+			return new WP_Error( 'rest_user_cannot_view', __( 'Sorry, you cannot view hidden groups.' ), array(
+				'status' => rest_authorization_required_code(),
+			) );
+		}
 
 		if ( 'edit' === $request['context'] && ! bp_current_user_can( 'bp_moderate' ) ) {
-			return new WP_Error( 'rest_forbidden_context', __( 'Sorry, you cannot view this resource with edit context.' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'rest_forbidden_context', __( 'Sorry, you cannot view this resource with edit context.' ), array(
+				'status' => rest_authorization_required_code(),
+			) );
 		}
 
 		return true;
@@ -409,9 +415,9 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass $group Group data.
-	 * @param WP_REST_Request $request
-	 * @param boolean $is_raw Optional, not used. Defaults to false.
+	 * @param stdClass        $item Group data.
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @param boolean         $is_raw Optional, not used. Defaults to false.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $item, $request, $is_raw = false ) {
@@ -434,27 +440,35 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
-		// Avatars
+		// Avatars.
 		$data['avatar_urls']['thumb'] = bp_core_fetch_avatar( array(
 			'html'    => false,
 			'object'  => 'group',
 			'item_id' => $item->id,
-			'type'    => 'thumb' )
-		);
+			'type'    => 'thumb',
+		) );
+
 		$data['avatar_urls']['full'] = bp_core_fetch_avatar( array(
 			'html'    => false,
 			'object'  => 'group',
 			'item_id' => $item->id,
-			'type'    => 'full' )
-		);
+			'type'    => 'full',
+		) );
 
 		// If this is the 'edit' context, fill in more details--similar to "populate_extras". Correct approach?
-		if ( 'edit' == $context ) {
+		if ( 'edit' === $context ) {
 			$data['total_member_count'] = groups_get_groupmeta( $item->id, 'total_member_count' );
 			$data['last_activity']      = $this->prepare_date_response( groups_get_groupmeta( $item->id, 'last_activity' ) );
 
 			// Add admins and moderators to their respective arrays.
-			$admin_mods = groups_get_group_members( array( 'group_id' => $item->id, 'group_role' => array( 'admin', 'mod' ) ) );
+			$admin_mods = groups_get_group_members( array(
+				'group_id' => $item->id,
+				'group_role' => array(
+					'admin',
+					'mod',
+				),
+			) );
+
 			foreach ( (array) $admin_mods['members'] as $user ) {
 				if ( ! empty( $user->is_admin ) ) {
 					$data['admins'][] = $user;
@@ -464,8 +478,8 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 			}
 		}
 
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
+		$data = $this->add_additional_fields_to_object( $data, $request );
+		$data = $this->filter_response_by_context( $data, $context );
 
 		$response = rest_ensure_response( $data );
 		$response->add_links( $this->prepare_links( $item ) );
@@ -474,7 +488,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 		 * Filter a group value returned from the API.
 		 *
 		 * @param array           $response
-		 * @param WP_REST_Request $request Request used to generate the response.
+		 * @param WP_REST_Request $request Full details about the request. Request used to generate the response.
 		 */
 		return apply_filters( 'rest_prepare_buddypress_group_value', $response, $request );
 	}
@@ -506,7 +520,9 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	/**
 	 * Convert the input date to RFC3339 format.
 	 *
-	 * @param string $date_gmt
+	 * @since 0.1.0
+	 *
+	 * @param string      $date_gmt Date GMT format.
 	 * @param string|null $date Optional. Date object.
 	 * @return string|null ISO8601/RFC3339 formatted datetime.
 	 */
@@ -515,7 +531,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 			return mysql_to_rfc3339( $date );
 		}
 
-		if ( $date_gmt === '0000-00-00 00:00:00' ) {
+		if ( '0000-00-00 00:00:00' === $date_gmt ) {
 			return null;
 		}
 
@@ -555,10 +571,10 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 */
 	public function validate_group_types( $value, $request, $param ) {
 		if ( ! empty( $value ) ) {
-			$types            = explode( ',', $value );
+			$types = explode( ',', $value );
 			$registered_types = bp_groups_get_group_types();
-			foreach ( $types as $type) {
-				if ( ! in_array( $type, $registered_types ) ) {
+			foreach ( $types as $type ) {
+				if ( ! in_array( $type, $registered_types, true ) ) {
 					return new WP_Error( 'rest_invalid_group_type', sprintf( __( 'The group type you provided, %s, is not one of %s.' ), $type, implode( ', ', $registered_types ) ) );
 				}
 			}
