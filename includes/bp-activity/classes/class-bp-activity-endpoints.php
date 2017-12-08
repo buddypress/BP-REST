@@ -31,6 +31,12 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				'args'                => $this->get_collection_params(),
 			),
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'create_item' ),
+				'permission_callback' => array( $this, 'create_item_permissions_check' ),
+				'args'                => $this->get_endpoint_args_for_item_schema( true ),
+			),
 			'schema' => array( $this, 'get_public_item_schema' ),
 		) );
 
@@ -364,6 +370,33 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Create activity.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request
+	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
+	 */
+	public function create_item( $request ) {
+		$prepared_activity = $this->prepare_item_for_database( $request );
+		$activity_id = bp_activity_add( $prepared_activity );
+
+		if ( empty( $activity_id ) ) {
+			return new WP_Error( 'rest_cant_create', __( 'Cannot create new activity.', 'buddypress'), array( 'status' => 500 ) );
+		}
+
+		$activity = bp_activity_get( array(
+			'in' => $activity_id,
+		) );
+
+		$retval = array( $this->prepare_response_for_collection(
+			$this->prepare_item_for_response( $activity['activities'][0], $request )
+		) );
+
+		return rest_ensure_response( $retval );
+	}
+
+	/**
 	 * Check if a given request has access to get information about a specific activity.
 	 *
 	 * @since 0.1.0
@@ -387,6 +420,88 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 		return $this->can_see( $request );
+	}
+
+	/**
+	 * Checks if a given request has access to create an activity.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return true|WP_Error True if the request has access to create items, WP_Error object otherwise.
+	 */
+	public function create_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_cannot_create', __( 'Sorry, you are not allowed to create activities as this user.', 'buddypress' ), array( 'status' => rest_authorization_required_code() ) );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Prepare the item for create or update operation
+	 *
+	 * @param WP_REST_Request $request Request object
+	 * @return WP_Error|object $prepared_item
+	 */
+	protected function prepare_item_for_database( $request ) {
+		$prepared_activity = new stdClass;
+
+		$schema = $this->get_item_schema();
+
+		if ( isset( $request['id'] ) ) {
+			$prepared_activity->id = $request['id'];
+		}
+
+		if ( isset( $request['action'] ) ) {
+			$prepared_activity->action = $request['action'];
+		}
+
+		if ( isset( $request['content'] ) ) {
+			$prepared_activity->content = $request['content'];
+		}
+
+		if ( isset( $request['component'] ) ) {
+			$prepared_activity->component = $request['component'];
+		}
+
+		if ( isset( $request['type'] ) ) {
+			$prepared_activity->type = $request['type'];
+		}
+
+		if ( isset( $request['primary_link'] ) ) {
+			$prepared_activity->primary_link = $request['primary_link'];
+		}
+
+		if ( isset( $request['user_id'] ) ) {
+			$prepared_activity->user_id = $request['user_id'];
+		}
+
+		if ( isset( $request['item_id'] ) ) {
+			$prepared_activity->item_id = $request['item_id'];
+		}
+
+		if ( isset( $request['secondary_item_id'] ) ) {
+			$prepared_activity->secondary_item_id = $request['secondary_item_id'];
+		}
+
+		if ( isset( $request['recorded_time'] ) ) {
+			$prepared_activity->recorded_time = $request['recorded_time'];
+		}
+
+		if ( isset( $request['hide_sitewide'] ) ) {
+			$prepared_activity->hide_sitewide = $request['hide_sitewide'];
+		}
+
+		if ( isset( $request['is_spam'] ) ) {
+			$prepared_activity->is_spam = $request['is_spam'];
+		}
+
+		if ( isset( $request['error_type'] ) ) {
+			$prepared_activity->error_type = $request['error_type'];
+		}
+
+		return $prepared_activity;
 	}
 
 	/**
