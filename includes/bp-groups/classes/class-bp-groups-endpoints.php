@@ -309,6 +309,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 		$args = array(
 			'type'               => $request['type'],
 			'order'              => $request['order'],
+			'fields'             => $request['fields'],
 			'orderby'            => $request['orderby'],
 			'user_id'            => $request['user_id'],
 			'include'            => $request['include'],
@@ -325,12 +326,11 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 			'update_meta_cache'  => true,
 		);
 
-		$groups = groups_get_groups( $args );
-
 		$retval = array();
-		foreach ( $groups['groups'] as $item ) {
+		$groups = groups_get_groups( $args );
+		foreach ( $groups as $group ) {
 			$retval[] = $this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $item, $request )
+				$this->prepare_item_for_response( $group, $request )
 			);
 		}
 
@@ -438,8 +438,6 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 			'last_activity' => null,
 		);
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-
 		// Avatars.
 		$data['avatar_urls']['thumb'] = bp_core_fetch_avatar( array(
 			'html'    => false,
@@ -454,6 +452,10 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 			'item_id' => $item->id,
 			'type'    => 'full',
 		) );
+
+		$context = ! empty( $request['context'] )
+			? $request['context']
+			: 'view';
 
 		// If this is the 'edit' context, fill in more details--similar to "populate_extras". Correct approach?
 		if ( 'edit' === $context ) {
