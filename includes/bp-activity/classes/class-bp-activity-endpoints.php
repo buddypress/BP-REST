@@ -461,7 +461,16 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 */
 	public function create_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_cannot_create', __( 'Sorry, you are not allowed to create activities as this user.', 'buddypress' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'rest_authorization_required', __( 'Sorry, you are not allowed to create activities as this user.', 'buddypress' ), array( 'status' => rest_authorization_required_code() ) );
+		}
+
+		if (
+			( $request['type'] == 'activity_update' ) &&
+			! empty( $request['prime_association'] ) &&
+			bp_is_active( 'groups' )
+		) {
+			if ( !bp_current_user_can( 'bp_moderate' ) && !groups_is_user_member( bp_loggedin_user_id(), $request['prime_association'] ) )
+				return new WP_Error( 'rest_cannot_create', __( 'Sorry, you are not allowed to create activity to this group as this user.', 'buddypress' ), array( 'status' => 500 ) );
 		}
 
 		return true;
