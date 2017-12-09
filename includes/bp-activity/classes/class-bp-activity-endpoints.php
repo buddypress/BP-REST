@@ -378,15 +378,44 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function create_item( $request ) {
-		$prepared_activity = $this->prepare_item_for_database( $request );
-		$activity_id = bp_activity_add( $prepared_activity );
 
-		if ( empty( $activity_id ) ) {
+		if ( empty( $request['content'] ) ) {
+			return new WP_Error( 'rest_empty_content', __( 'Please enter some content to post.', 'buddypress'), array( 'status' => 500 ) );
+		}
+
+		$prepared_activity = $this->prepare_item_for_database( $request );
+
+		$activity_id = 0;
+		if (
+			( $request['type'] == 'activity_update' ) &&
+			! empty( $request['prime_association'] ) &&
+			bp_is_active( 'groups' )
+		) {
+			$activity_id = groups_post_update( $prepared_activity );
+
+		} elseif (
+			( $request['type'] == 'activity_comment' ) &&
+			bp_is_active( 'activity' ) &&
+			! empty( $request['secondary_association'] ) &&
+			! empty( $request['prime_association'] ) &&
+			is_numeric( $request['secondary_association'] ) &&
+			is_numeric( $request['prime_association'] )
+		) {
+			$activity_id = bp_activity_new_comment( $prepared_activity );
+
+		} else {
+			$activity_id = bp_activity_post_update( $prepared_activity );
+		}
+
+		if ( ! is_numeric( $activity_id ) ) {
 			return new WP_Error( 'rest_cant_create', __( 'Cannot create new activity.', 'buddypress'), array( 'status' => 500 ) );
+		} elseif ( is_wp_error( $activity_id ) ) {
+			return $activity_id;
 		}
 
 		$activity = bp_activity_get( array(
 			'in' => $activity_id,
+			'display_comments' => 'stream',
 		) );
 
 		$retval = array( $this->prepare_response_for_collection(
@@ -439,72 +468,6 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Prepare the item for create or update operation
-	 *
-	 * @param WP_REST_Request $request Request object
-	 * @return WP_Error|object $prepared_item
-	 */
-	protected function prepare_item_for_database( $request ) {
-		$prepared_activity = new stdClass;
-
-		$schema = $this->get_item_schema();
-
-		if ( isset( $request['id'] ) ) {
-			$prepared_activity->id = $request['id'];
-		}
-
-		if ( isset( $request['action'] ) ) {
-			$prepared_activity->action = $request['action'];
-		}
-
-		if ( isset( $request['content'] ) ) {
-			$prepared_activity->content = $request['content'];
-		}
-
-		if ( isset( $request['component'] ) ) {
-			$prepared_activity->component = $request['component'];
-		}
-
-		if ( isset( $request['type'] ) ) {
-			$prepared_activity->type = $request['type'];
-		}
-
-		if ( isset( $request['primary_link'] ) ) {
-			$prepared_activity->primary_link = $request['primary_link'];
-		}
-
-		if ( isset( $request['user_id'] ) ) {
-			$prepared_activity->user_id = $request['user_id'];
-		}
-
-		if ( isset( $request['item_id'] ) ) {
-			$prepared_activity->item_id = $request['item_id'];
-		}
-
-		if ( isset( $request['secondary_item_id'] ) ) {
-			$prepared_activity->secondary_item_id = $request['secondary_item_id'];
-		}
-
-		if ( isset( $request['recorded_time'] ) ) {
-			$prepared_activity->recorded_time = $request['recorded_time'];
-		}
-
-		if ( isset( $request['hide_sitewide'] ) ) {
-			$prepared_activity->hide_sitewide = $request['hide_sitewide'];
-		}
-
-		if ( isset( $request['is_spam'] ) ) {
-			$prepared_activity->is_spam = $request['is_spam'];
-		}
-
-		if ( isset( $request['error_type'] ) ) {
-			$prepared_activity->error_type = $request['error_type'];
-		}
-
-		return $prepared_activity;
-	}
-
-	/**
 	 * Prepares activity data for return as an object.
 	 *
 	 * @since 0.1.0
@@ -547,6 +510,56 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		 * @param WP_REST_Request $request Request used to generate the response.
 		 */
 		return apply_filters( 'rest_prepare_buddypress_activity_value', $response, $request );
+	}
+
+	/**
+	 * Prepares a single activity for create or update.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return stdClass|WP_Error Post object or WP_Error.
+	 */
+	protected function prepare_item_for_database( $request ) {
+		$prepared_activity = new stdClass();
+
+		$schema = $this->get_item_schema();
+
+		// Prime association.
+		if ( ! empty( $schema['properties']['prime_association'] ) && isset( $request['prime_association'] ) ) {
+			if( $request['type'] == 'activity_update') {
+				$prepared_activity->group_id = $request['prime_association'];
+			} else {
+				$prepared_activity->activity_id = $request['prime_association'];
+			}
+		}
+
+		// Secondary association.
+		if ( ! empty( $schema['properties']['secondary_association'] ) && isset( $request['secondary_association'] ) ) {
+			$prepared_activity->parent_id = $request['secondary_association'];
+		}
+
+		// Activity type.
+		if ( ! empty( $schema['properties']['type'] ) && isset( $request['type'] ) ) {
+			$prepared_activity->type = $request['type'];
+		}
+
+		// Activity content.
+		if ( ! empty( $schema['properties']['content'] ) && isset( $request['content'] ) ) {
+			$prepared_activity->content = $request['content'];
+		}
+
+		/**
+		 * Filters an activity before it is inserted via the REST API.
+		 *
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param stdClass        $prepared_activity An object representing a single post prepared for inserting or updating the database.
+		 * @param WP_REST_Request $request Request object.
+		 */
+		return apply_filters( "rest_pre_insert_buddypress_activity_value", $prepared_activity, $request );
+
 	}
 
 	/**
