@@ -51,5 +51,11 @@ function bp_rest_api_endpoints() {
 		$controller = new BP_REST_Activity_Controller();
 		$controller->register_routes();
 	}
+
+	if ( bp_is_active( 'groups' ) ) {
+		require_once( dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-groups-endpoints.php' );
+		$controller = new BP_REST_Groups_Controller();
+		$controller->register_routes();
+	}
 }
 add_action( 'bp_rest_api_init', 'bp_rest_api_endpoints' );
