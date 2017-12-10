@@ -31,7 +31,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				'args'                => $this->get_collection_params(),
 			),
-			'schema' => array( $this, 'get_public_item_schema' ),
+			'schema' => array( $this, 'get_item_schema' ),
 		) );
 
 		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
@@ -45,7 +45,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 					) ),
 				),
 			),
-			'schema' => array( $this, 'get_public_item_schema' ),
+			'schema' => array( $this, 'get_item_schema' ),
 		) );
 	}
 
@@ -82,7 +82,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 					'type'        => 'integer',
 				),
 
-				'author' => array(
+				'user' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID for the creator of the object.', 'buddypress' ),
 					'type'        => 'integer',
@@ -202,8 +202,8 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['author'] = array(
-			'description'       => __( 'Limit result set to items created by specific authors.', 'buddypress' ),
+		$params['user'] = array(
+			'description'       => __( 'Limit result set to items created by specific users.', 'buddypress' ),
 			'type'              => 'array',
 			'default'           => array(),
 			'sanitize_callback' => 'wp_parse_id_list',
@@ -257,6 +257,13 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		$params['display_comments'] = array(
+			'description'       => __( 'False for no comments. stream for within stream display, threaded for below each activity item..', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		return $params;
 	}
 
@@ -279,7 +286,8 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'secondary_id'      => $request['secondary_id'],
 			'sort'              => $request['order'],
 			'spam'              => 'spam' === $request['status'] ? 'spam_only' : 'ham_only',
-			'user_id'           => $request['author'],
+			'user_id'           => $request['user'],
+			'display_comments'  => $request['display_comments'],
 
 			// Set optimised defaults.
 			'count_total'       => true,
@@ -316,18 +324,11 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			$args['count_total'] = false;
 		}
 
-		// Override certain options for security.
-		// @TODO: Verify and confirm this show_hidden logic, and check core for other edge cases.
-		if ( 'groups' === $request['component'] &&
-			(
-				groups_is_user_member( get_current_user_id(), $request['primary_id'] ) ||
-				bp_current_user_can( 'bp_moderate' )
-			)
-		) {
+		if ( $this->show_hidden( $request['component'], $request['primary_id'], get_current_user_id() ) ) {
 			$args['show_hidden'] = true;
 		}
 
-		$retval     = array();
+		$retval = array();
 		$activities = bp_activity_get( $args );
 
 		foreach ( $activities['activities'] as $activity ) {
@@ -341,8 +342,6 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 
 	/**
 	 * Retrieve activity.
-	 *
-	 * @todo Query logic, permissions, other parameters that might need to be set. etc.
 	 *
 	 * @since 0.1.0
 	 *
@@ -401,7 +400,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $activity, $request, $is_raw = false ) {
 		$data = array(
-			'author'                => $activity->user_id,
+			'user'                  => $activity->user_id,
 			'component'             => $activity->component,
 			'content'               => $activity->content,
 			'date'                  => $this->prepare_date_response( $activity->date_recorded ),
@@ -444,23 +443,24 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 */
 	protected function prepare_links( $activity ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
+		$url = $base . $activity->id;
 
 		// Entity meta.
 		$links = array(
 			'self' => array(
-				'href' => rest_url( $base . $activity->id ),
+				'href' => rest_url( $url ),
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'author' => array(
+			'user' => array(
 				'href' => rest_url( '/wp/v2/users/' . $activity->user_id ),
 			),
 		);
 
 		if ( 'activity_comment' === $activity->type ) {
 			$links['up'] = array(
-				'href' => rest_url( $base . $activity->item_id ),
+				'href' => rest_url( $url ),
 			);
 		}
 
@@ -476,6 +476,13 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function can_see( $request ) {
+		$user_id = bp_loggedin_user_id();
+
+		// Admins can see it all.
+		if ( is_super_admin( $user_id ) ) {
+			return true;
+		}
+
 		$retval = true;
 
 		$activity = bp_activity_get( array(
@@ -494,7 +501,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 				return false;
 			}
 
-			// Check to see if the user has access to to the activity's parent group.
+			// Check to see if the user has access to the activity's parent group.
 			$group = groups_get_group( $activity->item_id );
 			if ( $group ) {
 				$retval = $group->user_has_access;
@@ -502,11 +509,34 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		}
 
 		// If activity author does not match logged_in user, block access.
-		if ( true === $retval && bp_loggedin_user_id() !== $activity->user_id ) {
+		if ( true === $retval && $user_id !== $activity->user_id ) {
 			$retval = false;
 		}
 
 		return $retval;
+	}
+
+	/**
+	 * Show hidden activities?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  string $com  Group component.
+	 * @param  int    $id Primary ID.
+	 * @param  int    $user_id    User ID.
+	 * @return boolean
+	 */
+	protected function show_hidden( $com, $id, $user_id ) {
+		// Bail early.
+		if ( 'groups' !== $com ) {
+			return false;
+		}
+
+		if ( (bool) groups_is_user_member( $user_id, $id ) || bp_current_user_can( 'bp_moderate' ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
