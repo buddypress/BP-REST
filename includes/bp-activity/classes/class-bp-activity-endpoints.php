@@ -298,6 +298,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller
             'fields'            => 'all',
             'show_hidden'       => false,
             'update_meta_cache' => true,
+            'display_comments'  => 'threaded',
         );
 
         if (isset($request['after'])) {
@@ -486,6 +487,26 @@ class BP_REST_Activity_Controller extends WP_REST_Controller
     }
 
     /**
+	 * [prepare_activity_comments description]
+	 * @param  [type] $activity 			[description]
+	 * @return [WP_REST_Response]           [description]
+	 */
+	public function prepare_activity_comments( $comments, $request ) {
+        $data = array();
+
+        if(empty($comments)) {
+            return $data;
+        }
+
+		foreach ($comments as $comment) {
+            $comment = $this->prepare_item_for_response( $comment, $request );
+			$data[] = $this->prepare_response_for_collection( $comment );
+		}
+
+		return $data;
+	}
+
+    /**
      * Prepares activity data for return as an object.
      *
      * @since 0.1.0
@@ -510,6 +531,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller
             'status'                => $activity->is_spam ? 'spam' : 'published',
             'title'                 => $activity->action,
             'type'                  => $activity->type,
+            'children'              => $this->prepare_activity_comments($activity->children, $request),
         );
 
         $context = ! empty($request['context'])
