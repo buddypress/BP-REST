@@ -305,7 +305,6 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Request List of activity object data.
 	 */
 	public function get_items( $request ) {
-
 		$args = array(
 			'type'               => $request['type'],
 			'order'              => $request['order'],
@@ -326,9 +325,14 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 			'update_meta_cache'  => true,
 		);
 
-		$retval = array();
+		// Admins and moderators can see it all.
+		if ( is_super_admin( bp_loggedin_user_id() ) || bp_current_user_can( 'bp_moderate' ) ) {
+			$args['show_hidden'] = true;
+		}
+
 		$groups = groups_get_groups( $args );
 
+		$retval = array();
 		foreach ( $groups['groups'] as $group ) {
 			$retval[] = $this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $group, $request )
@@ -356,18 +360,26 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 		) );
 
 		// Prevent non-members from seeing hidden groups.
-		if ( 'hidden' === $group->status && ( ! bp_current_user_can( 'bp_moderate' ) && ! groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) ) {
+		if ( ! $this->show_hidden( $group ) ) {
+
 			// Unset the group ID to ensure our error condition fires.
 			$group->id = 0;
-		} else {
-			$retval = $this->prepare_item_for_response( $group, $request );
+
+			if ( empty( $group ) || empty( $group->id ) ) {
+				return new WP_Error( 'bp_rest_invalid_group_id',
+					__( 'Invalid group id.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			}
 		}
 
-		if ( empty( $group_id ) || empty( $group->id ) ) {
-			return new WP_Error( 'bp_rest_invalid_group_id', __( 'Invalid resource id.' ), array(
-				'status' => 404,
-			) );
-		}
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $group, $request )
+			),
+		);
 
 		return rest_ensure_response( $retval );
 	}
@@ -393,19 +405,22 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		// Only bp_moderators and logged in users (viewing their own groups) can see hidden groups.
-		if ( ! empty( $request['show_hidden'] ) && ( ! bp_current_user_can( 'bp_moderate' ) &&
-			! ( ! empty( $request['user_id'] ) && bp_loggedin_user_id() === $request['user_id'] ) )
-		) {
-			return new WP_Error( 'rest_user_cannot_view', __( 'Sorry, you cannot view hidden groups.' ), array(
-				'status' => rest_authorization_required_code(),
-			) );
+		if ( ! $this->can_see( $request ) ) {
+			return new WP_Error( 'rest_user_cannot_view_group',
+				__( 'Sorry, you cannot view hidden groups.' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
 		}
 
-		if ( 'edit' === $request['context'] && ! bp_current_user_can( 'bp_moderate' ) ) {
-			return new WP_Error( 'rest_forbidden_context', __( 'Sorry, you cannot view this resource with edit context.' ), array(
-				'status' => rest_authorization_required_code(),
-			) );
+		if ( ! $this->can_see( $request, true ) ) {
+			return new WP_Error( 'rest_forbidden_context',
+				__( 'Sorry, you cannot view this resource with edit context.' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
 		}
 
 		return true;
@@ -542,29 +557,100 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Can this user see the activity?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @param  boolean         $edit Edit fallback.
+	 * @return boolean
+	 */
+	protected function can_see( $request, $edit = false ) {
+
+		if ( $edit && 'edit' === $request['context'] && ! bp_current_user_can( 'bp_moderate' ) ) {
+			return false;
+		}
+
+		$retval = true;
+
+		// Only bp_moderators and logged in users (viewing their own groups) can see hidden groups.
+		if ( ! empty( $request['show_hidden'] ) ) {
+			if ( ! empty( $request['user_id'] ) && bp_loggedin_user_id() !== $request['user_id'] ) {
+				$retval = false;
+			}
+
+			if ( ! bp_current_user_can( 'bp_moderate' ) ) {
+				$retval = false;
+			}
+		}
+
+		/**
+		 * Filter the retval.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool $retval
+		 */
+		return apply_filters( 'rest_group_endpoint_can_see', $retval );
+	}
+
+	/**
+	 * Show hidden grous?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  string $group Group.
+	 * @return boolean
+	 */
+	protected function show_hidden( $group ) {
+		// Bail early.
+		if ( 'hidden' !== $group->status ) {
+			return true;
+		}
+
+		// Admins see it all.
+		if ( is_super_admin( bp_loggedin_user_id() ) ) {
+			return true;
+		}
+
+		// Moderators as well.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			return true;
+		}
+
+		if ( (bool) groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Clean up group_type__in input.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $value Comma-separated list of group types.
 	 *
 	 * @return array|null
 	 */
 	public function sanitize_group_types( $value ) {
-		if ( ! empty( $value ) ) {
-			$types            = explode( ',', $value );
-			$registered_types = bp_groups_get_group_types();
-			$valid_types = array_intersect( $types, $registered_types );
-
-			if ( ! empty( $valid_types ) ) {
-				return $valid_types;
-			} else {
-				return null;
-			}
+		if ( empty( $value ) ) {
+			return $value;
 		}
-		return $value;
+
+		$types = explode( ',', $value );
+		$valid_types = array_intersect( $types, bp_groups_get_group_types() );
+
+		return ( empty( $valid_types ) )
+			? null
+			: $valid_types;
 	}
 
 	/**
 	 * Validate group_type__in input.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param  mixed            $value
 	 * @param  WP_REST_Request  $request
@@ -573,15 +659,17 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 * @return WP_Error|boolean
 	 */
 	public function validate_group_types( $value, $request, $param ) {
-		if ( ! empty( $value ) ) {
-			$types = explode( ',', $value );
-			$registered_types = bp_groups_get_group_types();
-			foreach ( $types as $type ) {
-				if ( ! in_array( $type, $registered_types, true ) ) {
-					return new WP_Error( 'rest_invalid_group_type', sprintf( __( 'The group type you provided, %s, is not one of %s.' ), $type, implode( ', ', $registered_types ) ) );
-				}
+		// Bail early.
+		if ( empty( $value ) ) {
+			return true;
+		}
+
+		$types = explode( ',', $value );
+		$registered_types = bp_groups_get_group_types();
+		foreach ( $types as $type ) {
+			if ( ! in_array( $type, $registered_types, true ) ) {
+				return new WP_Error( 'rest_invalid_group_type', sprintf( __( 'The group type you provided, %s, is not one of %s.' ), $type, implode( ', ', $registered_types ) ) );
 			}
 		}
-		return true;
 	}
 }

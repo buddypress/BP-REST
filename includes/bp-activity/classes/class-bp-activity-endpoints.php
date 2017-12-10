@@ -525,7 +525,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		 *
 		 * @param bool $retval
 		 */
-		return apply_filters( 'rest_activity_endpoint_user_can', $retval );
+		return apply_filters( 'rest_activity_endpoint_can_see', $retval );
 	}
 
 	/**
@@ -544,7 +544,12 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			return false;
 		}
 
-		if ( (bool) groups_is_user_member( $user_id, $id ) || bp_current_user_can( 'bp_moderate' ) ) {
+		// Moderators as well.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			return true;
+		}
+
+		if ( (bool) groups_is_user_member( $user_id, $id ) ) {
 			return true;
 		}
 
