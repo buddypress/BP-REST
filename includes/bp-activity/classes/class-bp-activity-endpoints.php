@@ -443,7 +443,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 */
 	protected function prepare_links( $activity ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url = $base . $activity->id;
+		$url  = $base . $activity->id;
 
 		// Entity meta.
 		$links = array(
@@ -514,11 +514,18 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		}
 
 		// Community moderators can see it.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
+		if ( ! bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = false;
 		}
 
-		return $retval;
+		/**
+		 * Filter the retval.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool $retval
+		 */
+		return apply_filters( 'rest_activity_endpoint_user_can', $retval );
 	}
 
 	/**
