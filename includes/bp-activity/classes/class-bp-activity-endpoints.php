@@ -54,6 +54,16 @@ class BP_REST_Activity_Controller extends WP_REST_Controller
                     )),
                 ),
             ),
+            array(
+                'methods'  => WP_REST_Server::DELETABLE,
+                'callback' => array( $this, 'delete_item' ),
+                'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+                'args'     => array(
+                  'force'    => array(
+                    'default'      => false,
+                  ),
+                ),
+            ),
             'schema' => array( $this, 'get_public_item_schema' ),
         ));
     }
@@ -432,6 +442,26 @@ class BP_REST_Activity_Controller extends WP_REST_Controller
     }
 
     /**
+    * Delete one item from the collection
+    *
+    * @param WP_REST_Request $request Full data about the request.
+    * @return WP_Error|WP_REST_Request
+    */
+    public function delete_item($request)
+    {
+        $item = $this->prepare_item_for_database($request);
+
+        if (function_exists('bp_activity_delete')) {
+            $deleted = bp_activity_delete($item);
+            if ($deleted) {
+                return new WP_REST_Response(true, 200);
+            }
+        }
+
+        return new WP_Error('cant-delete', __('Can not delete activity.', 'buddypress'), array( 'status' => 500 ));
+    }
+
+    /**
      * Check if a given request has access to get information about a specific activity.
      *
      * @since 0.1.0
@@ -487,24 +517,36 @@ class BP_REST_Activity_Controller extends WP_REST_Controller
     }
 
     /**
-	 * [prepare_activity_comments description]
-	 * @param  [type] $activity 			[description]
-	 * @return [WP_REST_Response]           [description]
-	 */
-	public function prepare_activity_comments( $comments, $request ) {
+    * Check if a given request has access to delete a specific item
+    *
+    * @param WP_REST_Request $request Full data about the request.
+    * @return WP_Error|bool
+    */
+    public function delete_item_permissions_check($request)
+    {
+        return $this->create_item_permissions_check($request);
+    }
+
+    /**
+     * [prepare_activity_comments description]
+     * @param  [type] $activity 			[description]
+     * @return [WP_REST_Response]           [description]
+     */
+    public function prepare_activity_comments($comments, $request)
+    {
         $data = array();
 
-        if(empty($comments)) {
+        if (empty($comments)) {
             return $data;
         }
 
-		foreach ($comments as $comment) {
-            $comment = $this->prepare_item_for_response( $comment, $request );
-			$data[] = $this->prepare_response_for_collection( $comment );
-		}
+        foreach ($comments as $comment) {
+            $comment = $this->prepare_item_for_response($comment, $request);
+            $data[] = $this->prepare_response_for_collection($comment);
+        }
 
-		return $data;
-	}
+        return $data;
+    }
 
     /**
      * Prepares activity data for return as an object.
