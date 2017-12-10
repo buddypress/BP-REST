@@ -513,6 +513,11 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			$retval = false;
 		}
 
+		// Community moderators can see it.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
+		}
+
 		return $retval;
 	}
 
