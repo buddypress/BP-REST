@@ -595,11 +595,11 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Show hidden grous?
+	 * Show hidden group?
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  string $group Group.
+	 * @param  object $group Group object.
 	 * @return boolean
 	 */
 	protected function show_hidden( $group ) {
@@ -608,21 +608,25 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 			return true;
 		}
 
+		$retval = false;
+		$user_id = bp_loggedin_user_id();
+
 		// Admins see it all.
-		if ( is_super_admin( bp_loggedin_user_id() ) ) {
+		if ( is_super_admin( $user_id ) ) {
 			return true;
 		}
 
 		// Moderators as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
+			$retval = true;
 		}
 
-		if ( (bool) groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) {
-			return true;
+		// User is a member of the group.
+		if ( (bool) groups_is_user_member( $user_id, $group->id ) ) {
+			$retval = true;
 		}
 
-		return false;
+		return (bool) $retval;
 	}
 
 	/**
