@@ -1,4 +1,11 @@
 <?php
+/**
+ * BP REST: BP_REST_Activity_Controller class
+ *
+ * @package BuddyPress
+ * @since 0.1.0
+ */
+
 defined( 'ABSPATH' ) || exit;
 
 /**
