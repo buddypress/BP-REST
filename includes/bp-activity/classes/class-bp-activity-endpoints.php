@@ -45,6 +45,17 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 					) ),
 				),
 			),
+			array(
+				'methods'  => WP_REST_Server::DELETABLE,
+				'callback' => array( $this, 'delete_item' ),
+				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+				'args'     => array(
+					'force'    => array(
+						'default'     => false,
+						'description' => __( 'Whether to bypass trash and force deletion.' ),
+					),
+				),
+			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
 	}
@@ -349,11 +360,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function get_item( $request ) {
-		$activity = bp_activity_get( array(
-			'in' => (int) $request['id'],
-		) );
-
-		$activity = $activity['activities'][0];
+		$activity = $this->get_activity_object( $request );
 
 		// Prevent non-members from seeing hidden activity.
 		if ( ! $this->show_hidden( $activity->component, $activity->item_id ) ) {
@@ -414,6 +421,80 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Check if a given request has access to delete a post.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function delete_item_permissions_check( $request ) {
+		$activity = $this->get_activity_object( $request );
+
+		if ( ! bp_activity_user_can_delete( $activity ) ) {
+			return new WP_Error( 'rest_user_cannot_delete_activity',
+				__( 'Sorry, you cannot delete the activities.' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Delete an activity.
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function delete_item( $request ) {
+		$activity = $this->get_activity_object( $request );
+
+		if ( empty( $activity->id ) ) {
+			return new WP_Error( 'rest_activity_invalid_id',
+				__( 'Invalid activity id.' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$request->set_param( 'context', 'edit' );
+
+		$response = $this->prepare_item_for_response( $activity, $request );
+
+		if ( 'activity_comment' === $activity->type ) {
+			$retval = bp_activity_delete_comment( $activity->item_id, $activity->id );
+		} else {
+			$retval = bp_activity_delete( array(
+				'id' => $activity->id,
+			) );
+		}
+
+		if ( ! $retval ) {
+			return new WP_Error( 'rest_activity_cannot_delete',
+				__( 'Could not delete the activity.' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		/**
+		 * Fires after an activity is deleted via the REST API.
+		 *
+		 * @param object           $activity The deleted activity.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'rest_activity_delete', $activity, $response, $request );
+
+		return $response;
 	}
 
 	/**
@@ -617,5 +698,21 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		}
 
 		return mysql_to_rfc3339( $date_gmt );
+	}
+
+	/**
+	 * Get activity object.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  [type] $request [description]
+	 * @return [type]          [description]
+	 */
+	protected function get_activity_object( $request ) {
+		$activity = bp_activity_get( array(
+			'in' => (int) $request['id'],
+		) );
+
+		return $activity['activities'][0];
 	}
 }
