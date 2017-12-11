@@ -389,15 +389,31 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	/**
 	 * Check if a given request has access to activity items.
 	 *
-	 * @todo Handle private activities etc.
-	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		return $this->can_see( $request );
+		if ( ! $this->can_see( $request ) ) {
+			return new WP_Error( 'rest_user_cannot_view_activity',
+				__( 'Sorry, you cannot view the activities.' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		if ( ! $this->can_see( $request, true ) ) {
+			return new WP_Error( 'rest_forbidden_context',
+				__( 'Sorry, you cannot view this resource with edit context.' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		return true;
 	}
 
 	/**
@@ -485,14 +501,26 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
+	 * @param  boolean         $edit Edit fallback.
 	 * @return boolean
 	 */
-	protected function can_see( $request ) {
+	protected function can_see( $request, $edit = false ) {
+
 		$user_id = bp_loggedin_user_id();
 
 		// Admins can see it all.
 		if ( is_super_admin( $user_id ) ) {
 			return true;
+		}
+
+		// Moderators as well.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
+		}
+
+		// Fix for edit content.
+		if ( $edit && 'edit' === $request['context'] && ! bp_current_user_can( 'bp_moderate' ) ) {
+			return false;
 		}
 
 		$retval = true;
@@ -525,11 +553,6 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			$retval = false;
 		}
 
-		// Community moderators can see it.
-		if ( ! bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = false;
-		}
-
 		/**
 		 * Filter the retval.
 		 *
@@ -546,27 +569,33 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  string $component  Group component.
-	 * @param  int    $id Primary ID.
+	 * @param  int    $id Item ID.
 	 * @return boolean
 	 */
 	protected function show_hidden( $component, $id ) {
-		// Bail early.
-		if ( 'groups' !== $component ) {
-			return false;
-		}
-
 		$retval = false;
+		$user_id = bp_loggedin_user_id();
+
+		// Admins see it all.
+		if ( is_super_admin( $user_id ) ) {
+			return true;
+		}
 
 		// Moderators as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = true;
 		}
 
-		if ( (bool) groups_is_user_member( get_current_user_id(), $id ) ) {
+		if ( 'groups' === $component ) {
 			$retval = true;
 		}
 
-		return $retval;
+		// User is a member of the group.
+		if ( (bool) groups_is_user_member( $user_id, $id ) ) {
+			$retval = true;
+		}
+
+		return (bool) $retval;
 	}
 
 	/**
