@@ -324,7 +324,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			$args['count_total'] = false;
 		}
 
-		if ( $this->show_hidden( $request['component'], $request['primary_id'], get_current_user_id() ) ) {
+		if ( $this->show_hidden( $request['component'], $request['primary_id'] ) ) {
 			$args['show_hidden'] = true;
 		}
 
@@ -353,9 +353,21 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'in' => (int) $request['id'],
 		) );
 
+		$activity = $activity['activities'][0];
+
+		// Prevent non-members from seeing hidden activity.
+		if ( ! $this->show_hidden( $activity->component, $activity->item_id ) ) {
+			return new WP_Error( 'bp_rest_invalid_activity',
+				__( 'Invalid activity id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
 		$retval = array(
 			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $activity['activities'][0], $request )
+				$this->prepare_item_for_response( $activity, $request )
 			),
 		);
 
@@ -529,31 +541,32 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Show hidden activities?
+	 * Show hidden activity?
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  string $com  Group component.
+	 * @param  string $component  Group component.
 	 * @param  int    $id Primary ID.
-	 * @param  int    $user_id    User ID.
 	 * @return boolean
 	 */
-	protected function show_hidden( $com, $id, $user_id ) {
+	protected function show_hidden( $component, $id ) {
 		// Bail early.
-		if ( 'groups' !== $com ) {
+		if ( 'groups' !== $component ) {
 			return false;
 		}
 
+		$retval = false;
+
 		// Moderators as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
+			$retval = true;
 		}
 
-		if ( (bool) groups_is_user_member( $user_id, $id ) ) {
-			return true;
+		if ( (bool) groups_is_user_member( get_current_user_id(), $id ) ) {
+			$retval = true;
 		}
 
-		return false;
+		return $retval;
 	}
 
 	/**
