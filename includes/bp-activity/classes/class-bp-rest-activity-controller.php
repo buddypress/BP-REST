@@ -1,4 +1,11 @@
 <?php
+/**
+ * REST API: BP_REST_Activity_Controller class
+ *
+ * @package BuddyPress
+ * @since 0.1.0
+ */
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -69,14 +76,14 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'type'       => 'object',
 
 			'properties' => array(
-				'id' => array(
+				'id'                    => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 
-				'prime_association' => array(
+				'prime_association'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
@@ -88,63 +95,63 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 					'type'        => 'integer',
 				),
 
-				'author' => array(
+				'author'                => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID for the creator of the object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 
-				'link' => array(
+				'link'                  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
 					'format'      => 'url',
 					'type'        => 'string',
 				),
 
-				'component' => array(
+				'component'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The BuddyPress component the object relates to.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array_keys( bp_core_get_components() ),
 				),
 
-				'type' => array(
+				'type'                  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The activity type of the object.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array_keys( bp_activity_get_types() ),
 				),
 
-				'title' => array(
+				'title'                 => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML title of the object.', 'buddypress' ),
 					'type'        => 'string',
 				),
 
-				'content' => array(
+				'content'               => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML content of the object.', 'buddypress' ),
 					'type'        => 'string',
 				),
 
-				'date' => array(
+				'date'                  => array(
 					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 					'context'     => array( 'view', 'edit' ),
 				),
 
-				'status' => array(
+				'status'                => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the object has been marked as spam or not.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array( 'published', 'spam' ),
 				),
 
-				'parent' => array(
-					'description'  => __( 'The ID of the parent of the object.', 'buddypress' ),
-					'type'         => 'integer',
-					'context'      => array( 'view', 'edit' ),
+				'parent'                => array(
+					'description' => __( 'The ID of the parent of the object.', 'buddypress' ),
+					'type'        => 'integer',
+					'context'     => array( 'view', 'edit' ),
 				),
 			),
 		);
@@ -160,7 +167,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params = parent::get_collection_params();
+		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
 		$params['exclude'] = array(
@@ -370,32 +377,30 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Create activity.
+	 * Create activity
 	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request
-	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
+	 * @param  WP_REST_Request $request Full data about the request.
+	 * @return [type]          [description]
 	 */
 	public function create_item( $request ) {
 
 		if ( empty( $request['content'] ) ) {
-			return new WP_Error( 'rest_empty_content', __( 'Please enter some content to post.', 'buddypress'), array( 'status' => 500 ) );
+			return new WP_Error( 'rest_empty_content', __( 'Please enter some content to post.', 'buddypress' ), array( 'status' => 500 ) );
 		}
 
 		$prepared_activity = $this->prepare_item_for_database( $request );
 
 		$activity_id = 0;
 		if (
-			( $request['type'] == 'activity_update' ) &&
+			( 'activity_update' == $request['type'] ) &&
 			! empty( $request['prime_association'] ) &&
-            is_numeric( $request['prime_association'] ) &&
+			is_numeric( $request['prime_association'] ) &&
 			bp_is_active( 'groups' )
 		) {
 			$activity_id = groups_post_update( $prepared_activity );
 
 		} elseif (
-			( $request['type'] == 'activity_comment' ) &&
+			( 'activity_comment' == $request['type'] ) &&
 			bp_is_active( 'activity' ) &&
 			! empty( $request['id'] ) &&
 			! empty( $request['parent'] ) &&
@@ -409,19 +414,21 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		}
 
 		if ( ! is_numeric( $activity_id ) ) {
-			return new WP_Error( 'rest_cant_create', __( 'Cannot create new activity.', 'buddypress'), array( 'status' => 500 ) );
+			return new WP_Error( 'rest_cant_create', __( 'Cannot create new activity.', 'buddypress' ), array( 'status' => 500 ) );
 		} elseif ( is_wp_error( $activity_id ) ) {
 			return $activity_id;
 		}
 
 		$activity = bp_activity_get( array(
-			'in' => $activity_id,
+			'in'               => $activity_id,
 			'display_comments' => 'stream',
 		) );
 
-		$retval = array( $this->prepare_response_for_collection(
-			$this->prepare_item_for_response( $activity['activities'][0], $request )
-		) );
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $activity['activities'][0], $request )
+			),
+		);
 
 		return rest_ensure_response( $retval );
 	}
@@ -466,12 +473,13 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		}
 
 		if (
-			( $request['type'] == 'activity_update' ) &&
+			( 'activity_update' == $request['type'] ) &&
 			! empty( $request['prime_association'] ) &&
 			bp_is_active( 'groups' )
 		) {
-			if ( !bp_current_user_can( 'bp_moderate' ) && !groups_is_user_member( bp_loggedin_user_id(), $request['prime_association'] ) )
+			if ( ! bp_current_user_can( 'bp_moderate' ) && ! groups_is_user_member( bp_loggedin_user_id(), $request['prime_association'] ) ) {
 				return new WP_Error( 'rest_cannot_create', __( 'Sorry, you are not allowed to create activity to this group as this user.', 'buddypress' ), array( 'status' => 500 ) );
+			}
 		}
 
 		return true;
@@ -535,37 +543,36 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 
 		$schema = $this->get_item_schema();
 
-        // Activity id.
-        if ( ! empty($schema['properties']['id'] ) && ( $request['type'] === 'activity_comment' ) && isset( $request['id']) ) {
-            $prepared_activity->activity_id = (int) $request['id'];
-        }
-        // Parent
-        if (! empty( $schema['properties']['parent'] ) && ( $request['type'] === 'activity_comment' ) && isset( $request['parent']) ) {
-            $prepared_activity->parent_id = $request['parent'];
-        }
-        // Group id.
-        if ( ! empty($schema['properties']['prime_association'] ) && ( $request['type'] === 'activity_update' ) && isset( $request['prime_association'] ) ) {
-            $prepared_activity->group_id = (int) $request['prime_association'];
-        }
-        // Activity type.
-        if ( ! empty( $schema['properties']['type'] ) && isset( $request['type'] ) ) {
-            $prepared_activity->type = $request['type'];
-        }
-        // Activity content.
-        if ( ! empty($schema['properties']['content'] ) && isset( $request['content']) ) {
-            $prepared_activity->content = $request['content'];
-        }
+		// Activity id.
+		if ( ! empty( $schema['properties']['id'] ) && ( 'activity_comment' === $request['type'] ) && isset( $request['id'] ) ) {
+			$prepared_activity->activity_id = (int) $request['id'];
+		}
+		// Parent.
+		if ( ! empty( $schema['properties']['parent'] ) && ( 'activity_comment' === $request['type'] ) && isset( $request['parent'] ) ) {
+			$prepared_activity->parent_id = $request['parent'];
+		}
+		// Group id.
+		if ( ! empty( $schema['properties']['prime_association'] ) && ( 'activity_update' === $request['type'] ) && isset( $request['prime_association'] ) ) {
+			$prepared_activity->group_id = (int) $request['prime_association'];
+		}
+		// Activity type.
+		if ( ! empty( $schema['properties']['type'] ) && isset( $request['type'] ) ) {
+			$prepared_activity->type = $request['type'];
+		}
+		// Activity content.
+		if ( ! empty( $schema['properties']['content'] ) && isset( $request['content'] ) ) {
+			$prepared_activity->content = $request['content'];
+		}
 
 		/**
 		 * Filters an activity before it is inserted via the REST API.
-		 *
 		 *
 		 * @since 0.1.0
 		 *
 		 * @param stdClass        $prepared_activity An object representing a single post prepared for inserting or updating the database.
 		 * @param WP_REST_Request $request Request object.
 		 */
-		return apply_filters( "rest_pre_insert_buddypress_activity_value", $prepared_activity, $request );
+		return apply_filters( 'rest_pre_insert_buddypress_activity_value', $prepared_activity, $request );
 
 	}
 
@@ -582,13 +589,13 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 
 		// Entity meta.
 		$links = array(
-			'self' => array(
+			'self'       => array(
 				'href' => rest_url( $base . $activity->id ),
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'author' => array(
+			'author'     => array(
 				'href' => rest_url( '/wp/v2/users/' . $activity->user_id ),
 			),
 		);
