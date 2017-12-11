@@ -70,14 +70,14 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'type'       => 'object',
 
 			'properties' => array(
-				'id' => array(
+				'id'                    => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 
-				'prime_association' => array(
+				'prime_association'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
@@ -89,63 +89,63 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 					'type'        => 'integer',
 				),
 
-				'user' => array(
+				'user'                  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID for the creator of the object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 
-				'link' => array(
+				'link'                  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
 					'format'      => 'url',
 					'type'        => 'string',
 				),
 
-				'component' => array(
+				'component'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The BuddyPress component the object relates to.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array_keys( bp_core_get_components() ),
 				),
 
-				'type' => array(
+				'type'                  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The activity type of the object.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array_keys( bp_activity_get_types() ),
 				),
 
-				'title' => array(
+				'title'                 => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML title of the object.', 'buddypress' ),
 					'type'        => 'string',
 				),
 
-				'content' => array(
+				'content'               => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML content of the object.', 'buddypress' ),
 					'type'        => 'string',
 				),
 
-				'date' => array(
+				'date'                  => array(
 					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 					'context'     => array( 'view', 'edit' ),
 				),
 
-				'status' => array(
+				'status'                => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the object has been marked as spam or not.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array( 'published', 'spam' ),
 				),
 
-				'parent' => array(
-					'description'  => __( 'The ID of the parent of the object.', 'buddypress' ),
-					'type'         => 'integer',
-					'context'      => array( 'view', 'edit' ),
+				'parent'                => array(
+					'description' => __( 'The ID of the parent of the object.', 'buddypress' ),
+					'type'        => 'integer',
+					'context'     => array( 'view', 'edit' ),
 				),
 			),
 		);
@@ -358,7 +358,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			$args['show_hidden'] = true;
 		}
 
-		$retval = array();
+		$retval     = array();
 		$activities = bp_activity_get( $args );
 
 		foreach ( $activities['activities'] as $activity ) {
