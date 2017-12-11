@@ -389,6 +389,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		if (
 			( $request['type'] == 'activity_update' ) &&
 			! empty( $request['prime_association'] ) &&
+            is_numeric( $request['prime_association'] ) &&
 			bp_is_active( 'groups' )
 		) {
 			$activity_id = groups_post_update( $prepared_activity );
@@ -396,10 +397,10 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 		} elseif (
 			( $request['type'] == 'activity_comment' ) &&
 			bp_is_active( 'activity' ) &&
-			! empty( $request['secondary_association'] ) &&
-			! empty( $request['prime_association'] ) &&
-			is_numeric( $request['secondary_association'] ) &&
-			is_numeric( $request['prime_association'] )
+			! empty( $request['id'] ) &&
+			! empty( $request['parent'] ) &&
+			is_numeric( $request['id'] ) &&
+			is_numeric( $request['parent'] )
 		) {
 			$activity_id = bp_activity_new_comment( $prepared_activity );
 
@@ -534,29 +535,26 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 
 		$schema = $this->get_item_schema();
 
-		// Prime association.
-		if ( ! empty( $schema['properties']['prime_association'] ) && isset( $request['prime_association'] ) ) {
-			if( $request['type'] == 'activity_update') {
-				$prepared_activity->group_id = $request['prime_association'];
-			} else {
-				$prepared_activity->activity_id = $request['prime_association'];
-			}
-		}
-
-		// Secondary association.
-		if ( ! empty( $schema['properties']['secondary_association'] ) && isset( $request['secondary_association'] ) ) {
-			$prepared_activity->parent_id = $request['secondary_association'];
-		}
-
-		// Activity type.
-		if ( ! empty( $schema['properties']['type'] ) && isset( $request['type'] ) ) {
-			$prepared_activity->type = $request['type'];
-		}
-
-		// Activity content.
-		if ( ! empty( $schema['properties']['content'] ) && isset( $request['content'] ) ) {
-			$prepared_activity->content = $request['content'];
-		}
+        // Activity id.
+        if ( ! empty($schema['properties']['id'] ) && ( $request['type'] === 'activity_comment' ) && isset( $request['id']) ) {
+            $prepared_activity->activity_id = (int) $request['id'];
+        }
+        // Parent
+        if (! empty( $schema['properties']['parent'] ) && ( $request['type'] === 'activity_comment' ) && isset( $request['parent']) ) {
+            $prepared_activity->parent_id = $request['parent'];
+        }
+        // Group id.
+        if ( ! empty($schema['properties']['prime_association'] ) && ( $request['type'] === 'activity_update' ) && isset( $request['prime_association'] ) ) {
+            $prepared_activity->group_id = (int) $request['prime_association'];
+        }
+        // Activity type.
+        if ( ! empty( $schema['properties']['type'] ) && isset( $request['type'] ) ) {
+            $prepared_activity->type = $request['type'];
+        }
+        // Activity content.
+        if ( ! empty($schema['properties']['content'] ) && isset( $request['content']) ) {
+            $prepared_activity->content = $request['content'];
+        }
 
 		/**
 		 * Filters an activity before it is inserted via the REST API.
