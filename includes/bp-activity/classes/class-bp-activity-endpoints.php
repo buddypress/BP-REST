@@ -524,7 +524,20 @@ class BP_REST_Activity_Controller extends WP_REST_Controller
     */
     public function delete_item_permissions_check($request)
     {
-        return $this->create_item_permissions_check($request);
+        $retval = true;
+
+        $activity = bp_activity_get(array(
+            'in' => (int) $request['id'],
+        ));
+
+        $activity = $activity['activities'][0];
+
+        // If activity author does not match logged_in user, block access.
+        if (bp_loggedin_user_id() !== $activity->user_id) {
+            return new WP_Error('rest_cannot_delete', __('Sorry, you are not allowed to delete this activity as this user.', 'buddypress'), array( 'status' => 500 ));
+        }
+
+        return $retval;
     }
 
     /**
@@ -609,18 +622,23 @@ class BP_REST_Activity_Controller extends WP_REST_Controller
 
         $schema = $this->get_item_schema();
 
-        // Prime association.
-        if (! empty($schema['properties']['prime_association']) && isset($request['prime_association'])) {
-            if ($request['type'] == 'activity_update') {
-                $prepared_activity->group_id = $request['prime_association'];
+        // Activity id.
+        if (! empty($schema['properties']['id']) && isset($request['id'])) {
+            if (($request['type'] === 'activity_comment')) {
+                $prepared_activity->activity_id = (int) $request['id'];
             } else {
-                $prepared_activity->activity_id = $request['prime_association'];
+                $prepared_activity->id = (int) $request['id'];
             }
         }
 
-        // Secondary association.
-        if (! empty($schema['properties']['secondary_association']) && isset($request['secondary_association'])) {
-            $prepared_activity->parent_id = $request['secondary_association'];
+        // Parent
+        if (! empty($schema['properties']['parent']) && ($request['type'] === 'activity_comment') && isset($request['parent'])) {
+            $prepared_activity->parent_id = $request['parent'];
+        }
+
+        // Group id.
+        if (! empty($schema['properties']['prime_association']) && ($request['type'] === 'activity_update') && isset($request['prime_association'])) {
+            $prepared_activity->group_id = (int) $request['prime_association'];
         }
 
         // Activity type.
