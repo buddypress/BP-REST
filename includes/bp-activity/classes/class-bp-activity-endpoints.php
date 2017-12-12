@@ -424,7 +424,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check if a given request has access to delete a post.
+	 * Check if a given request has access to delete an activity.
 	 *
 	 * @since 0.1.0
 	 *
