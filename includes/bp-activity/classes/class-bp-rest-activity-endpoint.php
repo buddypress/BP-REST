@@ -38,6 +38,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				'args'                => $this->get_collection_params(),
 			),
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'create_item' ),
+				'permission_callback' => array( $this, 'create_item_permissions_check' ),
+				'args'                => $this->get_endpoint_args_for_item_schema( true ),
+			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
 
@@ -448,32 +454,101 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check if a given request has access to delete an activity.
+	 * Create activity
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @param  WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
-	public function delete_item_permissions_check( $request ) {
-		$activity = $this->get_activity_object( $request );
+	public function create_item( $request ) {
 
-		if ( empty( $activity->id ) ) {
-			return new WP_Error( 'rest_activity_invalid_id',
-				__( 'Invalid activity id.' ),
+		// Bail early.
+		if ( empty( $request['content'] ) ) {
+			return new WP_Error( 'rest_create_activity_empty_content',
+				__( 'Please, enter some content.', 'buddypress' ),
 				array(
-					'status' => 404,
+					'status' => 500,
 				)
 			);
 		}
 
-		if ( ! $this->can_see( $request ) ) {
-			return new WP_Error( 'rest_user_cannot_delete_activity',
-				__( 'Sorry, you cannot delete the activities.' ),
+		$prepared_activity = $this->prepare_item_for_database( $request );
+
+		$activity_id = 0;
+		if ( ( 'activity_update' === $request['type'] )
+			&& bp_is_active( 'groups' )
+			&& ! empty( $request['prime_association'] )
+			&& is_numeric( $request['prime_association'] )
+		) {
+			$activity_id = groups_post_update( $prepared_activity );
+
+		} elseif ( ( 'activity_comment' === $request['type'] )
+			&& bp_is_active( 'activity' )
+			&& ! empty( $request['id'] )
+			&& ! empty( $request['parent'] )
+			&& is_numeric( $request['id'] )
+			&& is_numeric( $request['parent'] )
+		) {
+			$activity_id = bp_activity_new_comment( $prepared_activity );
+
+		} else {
+			$activity_id = bp_activity_post_update( $prepared_activity );
+		}
+
+		if ( ! is_numeric( $activity_id ) ) {
+			return new WP_Error( 'rest_user_cannot_create_activity',
+				__( 'Cannot create new activity.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$activity = bp_activity_get( array(
+			'in'               => $activity_id,
+			'display_comments' => 'stream',
+		) );
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $activity['activities'][0], $request )
+			),
+		);
+
+		return rest_ensure_response( $retval );
+	}
+
+	/**
+	 * Checks if a given request has access to create an activity.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return true|WP_Error True if the request has access to create, WP_Error object otherwise.
+	 */
+	public function create_item_permissions_check( $request ) {
+		// Bail early.
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you are not allowed to create activities.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
 			);
+		}
+
+		$acc = $request['prime_association'];
+
+		if ( ( 'activity_update' === $request['type'] ) && bp_is_active( 'groups' ) && ! empty( $acc ) ) {
+			if ( ! $this->show_hidden( 'groups', $acc ) ) {
+				return new WP_Error( 'rest_user_cannot_create_activity',
+					__( 'Sorry, you are not allowed to create activity to this group.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
 		}
 
 		return true;
@@ -519,6 +594,38 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		do_action( 'rest_activity_delete', $activity, $response, $request );
 
 		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to delete an activity.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function delete_item_permissions_check( $request ) {
+		$activity = $this->get_activity_object( $request );
+
+		if ( empty( $activity->id ) ) {
+			return new WP_Error( 'rest_activity_invalid_id',
+				__( 'Invalid activity id.' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		if ( ! $this->can_see( $request ) ) {
+			return new WP_Error( 'rest_user_cannot_delete_activity',
+				__( 'Sorry, you cannot delete the activities.' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		return true;
 	}
 
 	/**
@@ -570,6 +677,55 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request $request Request used to generate the response.
 		 */
 		return apply_filters( 'rest_prepare_buddypress_activity_value', $response, $request );
+	}
+
+	/**
+	 * Prepare an activity for create or update.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return stdClass|WP_Error Post object or WP_Error.
+	 */
+	protected function prepare_item_for_database( $request ) {
+		$prepared_activity = new stdClass();
+
+		$schema = $this->get_item_schema();
+
+		// Activity ID.
+		if ( ! empty( $schema['properties']['id'] ) && ( 'activity_comment' === $request['type'] ) && isset( $request['id'] ) ) {
+			$prepared_activity->activity_id = (int) $request['id'];
+		}
+
+		// Parent.
+		if ( ! empty( $schema['properties']['parent'] ) && ( 'activity_comment' === $request['type'] ) && isset( $request['parent'] ) ) {
+			$prepared_activity->parent_id = $request['parent'];
+		}
+
+		// Group ID.
+		if ( ! empty( $schema['properties']['prime_association'] ) && ( 'activity_update' === $request['type'] ) && isset( $request['prime_association'] ) ) {
+			$prepared_activity->group_id = (int) $request['prime_association'];
+		}
+
+		// Activity type.
+		if ( ! empty( $schema['properties']['type'] ) && isset( $request['type'] ) ) {
+			$prepared_activity->type = $request['type'];
+		}
+
+		// Activity content.
+		if ( ! empty( $schema['properties']['content'] ) && isset( $request['content'] ) ) {
+			$prepared_activity->content = $request['content'];
+		}
+
+		/**
+		 * Filters an activity before it is inserted via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param stdClass        $prepared_activity An object prepared for inserting or updating the database.
+		 * @param WP_REST_Request $request Request object.
+		 */
+		return apply_filters( 'rest_pre_insert_buddypress_activity_value', $prepared_activity, $request );
 	}
 
 	/**
@@ -682,10 +838,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  string $component  Group component.
-	 * @param  int    $id Item ID.
+	 * @param  int    $group_id Item ID.
 	 * @return boolean
 	 */
-	protected function show_hidden( $component, $id ) {
+	protected function show_hidden( $component, $group_id ) {
 		$user_id = bp_loggedin_user_id();
 		$retval  = false;
 
@@ -704,7 +860,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// User is a member of the group.
-		if ( (bool) groups_is_user_member( $user_id, $id ) ) {
+		if ( (bool) groups_is_user_member( $user_id, $group_id ) ) {
+			$retval = true;
+		}
+
+		// Group admins and mods have access as well.
+		if ( groups_is_user_admin( $user_id, $group_id ) || groups_is_user_mod( $user_id, $group_id ) ) {
 			$retval = true;
 		}
 
