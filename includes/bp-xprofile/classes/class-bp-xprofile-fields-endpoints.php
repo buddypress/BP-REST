@@ -203,10 +203,16 @@ class BP_REST_XProfile_Fields_Controller extends WP_REST_Controller {
 
 		$field = xprofile_get_field( $profile_field_id );
 
-		// @TODO: Visibility doesn't protect field values in this function.
 		if ( ! empty( $request['user_id'] ) ) {
-			$field->data = new stdClass;
-			$field->data->value = xprofile_get_field_data( $profile_field_id, $request['user_id'] );
+			$field->data = new stdClass();
+
+			// Ensure that the requester is allowed to see this field.
+			$hidden_user_fields = bp_xprofile_get_hidden_fields_for_user( $request['user_id'] );
+			if ( in_array( $profile_field_id, $hidden_user_fields, true ) ) {
+				$field->data->value = __( 'Value suppressed.', 'buddypress' );
+			} else {
+				$field->data->value = xprofile_get_field_data( $profile_field_id, $request['user_id'] );
+			}
 			// Set 'fetch_field_data' to true so that the data is included in the response.
 			$request['fetch_field_data'] = true;
 		}
@@ -313,8 +319,7 @@ class BP_REST_XProfile_Fields_Controller extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		// @TODO: Much of this is handled by the visibility logic.
-
+		// Protecting the values of non-private fields is handled above in get_item().
 		return true;
 	}
 
