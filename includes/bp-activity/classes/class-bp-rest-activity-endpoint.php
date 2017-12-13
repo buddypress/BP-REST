@@ -484,7 +484,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$activity_id = groups_post_update( $prepared_activity );
 
 		} elseif ( ( 'activity_comment' === $request['type'] )
-			&& bp_is_active( 'activity' )
 			&& ! empty( $request['id'] )
 			&& ! empty( $request['parent'] )
 			&& is_numeric( $request['id'] )
