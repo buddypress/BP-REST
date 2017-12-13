@@ -26,18 +26,6 @@ class BP_REST_XProfile_Fields_Controller extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-		// Fetch xprofile fields.
-		// @TODO: There's no general `get()` for fields, so maybe we don't do this.
-		// register_rest_route( $this->namespace, '/' . $this->rest_base, array(
-		// 	array(
-		// 		'methods'             => WP_REST_Server::READABLE,
-		// 		'callback'            => array( $this, 'get_items' ),
-		// 		'permission_callback' => array( $this, 'get_items_permissions_check' ),
-		// 		'args'                => $this->get_collection_params(),
-		// 	),
-		// 	'schema' => array( $this, 'get_item_schema' ),
-		// ) );
-
 		// Fetch a single xprofile field with field data.
 		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
 			array(
@@ -218,7 +206,7 @@ class BP_REST_XProfile_Fields_Controller extends WP_REST_Controller {
 		}
 
 		if ( empty( $profile_field_id ) || empty( $field->id ) ) {
-			return new WP_Error( 'bp_rest_invalid_field_id', __( 'Invalid resource id.' ), array( 'status' => 404 ) );
+			return new WP_Error( 'bp_rest_invalid_field_id', __( 'Invalid resource id.', 'buddypress' ), array( 'status' => 404 ) );
 		} else {
 			$retval = $this->prepare_item_for_response( $field, $request );
 		}
@@ -257,9 +245,9 @@ class BP_REST_XProfile_Fields_Controller extends WP_REST_Controller {
 			$data['visibility_level'] = $item->visibility_level;
 		}
 
-		IF ( ! empty( $request['fetch_field_data'] ) ) {
+		if ( ! empty( $request['fetch_field_data'] ) ) {
 			if ( isset( $item->data->id ) ) {
-				$data['data']['id']    = $item->data->id;
+				$data['data']['id'] = $item->data->id;
 			}
 			$data['data']['value'] = maybe_unserialize( $item->data->value );
 		}
