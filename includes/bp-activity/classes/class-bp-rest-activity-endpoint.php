@@ -640,6 +640,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		// If activity is from a group, do an extra cap check.
 		if ( isset( $bp->groups->id ) && $activity->component === $bp->groups->id ) {
+			$group_id = $bp->groups->id;
 
 			// Activity is from a group, but groups is currently disabled.
 			if ( ! bp_is_active( 'groups' ) ) {
@@ -650,6 +651,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$group = groups_get_group( $activity->item_id );
 			if ( $group ) {
 				$retval = $group->user_has_access;
+			}
+
+			// Group admins and mods have access as well.
+			if ( groups_is_user_admin( $user_id, $group_id ) || groups_is_user_mod( $user_id, $group_id ) ) {
+				$retval = true;
 			}
 		}
 
