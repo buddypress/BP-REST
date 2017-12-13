@@ -52,6 +52,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					) ),
 				),
 			),
+			array(
+				'methods'             => WP_REST_Server::DELETABLE,
+				'callback'            => array( $this, 'delete_item' ),
+				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
 	}
@@ -379,11 +384,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function get_item( $request ) {
-		$activity = bp_activity_get( array(
-			'in' => (int) $request['id'],
-		) );
-
-		$activity = $activity['activities'][0];
+		$activity = $this->get_activity_object( $request );
 
 		// Prevent non-members from seeing hidden activity.
 		if ( ! $this->show_hidden( $activity->component, $activity->item_id ) ) {
@@ -444,6 +445,80 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Check if a given request has access to delete an activity.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function delete_item_permissions_check( $request ) {
+		$activity = $this->get_activity_object( $request );
+
+		if ( empty( $activity->id ) ) {
+			return new WP_Error( 'rest_activity_invalid_id',
+				__( 'Invalid activity id.' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		if ( ! $this->can_see( $request ) ) {
+			return new WP_Error( 'rest_user_cannot_delete_activity',
+				__( 'Sorry, you cannot delete the activities.' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Delete an activity.
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function delete_item( $request ) {
+		$activity = $this->get_activity_object( $request );
+
+		$request->set_param( 'context', 'edit' );
+
+		$response = $this->prepare_item_for_response( $activity, $request );
+
+		if ( 'activity_comment' === $activity->type ) {
+			$retval = bp_activity_delete_comment( $activity->item_id, $activity->id );
+		} else {
+			$retval = bp_activity_delete( array(
+				'id' => $activity->id,
+			) );
+		}
+
+		if ( ! $retval ) {
+			return new WP_Error( 'rest_activity_cannot_delete',
+				__( 'Could not delete the activity.' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		/**
+		 * Fires after an activity is deleted via the REST API.
+		 *
+		 * @param object           $activity The deleted activity.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'rest_activity_delete', $activity, $response, $request );
+
+		return $response;
 	}
 
 	/**
@@ -541,8 +616,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function can_see( $request, $edit = false ) {
-
 		$user_id = bp_loggedin_user_id();
+		$retval  = true;
 
 		// Admins can see it all.
 		if ( is_super_admin( $user_id ) ) {
@@ -559,18 +634,13 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			return false;
 		}
 
-		$retval = true;
-
-		$activity = bp_activity_get( array(
-			'in' => (int) $request['id'],
-		) );
-
-		$activity = $activity['activities'][0];
+		$activity = $this->get_activity_object( $request );
 
 		$bp = buddypress();
 
 		// If activity is from a group, do an extra cap check.
 		if ( isset( $bp->groups->id ) && $activity->component === $bp->groups->id ) {
+			$group_id = $bp->groups->id;
 
 			// Activity is from a group, but groups is currently disabled.
 			if ( ! bp_is_active( 'groups' ) ) {
@@ -581,6 +651,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$group = groups_get_group( $activity->item_id );
 			if ( $group ) {
 				$retval = $group->user_has_access;
+			}
+
+			// Group admins and mods have access as well.
+			if ( groups_is_user_admin( $user_id, $group_id ) || groups_is_user_mod( $user_id, $group_id ) ) {
+				$retval = true;
 			}
 		}
 
@@ -594,9 +669,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool $retval
+		 * @param bool   $retval Return value.
+		 * @param int    $user_id User ID.
+		 * @param object $activity Activity obhect.
 		 */
-		return apply_filters( 'rest_activity_endpoint_can_see', $retval );
+		return apply_filters( 'rest_activity_endpoint_can_see', $retval, $user_id, $activity );
 	}
 
 	/**
@@ -609,8 +686,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function show_hidden( $component, $id ) {
-		$retval = false;
 		$user_id = bp_loggedin_user_id();
+		$retval  = false;
 
 		// Admins see it all.
 		if ( is_super_admin( $user_id ) ) {
@@ -653,5 +730,21 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		return mysql_to_rfc3339( $date_gmt );
+	}
+
+	/**
+	 * Get activity object.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return object An activity object.
+	 */
+	protected function get_activity_object( $request ) {
+		$activity = bp_activity_get( array(
+			'in' => (int) $request['id'],
+		) );
+
+		return $activity['activities'][0];
 	}
 }
