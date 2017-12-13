@@ -53,9 +53,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				),
 			),
 			array(
-				'methods'  				=> WP_REST_Server::DELETABLE,
-				'callback' 				=> array( $this, 'delete_item' ),
-				'permission_callback' 	=> array( $this, 'delete_item_permissions_check' ),
+				'methods'  			  => WP_REST_Server::DELETABLE,
+				'callback' 			  => array( $this, 'delete_item' ),
+				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -616,8 +616,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function can_see( $request, $edit = false ) {
-		$user_id 	= bp_loggedin_user_id();
-		$retval 	= true;
+		$user_id = bp_loggedin_user_id();
+		$retval  = true;
 
 		// Admins can see it all.
 		if ( is_super_admin( $user_id ) ) {
@@ -686,8 +686,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function show_hidden( $component, $id ) {
-		$user_id 	= bp_loggedin_user_id();
-		$retval 	= false;
+		$user_id = bp_loggedin_user_id();
+		$retval  = false;
 
 		// Admins see it all.
 		if ( is_super_admin( $user_id ) ) {

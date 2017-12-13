@@ -596,9 +596,10 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool $retval
+		 * @param bool $retval Return value.
+		 * @param WP_REST_Request $request Full details about the request.
 		 */
-		return apply_filters( 'rest_group_endpoint_can_see', $retval );
+		return apply_filters( 'rest_group_endpoint_can_see', $retval, $request );
 	}
 
 	/**
@@ -615,13 +616,14 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			return true;
 		}
 
-		$retval 	= false;
-		$user_id 	= bp_loggedin_user_id();
+		$user_id = bp_loggedin_user_id();
 
 		// Admins see it all.
 		if ( is_super_admin( $user_id ) ) {
 			return true;
 		}
+
+		$retval  = false;
 
 		// Moderators as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
