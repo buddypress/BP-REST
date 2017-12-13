@@ -615,8 +615,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			return true;
 		}
 
-		$retval = false;
-		$user_id = bp_loggedin_user_id();
+		$retval 	= false;
+		$user_id 	= bp_loggedin_user_id();
 
 		// Admins see it all.
 		if ( is_super_admin( $user_id ) ) {
