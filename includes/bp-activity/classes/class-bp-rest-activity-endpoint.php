@@ -1,4 +1,11 @@
 <?php
+/**
+ * BP REST: BP_REST_Activity_Endpoint class
+ *
+ * @package BuddyPress
+ * @since 0.1.0
+ */
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -6,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 0.1.0
  */
-class BP_REST_Activity_Controller extends WP_REST_Controller {
+class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 	/**
 	 * Constructor.
@@ -74,14 +81,14 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'type'       => 'object',
 
 			'properties' => array(
-				'id' => array(
+				'id'                    => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 
-				'prime_association' => array(
+				'prime_association'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
@@ -93,66 +100,89 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 					'type'        => 'integer',
 				),
 
-				'user' => array(
+				'user'                  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID for the creator of the object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 
-				'link' => array(
+				'link'                  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
 					'format'      => 'url',
 					'type'        => 'string',
 				),
 
-				'component' => array(
+				'component'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The BuddyPress component the object relates to.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array_keys( bp_core_get_components() ),
 				),
 
-				'type' => array(
+				'type'                  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The activity type of the object.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array_keys( bp_activity_get_types() ),
 				),
 
-				'title' => array(
+				'title'                 => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML title of the object.', 'buddypress' ),
 					'type'        => 'string',
 				),
 
-				'content' => array(
+				'content'               => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML content of the object.', 'buddypress' ),
 					'type'        => 'string',
 				),
 
-				'date' => array(
+				'date'                  => array(
 					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 					'context'     => array( 'view', 'edit' ),
 				),
 
-				'status' => array(
+				'status'                => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the object has been marked as spam or not.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array( 'published', 'spam' ),
 				),
 
-				'parent' => array(
-					'description'  => __( 'The ID of the parent of the object.', 'buddypress' ),
-					'type'         => 'integer',
-					'context'      => array( 'view', 'edit' ),
+				'parent'                => array(
+					'description' => __( 'The ID of the parent of the object.', 'buddypress' ),
+					'type'        => 'integer',
+					'context'     => array( 'view', 'edit' ),
 				),
 			),
 		);
+
+		if ( get_option( 'show_avatars' ) ) {
+			$avatar_properties = array();
+
+			$avatar_sizes = rest_get_avatar_sizes();
+			foreach ( $avatar_sizes as $size ) {
+				$avatar_properties[ $size ] = array(
+					/* translators: %d: avatar image size in pixels */
+					'description' => sprintf( __( 'Avatar URL with image size of %d pixels.' ), $size ),
+					'type'        => 'string',
+					'format'      => 'uri',
+					'context'     => array( 'embed', 'view', 'edit' ),
+				);
+			}
+
+			$schema['properties']['user_avatar_urls'] = array(
+				'description' => __( 'Avatar URLs for the object user.' ),
+				'type'        => 'object',
+				'context'     => array( 'view', 'edit', 'embed' ),
+				'readonly'    => true,
+				'properties'  => $avatar_properties,
+			);
+		}
 
 		return $schema;
 	}
@@ -165,7 +195,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params = parent::get_collection_params();
+		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
 		$params['exclude'] = array(
@@ -339,7 +369,7 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			$args['show_hidden'] = true;
 		}
 
-		$retval = array();
+		$retval     = array();
 		$activities = bp_activity_get( $args );
 
 		foreach ( $activities['activities'] as $activity ) {
@@ -523,6 +553,12 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 			'type'                  => $activity->type,
 		);
 
+		$schema = $this->get_item_schema();
+
+		if ( ! empty( $schema['properties']['user_avatar_urls'] ) ) {
+			$data['user_avatar_urls'] = rest_get_avatar_urls( $activity->user_email );
+		}
+
 		$context = ! empty( $request['context'] )
 			? $request['context']
 			: 'view';
@@ -556,13 +592,13 @@ class BP_REST_Activity_Controller extends WP_REST_Controller {
 
 		// Entity meta.
 		$links = array(
-			'self' => array(
+			'self'       => array(
 				'href' => rest_url( $url ),
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'user' => array(
+			'user'       => array(
 				'href' => rest_url( '/wp/v2/users/' . $activity->user_id ),
 			),
 		);

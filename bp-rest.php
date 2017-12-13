@@ -13,6 +13,9 @@
  * Requires PHP: 5.5
  * License: GPLv2
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
+ *
+ * @package BuddyPress
+ * @since 0.1.0
  */
 
 /**
@@ -47,14 +50,14 @@ function bp_rest_api_endpoints() {
 	}
 
 	if ( bp_is_active( 'activity' ) ) {
-		require_once( dirname( __FILE__ ) . '/includes/bp-activity/classes/class-bp-activity-endpoints.php' );
-		$controller = new BP_REST_Activity_Controller();
+		require_once( dirname( __FILE__ ) . '/includes/bp-activity/classes/class-bp-rest-activity-endpoint.php' );
+		$controller = new BP_REST_Activity_Endpoint();
 		$controller->register_routes();
 	}
 
 	if ( bp_is_active( 'groups' ) ) {
-		require_once( dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-groups-endpoints.php' );
-		$controller = new BP_REST_Groups_Controller();
+		require_once( dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-groups-endpoint.php' );
+		$controller = new BP_REST_Groups_Endpoint();
 		$controller->register_routes();
 	}
 }
