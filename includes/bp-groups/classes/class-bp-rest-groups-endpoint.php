@@ -1,4 +1,11 @@
 <?php
+/**
+ * BP REST: BP_REST_Groups_Endpoint class
+ *
+ * @package BuddyPress
+ * @since 0.1.0
+ */
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -6,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 0.1.0
  */
-class BP_REST_Groups_Controller extends WP_REST_Controller {
+class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 	/**
 	 * Constructor.
@@ -63,71 +70,71 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 			'type'       => 'object',
 
 			'properties' => array(
-				'id' => array(
+				'id'                 => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 
-				'creator_id' => array(
+				'creator_id'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the user that created the group.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 
-				'name' => array(
+				'name'               => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The name of the group.', 'buddypress' ),
 					'type'        => 'string',
 				),
 
-				'slug' => array(
+				'slug'               => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The URL-friendly slug for the group.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 
-				'link' => array(
+				'link'               => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
 					'format'      => 'url',
 					'type'        => 'string',
 				),
 
-				'description' => array(
+				'description'        => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The description of the group.', 'buddypress' ),
 					'type'        => 'string',
 				),
 
-				'status' => array(
+				'status'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The status of the group.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array( 'public', 'private', 'hidden' ),
 				),
 
-				'enable_forum' => array(
+				'enable_forum'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the group has a forum or not.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
 
-				'date_created' => array(
+				'date_created'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the group was created, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
 
-				'admins' => array(
+				'admins'             => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'Group administrators.', 'buddypress' ),
 					'type'        => 'array',
 				),
 
-				'mods' => array(
+				'mods'               => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'Group administrators.', 'buddypress' ),
 					'type'        => 'array',
@@ -139,14 +146,14 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 					'type'        => 'integer',
 				),
 
-				'last_activity' => array(
+				'last_activity'      => array(
 					'context'     => array( 'edit' ),
 					'description' => __( "The date the group was last active, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
 
-				'avatar_urls'  => array(
+				'avatar_urls'        => array(
 					'description' => __( 'Avatar URLs for the resource.' ),
 					'type'        => 'object',
 					'context'     => array( 'embed', 'view', 'edit' ),
@@ -158,7 +165,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 							'format'      => 'uri',
 							'context'     => array( 'embed', 'view', 'edit' ),
 						),
-						'full' => array(
+						'full'  => array(
 							'description' => __( 'Full-sized avatar URL.' ),
 							'type'        => 'string',
 							'format'      => 'uri',
@@ -180,7 +187,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params = parent::get_collection_params();
+		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
 		$params['type'] = array(
@@ -305,7 +312,6 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Request List of activity object data.
 	 */
 	public function get_items( $request ) {
-
 		$args = array(
 			'type'               => $request['type'],
 			'order'              => $request['order'],
@@ -326,9 +332,14 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 			'update_meta_cache'  => true,
 		);
 
-		$retval = array();
+		// Admins and moderators can see it all.
+		if ( is_super_admin( bp_loggedin_user_id() ) || bp_current_user_can( 'bp_moderate' ) ) {
+			$args['show_hidden'] = true;
+		}
+
 		$groups = groups_get_groups( $args );
 
+		$retval = array();
 		foreach ( $groups['groups'] as $group ) {
 			$retval[] = $this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $group, $request )
@@ -350,24 +361,32 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 		$group_id = (int) $request['id'];
 
 		$group = groups_get_group( array(
-			'group_id'          => $group_id,
-			'load_users'        => false,
-			'populate_extras'   => false,
+			'group_id'        => $group_id,
+			'load_users'      => false,
+			'populate_extras' => false,
 		) );
 
 		// Prevent non-members from seeing hidden groups.
-		if ( 'hidden' === $group->status && ( ! bp_current_user_can( 'bp_moderate' ) && ! groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) ) {
+		if ( ! $this->show_hidden( $group ) ) {
+
 			// Unset the group ID to ensure our error condition fires.
 			$group->id = 0;
-		} else {
-			$retval = $this->prepare_item_for_response( $group, $request );
+
+			if ( empty( $group ) || empty( $group->id ) ) {
+				return new WP_Error( 'bp_rest_invalid_group_id',
+					__( 'Invalid group id.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			}
 		}
 
-		if ( empty( $group_id ) || empty( $group->id ) ) {
-			return new WP_Error( 'bp_rest_invalid_group_id', __( 'Invalid resource id.' ), array(
-				'status' => 404,
-			) );
-		}
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $group, $request )
+			),
+		);
 
 		return rest_ensure_response( $retval );
 	}
@@ -393,19 +412,22 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		// Only bp_moderators and logged in users (viewing their own groups) can see hidden groups.
-		if ( ! empty( $request['show_hidden'] ) && ( ! bp_current_user_can( 'bp_moderate' ) &&
-			! ( ! empty( $request['user_id'] ) && bp_loggedin_user_id() === $request['user_id'] ) )
-		) {
-			return new WP_Error( 'rest_user_cannot_view', __( 'Sorry, you cannot view hidden groups.' ), array(
-				'status' => rest_authorization_required_code(),
-			) );
+		if ( ! $this->can_see( $request ) ) {
+			return new WP_Error( 'rest_user_cannot_view_group',
+				__( 'Sorry, you cannot view hidden groups.' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
 		}
 
-		if ( 'edit' === $request['context'] && ! bp_current_user_can( 'bp_moderate' ) ) {
-			return new WP_Error( 'rest_forbidden_context', __( 'Sorry, you cannot view this resource with edit context.' ), array(
-				'status' => rest_authorization_required_code(),
-			) );
+		if ( ! $this->can_see( $request, true ) ) {
+			return new WP_Error( 'rest_forbidden_context',
+				__( 'Sorry, you cannot view this resource with edit context.' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
 		}
 
 		return true;
@@ -423,20 +445,20 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $item, $request, $is_raw = false ) {
 		$data = array(
-			'avatar_urls'  => array(),
-			'creator_id'   => bp_get_group_creator_id( $item ),
-			'date_created' => $this->prepare_date_response( $item->date_created ),
-			'decription'   => bp_get_group_description( $item ),
-			'enable_forum' => bp_group_is_forum_enabled( $item ),
-			'id'           => $item->id,
-			'link'         => bp_get_group_permalink( $item ),
-			'name'         => bp_get_group_name( $item ),
-			'slug'         => bp_get_group_slug( $item ),
-			'status'       => bp_get_group_status( $item ),
-			'admins'       => array(),
-			'mods'         => array(),
+			'avatar_urls'        => array(),
+			'creator_id'         => bp_get_group_creator_id( $item ),
+			'date_created'       => $this->prepare_date_response( $item->date_created ),
+			'decription'         => bp_get_group_description( $item ),
+			'enable_forum'       => bp_group_is_forum_enabled( $item ),
+			'id'                 => $item->id,
+			'link'               => bp_get_group_permalink( $item ),
+			'name'               => bp_get_group_name( $item ),
+			'slug'               => bp_get_group_slug( $item ),
+			'status'             => bp_get_group_status( $item ),
+			'admins'             => array(),
+			'mods'               => array(),
 			'total_member_count' => null,
-			'last_activity' => null,
+			'last_activity'      => null,
 		);
 
 		// Avatars.
@@ -465,7 +487,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 
 			// Add admins and moderators to their respective arrays.
 			$admin_mods = groups_get_group_members( array(
-				'group_id' => $item->id,
+				'group_id'   => $item->id,
 				'group_role' => array(
 					'admin',
 					'mod',
@@ -509,7 +531,7 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 
 		// Entity meta.
 		$links = array(
-			'self' => array(
+			'self'       => array(
 				'href' => rest_url( $base . $item->id ),
 			),
 			'collection' => array(
@@ -542,46 +564,126 @@ class BP_REST_Groups_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Can this user see the activity?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @param  boolean         $edit Edit fallback.
+	 * @return boolean
+	 */
+	protected function can_see( $request, $edit = false ) {
+
+		if ( $edit && 'edit' === $request['context'] && ! bp_current_user_can( 'bp_moderate' ) ) {
+			return false;
+		}
+
+		$retval = true;
+
+		// Only bp_moderators and logged in users (viewing their own groups) can see hidden groups.
+		if ( ! empty( $request['show_hidden'] ) ) {
+			if ( ! empty( $request['user_id'] ) && bp_loggedin_user_id() !== $request['user_id'] ) {
+				$retval = false;
+			}
+
+			if ( ! bp_current_user_can( 'bp_moderate' ) ) {
+				$retval = false;
+			}
+		}
+
+		/**
+		 * Filter the retval.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool $retval Return value.
+		 * @param WP_REST_Request $request Full details about the request.
+		 */
+		return apply_filters( 'rest_group_endpoint_can_see', $retval, $request );
+	}
+
+	/**
+	 * Show hidden group?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  object $group Group object.
+	 * @return boolean
+	 */
+	protected function show_hidden( $group ) {
+		// Bail early.
+		if ( 'hidden' !== $group->status ) {
+			return true;
+		}
+
+		$user_id = bp_loggedin_user_id();
+
+		// Admins see it all.
+		if ( is_super_admin( $user_id ) ) {
+			return true;
+		}
+
+		$retval = false;
+
+		// Moderators as well.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
+		}
+
+		// User is a member of the group.
+		if ( (bool) groups_is_user_member( $user_id, $group->id ) ) {
+			$retval = true;
+		}
+
+		return (bool) $retval;
+	}
+
+	/**
 	 * Clean up group_type__in input.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $value Comma-separated list of group types.
 	 *
 	 * @return array|null
 	 */
 	public function sanitize_group_types( $value ) {
-		if ( ! empty( $value ) ) {
-			$types            = explode( ',', $value );
-			$registered_types = bp_groups_get_group_types();
-			$valid_types = array_intersect( $types, $registered_types );
-
-			if ( ! empty( $valid_types ) ) {
-				return $valid_types;
-			} else {
-				return null;
-			}
+		if ( empty( $value ) ) {
+			return $value;
 		}
-		return $value;
+
+		$types       = explode( ',', $value );
+		$valid_types = array_intersect( $types, bp_groups_get_group_types() );
+
+		return ( empty( $valid_types ) )
+			? null
+			: $valid_types;
 	}
 
 	/**
 	 * Validate group_type__in input.
 	 *
-	 * @param  mixed            $value
-	 * @param  WP_REST_Request  $request
-	 * @param  string           $param
+	 * @since 0.1.0
+	 *
+	 * @param  mixed           $value mixed value.
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @param  string          $param string.
 	 *
 	 * @return WP_Error|boolean
 	 */
 	public function validate_group_types( $value, $request, $param ) {
-		if ( ! empty( $value ) ) {
-			$types = explode( ',', $value );
-			$registered_types = bp_groups_get_group_types();
-			foreach ( $types as $type ) {
-				if ( ! in_array( $type, $registered_types, true ) ) {
-					return new WP_Error( 'rest_invalid_group_type', sprintf( __( 'The group type you provided, %s, is not one of %s.' ), $type, implode( ', ', $registered_types ) ) );
-				}
+		// Bail early.
+		if ( empty( $value ) ) {
+			return true;
+		}
+
+		$types            = explode( ',', $value );
+		$registered_types = bp_groups_get_group_types();
+		foreach ( $types as $type ) {
+			if ( ! in_array( $type, $registered_types, true ) ) {
+				/* translators: %1$s and %2$s is replaced with the registered types */
+				return new WP_Error( 'rest_invalid_group_type', sprintf( __( 'The group type you provided, %1$s, is not one of %2$s.' ), $type, implode( ', ', $registered_types ) ) );
 			}
 		}
-		return true;
 	}
 }
