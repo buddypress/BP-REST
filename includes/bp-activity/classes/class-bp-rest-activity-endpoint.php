@@ -474,23 +474,18 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		$prepared_activity = $this->prepare_item_for_database( $request );
+		$prime             = $request['prime_association'];
+		$id                = $request['id'];
+		$parent            = $request['parent'];
+		$type              = $request['type'];
+		$activity_id       = 0;
 
-		$activity_id = 0;
-		if ( ( 'activity_update' === $request['type'] )
-			&& bp_is_active( 'groups' )
-			&& ! empty( $request['prime_association'] )
-			&& is_numeric( $request['prime_association'] )
-		) {
+		if ( ( 'activity_update' === $type ) && bp_is_active( 'groups' ) && ( ! empty( $prime ) && is_numeric( $prime ) ) ) {
 			$activity_id = groups_post_update( $prepared_activity );
-
-		} elseif ( ( 'activity_comment' === $request['type'] )
-			&& ! empty( $request['id'] )
-			&& ! empty( $request['parent'] )
-			&& is_numeric( $request['id'] )
-			&& is_numeric( $request['parent'] )
-		) {
+		} elseif ( ( 'activity_comment' === $type )
+				&& ( ! empty( $id ) && is_numeric( $id ) )
+				&& ( ! empty( $parent ) && is_numeric( $parent ) ) ) {
 			$activity_id = bp_activity_new_comment( $prepared_activity );
-
 		} else {
 			$activity_id = bp_activity_post_update( $prepared_activity );
 		}
