@@ -53,8 +53,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				),
 			),
 			array(
-				'methods'  			  => WP_REST_Server::DELETABLE,
-				'callback' 			  => array( $this, 'delete_item' ),
+				'methods'             => WP_REST_Server::DELETABLE,
+				'callback'            => array( $this, 'delete_item' ),
 				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
 			),
 			'schema' => array( $this, 'get_item_schema' ),

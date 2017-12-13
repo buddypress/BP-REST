@@ -623,7 +623,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			return true;
 		}
 
-		$retval  = false;
+		$retval = false;
 
 		// Moderators as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
