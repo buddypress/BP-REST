@@ -56,12 +56,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'methods'  => WP_REST_Server::DELETABLE,
 				'callback' => array( $this, 'delete_item' ),
 				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
-				'args'     => array(
-					'force'    => array(
-						'default'     => false,
-						'description' => __( 'Whether to bypass trash and force deletion.' ),
-					),
-				),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -464,7 +458,16 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	public function delete_item_permissions_check( $request ) {
 		$activity = $this->get_activity_object( $request );
 
-		if ( ! bp_activity_user_can_delete( $activity ) ) {
+		if ( empty( $activity->id ) ) {
+			return new WP_Error( 'rest_activity_invalid_id',
+				__( 'Invalid activity id.' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		if ( ! $this->can_see( $request ) ) {
 			return new WP_Error( 'rest_user_cannot_delete_activity',
 				__( 'Sorry, you cannot delete the activities.' ),
 				array(
@@ -484,15 +487,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	public function delete_item( $request ) {
 		$activity = $this->get_activity_object( $request );
-
-		if ( empty( $activity->id ) ) {
-			return new WP_Error( 'rest_activity_invalid_id',
-				__( 'Invalid activity id.' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
 
 		$request->set_param( 'context', 'edit' );
 
@@ -622,8 +616,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function can_see( $request, $edit = false ) {
-
 		$user_id = bp_loggedin_user_id();
+		$retval = true;
 
 		// Admins can see it all.
 		if ( is_super_admin( $user_id ) ) {
@@ -639,8 +633,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( $edit && 'edit' === $request['context'] && ! bp_current_user_can( 'bp_moderate' ) ) {
 			return false;
 		}
-
-		$retval = true;
 
 		$activity = $this->get_activity_object( $request );
 
@@ -671,9 +663,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool $retval
+		 * @param bool   $retval Return value.
+		 * @param int    $user_id User ID.
+		 * @param object $activity Activity obhect.
 		 */
-		return apply_filters( 'rest_activity_endpoint_can_see', $retval );
+		return apply_filters( 'rest_activity_endpoint_can_see', $retval, $user_id, $activity );
 	}
 
 	/**
