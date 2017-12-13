@@ -642,11 +642,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$retval = true;
 
-		$activity = bp_activity_get( array(
-			'in' => (int) $request['id'],
-		) );
-
-		$activity = $activity['activities'][0];
+		$activity = $this->get_activity_object( $request );
 
 		$bp = buddypress();
 
@@ -741,8 +737,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  [type] $request [description]
-	 * @return [type]          [description]
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return object An activity object.
 	 */
 	protected function get_activity_object( $request ) {
 		$activity = bp_activity_get( array(
