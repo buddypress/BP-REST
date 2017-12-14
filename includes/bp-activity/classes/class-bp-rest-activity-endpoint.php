@@ -158,6 +158,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'type'        => 'integer',
 					'context'     => array( 'view', 'edit' ),
 				),
+				'comments'              => array(
+					'description' => __( 'Childrens of the object.', 'buddypress' ),
+					'type'        => 'array',
+					'context'     => array( 'view', 'edit' ),
+				),
 			),
 		);
 
@@ -300,8 +305,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$params['display_comments'] = array(
 			'description'       => __( 'False for no comments. stream for within stream display, threaded for below each activity item..', 'buddypress' ),
-			'default'           => false,
-			'type'              => 'boolean',
+			'default'           => '',
+			'type'              => 'string',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -650,6 +655,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$schema = $this->get_item_schema();
 
+		if ( ! empty( $schema['properties']['comments'] ) && 'threaded' == $request['display_comments'] ) {
+			$data['comments'] = $this->prepare_activity_comments( $activity->children, $request );
+		}
+
 		if ( ! empty( $schema['properties']['user_avatar_urls'] ) ) {
 			$data['user_avatar_urls'] = rest_get_avatar_urls( $activity->user_email );
 		}
@@ -671,6 +680,25 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request $request Request used to generate the response.
 		 */
 		return apply_filters( 'rest_prepare_buddypress_activity_value', $response, $request );
+	}
+
+	/**
+	 * Prepare activity comments
+	 *
+	 * @param  object          $comments Comments.
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return array           description.
+	 */
+	public function prepare_activity_comments( $comments, $request ) {
+		$data = array();
+		if ( empty( $comments ) ) {
+			return $data;
+		}
+		foreach ( $comments as $comment ) {
+			$comment = $this->prepare_item_for_response( $comment, $request );
+			$data[]  = $this->prepare_response_for_collection( $comment );
+		}
+		return $data;
 	}
 
 	/**
