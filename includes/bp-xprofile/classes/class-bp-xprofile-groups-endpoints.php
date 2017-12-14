@@ -35,7 +35,7 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				'args'                => $this->get_collection_params(),
 			),
-			'schema' => array( $this, 'xprofile_groups_schema' ),
+			'schema' => array( $this, 'get_item_schema' ),
 		) );
 
 		// Fetch a single xprofile group.
@@ -47,7 +47,7 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 				'args'                => $this->get_item_params(),
 
 			),
-			'schema' => array( $this, 'xprofile_groups_schema' ),
+			'schema' => array( $this, 'get_item_schema' ),
 		) );
 	}
 
@@ -58,7 +58,7 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 	 *
 	 * @return array
 	 */
-	public function xprofile_groups_schema() {
+	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
 			'title'      => 'xprofile_group_single',

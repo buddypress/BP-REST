@@ -26,18 +26,6 @@ class BP_REST_XProfile_Fields_Controller extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-		// Fetch xprofile fields.
-		// @TODO: There's no general `get()` for fields, so maybe we don't do this.
-		// register_rest_route( $this->namespace, '/' . $this->rest_base, array(
-		// 	array(
-		// 		'methods'             => WP_REST_Server::READABLE,
-		// 		'callback'            => array( $this, 'get_items' ),
-		// 		'permission_callback' => array( $this, 'get_items_permissions_check' ),
-		// 		'args'                => $this->get_collection_params(),
-		// 	),
-		// 	'schema' => array( $this, 'get_item_schema' ),
-		// ) );
-
 		// Fetch a single xprofile field with field data.
 		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
 			array(
@@ -203,16 +191,22 @@ class BP_REST_XProfile_Fields_Controller extends WP_REST_Controller {
 
 		$field = xprofile_get_field( $profile_field_id );
 
-		// @TODO: Visibility doesn't protect field values in this function.
 		if ( ! empty( $request['user_id'] ) ) {
-			$field->data = new stdClass;
-			$field->data->value = xprofile_get_field_data( $profile_field_id, $request['user_id'] );
+			$field->data = new stdClass();
+
+			// Ensure that the requester is allowed to see this field.
+			$hidden_user_fields = bp_xprofile_get_hidden_fields_for_user( $request['user_id'] );
+			if ( in_array( $profile_field_id, $hidden_user_fields, true ) ) {
+				$field->data->value = __( 'Value suppressed.', 'buddypress' );
+			} else {
+				$field->data->value = xprofile_get_field_data( $profile_field_id, $request['user_id'] );
+			}
 			// Set 'fetch_field_data' to true so that the data is included in the response.
 			$request['fetch_field_data'] = true;
 		}
 
 		if ( empty( $profile_field_id ) || empty( $field->id ) ) {
-			return new WP_Error( 'bp_rest_invalid_field_id', __( 'Invalid resource id.' ), array( 'status' => 404 ) );
+			return new WP_Error( 'bp_rest_invalid_field_id', __( 'Invalid resource id.', 'buddypress' ), array( 'status' => 404 ) );
 		} else {
 			$retval = $this->prepare_item_for_response( $field, $request );
 		}
@@ -251,9 +245,9 @@ class BP_REST_XProfile_Fields_Controller extends WP_REST_Controller {
 			$data['visibility_level'] = $item->visibility_level;
 		}
 
-		IF ( ! empty( $request['fetch_field_data'] ) ) {
+		if ( ! empty( $request['fetch_field_data'] ) ) {
 			if ( isset( $item->data->id ) ) {
-				$data['data']['id']    = $item->data->id;
+				$data['data']['id'] = $item->data->id;
 			}
 			$data['data']['value'] = maybe_unserialize( $item->data->value );
 		}
@@ -313,8 +307,7 @@ class BP_REST_XProfile_Fields_Controller extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		// @TODO: Much of this is handled by the visibility logic.
-
+		// Protecting the values of non-private fields is handled above in get_item().
 		return true;
 	}
 
