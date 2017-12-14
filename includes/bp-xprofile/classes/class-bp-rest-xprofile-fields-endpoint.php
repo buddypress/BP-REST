@@ -58,89 +58,89 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'title'      => 'xprofile_groups_overview',
 			'type'       => 'object',
 			'properties' => array(
-				'id' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
+				'id'                => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
+					'readonly'          => true,
+					'type'              => 'integer',
 				),
 
-				'group_id' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the group the field is part of.', 'buddypress' ),
-					'type'        => 'integer',
+				'group_id'          => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'The ID of the group the field is part of.', 'buddypress' ),
+					'type'              => 'integer',
 				),
 
-				'parent_id' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the field parent.', 'buddypress' ),
-					'type'        => 'integer',
+				'parent_id'         => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'The ID of the field parent.', 'buddypress' ),
+					'type'              => 'integer',
 				),
 
-				'type' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The type of field, like checkbox or select.', 'buddypress' ),
-					'type'        => 'string',
+				'type'              => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'The type of field, like checkbox or select.', 'buddypress' ),
+					'type'              => 'string',
 				),
 
-				'name' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The name of the profile field group.', 'buddypress' ),
-					'type'        => 'string',
+				'name'              => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'The name of the profile field group.', 'buddypress' ),
+					'type'              => 'string',
 				),
 
-				'description' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The description of the profile field group.', 'buddypress' ),
-					'type'        => 'string',
+				'description'       => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'The description of the profile field group.', 'buddypress' ),
+					'type'              => 'string',
 				),
 
-				'is_required' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the profile field must have a value.', 'buddypress' ),
-					'type'        => 'boolean',
+				'is_required'       => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'Whether the profile field must have a value.', 'buddypress' ),
+					'type'              => 'boolean',
 				),
 
-				'can_delete' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the profile field can be deleted or not.', 'buddypress' ),
-					'type'        => 'boolean',
+				'can_delete'        => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'Whether the profile field can be deleted or not.', 'buddypress' ),
+					'type'              => 'boolean',
 				),
 
-				'field_order' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The order of the field.', 'buddypress' ),
-					'type'        => 'integer',
+				'field_order'       => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'The order of the field.', 'buddypress' ),
+					'type'              => 'integer',
 				),
 
-				'option_order' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The order of the field\'s options.', 'buddypress' ),
-					'type'        => 'integer',
+				'option_order'      => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'The order of the field\'s options.', 'buddypress' ),
+					'type'              => 'integer',
 				),
 
-				'order_by' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'How the field\'s options are ordered.', 'buddypress' ),
-					'type'        => 'string',
+				'order_by'          => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'How the field\'s options are ordered.', 'buddypress' ),
+					'type'              => 'string',
 				),
 
 				'is_default_option' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the option is the default option.', 'buddypress' ),
-					'type'        => 'boolean',
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'Whether the option is the default option.', 'buddypress' ),
+					'type'              => 'boolean',
 				),
 
-				'visibility_level' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Who may see the saved value for this field.', 'buddypress' ),
-					'type'        => 'string',
+				'visibility_level'  => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'Who may see the saved value for this field.', 'buddypress' ),
+					'type'              => 'string',
 				),
 
-				'data' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The saved value for this field.', 'buddypress' ),
-					'type'        => 'array',
+				'data'              => array(
+					'context'           => array( 'view', 'edit' ),
+					'description'       => __( 'The saved value for this field.', 'buddypress' ),
+					'type'              => 'array',
 				),
 			),
 		);
@@ -271,8 +271,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			? $request['context']
 			: 'view';
 
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
+		$data = $this->add_additional_fields_to_object( $data, $request );
+		$data = $this->filter_response_by_context( $data, $context );
 
 		return $data;
 	}
@@ -341,11 +341,11 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		// Entity meta.
 		$links = array(
-			'self' => array(
-				'href' => rest_url( $base . $item->id ),
+			'self'       => array(
+				'href'   => rest_url( $base . $item->id ),
 			),
 			'collection' => array(
-				'href' => rest_url( $base ),
+				'href'   => rest_url( $base ),
 			),
 		);
 

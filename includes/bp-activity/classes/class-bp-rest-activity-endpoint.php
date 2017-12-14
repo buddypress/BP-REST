@@ -700,7 +700,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		foreach ( $comments as $comment ) {
-			$data[]  = $this->prepare_response_for_collection(
+			$data[] = $this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $comment, $request )
 			);
 		}

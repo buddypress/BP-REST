@@ -69,14 +69,14 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'title'      => 'xprofile_group_single',
 			'type'       => 'object',
 			'properties' => array(
-				'id' => array(
+				'id'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 
-				'name' => array(
+				'name'        => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The name of the profile field group.', 'buddypress' ),
 					'type'        => 'string',
@@ -94,13 +94,13 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 					'type'        => 'integer',
 				),
 
-				'can_delete' => array(
+				'can_delete'  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the profile field group can be deleted or not.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
 
-				'fields' => array(
+				'fields'      => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The fields associated with this field group.', 'buddypress' ),
 					'type'        => 'array',
@@ -343,8 +343,8 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			? $request['context']
 			: 'view';
 
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
+		$data = $this->add_additional_fields_to_object( $data, $request );
+		$data = $this->filter_response_by_context( $data, $context );
 
 		$response = rest_ensure_response( $data );
 		$response->add_links( $this->prepare_links( $item ) );
@@ -413,11 +413,11 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $item, $request, $is_raw = false ) {
 		$data = array(
-			'id'           => (int) $item->id,
-			'name'         => $item->name,
-			'description'  => $item->description,
-			'group_order'  => (int) $item->group_order,
-			'can_delete'   => (bool) $item->can_delete,
+			'id'          => (int) $item->id,
+			'name'        => $item->name,
+			'description' => $item->description,
+			'group_order' => (int) $item->group_order,
+			'can_delete'  => (bool) $item->can_delete,
 		);
 
 		// If the fields have been requested, we populate them.
@@ -506,17 +506,14 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function sanitize_member_types( $value ) {
 		if ( ! empty( $value ) ) {
-			$types            = explode( ',', $value );
-			$registered_types = bp_get_member_types();
-			// Add the special value.
+			$types              = explode( ',', $value );
+			$registered_types   = bp_get_member_types();
 			$registered_types[] = 'any';
-			$valid_types = array_intersect( $types, $registered_types );
+			$valid_types        = array_intersect( $types, $registered_types );
 
-			if ( ! empty( $valid_types ) ) {
-				return $valid_types;
-			} else {
-				return null;
-			}
+			return ( ! empty( $valid_types ) )
+				? $valid_types
+				: null;
 		}
 		return $value;
 	}
@@ -538,7 +535,8 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			$registered_types[] = 'any';
 			foreach ( $types as $type ) {
 				if ( ! in_array( $type, $registered_types, true ) ) {
-					return new WP_Error( 'rest_invalid_group_type',sprintf( __( 'The member type you provided, %s, is not one of %s.' ), $type, implode( ', ', $registered_types ) ) );
+					/* translators: %1$s and %2$s is replaced with the registered types */
+					return new WP_Error( 'rest_invalid_group_type',sprintf( __( 'The member type you provided, %$1s, is not one of %$2s.' ), $type, implode( ', ', $registered_types ) ) );
 				}
 			}
 		}
