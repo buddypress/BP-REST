@@ -290,9 +290,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	public function prepare_item_for_response( $item, $request, $is_raw = false ) {
 		$data = $this->assemble_response_data( $item, $request, $is_raw );
 
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
-
 		$response = rest_ensure_response( $data );
 		$response->add_links( $this->prepare_links( $item ) );
 
