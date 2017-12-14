@@ -61,7 +61,7 @@ function bp_rest_api_endpoints() {
 		$controller->register_routes();
 	}
 
-	// Member response filters
+	// Member response filters.
 	require_once( dirname( __FILE__ ) . '/includes/bp-members/bp-members-filters.php' );
 
 }

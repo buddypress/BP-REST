@@ -158,6 +158,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'type'        => 'integer',
 					'context'     => array( 'view', 'edit' ),
 				),
+
 				'comments'              => array(
 					'description' => __( 'Childrens of the object.', 'buddypress' ),
 					'type'        => 'array',
@@ -655,7 +656,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$schema = $this->get_item_schema();
 
-		if ( ! empty( $schema['properties']['comments'] ) && 'threaded' == $request['display_comments'] ) {
+		if ( ! empty( $schema['properties']['comments'] ) && 'threaded' === $request['display_comments'] ) {
 			$data['comments'] = $this->prepare_activity_comments( $activity->children, $request );
 		}
 
@@ -683,21 +684,27 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Prepare activity comments
+	 * Prepare activity comments.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param  object          $comments Comments.
 	 * @param  WP_REST_Request $request Full details about the request.
 	 * @return array           description.
 	 */
-	public function prepare_activity_comments( $comments, $request ) {
+	protected function prepare_activity_comments( $comments, $request ) {
 		$data = array();
+
 		if ( empty( $comments ) ) {
 			return $data;
 		}
+
 		foreach ( $comments as $comment ) {
-			$comment = $this->prepare_item_for_response( $comment, $request );
-			$data[]  = $this->prepare_response_for_collection( $comment );
+			$data[]  = $this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $comment, $request )
+			);
 		}
+
 		return $data;
 	}
 
