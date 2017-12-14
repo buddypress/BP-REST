@@ -29,3 +29,6 @@ Changes are proposed in the form of pull requests by you, the contributor! After
 submitting your proposed changes, a member of the API team will review your
 commits and mark them for merge by assigning it to themselves. Your pull request
 will then be merged after final review by another member.
+
+## Unit tests
+It's important the code submitted comes with proper unit tests and comply with the WordPress Coding Standards.

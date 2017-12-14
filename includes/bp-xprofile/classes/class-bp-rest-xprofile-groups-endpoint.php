@@ -1,15 +1,22 @@
 <?php
+/**
+ * BP REST: BP_REST_XProfile_Groups_Endpoint class
+ *
+ * @package BuddyPress
+ * @since 0.1.0
+ */
+
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Endpoints to retrieve information about profile field groups.
+ * XProfile field groups.
  *
  * Use /xprofile/ to find info about all groups
  * Use /xprofile/{id} to return info about a single group
  *
  * @since 0.1.0
  */
-class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
+class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 	/**
 	 * Constructor.
@@ -27,7 +34,6 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-		// Fetch xprofile groups.
 		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -38,7 +44,6 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
 
-		// Fetch a single xprofile group.
 		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -100,7 +105,7 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 					'description' => __( 'The fields associated with this field group.', 'buddypress' ),
 					'type'        => 'array',
 				),
-			)
+			),
 		);
 
 		return $schema;
@@ -200,86 +205,6 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Retrieve xprofile field groups.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request
-	 * @return WP_REST_Request List of activity object data.
-	 */
-	public function get_items( $request ) {
-
-		$args = array(
-			'user_id'                => $request['user_id'],
-			'member_type'            => $request['member_type'],
-			'hide_empty_groups'      => $request['hide_empty_groups'],
-			'hide_empty_fields'      => $request['hide_empty_fields'],
-			'fetch_fields'           => $request['fetch_fields'],
-			'fetch_field_data'       => $request['fetch_field_data'],
-			'fetch_visibility_level' => $request['fetch_visibility_level'],
-			'exclude_groups'         => $request['exclude_groups'],
-			'exclude_fields'         => $request['exclude_fields'],
-			'update_meta_cache'      => $request['update_meta_cache'],
-		);
-
-		$field_groups = bp_xprofile_get_groups( $args );
-
-		$retval = array();
-		foreach ( $field_groups as $item ) {
-			$retval[] = $this->prepare_response_for_collection(
-				$this->prepare_groups_for_response( $item, $request )
-			);
-		}
-
-		return rest_ensure_response( $retval );
-	}
-
-	/**
-	 * Prepares xprofile groups for return as an object.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param stdClass $item Xprofile group data.
-	 * @param WP_REST_Request $request
-	 * @param boolean $is_raw Optional, not used. Defaults to false.
-	 * @return WP_REST_Response
-	 */
-	public function prepare_groups_for_response( $item, $request, $is_raw = false ) {
-		$data = array(
-			'id'           => (int) $item->id,
-			'name'         => $item->name,
-			'description'  => $item->description,
-			'group_order'  => (int) $item->group_order,
-			'can_delete'   => (bool) $item->can_delete,
-		);
-
-		// If the fields have been requested, we populate them.
-		if ( $request['fetch_fields'] ) {
-			$data['fields'] = array();
-			$fields_controller = new BP_REST_XProfile_Fields_Controller;
-			foreach ( $item->fields as $field ) {
-				$data['fields'][] = $fields_controller->assemble_response_data( $field, $request );
-			}
-		}
-
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
-
-		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $item ) );
-
-		/**
-		 * Filter the xprofile groups overview value returned from the API.
-		 *
-		 * @param array           $response
-		 * @param WP_REST_Request $request Request used to generate the response.
-		 */
-		return apply_filters( 'rest_prepare_buddypress_xprofile_groups_value', $response, $request );
-	}
-
-	/**
 	 * Get the query params for single xprofile field groups.
 	 *
 	 * @since 0.1.0
@@ -352,11 +277,93 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Retrieve xprofile field groups.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Request List of activity object data.
+	 */
+	public function get_items( $request ) {
+		$args = array(
+			'user_id'                => $request['user_id'],
+			'member_type'            => $request['member_type'],
+			'hide_empty_groups'      => $request['hide_empty_groups'],
+			'hide_empty_fields'      => $request['hide_empty_fields'],
+			'fetch_fields'           => $request['fetch_fields'],
+			'fetch_field_data'       => $request['fetch_field_data'],
+			'fetch_visibility_level' => $request['fetch_visibility_level'],
+			'exclude_groups'         => $request['exclude_groups'],
+			'exclude_fields'         => $request['exclude_fields'],
+			'update_meta_cache'      => $request['update_meta_cache'],
+		);
+
+		$field_groups = bp_xprofile_get_groups( $args );
+
+		$retval = array();
+		foreach ( $field_groups as $item ) {
+			$retval[] = $this->prepare_response_for_collection(
+				$this->prepare_groups_for_response( $item, $request )
+			);
+		}
+
+		return rest_ensure_response( $retval );
+	}
+
+	/**
+	 * Prepares xprofile groups for return as an object.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param stdClass        $item Xprofile group data.
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @param boolean         $is_raw Optional, not used. Defaults to false.
+	 * @return WP_REST_Response
+	 */
+	public function prepare_groups_for_response( $item, $request, $is_raw = false ) {
+		$data = array(
+			'id'           => (int) $item->id,
+			'name'         => $item->name,
+			'description'  => $item->description,
+			'group_order'  => (int) $item->group_order,
+			'can_delete'   => (bool) $item->can_delete,
+		);
+
+		// If the fields have been requested, we populate them.
+		if ( $request['fetch_fields'] ) {
+			$data['fields'] = array();
+			$fields_controller = new BP_REST_XProfile_Fields_Endpoint();
+
+			foreach ( $item->fields as $field ) {
+				$data['fields'][] = $fields_controller->assemble_response_data( $field, $request );
+			}
+		}
+
+		$context = ! empty( $request['context'] )
+			? $request['context']
+			: 'view';
+
+		$data    = $this->add_additional_fields_to_object( $data, $request );
+		$data    = $this->filter_response_by_context( $data, $context );
+
+		$response = rest_ensure_response( $data );
+		$response->add_links( $this->prepare_links( $item ) );
+
+		/**
+		 * Filter the xprofile groups overview value returned from the API.
+		 *
+		 * @param array           $response
+		 * @param WP_REST_Request $request Request used to generate the response.
+		 */
+		return apply_filters( 'rest_prepare_buddypress_xprofile_groups_value', $response, $request );
+	}
+
+	/**
 	 * Retrieve single xprofile group.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request Full data about the request.
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function get_item( $request ) {
@@ -374,14 +381,22 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 			'update_meta_cache'      => $request['update_meta_cache'],
 		);
 
-		$field_groups = bp_xprofile_get_groups( $args );
-		$field_group  = current( $field_groups );
+		$field_group  = current( bp_xprofile_get_groups( $args ) );
 
 		if ( empty( $profile_group_id ) || empty( $field_group->id ) ) {
-			return new WP_Error( 'bp_rest_invalid_group_id', __( 'Invalid resource id.' ), array( 'status' => 404 ) );
-		} else {
-			$retval = $this->prepare_item_for_response( $field_group, $request );
+			return new WP_Error( 'bp_rest_invalid_group_id',
+				__( 'Invalid resource id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
 		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $field_group, $request )
+			),
+		);
 
 		return rest_ensure_response( $retval );
 	}
@@ -391,13 +406,12 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass $item Xprofile group data.
-	 * @param WP_REST_Request $request
-	 * @param boolean $is_raw Optional, not used. Defaults to false.
+	 * @param stdClass        $item Xprofile group data.
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @param boolean         $is_raw Optional, not used. Defaults to false.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $item, $request, $is_raw = false ) {
-		// Core data
 		$data = array(
 			'id'           => (int) $item->id,
 			'name'         => $item->name,
@@ -409,13 +423,16 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 		// If the fields have been requested, we populate them.
 		if ( $request['fetch_fields'] ) {
 			$data['fields'] = array();
-			$fields_controller = new BP_REST_XProfile_Fields_Controller;
+			$fields_controller = new BP_REST_XProfile_Fields_Endpoint();
+
 			foreach ( $item->fields as $field ) {
 				$data['fields'][] = $fields_controller->assemble_response_data( $field, $request );
 			}
 		}
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context = ! empty( $request['context'] )
+			? $request['context']
+			: 'view';
 
 		$data    = $this->add_additional_fields_to_object( $data, $request );
 		$data    = $this->filter_response_by_context( $data, $context );
@@ -432,9 +449,8 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 		return apply_filters( 'rest_prepare_buddypress_xprofile_group_value', $response, $request );
 	}
 
-
 	/**
-	 * Check if a given request has access to get information about a specific activity.
+	 * Check if a given request has access to get information about a specific field group.
 	 *
 	 * @since 0.1.0
 	 *
@@ -454,8 +470,6 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		// @TODO: Much of this is handled by the visibility logic.
-
 		return true;
 	}
 
@@ -510,9 +524,9 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 	/**
 	 * Validate member_type input.
 	 *
-	 * @param  mixed            $value
-	 * @param  WP_REST_Request  $request
-	 * @param  string           $param
+	 * @param  mixed           $value mixed value.
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @param  string          $param string.
 	 *
 	 * @return WP_Error|boolean
 	 */
@@ -522,9 +536,9 @@ class BP_REST_XProfile_Groups_Controller extends WP_REST_Controller {
 			$registered_types = bp_get_member_types();
 			// Add the special value.
 			$registered_types[] = 'any';
-			foreach ( $types as $type) {
-				if ( ! in_array( $type, $registered_types ) ) {
-					return new WP_Error( 'rest_invalid_group_type', sprintf( __( 'The member type you provided, %s, is not one of %s.' ), $type, implode( ', ', $registered_types ) ) );
+			foreach ( $types as $type ) {
+				if ( ! in_array( $type, $registered_types, true ) ) {
+					return new WP_Error( 'rest_invalid_group_type',sprintf( __( 'The member type you provided, %s, is not one of %s.' ), $type, implode( ', ', $registered_types ) ) );
 				}
 			}
 		}
