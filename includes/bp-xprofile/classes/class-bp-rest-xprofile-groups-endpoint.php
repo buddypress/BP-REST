@@ -322,16 +322,16 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_groups_for_response( $item, $request, $is_raw = false ) {
 		$data = array(
-			'id'           => (int) $item->id,
-			'name'         => $item->name,
-			'description'  => $item->description,
-			'group_order'  => (int) $item->group_order,
-			'can_delete'   => (bool) $item->can_delete,
+			'id'          => (int) $item->id,
+			'name'        => $item->name,
+			'description' => $item->description,
+			'group_order' => (int) $item->group_order,
+			'can_delete'  => (bool) $item->can_delete,
 		);
 
 		// If the fields have been requested, we populate them.
 		if ( $request['fetch_fields'] ) {
-			$data['fields'] = array();
+			$data['fields']    = array();
 			$fields_controller = new BP_REST_XProfile_Fields_Endpoint();
 
 			foreach ( $item->fields as $field ) {
@@ -381,7 +381,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'update_meta_cache'      => $request['update_meta_cache'],
 		);
 
-		$field_group  = current( bp_xprofile_get_groups( $args ) );
+		$field_group = current( bp_xprofile_get_groups( $args ) );
 
 		if ( empty( $profile_group_id ) || empty( $field_group->id ) ) {
 			return new WP_Error( 'bp_rest_invalid_group_id',
@@ -422,7 +422,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 		// If the fields have been requested, we populate them.
 		if ( $request['fetch_fields'] ) {
-			$data['fields'] = array();
+			$data['fields']    = array();
 			$fields_controller = new BP_REST_XProfile_Fields_Endpoint();
 
 			foreach ( $item->fields as $field ) {
@@ -434,8 +434,8 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			? $request['context']
 			: 'view';
 
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
+		$data = $this->add_additional_fields_to_object( $data, $request );
+		$data = $this->filter_response_by_context( $data, $context );
 
 		$response = rest_ensure_response( $data );
 		$response->add_links( $this->prepare_links( $item ) );
@@ -486,7 +486,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 		// Entity meta.
 		$links = array(
-			'self' => array(
+			'self'       => array(
 				'href' => rest_url( $base . $item->id ),
 			),
 			'collection' => array(
@@ -531,12 +531,13 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		if ( ! empty( $value ) ) {
 			$types            = explode( ',', $value );
 			$registered_types = bp_get_member_types();
+
 			// Add the special value.
 			$registered_types[] = 'any';
 			foreach ( $types as $type ) {
 				if ( ! in_array( $type, $registered_types, true ) ) {
 					/* translators: %1$s and %2$s is replaced with the registered types */
-					return new WP_Error( 'rest_invalid_group_type',sprintf( __( 'The member type you provided, %$1s, is not one of %$2s.' ), $type, implode( ', ', $registered_types ) ) );
+					return new WP_Error( 'rest_invalid_group_type', sprintf( __( 'The member type you provided, %$1s, is not one of %$2s.' ), $type, implode( ', ', $registered_types ) ) );
 				}
 			}
 		}

@@ -440,7 +440,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	public function get_items_permissions_check( $request ) {
 		if ( ! $this->can_see( $request ) ) {
 			return new WP_Error( 'rest_user_cannot_view_activity',
-				__( 'Sorry, you cannot view the activities.' ),
+				__( 'Sorry, you cannot view the activities.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -449,7 +449,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( ! $this->can_see( $request, true ) ) {
 			return new WP_Error( 'rest_forbidden_context',
-				__( 'Sorry, you cannot view this resource with edit context.' ),
+				__( 'Sorry, you cannot view this resource with edit context.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -577,7 +577,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( ! $retval ) {
 			return new WP_Error( 'rest_activity_cannot_delete',
-				__( 'Could not delete the activity.' ),
+				__( 'Could not delete the activity.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
@@ -609,7 +609,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( empty( $activity->id ) ) {
 			return new WP_Error( 'rest_activity_invalid_id',
-				__( 'Invalid activity id.' ),
+				__( 'Invalid activity id.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -618,7 +618,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( ! $this->can_see( $request ) ) {
 			return new WP_Error( 'rest_user_cannot_delete_activity',
-				__( 'Sorry, you cannot delete the activities.' ),
+				__( 'Sorry, you cannot delete the activities.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
