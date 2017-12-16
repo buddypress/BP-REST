@@ -583,8 +583,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$activity_id = bp_activity_add( $prepared_activity );
 
 		if ( ! is_numeric( $activity_id ) ) {
-			return new WP_Error( 'rest_user_cannot_create_activity',
-				__( 'Cannot create new activity.', 'buddypress' ),
+			return new WP_Error( 'rest_user_cannot_update_activity',
+				__( 'Cannot update existing activity.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
