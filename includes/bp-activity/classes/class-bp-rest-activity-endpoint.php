@@ -563,6 +563,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	/**
 	 * Update an activity
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response|WP_Error
 	 */
@@ -578,9 +580,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$prepared_activity = $this->prepare_item_for_database( $request );
-
-		$activity_id = bp_activity_add( $prepared_activity );
+		$activity_id = bp_activity_add( $this->prepare_item_for_database( $request ) );
 
 		if ( ! is_numeric( $activity_id ) ) {
 			return new WP_Error( 'rest_user_cannot_update_activity',
@@ -591,9 +591,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$activity = $this->get_activity_object( array(
-			'in' => $activity_id,
-		) );
+		$activity = $this->get_activity_object( $activity_id );
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -613,8 +611,18 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
+
+		// Bail early.
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
 		$activity = $this->get_activity_object( $request );
-		$user_id  = bp_loggedin_user_id();
 
 		if ( empty( $activity->id ) ) {
 			return new WP_Error( 'rest_activity_invalid_id',
@@ -626,7 +634,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// If activity author does not match logged_in user, block access.
-		if ( $user_id !== $activity->user_id ) {
+		if ( bp_loggedin_user_id() !== $activity->user_id ) {
 			return new WP_Error( 'rest_activity_cannot_update',
 				__( 'You are not allowed to update this activity.', 'buddypress' ),
 				array(
@@ -689,6 +697,17 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
+
+		// Bail early.
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you are not allowed to delete this activity.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
 		$activity = $this->get_activity_object( $request );
 
 		if ( empty( $activity->id ) ) {
@@ -1022,8 +1041,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return object An activity object.
 	 */
 	protected function get_activity_object( $request ) {
+		$activity_id = is_numeric( $request )
+			? $request
+			: (int) $request['id'];
+
 		$activity = bp_activity_get( array(
-			'in' => (int) $request['id'],
+			'in' => $activity_id,
 		) );
 
 		return $activity['activities'][0];
