@@ -59,6 +59,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				),
 			),
 			array(
+				'methods'             => WP_REST_Server::EDITABLE,
+				'callback'            => array( $this, 'update_item' ),
+				'permission_callback' => array( $this, 'update_item_permissions_check' ),
+				'args'                => $this->get_endpoint_args_for_item_schema( false ),
+			),
+			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array( $this, 'delete_item' ),
 				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
@@ -555,6 +561,84 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Update an activity
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function update_item( $request ) {
+
+		// Bail early.
+		if ( empty( $request['content'] ) ) {
+			return new WP_Error( 'rest_update_activity_empty_content',
+				__( 'Please, enter some content.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$prepared_activity = $this->prepare_item_for_database( $request );
+
+		$activity_id = bp_activity_add( $prepared_activity );
+
+		if ( ! is_numeric( $activity_id ) ) {
+			return new WP_Error( 'rest_user_cannot_create_activity',
+				__( 'Cannot create new activity.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$activity = $this->get_activity_object( array(
+			'in' => $activity_id,
+		) );
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $activity, $request )
+			),
+		);
+
+		return rest_ensure_response( $retval );
+	}
+
+	/**
+	 * Check if a given request has access to update an activity.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function update_item_permissions_check( $request ) {
+		$activity = $this->get_activity_object( $request );
+		$user_id  = bp_loggedin_user_id();
+
+		if ( empty( $activity->id ) ) {
+			return new WP_Error( 'rest_activity_invalid_id',
+				__( 'Invalid activity id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		// If activity author does not match logged_in user, block access.
+		if ( $user_id !== $activity->user_id ) {
+			return new WP_Error( 'rest_activity_cannot_update',
+				__( 'You are not allowed to update this activity.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Delete an activity.
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
@@ -721,17 +805,24 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$schema = $this->get_item_schema();
 
-		// Activity ID.
-		if ( ! empty( $schema['properties']['id'] ) && ( 'activity_comment' === $request['type'] ) && isset( $request['id'] ) ) {
-			$prepared_activity->activity_id = (int) $request['id'];
+		$activity = $this->get_activity_object( $request );
+
+		if ( ! empty( $schema['properties']['id'] ) && ! empty( $activity->id ) ) {
+			if ( 'activity_comment' === $request['type'] ) {
+				$prepared_activity->activity_id = $activity->id;
+			} else {
+				$prepared_activity->id         = $activity->id;
+				$prepared_activity->component  = buddypress()->activity->id;
+				$prepared_activity->error_type = 'wp_error';
+			}
 		}
 
-		// Parent.
+		// Comment parent.
 		if ( ! empty( $schema['properties']['parent'] ) && ( 'activity_comment' === $request['type'] ) && isset( $request['parent'] ) ) {
 			$prepared_activity->parent_id = $request['parent'];
 		}
 
-		// Group ID.
+		// Group id.
 		if ( ! empty( $schema['properties']['prime_association'] ) && ( 'activity_update' === $request['type'] ) && isset( $request['prime_association'] ) ) {
 			$prepared_activity->group_id = (int) $request['prime_association'];
 		}
