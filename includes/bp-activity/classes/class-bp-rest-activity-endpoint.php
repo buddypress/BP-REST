@@ -193,7 +193,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'context'     => array( 'embed', 'view', 'edit' ),
 			);
 
-			$schema['properties']['user_avatar_urls']  = array(
+			$schema['properties']['user_avatar_urls'] = array(
 				'description' => __( 'Avatar URLs for the member.', 'buddypress' ),
 				'type'        => 'object',
 				'context'     => array( 'embed', 'view', 'edit' ),
