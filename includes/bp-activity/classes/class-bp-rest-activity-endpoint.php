@@ -166,7 +166,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				),
 
 				'comments'              => array(
-					'description' => __( 'Childrens of the object.', 'buddypress' ),
+					'description' => __( 'The ID for the parent of the object.', 'buddypress' ),
 					'type'        => 'array',
 					'context'     => array( 'view', 'edit' ),
 				),
@@ -180,7 +180,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			foreach ( $avatar_sizes as $size ) {
 				$avatar_properties[ $size ] = array(
 					/* translators: %d: avatar image size in pixels */
-					'description' => sprintf( __( 'Avatar URL with image size of %d pixels.' ), $size ),
+					'description' => sprintf( __( 'Avatar URL with image size of %d pixels.' ), number_format_i18n( $size ) ),
 					'type'        => 'string',
 					'format'      => 'uri',
 					'context'     => array( 'embed', 'view', 'edit' ),
@@ -800,9 +800,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$data['user_avatar_urls'] = rest_get_avatar_urls( $activity->user_email );
 		}
 
-		$context = ! empty( $request['context'] )
-			? $request['context']
-			: 'view';
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
 		$data = $this->add_additional_fields_to_object( $data, $request );
 		$data = $this->filter_response_by_context( $data, $context );
@@ -854,10 +852,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	protected function prepare_item_for_database( $request ) {
 		$prepared_activity = new stdClass();
-
-		$schema = $this->get_item_schema();
-
-		$activity = $this->get_activity_object( $request );
+		$schema            = $this->get_item_schema();
+		$activity          = $this->get_activity_object( $request );
 
 		if ( ! empty( $schema['properties']['id'] ) && ! empty( $activity->id ) ) {
 			if ( 'activity_comment' === $request['type'] ) {
@@ -921,7 +917,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'user'       => array(
-				'href' => rest_url( '/wp/v2/users/' . $activity->user_id ),
+				'href' => rest_url( sprintf( '/wp/v2/users/%d', $activity->user_id ) ),
 			),
 		);
 
@@ -947,12 +943,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$user_id = bp_loggedin_user_id();
 		$retval  = true;
 
-		// Admins can see it all.
-		if ( is_super_admin( $user_id ) ) {
-			return true;
-		}
-
-		// Moderators as well.
+		// Moderators and admins can see it all.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = true;
 		}
@@ -1017,12 +1008,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$user_id = bp_loggedin_user_id();
 		$retval  = false;
 
-		// Admins see it all.
-		if ( is_super_admin( $user_id ) ) {
-			return true;
-		}
-
-		// Moderators as well.
+		// Admins and Moderators can see it all.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = true;
 		}
@@ -1074,9 +1060,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return object An activity object.
 	 */
 	protected function get_activity_object( $request ) {
-		$activity_id = is_numeric( $request )
-			? $request
-			: (int) $request['id'];
+		$activity_id = is_numeric( $request ) ? $request : (int) $request['id'];
 
 		$activity = bp_activity_get( array(
 			'in' => $activity_id,
