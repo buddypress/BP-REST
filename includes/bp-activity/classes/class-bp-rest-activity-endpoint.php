@@ -173,24 +173,30 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		if ( get_option( 'show_avatars' ) ) {
+		// Avatars.
+		if ( true === buddypress()->avatar->show_avatars ) {
 			$avatar_properties = array();
 
-			$avatar_sizes = rest_get_avatar_sizes();
-			foreach ( $avatar_sizes as $size ) {
-				$avatar_properties[ $size ] = array(
-					/* translators: %d: avatar image size in pixels */
-					'description' => sprintf( __( 'Avatar URL with image size of %d pixels.' ), number_format_i18n( $size ) ),
-					'type'        => 'string',
-					'format'      => 'uri',
-					'context'     => array( 'embed', 'view', 'edit' ),
-				);
-			}
+			$avatar_properties['full'] = array(
+				/* translators: Full image size for the member Avatar */
+				'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), bp_core_avatar_full_width(), bp_core_avatar_full_height() ),
+				'type'        => 'string',
+				'format'      => 'uri',
+				'context'     => array( 'embed', 'view', 'edit' ),
+			);
 
-			$schema['properties']['user_avatar_urls'] = array(
-				'description' => __( 'Avatar URLs for the object user.' ),
+			$avatar_properties['thumb'] = array(
+				/* translators: Thumb imaze size for the member Avatar */
+				'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), bp_core_avatar_thumb_width(), bp_core_avatar_thumb_height() ),
+				'type'        => 'string',
+				'format'      => 'uri',
+				'context'     => array( 'embed', 'view', 'edit' ),
+			);
+
+			$schema['properties']['user_avatar_urls']  = array(
+				'description' => __( 'Avatar URLs for the member.', 'buddypress' ),
 				'type'        => 'object',
-				'context'     => array( 'view', 'edit', 'embed' ),
+				'context'     => array( 'embed', 'view', 'edit' ),
 				'readonly'    => true,
 				'properties'  => $avatar_properties,
 			);
@@ -797,7 +803,18 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! empty( $schema['properties']['user_avatar_urls'] ) ) {
-			$data['user_avatar_urls'] = rest_get_avatar_urls( $activity->user_email );
+			$data['user_avatar_urls'] = array(
+				'full'  => bp_core_fetch_avatar( array(
+					'item_id' => $activity->user_id,
+					'html'    => false,
+					'type'    => 'full',
+				) ),
+
+				'thumb' => bp_core_fetch_avatar( array(
+					'item_id' => $activity->user_id,
+					'html'    => false,
+				) ),
+			);
 		}
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -943,7 +960,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$user_id = bp_loggedin_user_id();
 		$retval  = true;
 
-		// Moderators and admins can see it all.
+		// Admins can see it all.
+		if ( is_super_admin( $user_id ) ) {
+			return true;
+		}
+
+		// Moderators as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = true;
 		}
@@ -1008,7 +1030,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$user_id = bp_loggedin_user_id();
 		$retval  = false;
 
-		// Admins and Moderators can see it all.
+		// Admins can see it all.
+		if ( is_super_admin( $user_id ) ) {
+			return true;
+		}
+
+		// Moderators as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = true;
 		}
