@@ -339,7 +339,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'secondary_id'      => $request['secondary_id'],
 			'sort'              => $request['order'],
 			'spam'              => 'spam' === $request['status'] ? 'spam_only' : 'ham_only',
-			'user_id'           => $request['user'],
 			'display_comments'  => $request['display_comments'],
 
 			// Set optimised defaults.
@@ -352,6 +351,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( isset( $request['after'] ) ) {
 			$args['since'] = $request['after'];
+		}
+
+		if ( isset( $request['user'] ) ) {
+			$args['filter']['user_id'] = $request['user'];
 		}
 
 		if ( isset( $request['component'] ) ) {
