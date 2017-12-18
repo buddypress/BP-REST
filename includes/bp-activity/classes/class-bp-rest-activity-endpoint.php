@@ -412,7 +412,20 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return rest_ensure_response( $retval );
+		$retval = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after an activity is fetched via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param object           $activity Fetched activity.
+		 * @param WP_REST_Response $retval   The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'rest_activity_get', $activity, $retval, $request );
+
+		return $retval;
 	}
 
 	/**
@@ -514,7 +527,20 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return rest_ensure_response( $retval );
+		$retval = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after an activity is created via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param object           $activity The created activity.
+		 * @param WP_REST_Response $retval   The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'rest_activity_create', $activity, $retval, $request );
+
+		return $retval;
 	}
 
 	/**
@@ -591,7 +617,20 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return rest_ensure_response( $retval );
+		$retval = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after an activity is updated via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param object           $activity The updated activity.
+		 * @param WP_REST_Response $retval   The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'rest_activity_update', $activity, $retval, $request );
+
+		return $retval;
 	}
 
 	/**
@@ -670,6 +709,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		/**
 		 * Fires after an activity is deleted via the REST API.
+		 *
+		 * @since 0.1.0
 		 *
 		 * @param object           $activity The deleted activity.
 		 * @param WP_REST_Response $response The response data.
