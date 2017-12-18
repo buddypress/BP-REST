@@ -347,6 +347,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'fields'            => 'all',
 			'show_hidden'       => false,
 			'update_meta_cache' => true,
+			'filter'            => false,
 		);
 
 		if ( isset( $request['after'] ) ) {
@@ -354,23 +355,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( isset( $request['component'] ) ) {
-			if ( ! isset( $args['filter'] ) ) {
-				$args['filter'] = array(
-					'object' => $request['component'],
-				);
-			} else {
-				$args['filter']['object'] = $request['component'];
-			}
+			$args['filter']['object'] = $request['component'];
 		}
 
 		if ( isset( $request['type'] ) ) {
-			if ( ! isset( $args['filter'] ) ) {
-				$args['filter'] = array(
-					'action' => $request['type'],
-				);
-			} else {
-				$args['filter']['action'] = $request['type'];
-			}
+			$args['filter']['action'] = $request['type'];
 		}
 
 		if ( $args['in'] ) {
