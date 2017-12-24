@@ -340,9 +340,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'in'                => $request['include'],
 			'page'              => $request['page'],
 			'per_page'          => $request['per_page'],
-			'primary_id'        => $request['primary_id'],
 			'search_terms'      => $request['search'],
-			'secondary_id'      => $request['secondary_id'],
 			'sort'              => $request['order'],
 			'spam'              => 'spam' === $request['status'] ? 'spam_only' : 'ham_only',
 			'display_comments'  => $request['display_comments'],
@@ -369,6 +367,14 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( isset( $request['type'] ) ) {
 			$args['filter']['action'] = $request['type'];
+		}
+
+		if ( isset( $request['primary_id'] ) ) {
+			$args['filter']['primary_id'] = $request['primary_id'];
+		}
+
+		if ( isset( $request['secondary_id'] ) ) {
+			$args['filter']['secondary_id'] = $request['secondary_id'];
 		}
 
 		if ( $args['in'] ) {
