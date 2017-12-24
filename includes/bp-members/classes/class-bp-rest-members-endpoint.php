@@ -126,6 +126,12 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'type'        => 'object',
 					'context'     => array( 'embed', 'view', 'edit' ),
 				),
+
+				'xprofile' => array(
+					'description' => __( 'Member XProfile fields.', 'buddypress' ),
+					'type'        => 'array',
+					'context'     => array( 'embed', 'view', 'edit' ),
+				),
 			),
 		);
 
@@ -234,6 +240,10 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$data['extra_capabilities'] = (object) $user->caps;
 		}
 
+		if ( ! empty( $schema['properties']['xprofile'] ) ) {
+			$data['xprofile'] = $this->xprofile( $user->ID );
+		}
+
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'embed';
 
 		$data = $this->add_additional_fields_to_object( $data, $request );
@@ -300,6 +310,40 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
+	 * Get XProfile info from the user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  [type] $user_id User ID.
+	 * @return XProfile info.
+	 */
+	protected function xprofile( $user_id ) {
+
+		// Get group info.
+		$groups = bp_xprofile_get_groups( array(
+			'user_id'                => $user_id,
+			'fetch_fields'           => true,
+			'fetch_field_data'       => true,
+		) );
+
+		$data = array();
+		foreach ( $groups as $group ) {
+			$data['groups'][ $group->id ] = array(
+				'name' => $group->name,
+			);
+
+			foreach ( $group->fields as $item ) {
+				$data['groups'][ $group->id ]['fields'][ $item->id ] = array(
+					'name'  => $item->name,
+					'value' => maybe_unserialize( $item->data->value ),
+				);
+			}
+		}
+
+		return $data;
+	}
+
+	/**
 	 * Can this user see a member?
 	 *
 	 * @since 0.1.0
@@ -327,8 +371,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		// Fix for edit content.
-		if ( $edit && 'edit' === $request['context'] && ! ( bp_current_user_can( 'bp_moderate' ) || current_user_can( 'edit_user' ) ) ) {
-			return false;
+		if ( $edit && 'edit' === $request['context'] && $retval ) {
+			$retval = true;
 		}
 
 		return (bool) $retval;
