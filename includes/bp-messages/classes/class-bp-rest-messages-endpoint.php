@@ -162,6 +162,14 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		$params['user_id'] = array(
+			'description'       => __( 'Limit result to messages created by specific users.', 'buddypress' ),
+			'type'              => 'integer',
+			'default'           => bp_loggedin_user_id(),
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		return $params;
 	}
 
@@ -175,6 +183,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
+			'user_id'      => $request['user_id'],
 			'box'          => $request['box'],
 			'type'         => $request['type'],
 			'page'         => $request['page'],
@@ -182,9 +191,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'search_terms' => $request['search'],
 		);
 
-		$retval       = array();
 		$messages_box = new BP_Messages_Box_Template( $args );
 
+		$retval = array();
 		foreach ( $messages_box->threads as $thread ) {
 			$retval[] = $this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $thread, $request )
@@ -204,11 +213,11 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 		// Bail early.
-		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
-				__( 'Sorry, you are not allowed to create activities.', 'buddypress' ),
+		if ( ! $this->can_see() ) {
+			return new WP_Error( 'rest_user_cannot_view_messages',
+				__( 'Sorry, you cannot view the messages.', 'buddypress' ),
 				array(
-					'status' => rest_authorization_required_code(),
+					'status' => 500,
 				)
 			);
 		}
@@ -229,19 +238,16 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$data = array(
 			'id'                    => $thread->thread_id,
 			'prime_association'     => $thread->last_message_id,
+			'secondary_association' => $thread->last_sender_id,
 			'subject'               => $thread->last_message_subject,
 			'message'               => $thread->last_message_content,
-			'secondary_association' => $thread->last_sender_id,
 			'date'                  => $thread->last_message_date,
+			'unread'                => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
+			'sender_ids'            => $thread->sender_ids,
 			'messages'              => $thread->messages,
-			'unread'                => $thread->unread_count,
 		);
 
-		$schema = $this->get_item_schema();
-
-		$context = ! empty( $request['context'] )
-			? $request['context']
-			: 'view';
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
 		$data = $this->add_additional_fields_to_object( $data, $request );
 		$data = $this->filter_response_by_context( $data, $context );
@@ -251,6 +257,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		/**
 		 * Filter a thread value returned from the API.
+		 *
+		 * @since 0.1.0
 		 *
 		 * @param array           $response
 		 * @param WP_REST_Request $request Request used to generate the response.
@@ -284,5 +292,43 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		);
 
 		return $links;
+	}
+
+	/**
+	 * Can this user see the message?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $thread_id Thread ID.
+	 * @return boolean
+	 */
+	protected function can_see( $thread_id = 0 ) {
+		$user_id = bp_loggedin_user_id();
+		$retval  = false;
+
+		// Admins can see it all.
+		if ( is_super_admin( $user_id ) ) {
+			return true;
+		}
+
+		// Moderators as well.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
+		}
+
+		// Check thread access.
+		if ( 0 !== $thread_id && messages_check_thread_access( $thread_id, $user_id ) ) {
+			$retval = true;
+		}
+
+		/**
+		 * Filter the retval.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool   $retval Return value.
+		 * @param int    $user_id User ID.
+		 */
+		return apply_filters( 'rest_thread_endpoint_can_see', $retval, $user_id );
 	}
 }
