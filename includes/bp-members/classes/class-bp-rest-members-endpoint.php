@@ -177,7 +177,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 */
 	protected function xprofile_data( $user_id ) {
 
-		// Get group info.
+		// Get XProfile group info.
 		$groups = bp_xprofile_get_groups( array(
 			'user_id'          => $user_id,
 			'fetch_fields'     => true,
@@ -214,13 +214,18 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$user_id = bp_loggedin_user_id();
 		$retval = false;
 
-		// Admins can see it all.
-		if ( is_super_admin( $user_id ) ) {
+		$user = $this->get_user( $request['id'] );
+		if ( is_wp_error( $user ) ) {
+			return false;
+		}
+
+		// Me, myself and I are always allowed access.
+		if ( $user_id === $user->ID ) {
 			return true;
 		}
 
 		// Moderators as well.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
+		if ( current_user_can( 'bp_moderate' ) ) {
 			$retval = true;
 		}
 
