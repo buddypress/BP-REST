@@ -26,6 +26,217 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
+	 * Checks if a given request has access to read a user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return true|WP_Error True if the request has read access for the item, otherwise WP_Error object.
+	 */
+	public function get_item_permissions_check( $request ) {
+		return $this->get_items_permissions_check( $request );
+	}
+
+
+	/**
+	 * Check if a given request has access to the list of users.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_Error|bool
+	 */
+	public function get_items_permissions_check( $request ) {
+
+		// Bail early.
+		if ( ! $this->can_see( $request ) ) {
+			return new WP_Error( 'rest_user_cannot_view',
+				__( 'Sorry, you are not allowed to list users.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		if ( ! $this->can_see( $request, true ) ) {
+			return new WP_Error( 'rest_forbidden_context',
+				__( 'Sorry, you cannot view this resource with edit context.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Prepares a single user output for response.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param stdClass        $user User data.
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response
+	 */
+	public function prepare_item_for_response( $user, $request ) {
+		$data   = array();
+		$schema = $this->get_item_schema();
+
+		if ( ! empty( $schema['properties']['id'] ) ) {
+			$data['id'] = $user->ID;
+		}
+
+		if ( ! empty( $schema['properties']['name'] ) ) {
+			$data['name'] = $user->display_name;
+		}
+
+		if ( ! empty( $schema['properties']['email'] ) ) {
+			$data['email'] = $user->user_email;
+		}
+
+		if ( ! empty( $schema['properties']['link'] ) ) {
+			$data['link'] = bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login );
+		}
+
+		if ( ! empty( $schema['properties']['user_login'] ) ) {
+			$data['user_login'] = bp_is_username_compatibility_mode() ? $user->user_login : $user->user_nicename;
+		}
+
+		if ( ! empty( $schema['properties']['registered_date'] ) ) {
+			$data['registered_date'] = date( 'c', strtotime( $user->user_registered ) );
+		}
+
+		if ( ! empty( $schema['properties']['avatar_urls'] ) ) {
+			$data['avatar_urls'] = array(
+				'full'  => bp_core_fetch_avatar( array(
+					'item_id' => $user->ID,
+					'html'    => false,
+					'type'    => 'full',
+				) ),
+
+				'thumb' => bp_core_fetch_avatar( array(
+					'item_id' => $user->ID,
+					'html'    => false,
+				) ),
+			);
+		}
+
+		// Member types.
+		if ( ! empty( $schema['properties']['member_types'] ) ) {
+			$data['member_types'] = bp_get_member_type( $user->ID, false );
+			if ( false === $data['member_types'] ) {
+				$data['member_types'] = array();
+			}
+		}
+
+		// Defensively call array_values() to ensure an array is returned.
+		if ( ! empty( $schema['properties']['roles'] ) ) {
+			$data['roles'] = array_values( $user->roles );
+		}
+
+		if ( ! empty( $schema['properties']['capabilities'] ) ) {
+			$data['capabilities'] = (object) $user->allcaps;
+		}
+
+		if ( ! empty( $schema['properties']['extra_capabilities'] ) ) {
+			$data['extra_capabilities'] = (object) $user->caps;
+		}
+
+		if ( ! empty( $schema['properties']['xprofile'] ) ) {
+			$data['xprofile'] = $this->xprofile_data( $user->ID );
+		}
+
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'embed';
+
+		$data = $this->add_additional_fields_to_object( $data, $request );
+		$data = $this->filter_response_by_context( $data, $context );
+
+		$response = rest_ensure_response( $data );
+		$response->add_links( $this->prepare_links( $user ) );
+
+		/**
+		 * Filters user data returned from the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param WP_REST_Response $response The response object.
+		 * @param object           $user     User object used to create response.
+		 * @param WP_REST_Request  $request  Request object.
+		 */
+		return apply_filters( 'rest_prepare_user', $response, $user, $request );
+	}
+
+	/**
+	 * Get XProfile info from the user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  int $user_id User ID.
+	 * @return array XProfile info.
+	 */
+	protected function xprofile_data( $user_id ) {
+
+		// Get group info.
+		$groups = bp_xprofile_get_groups( array(
+			'user_id'          => $user_id,
+			'fetch_fields'     => true,
+			'fetch_field_data' => true,
+		) );
+
+		$data = array();
+		foreach ( $groups as $group ) {
+			$data['groups'][ $group->id ] = array(
+				'name' => $group->name,
+			);
+
+			foreach ( $group->fields as $item ) {
+				$data['groups'][ $group->id ]['fields'][ $item->id ] = array(
+					'name'  => $item->name,
+					'value' => maybe_unserialize( $item->data->value ),
+				);
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Can this user see a member?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @param  boolean         $edit Edit fallback.
+	 * @return boolean
+	 */
+	protected function can_see( $request, $edit = false ) {
+		$user_id = bp_loggedin_user_id();
+		$retval = false;
+
+		// Admins can see it all.
+		if ( is_super_admin( $user_id ) ) {
+			return true;
+		}
+
+		// Moderators as well.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
+		}
+
+		if ( ! current_user_can( 'list_users' ) ) {
+			$retval = true;
+		}
+
+		// Fix for edit content.
+		if ( $edit && 'edit' === $request['context'] && $retval ) {
+			$retval = true;
+		}
+
+		return (bool) $retval;
+	}
+
+	/**
 	 * Get the plugin schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
@@ -125,12 +336,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'description' => __( 'Member types associated with the member.', 'buddypress' ),
 					'type'        => 'object',
 					'context'     => array( 'embed', 'view', 'edit' ),
+					'readonly'    => true,
 				),
 
 				'xprofile' => array(
-					'description' => __( 'Member XProfile fields.', 'buddypress' ),
+					'description' => __( 'Member XProfile groups and its fields.', 'buddypress' ),
 					'type'        => 'array',
 					'context'     => array( 'embed', 'view', 'edit' ),
+					'readonly'    => true,
 				),
 			),
 		);
@@ -165,216 +378,5 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		return $this->add_additional_fields_schema( $schema );
-	}
-
-	/**
-	 * Prepares a single user output for response.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param stdClass        $user User data.
-	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Response
-	 */
-	public function prepare_item_for_response( $user, $request ) {
-		$data = array();
-		$schema = $this->get_item_schema();
-
-		if ( ! empty( $schema['properties']['id'] ) ) {
-			$data['id'] = $user->ID;
-		}
-
-		if ( ! empty( $schema['properties']['name'] ) ) {
-			$data['name'] = $user->display_name;
-		}
-
-		if ( ! empty( $schema['properties']['email'] ) ) {
-			$data['email'] = $user->user_email;
-		}
-
-		if ( ! empty( $schema['properties']['link'] ) ) {
-			$data['link'] = bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login );
-		}
-
-		if ( ! empty( $schema['properties']['user_login'] ) ) {
-			$data['user_login'] = bp_is_username_compatibility_mode() ? $user->user_login : $user->user_nicename;
-		}
-
-		if ( ! empty( $schema['properties']['registered_date'] ) ) {
-			$data['registered_date'] = date( 'c', strtotime( $user->user_registered ) );
-		}
-
-		if ( ! empty( $schema['properties']['avatar_urls'] ) ) {
-			$data['avatar_urls'] = array(
-				'full'  => bp_core_fetch_avatar( array(
-					'item_id' => $user->ID,
-					'html'    => false,
-					'type'    => 'full',
-				) ),
-
-				'thumb' => bp_core_fetch_avatar( array(
-					'item_id' => $user->ID,
-					'html'    => false,
-				) ),
-			);
-		}
-
-		// Member types.
-		if ( ! empty( $schema['properties']['member_types'] ) ) {
-			$data['member_types'] = bp_get_member_type( $user->ID, false );
-			if ( false === $data['member_types'] ) {
-				$data['member_types'] = array();
-			}
-		}
-
-		// Defensively call array_values() to ensure an array is returned.
-		if ( ! empty( $schema['properties']['roles'] ) ) {
-			$data['roles'] = array_values( $user->roles );
-		}
-
-		if ( ! empty( $schema['properties']['capabilities'] ) ) {
-			$data['capabilities'] = (object) $user->allcaps;
-		}
-
-		if ( ! empty( $schema['properties']['extra_capabilities'] ) ) {
-			$data['extra_capabilities'] = (object) $user->caps;
-		}
-
-		if ( ! empty( $schema['properties']['xprofile'] ) ) {
-			$data['xprofile'] = $this->xprofile( $user->ID );
-		}
-
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'embed';
-
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
-
-		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $user ) );
-
-		/**
-		 * Filters user data returned from the REST API.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param WP_REST_Response $response The response object.
-		 * @param object           $user     User object used to create response.
-		 * @param WP_REST_Request  $request  Request object.
-		 */
-		return apply_filters( 'rest_prepare_user', $response, $user, $request );
-	}
-
-	/**
-	 * Checks if a given request has access to read a user.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full details about the request.
-	 * @return true|WP_Error True if the request has read access for the item, otherwise WP_Error object.
-	 */
-	public function get_item_permissions_check( $request ) {
-		return $this->get_items_permissions_check( $request );
-	}
-
-
-	/**
-	 * Check if a given request has access to the list of users.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_Error|bool
-	 */
-	public function get_items_permissions_check( $request ) {
-
-		// Bail early.
-		if ( ! $this->can_see( $request ) ) {
-			return new WP_Error( 'rest_user_cannot_view',
-				__( 'Sorry, you are not allowed to list users.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		if ( ! $this->can_see( $request, true ) ) {
-			return new WP_Error( 'rest_forbidden_context',
-				__( 'Sorry, you cannot view this resource with edit context.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		return true;
-	}
-
-	/**
-	 * Get XProfile info from the user.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param  [type] $user_id User ID.
-	 * @return XProfile info.
-	 */
-	protected function xprofile( $user_id ) {
-
-		// Get group info.
-		$groups = bp_xprofile_get_groups( array(
-			'user_id'                => $user_id,
-			'fetch_fields'           => true,
-			'fetch_field_data'       => true,
-		) );
-
-		$data = array();
-		foreach ( $groups as $group ) {
-			$data['groups'][ $group->id ] = array(
-				'name' => $group->name,
-			);
-
-			foreach ( $group->fields as $item ) {
-				$data['groups'][ $group->id ]['fields'][ $item->id ] = array(
-					'name'  => $item->name,
-					'value' => maybe_unserialize( $item->data->value ),
-				);
-			}
-		}
-
-		return $data;
-	}
-
-	/**
-	 * Can this user see a member?
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param  WP_REST_Request $request Full details about the request.
-	 * @param  boolean         $edit Edit fallback.
-	 * @return boolean
-	 */
-	protected function can_see( $request, $edit = false ) {
-		$user_id = bp_loggedin_user_id();
-		$retval = false;
-
-		// Admins can see it all.
-		if ( is_super_admin( $user_id ) ) {
-			return true;
-		}
-
-		// Moderators as well.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
-		}
-
-		if ( ! current_user_can( 'list_users' ) ) {
-			$retval = true;
-		}
-
-		// Fix for edit content.
-		if ( $edit && 'edit' === $request['context'] && $retval ) {
-			$retval = true;
-		}
-
-		return (bool) $retval;
 	}
 }
