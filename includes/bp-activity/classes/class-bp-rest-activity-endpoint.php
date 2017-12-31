@@ -26,7 +26,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Register the plugin routes.
+	 * Register the component routes.
 	 *
 	 * @since 0.1.0
 	 */
@@ -79,7 +79,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request List of activity object data.
+	 * @return WP_REST_Request List of activities object data.
 	 */
 	public function get_items( $request ) {
 		$args = array(
@@ -91,8 +91,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'sort'              => $request['order'],
 			'spam'              => 'spam' === $request['status'] ? 'spam_only' : 'ham_only',
 			'display_comments'  => $request['display_comments'],
-
-			// Set optimised defaults.
 			'count_total'       => true,
 			'fields'            => 'all',
 			'show_hidden'       => false,
@@ -158,7 +156,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Retrieve activity.
+	 * Retrieve an activity.
 	 *
 	 * @since 0.1.0
 	 *
