@@ -28,7 +28,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Register the routes.
+	 * Register the component routes.
 	 *
 	 * @since 0.1.0
 	 */
@@ -42,6 +42,187 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
+	}
+
+	/**
+	 * Retrieve single xprofile field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
+	 */
+	public function get_item( $request ) {
+		$profile_field_id = (int) $request['id'];
+
+		$field = xprofile_get_field( $profile_field_id );
+
+		if ( ! empty( $request['user_id'] ) ) {
+			$field->data = new stdClass();
+
+			// Ensure that the requester is allowed to see this field.
+			$hidden_user_fields = bp_xprofile_get_hidden_fields_for_user( $request['user_id'] );
+
+			$field->data->value = ( in_array( $profile_field_id, $hidden_user_fields, true ) )
+				? __( 'Value suppressed.', 'buddypress' )
+				: xprofile_get_field_data( $profile_field_id, $request['user_id'] );
+
+			// Set 'fetch_field_data' to true so that the data is included in the response.
+			$request['fetch_field_data'] = true;
+		}
+
+		if ( empty( $profile_field_id ) || empty( $field->id ) ) {
+			return new WP_Error( 'bp_rest_invalid_field_id',
+				__( 'Invalid resource id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $field, $request )
+			),
+		);
+
+		$retval = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after XProfile fields is fetched via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param object           $field    Fetched field.
+		 * @param WP_REST_Response $retval   The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'rest_xprofile_field_get_item', $field, $retval, $request );
+
+		return $retval;
+	}
+
+	/**
+	 * Assembles single xprofile field data for return as an object.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param stdClass        $item    XProfile group data.
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @param boolean         $is_raw  Optional, not used. Defaults to false.
+	 * @return Array
+	 */
+	public function assemble_response_data( $item, $request, $is_raw = false ) {
+		$data = array(
+			'id'                => (int) $item->id,
+			'group_id'          => (int) $item->group_id,
+			'parent_id'         => (int) $item->parent_id,
+			'type'              => $item->type,
+			'name'              => $item->name,
+			'description'       => $item->description,
+			'is_required'       => (bool) $item->is_required,
+			'can_delete'        => (bool) $item->can_delete,
+			'field_order'       => (int) $item->field_order,
+			'option_order'      => (int) $item->option_order,
+			'order_by'          => $item->order_by,
+			'is_default_option' => (bool) $item->is_default_option,
+		);
+
+		if ( ! empty( $request['fetch_visibility_level'] ) ) {
+			$data['visibility_level'] = $item->visibility_level;
+		}
+
+		if ( ! empty( $request['fetch_field_data'] ) ) {
+			if ( isset( $item->data->id ) ) {
+				$data['data']['id'] = $item->data->id;
+			}
+			$data['data']['value'] = maybe_unserialize( $item->data->value );
+		}
+
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+
+		$data = $this->add_additional_fields_to_object( $data, $request );
+		$data = $this->filter_response_by_context( $data, $context );
+
+		return $data;
+	}
+
+	/**
+	 * Prepares single XProfile field data to return as an object.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param stdClass        $item XProfile group data.
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @param boolean         $is_raw Optional, not used. Defaults to false.
+	 * @return WP_REST_Response
+	 */
+	public function prepare_item_for_response( $item, $request, $is_raw = false ) {
+		$data = $this->assemble_response_data( $item, $request, $is_raw );
+
+		$response = rest_ensure_response( $data );
+		$response->add_links( $this->prepare_links( $item ) );
+
+		/**
+		 * Filter the xprofile groups overview value returned from the API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $response
+		 * @param WP_REST_Request $request Request used to generate the response.
+		 */
+		return apply_filters( 'rest_prepare_buddypress_xprofile_fields_value', $response, $request );
+	}
+
+
+	/**
+	 * Check if a given request has access to get information about a specific field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return bool
+	 */
+	public function get_item_permissions_check( $request ) {
+		return $this->get_items_permissions_check( $request );
+	}
+
+	/**
+	 * Check if a given request has access to the fields.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_Error|bool
+	 */
+	public function get_items_permissions_check( $request ) {
+		// Protecting the values of non-private fields is
+		// handled above in get_item().
+		return true;
+	}
+
+	/**
+	 * Prepare links for the request.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $item Field.
+	 * @return array Links for the given plugin.
+	 */
+	protected function prepare_links( $item ) {
+		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
+
+		// Entity meta.
+		$links = array(
+			'self'       => array(
+				'href' => rest_url( $base . $item->id ),
+			),
+			'collection' => array(
+				'href' => rest_url( $base ),
+			),
+		);
+
+		return $links;
 	}
 
 	/**
@@ -155,7 +336,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params                       = parent::get_collection_params();
+		$params = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
 		return $params;
@@ -181,172 +362,5 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		);
 
 		return $params;
-	}
-
-	/**
-	 * Retrieve single xprofile field.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
-	 */
-	public function get_item( $request ) {
-		$profile_field_id = (int) $request['id'];
-
-		$field = xprofile_get_field( $profile_field_id );
-
-		if ( ! empty( $request['user_id'] ) ) {
-			$field->data = new stdClass();
-
-			// Ensure that the requester is allowed to see this field.
-			$hidden_user_fields = bp_xprofile_get_hidden_fields_for_user( $request['user_id'] );
-
-			$field->data->value = ( in_array( $profile_field_id, $hidden_user_fields, true ) )
-				? __( 'Value suppressed.', 'buddypress' )
-				: xprofile_get_field_data( $profile_field_id, $request['user_id'] );
-
-			// Set 'fetch_field_data' to true so that the data is included in the response.
-			$request['fetch_field_data'] = true;
-		}
-
-		if ( empty( $profile_field_id ) || empty( $field->id ) ) {
-			return new WP_Error( 'bp_rest_invalid_field_id',
-				__( 'Invalid resource id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $field, $request )
-			),
-		);
-
-		return rest_ensure_response( $retval );
-	}
-
-	/**
-	 * Assembles single xprofile field data for return as an object.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param stdClass        $item XProfile group data.
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @param boolean         $is_raw Optional, not used. Defaults to false.
-	 * @return Array
-	 */
-	public function assemble_response_data( $item, $request, $is_raw = false ) {
-		$data = array(
-			'id'                => (int) $item->id,
-			'group_id'          => (int) $item->group_id,
-			'parent_id'         => (int) $item->parent_id,
-			'type'              => $item->type,
-			'name'              => $item->name,
-			'description'       => $item->description,
-			'is_required'       => (bool) $item->is_required,
-			'can_delete'        => (bool) $item->can_delete,
-			'field_order'       => (int) $item->field_order,
-			'option_order'      => (int) $item->option_order,
-			'order_by'          => $item->order_by,
-			'is_default_option' => (bool) $item->is_default_option,
-		);
-
-		if ( ! empty( $request['fetch_visibility_level'] ) ) {
-			$data['visibility_level'] = $item->visibility_level;
-		}
-
-		if ( ! empty( $request['fetch_field_data'] ) ) {
-			if ( isset( $item->data->id ) ) {
-				$data['data']['id'] = $item->data->id;
-			}
-			$data['data']['value'] = maybe_unserialize( $item->data->value );
-		}
-
-		$context = ! empty( $request['context'] )
-			? $request['context']
-			: 'view';
-
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
-
-		return $data;
-	}
-
-	/**
-	 * Prepares single xprofile field data to return as an object.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param stdClass        $item XProfile group data.
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @param boolean         $is_raw Optional, not used. Defaults to false.
-	 * @return WP_REST_Response
-	 */
-	public function prepare_item_for_response( $item, $request, $is_raw = false ) {
-		$data = $this->assemble_response_data( $item, $request, $is_raw );
-
-		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $item ) );
-
-		/**
-		 * Filter the xprofile groups overview value returned from the API.
-		 *
-		 * @param array           $response
-		 * @param WP_REST_Request $request Request used to generate the response.
-		 */
-		return apply_filters( 'rest_prepare_buddypress_xprofile_fields_value', $response, $request );
-	}
-
-
-	/**
-	 * Check if a given request has access to get information about a specific field.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return bool
-	 */
-	public function get_item_permissions_check( $request ) {
-		return $this->get_items_permissions_check( $request );
-	}
-
-	/**
-	 * Check if a given request has access to the fields.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_Error|bool
-	 */
-	public function get_items_permissions_check( $request ) {
-		// Protecting the values of non-private fields is handled above in get_item().
-		return true;
-	}
-
-	/**
-	 * Prepare links for the request.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param array $item Field.
-	 * @return array Links for the given plugin.
-	 */
-	protected function prepare_links( $item ) {
-		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-
-		// Entity meta.
-		$links = array(
-			'self'       => array(
-				'href' => rest_url( $base . $item->id ),
-			),
-			'collection' => array(
-				'href' => rest_url( $base ),
-			),
-		);
-
-		return $links;
 	}
 }
