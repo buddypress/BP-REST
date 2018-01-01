@@ -544,7 +544,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @param boolean         $is_raw Optional, not used. Defaults to false.
 	 * @return WP_REST_Response
 	 */
-	protected function prepare_item_for_response( $activity, $request, $is_raw = false ) {
+	public function prepare_item_for_response( $activity, $request, $is_raw = false ) {
 		$data = array(
 			'user'                  => $activity->user_id,
 			'component'             => $activity->component,

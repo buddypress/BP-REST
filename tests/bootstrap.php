@@ -29,16 +29,7 @@ if ( false !== getenv( 'WP_DEVELOP_DIR' ) ) {
 }
 
 if ( ! defined( 'BP_TESTS_DIR' ) ) {
-	$path = dirname( __FILE__ ) . '/../../buddypress/tests/phpunit';
-
-	// BP 2.1 and higher.
-	if ( file_exists( realpath( $path ) ) ) {
-		define( 'BP_TESTS_DIR', $path );
-	}
-}
-
-if ( ! defined( 'BP_TESTS_DIR' ) || ! file_exists( BP_TESTS_DIR . '/bootstrap.php' ) ) {
-	return;
+	define( 'BP_TESTS_DIR', dirname( __FILE__ ) . '/../../buddypress/tests/phpunit' );
 }
 
 // Give access to tests_add_filter() function.
@@ -59,13 +50,5 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 // Start up the WP testing environment.
 require $test_root . '/includes/bootstrap.php';
 
-// Helper classes
-if ( ! class_exists( 'WP_Test_REST_TestCase' ) ) {
-	require_once dirname( __FILE__ ) . '/class-wp-test-rest-testcase.php';
-}
-
-// Load the REST controllers.
-require_once $test_root . '/includes/testcase-rest-controller.php';
-
 // Load the BP test files.
-require BP_TESTS_DIR . '/includes/testcase.php';
+require_once( BP_TESTS_DIR . '/includes/testcase.php' );
