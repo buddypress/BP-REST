@@ -724,7 +724,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	protected function can_see( $request, $edit = false ) {
 		$user_id = bp_loggedin_user_id();
-		$retval  = true;
+		$retval  = false;
 
 		// Moderators as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
@@ -742,10 +742,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		// If activity is from a group, do an extra cap check.
 		if ( bp_is_active( 'groups' ) && $activity->component === $bp->groups->id ) {
-			$group_id = $bp->groups->id;
+			$group_id = $activity->item_id;
 
 			// Check to see if the user has access to the activity's parent group.
-			$group = groups_get_group( $activity->item_id );
+			$group = groups_get_group( $group_id );
 			if ( $group ) {
 				$retval = $group->user_has_access;
 			}
@@ -757,8 +757,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// If activity author does not match logged_in user, block access.
-		if ( true === $retval && $user_id !== $activity->user_id ) {
-			$retval = false;
+		if ( $user_id === $activity->user_id ) {
+			$retval = true;
 		}
 
 		/**
@@ -818,7 +818,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @param string|null $date Optional. Date object.
 	 * @return string|null ISO8601/RFC3339 formatted datetime.
 	 */
-	protected function prepare_date_response( $date_gmt, $date = null ) {
+	public function prepare_date_response( $date_gmt, $date = null ) {
 		if ( isset( $date ) ) {
 			return mysql_to_rfc3339( $date );
 		}
@@ -838,11 +838,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @param  WP_REST_Request $request Full details about the request.
 	 * @return object An activity object.
 	 */
-	protected function get_activity_object( $request ) {
+	public function get_activity_object( $request ) {
 		$activity_id = is_numeric( $request ) ? $request : (int) $request['id'];
 
-		$activity = bp_activity_get( array(
-			'in' => $activity_id,
+		$activity = bp_activity_get_specific( array(
+			'activity_ids' => array( $activity_id ),
 		) );
 
 		return $activity['activities'][0];

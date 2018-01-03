@@ -6,24 +6,19 @@
  */
 class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
-	protected static $user;
-
-	public static function wpSetUpBeforeClass( $factory ) {
-		self::$user = $factory->user->create( array(
-			'role'          => 'administrator',
-			'user_email'    => 'admin@example.com',
-		) );
-	}
-
-	public static function wpTearDownAfterClass() {
-		self::delete_user( self::$user );
-	}
-
 	public function setUp() {
 		parent::setUp();
 
+		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Activity_Endpoint();
 		$this->endpoint_url = '/buddypress/v1/' . buddypress()->activity->id;
+
+		$this->activity_id  = $this->bp_factory->activity->create();
+
+		$this->user = $this->factory->user->create( array(
+			'role'          => 'administrator',
+			'user_email'    => 'admin@example.com',
+		) );
 	}
 
 	public function test_register_routes() {
@@ -43,22 +38,21 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function test_get_item() {
-		wp_set_current_user( self::$user );
+		wp_set_current_user( $this->user );
 
-		// create an activity update
-		$activity = self::factory()->activity->create( array(
-			'type' => 'activity_update',
-		) );
+		$activity = $this->endpoint->get_activity_object( $this->activity_id );
 
-		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/%d', $activity->id );
+		$this->assertEquals( $this->activity_id, $activity->id );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$data = $response->get_data();
+		$all_data = $response->get_data();
 
-		$this->check_activity_data( $activity, $data, 'view', $response->get_links() );
+		$this->check_activity_data( $activity, $all_data[0], 'view', $response->get_links() );
 	}
 
 	public function test_create_item() {
@@ -78,11 +72,25 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	protected function check_activity_data( $activity, $data, $context, $links ) {
-		$this->assertEquals( $activity->user, $data['user'] );
+		$this->assertEquals( $activity->user_id, $data['user'] );
 		$this->assertEquals( $activity->component, $data['component'] );
+		$this->assertEquals( $activity->content, $data['content'] );
 		$this->assertEquals( $activity->type, $data['type'] );
+		$this->assertEquals( $this->endpoint->prepare_date_response( $activity->date_recorded ), $data['date'] );
+		$this->assertEquals( $activity->id, $data['id'] );
+		$this->assertEquals( bp_activity_get_permalink( $activity->id ), $data['link'] );
+		$this->assertEquals( $activity->item_id, $data['prime_association'] );
+		$this->assertEquals( $activity->secondary_item_id, $data['secondary_association'] );
+		$this->assertEquals( $activity->action, $data['title'] );
+		$this->assertEquals( $activity->type, $data['type'] );
+		$this->assertEquals( $activity->is_spam ? 'spam' : 'published', $data['status'] );
 
-		$this->assertEqualSets( array( 'self', 'collection', 'user' ), array_keys( $links ) );
+		$parent = 'activity_comment' === $activity->type ? $activity->item_id : 0;
+		$this->assertEquals( $parent, $data['parent'] );
+
+		// @todo
+		// $this->assertEquals( , $data['comments'] );
+		// $this->assertEquals( , $data['user_avatar'] );
 	}
 
 	public function test_get_item_schema() {
@@ -118,11 +126,11 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 
 		// Single.
-		// $request  = new WP_REST_Request( 'OPTIONS', $this->endpoint_url . self::$activity );
-		// $response = $this->server->dispatch( $request );
-		// $data     = $response->get_data();
+		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', $this->activity_id ) );
+		$response = $this->server->dispatch( $request );
+		$data     = $response->get_data();
 
-		// $this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		// $this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
+		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 	}
 }

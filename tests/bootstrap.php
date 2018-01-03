@@ -40,15 +40,15 @@ require_once $test_root . '/includes/functions.php';
  */
 function _manually_load_plugin() {
 	// Make sure BP is installed and loaded first.
-	require BP_TESTS_DIR . '/includes/loader.php';
+	require_once BP_TESTS_DIR . '/includes/loader.php';
 
 	// Load our plugin.
-	require dirname( dirname( __FILE__ ) ) . '/bp-rest.php';
+	require_once dirname( __FILE__ ) . '/../bp-rest.php';
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
 // Start up the WP testing environment.
-require $test_root . '/includes/bootstrap.php';
+require_once $test_root . '/includes/bootstrap.php';
 
 // Load the BP test files.
-require_once( BP_TESTS_DIR . '/includes/testcase.php' );
+require_once BP_TESTS_DIR . '/includes/testcase.php';
