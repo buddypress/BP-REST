@@ -34,7 +34,25 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function test_get_items() {
-		return;
+		wp_set_current_user( $this->user );
+
+		$a1  = $this->bp_factory->activity->create();
+		$a2  = $this->bp_factory->activity->create();
+		$a3  = $this->bp_factory->activity->create();
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$data     = $all_data;
+
+		foreach ( $all_data as $data ) {
+			$activity = $this->endpoint->get_activity_object( $data['id'] );
+			$this->check_activity_data( $activity, $data, 'view', $response->get_links() );
+		}
 	}
 
 	public function test_get_item() {
@@ -87,10 +105,18 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$parent = 'activity_comment' === $activity->type ? $activity->item_id : 0;
 		$this->assertEquals( $parent, $data['parent'] );
+	}
 
-		// @todo
-		// $this->assertEquals( , $data['comments'] );
-		// $this->assertEquals( , $data['user_avatar'] );
+	protected function check_add_edit_activity( $response, $update = false ) {
+		if ( $update ) {
+			$this->assertEquals( 200, $response->get_status() );
+		} else {
+			$this->assertEquals( 201, $response->get_status() );
+		}
+
+		$data     = $response->get_data();
+		$activity = $this->endpoint->get_activity_object( $data['id'] );
+		$this->check_activity_data( $activity, $data, 'edit', $response->get_links() );
 	}
 
 	public function test_get_item_schema() {

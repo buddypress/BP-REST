@@ -207,18 +207,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_item_permissions_check( $request ) {
-		return $this->get_items_permissions_check( $request );
-	}
-
-	/**
-	 * Check if a given request has access to activity items.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_Error|bool
-	 */
-	public function get_items_permissions_check( $request ) {
 		if ( ! $this->can_see( $request ) ) {
 			return new WP_Error( 'rest_user_cannot_view_activity',
 				__( 'Sorry, you cannot view the activities.', 'buddypress' ),
@@ -231,6 +219,29 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( ! $this->can_see( $request, true ) ) {
 			return new WP_Error( 'rest_forbidden_context',
 				__( 'Sorry, you cannot view this resource with edit context.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check if a given request has access to activity items.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_Error|bool
+	 */
+	public function get_items_permissions_check( $request ) {
+
+		// Bail early.
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you are not allowed to see the activities.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -320,6 +331,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error True if the request has access to create, WP_Error object otherwise.
 	 */
 	public function create_item_permissions_check( $request ) {
+		return;
 		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
