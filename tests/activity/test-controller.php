@@ -82,7 +82,25 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function test_delete_item() {
-		return;
+		wp_set_current_user( $this->user );
+
+		$activity_id  = $this->bp_factory->activity->create( array(
+			'content' => 'Deleted activity',
+		) );
+
+		$activity = $this->endpoint->get_activity_object( $activity_id );
+
+		$this->assertEquals( $activity_id, $activity->id );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
+		$response = $this->server->dispatch( $request );
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		$this->assertEquals( 'Deleted activity', $data['content'] );
 	}
 
 	public function test_prepare_item() {
