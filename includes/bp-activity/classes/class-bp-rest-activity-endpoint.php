@@ -857,7 +857,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'activity_ids' => array( $activity_id ),
 		) );
 
-		return $activity['activities'][0];
+		if ( is_array( $activity ) && isset( $activity['activities'][0] ) ) {
+			return $activity['activities'][0];
+		}
+
+		return '';
 	}
 
 	/**

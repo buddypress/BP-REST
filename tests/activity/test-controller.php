@@ -103,6 +103,15 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 'Deleted activity', $data['content'] );
 	}
 
+	public function test_delete_item_invalid_id() {
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_activity_invalid_id', $response, 404 );
+	}
+
 	public function test_prepare_item() {
 		return;
 	}
