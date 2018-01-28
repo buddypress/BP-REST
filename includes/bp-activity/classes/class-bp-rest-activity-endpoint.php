@@ -534,7 +534,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see( $request ) ) {
+		if ( ! $this->can_see( $request, true ) ) {
 			return new WP_Error( 'rest_user_cannot_delete_activity',
 				__( 'Sorry, you cannot delete the activity.', 'buddypress' ),
 				array(

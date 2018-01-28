@@ -19,6 +19,10 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 			'role'          => 'administrator',
 			'user_email'    => 'admin@example.com',
 		) );
+
+		$this->random_user = $this->factory->user->create( array(
+			'role'          => 'subscriber',
+		) );
 	}
 
 	public function test_register_routes() {
@@ -110,6 +114,33 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'rest_activity_invalid_id', $response, 404 );
+	}
+
+	public function test_delete_item_not_logged_in() {
+
+		$activity = $this->endpoint->get_activity_object( $this->activity_id );
+
+		$this->assertEquals( $this->activity_id, $activity->id );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
+	}
+
+	public function delete_item_without_permission() {
+		$u = self::factory()->user->create();
+
+		wp_set_current_user( $u );
+
+		$activity = $this->endpoint->get_activity_object( $this->activity_id );
+
+		$this->assertEquals( $this->activity_id, $activity->id );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_cannot_delete_activity', $response, 403 );
 	}
 
 	public function test_prepare_item() {
