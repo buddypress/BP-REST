@@ -85,6 +85,42 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		return;
 	}
 
+	public function test_update_item_invalid_id() {
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_activity_invalid_id', $response, 404 );
+	}
+
+	public function test_update_item_not_logged_in() {
+
+		$activity = $this->endpoint->get_activity_object( $this->activity_id );
+
+		$this->assertEquals( $this->activity_id, $activity->id );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
+	}
+
+	public function test_update_item_without_permission() {
+		$u = $this->factory()->user->create();
+
+		wp_set_current_user( $u );
+
+		$activity = $this->endpoint->get_activity_object( $this->activity_id );
+
+		$this->assertEquals( $this->activity_id, $activity->id );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_activity_cannot_update', $response, 403 );
+	}
+
 	public function test_delete_item() {
 		wp_set_current_user( $this->user );
 
