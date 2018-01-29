@@ -111,14 +111,18 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		wp_set_current_user( $u );
 
-		$activity = $this->endpoint->get_activity_object( $this->activity_id );
+		$activity_id  = $this->bp_factory->activity->create( array(
+			'content' => 'Update activity',
+		) );
 
-		$this->assertEquals( $this->activity_id, $activity->id );
+		$activity = $this->endpoint->get_activity_object( $activity_id );
+
+		$this->assertEquals( $activity_id, $activity->id );
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_activity_cannot_update', $response, 403 );
+		$this->assertErrorResponse( 'rest_activity_cannot_update', $response, 500 );
 	}
 
 	public function test_delete_item() {

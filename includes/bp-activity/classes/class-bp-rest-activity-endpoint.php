@@ -331,7 +331,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error True if the request has access to create, WP_Error object otherwise.
 	 */
 	public function create_item_permissions_check( $request ) {
-		return;
 		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
