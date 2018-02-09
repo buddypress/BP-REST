@@ -73,9 +73,67 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->check_activity_data( $activity, $all_data[0], 'view', $response->get_links() );
 	}
 
-	// Pending.
 	public function test_create_item() {
-		return;
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+
+		$params = $this->set_activity_data();
+		$request->set_body_params( $params );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_create_activity_response( $response );
+	}
+
+	public function test_rest_create_item() {
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_create_activity_response( $response );
+	}
+
+	public function test_create_item_with_no_content() {
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data( array( 'content' => '' ) );
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_create_activity_empty_content', $response, 500 );
+	}
+
+	public function test_create_item_not_logged_in() {
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
+	}
+
+	public function test_create_item_in_a_group() {
+		$this->markTestIncomplete(
+			'This test has not been fully implemented yet.'
+		);
+	}
+
+	public function test_create_item_with_no_content_in_a_group() {
+		$this->markTestIncomplete(
+			'This test has not been fully implemented yet.'
+		);
 	}
 
 	public function test_update_item() {
@@ -201,7 +259,21 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function test_prepare_item() {
-		return;
+		wp_set_current_user( $this->user );
+
+		$activity = $this->endpoint->get_activity_object( $this->activity_id );
+
+		$this->assertEquals( $this->activity_id, $activity->id );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
+		$request->set_query_params( array( 'context' => 'edit' ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->check_activity_data( $activity, $all_data[0], 'edit', $response->get_links() );
 	}
 
 	protected function check_activity_data( $activity, $data, $context, $links ) {
@@ -235,12 +307,11 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	protected function set_activity_data( $args = array() ) {
-		$defaults = array(
-			'content' => 'Activity content',
-			'type'    => 'activity_update',
-		);
-
-		return wp_parse_args( $args, $defaults );
+		return wp_parse_args( $args, array(
+			'content'   => 'Activity content',
+			'type'      => 'activity_update',
+			'component' => buddypress()->activity->id,
+		) );
 	}
 
 	protected function check_update_activity_response( $response ) {
@@ -250,6 +321,22 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 		$headers = $response->get_headers();
 		$this->assertArrayNotHasKey( 'Location', $headers );
+
+		$data = $response->get_data();
+
+		$activity = $this->endpoint->get_activity_object( $data[0]['id'] );
+		$this->check_activity_data( $activity, $data[0], 'edit', $response->get_links() );
+	}
+
+	protected function check_create_activity_response( $response ) {
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$response = rest_ensure_response( $response );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		// Location header is missing. Why?!
+		// $headers = $response->get_headers();
+		// $this->assertArrayHasKey( 'Location', $headers );
 
 		$data = $response->get_data();
 

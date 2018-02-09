@@ -260,17 +260,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function create_item( $request ) {
-
-		// Bail early.
-		if ( empty( $request['content'] ) ) {
-			return new WP_Error( 'rest_create_activity_empty_content',
-				__( 'Please, enter some content.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
 		$prepared_activity = $this->prepare_item_for_database( $request );
 		$prime             = $request['prime_association'];
 		$id                = $request['id'];
@@ -278,9 +267,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$type              = $request['type'];
 		$activity_id       = 0;
 
-		if ( ( 'activity_update' === $type ) && bp_is_active( 'groups' ) && ( ! $prime ) ) {
+		if ( ( 'activity_update' === $type ) && bp_is_active( 'groups' ) && ! is_null( $prime ) ) {
 			$activity_id = groups_post_update( $prepared_activity );
-		} elseif ( ( 'activity_comment' === $type ) && ( ! $id ) && ( ! $parent ) ) {
+		} elseif ( ( 'activity_comment' === $type ) && ! is_null( $id ) && ! is_null( $parent ) ) {
 			$activity_id = bp_activity_new_comment( $prepared_activity );
 		} else {
 			$activity_id = bp_activity_post_update( $prepared_activity );
@@ -341,9 +330,19 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Bail early.
+		if ( empty( $request['content'] ) ) {
+			return new WP_Error( 'rest_create_activity_empty_content',
+				__( 'Please, enter some content.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		$acc = $request['prime_association'];
 
-		if ( ( 'activity_update' === $request['type'] ) && bp_is_active( 'groups' ) && ! empty( $acc ) ) {
+		if ( ( 'activity_update' === $request['type'] ) && bp_is_active( 'groups' ) && ! is_null( $acc ) ) {
 			if ( ! $this->show_hidden( 'groups', $acc ) ) {
 				return new WP_Error( 'rest_user_cannot_create_activity',
 					__( 'Sorry, you are not allowed to create activity to this group.', 'buddypress' ),
