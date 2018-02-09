@@ -19,10 +19,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 			'role'          => 'administrator',
 			'user_email'    => 'admin@example.com',
 		) );
-
-		$this->random_user = $this->factory->user->create( array(
-			'role'          => 'subscriber',
-		) );
 	}
 
 	public function test_register_routes() {
@@ -34,7 +30,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
-		$this->assertCount( 3, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)'] );
+		$this->assertCount( 3, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
 	}
 
 	public function test_get_items() {
@@ -77,12 +73,34 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->check_activity_data( $activity, $all_data[0], 'view', $response->get_links() );
 	}
 
+	// Pending.
 	public function test_create_item() {
 		return;
 	}
 
 	public function test_update_item() {
-		return;
+		wp_set_current_user( $this->user );
+
+		$activity = $this->endpoint->get_activity_object( $this->activity_id );
+		$this->assertEquals( $this->activity_id, $activity->id );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_update_activity_response( $response );
+
+		$new_data = $response->get_data();
+		$new_data = $new_data[0];
+
+		$this->assertEquals( $this->activity_id, $new_data['id'] );
+		$this->assertEquals( $params['content'], $new_data['content'] );
+
+		$activity = $this->endpoint->get_activity_object( $this->activity_id );
+		$this->assertEquals( $params['content'], $activity->content );
 	}
 
 	public function test_update_item_invalid_id() {
@@ -107,19 +125,20 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function test_update_item_without_permission() {
-		$u = $this->factory()->user->create();
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$a = $this->bp_factory->activity->create( array( 'user_id' => $u ) );
 
-		wp_set_current_user( $u );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u2 );
 
-		$activity_id  = $this->bp_factory->activity->create( array(
-			'content' => 'Update activity',
-		) );
-
-		$activity = $this->endpoint->get_activity_object( $activity_id );
-
-		$this->assertEquals( $activity_id, $activity->id );
+		$activity = $this->endpoint->get_activity_object( $a );
+		$this->assertEquals( $a, $activity->id );
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data();
+		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'rest_activity_cannot_update', $response, 500 );
@@ -157,7 +176,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function test_delete_item_not_logged_in() {
-
 		$activity = $this->endpoint->get_activity_object( $this->activity_id );
 
 		$this->assertEquals( $this->activity_id, $activity->id );
@@ -169,8 +187,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function delete_item_without_permission() {
-		$u = self::factory()->user->create();
-
+		$u = $this->factory->user->create();
 		wp_set_current_user( $u );
 
 		$activity = $this->endpoint->get_activity_object( $this->activity_id );
@@ -180,7 +197,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_user_cannot_delete_activity', $response, 403 );
+		$this->assertErrorResponse( 'rest_user_cannot_delete_activity', $response, 500 );
 	}
 
 	public function test_prepare_item() {
@@ -215,6 +232,29 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data     = $response->get_data();
 		$activity = $this->endpoint->get_activity_object( $data['id'] );
 		$this->check_activity_data( $activity, $data, 'edit', $response->get_links() );
+	}
+
+	protected function set_activity_data( $args = array() ) {
+		$defaults = array(
+			'content' => 'Activity content',
+			'type'    => 'activity_update',
+		);
+
+		return wp_parse_args( $args, $defaults );
+	}
+
+	protected function check_update_activity_response( $response ) {
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$response = rest_ensure_response( $response );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$headers = $response->get_headers();
+		$this->assertArrayNotHasKey( 'Location', $headers );
+
+		$data = $response->get_data();
+
+		$activity = $this->endpoint->get_activity_object( $data[0]['id'] );
+		$this->check_activity_data( $activity, $data[0], 'edit', $response->get_links() );
 	}
 
 	public function test_get_item_schema() {
