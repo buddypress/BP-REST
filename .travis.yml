@@ -33,7 +33,6 @@ matrix:
       dist: precise
 
 install:
-  - composer install
   - bash bin/install-package-tests.sh
   - export BP_SRC_DIR=/tmp/bp-src/
   - svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk/src $BP_SRC_DIR
