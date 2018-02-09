@@ -33,7 +33,7 @@ matrix:
       dist: precise
 
 install:
-  - bash bin/install-package-tests.sh
+  - bash bin/install-wp-tests.sh
   - export BP_SRC_DIR=/tmp/bp-src/
   - svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk/src $BP_SRC_DIR
 
