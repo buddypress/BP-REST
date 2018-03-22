@@ -156,6 +156,6 @@ install_db() {
 }
 
 install_wp
-install_buddypress
+install_bp
 install_test_suite
 install_db
