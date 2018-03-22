@@ -1,20 +1,29 @@
-sudo: false
-dist: trusty
+# Travis CI Configuration File
 
+# Use new Travis container-based infrastructure
+# http://docs.travis-ci.com/user/workers/container-based-infrastructure/
+sudo: false
+
+# Tell Travis CI we're using PHP
 language: php
 
-notifications:
-  email:
-    on_success: never
-    on_failure: change
+# Tell Travis CI which distro to use
+dist: trusty
 
-branches:
-  only:
-    - master
-
+# Configure caches
 cache:
+  apt: true
   directories:
+    - vendor
     - $HOME/.composer/cache
+
+# WordPress comes from the Git mirror, where 'master' mirrors svn 'trunk' and
+# x.y mirrors the latest from the x.y branch
+env:
+  - WP_VERSION=master
+  - WP_VERSION=4.9
+  - WP_VERSION=4.8
+  - WP_VERSION=4.7
 
 matrix:
   include:
@@ -39,7 +48,7 @@ before_install:
   - mkdir -p $WP_DEVELOP_DIR
 
   # clone the WordPress develop repo
-  - git clone --depth=1 --branch="$WP_VERSION" git://develop.git.wordpress.org/ $WP_DEVELOP_DI
+  - git clone --depth=1 --branch="$WP_VERSION" git://develop.git.wordpress.org/ $WP_DEVELOP_DIR
 
   # clone the BuddyPress develop repo
   - git clone --depth=1 git://buddypress.git.wordpress.org/ $WP_DEVELOP_DIR/src/wp-content/plugins/buddypress
@@ -92,3 +101,8 @@ script:
     if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
       phpcs
     fi
+
+notifications:
+  email:
+    on_success: never
+    on_failure: change
