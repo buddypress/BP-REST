@@ -71,6 +71,17 @@ before_install:
   # prepare for running the tests
   - cd $plugin_dir
 
+  # setup NodeJS version using NVM
+  - phpenv versions
+  - echo $TRAVIS_PHP_VERSION
+  - mysql --version
+  - php --version
+  - php -m
+  - phpunit --version
+  - curl --version
+  - git --version
+  - svn --version
+
 before_script:
   - |
     # Remove Xdebug for a huge performance increase:
@@ -79,7 +90,6 @@ before_script:
     else
       echo "xdebug.ini does not exist"
     fi
-  - export PATH="$HOME/.composer/vendor/bin:$PATH"
   - |
     if [[ ! -z "$WP_VERSION" ]] ; then
       bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
@@ -92,11 +102,7 @@ before_script:
     fi
 
 script:
-  - |
-    if [[ ! -z "$WP_VERSION" ]] ; then
-      phpunit
-      WP_MULTISITE=1 phpunit
-    fi
+  - phpunit
   - |
     if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
       phpcs
