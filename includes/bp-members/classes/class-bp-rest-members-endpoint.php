@@ -26,51 +26,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
-	 * Checks if a given request has access to read a user.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full details about the request.
-	 * @return true|WP_Error True if the request has read access for the item, otherwise WP_Error object.
-	 */
-	public function get_item_permissions_check( $request ) {
-		return $this->get_items_permissions_check( $request );
-	}
-
-
-	/**
-	 * Check if a given request has access to the list of users.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_Error|bool
-	 */
-	public function get_items_permissions_check( $request ) {
-
-		// Bail early.
-		if ( ! $this->can_see( $request ) ) {
-			return new WP_Error( 'rest_user_cannot_view',
-				__( 'Sorry, you are not allowed to list users.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		if ( ! $this->can_see( $request, true ) ) {
-			return new WP_Error( 'rest_forbidden_context',
-				__( 'Sorry, you cannot view this resource with edit context.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		return true;
-	}
-
-	/**
 	 * Prepares a single user output for response.
 	 *
 	 * @since 0.1.0
@@ -229,7 +184,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$retval = true;
 		}
 
-		if ( ! current_user_can( 'list_users' ) ) {
+		if ( current_user_can( 'list_users' ) ) {
 			$retval = true;
 		}
 

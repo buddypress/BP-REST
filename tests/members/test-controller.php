@@ -40,34 +40,20 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		buddypress()->members->types = array();
 
 		$this->endpoint = new BP_REST_Members_Endpoint();
+		$this->endpoint_url = '/buddypress/v1/members';
 	}
 
 	public function test_register_routes() {
 		$routes = $this->server->get_routes();
 
-		$this->assertArrayHasKey( '/buddypress/v1/members', $routes );
-		$this->assertCount( 2, $routes['/buddypress/v1/members'] );
-		$this->assertArrayHasKey( '/buddypress/v1/members/(?P<id>[\d]+)', $routes );
-		$this->assertCount( 3, $routes['/buddypress/v1/members/(?P<id>[\d]+)'] );
-		$this->assertArrayHasKey( '/buddypress/v1/members/me', $routes );
-	}
-
-	public function test_context_param() {
-		// Collection.
-		$request  = new WP_REST_Request( 'OPTIONS', '/buddypress/v1/members' );
-		$response = $this->server->dispatch( $request );
-		$data     = $response->get_data();
-
-		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+		// Main.
+		$this->assertArrayHasKey( $this->endpoint_url, $routes );
+		$this->assertCount( 2, $routes[ $this->endpoint_url ] );
 
 		// Single.
-		$request  = new WP_REST_Request( 'OPTIONS', '/buddypress/v1/members/' . self::$user );
-		$response = $this->server->dispatch( $request );
-		$data     = $response->get_data();
-
-		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
+		$this->assertCount( 3, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
+		$this->assertArrayHasKey( $this->endpoint_url . '/me', $routes );
 	}
 
 	/**
@@ -76,35 +62,37 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_items() {
 		wp_set_current_user( self::$user );
 
-		$request = new WP_REST_Request( 'GET', '/buddypress/v1/members' );
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$u3 = $this->factory->user->create();
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$all_data = $response->get_data();
-		$data     = $all_data[0];
-		$userdata = get_userdata( $data['id'] );
-
-		$this->check_user_data( $userdata, $data, 'view', $data['_links'] );
+		foreach ( $response->get_data() as $data ) {
+			$this->check_user_data( get_userdata( $data['id'] ), $data, 'view', $data['_links'] );
+		}
 	}
 
 	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		$user_id = $this->factory->user->create();
+		$u = $this->factory->user->create();
 
 		// Register and set member types.
 		bp_register_member_type( 'foo' );
 		bp_register_member_type( 'bar' );
-		bp_set_member_type( $user_id, 'foo' );
-		bp_set_member_type( $user_id, 'bar', true );
+		bp_set_member_type( $u, 'foo' );
+		bp_set_member_type( $u, 'bar', true );
 
 		// Set up xprofile data.
 		wp_set_current_user( self::$user );
 
-		$request  = new WP_REST_Request( 'GET', sprintf( '/buddypress/v1/members/%d', $user_id ) );
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $u ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -130,7 +118,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 			'roles'       => array( 'editor' ),
 		);
 
-		$request = new WP_REST_Request( 'POST', '/buddypress/v1/members' );
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
 		$request->set_body_params( $params );
 
@@ -142,10 +130,10 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
-	 * @group upadte_item
+	 * @group update_item
 	 */
 	public function test_update_item() {
-		$user_id = $this->factory->user->create( array(
+		$u = $this->factory->user->create( array(
 			'user_email' => 'test@example.com',
 			'user_pass'  => 'sjflsfls',
 			'user_login' => 'test_update',
@@ -154,12 +142,12 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->allow_user_to_manage_multisite();
 		wp_set_current_user( self::$user );
 
-		$userdata  = get_userdata( $user_id );
+		$userdata  = get_userdata( $u );
 		$pw_before = $userdata->user_pass;
 
 		$_POST['email'] = $userdata->user_email;
 
-		$request = new WP_REST_Request( 'PUT', sprintf( '/wp/v2/users/%d', $user_id ) );
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
 		$request->set_body_params( $_POST );
 
@@ -180,7 +168,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		wp_set_current_user( self::$user );
 
 		$userdata = get_userdata( $user_id ); // cache for later.
-		$request = new WP_REST_Request( 'DELETE', sprintf( '/wp/v2/users/%d', $user_id ) );
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $user_id ) );
 		$request->set_param( 'force', true );
 		$request->set_param( 'reassign', false );
 		$response = $this->server->dispatch( $request );
@@ -208,34 +196,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->check_get_user_response( $data, 'view' );
 	}
 
-	public function test_get_item_schema() {
-		$request    = new WP_REST_Request( 'OPTIONS', '/wp/v2/users' );
-		$response   = $this->server->dispatch( $request );
-		$data       = $response->get_data();
-		$properties = $data['schema']['properties'];
-
-		$this->assertEquals( 19, count( $properties ) );
-		$this->assertArrayHasKey( 'avatar_urls', $properties );
-		$this->assertArrayHasKey( 'capabilities', $properties );
-		$this->assertArrayHasKey( 'description', $properties );
-		$this->assertArrayHasKey( 'email', $properties );
-		$this->assertArrayHasKey( 'extra_capabilities', $properties );
-		$this->assertArrayHasKey( 'first_name', $properties );
-		$this->assertArrayHasKey( 'id', $properties );
-		$this->assertArrayHasKey( 'last_name', $properties );
-		$this->assertArrayHasKey( 'link', $properties );
-		$this->assertArrayHasKey( 'locale', $properties );
-		$this->assertArrayHasKey( 'meta', $properties );
-		$this->assertArrayHasKey( 'name', $properties );
-		$this->assertArrayHasKey( 'nickname', $properties );
-		$this->assertArrayHasKey( 'registered_date', $properties );
-		$this->assertArrayHasKey( 'slug', $properties );
-		$this->assertArrayHasKey( 'password', $properties );
-		$this->assertArrayHasKey( 'url', $properties );
-		$this->assertArrayHasKey( 'username', $properties );
-		$this->assertArrayHasKey( 'roles', $properties );
-	}
-
 	protected function check_get_user_response( $response, $context = 'view' ) {
 		$data = $response->get_data();
 		$user = get_userdata( $data['id'] );
@@ -250,9 +210,8 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$this->assertEquals( 201, $response->get_status() );
 		}
 
-		$data     = $response->get_data();
-		$userdata = get_userdata( $data['id'] );
-		$this->check_user_data( $userdata, $data, 'edit', $response->get_links() );
+		$data = $response->get_data();
+		$this->check_user_data( get_userdata( $data['id'] ), $data, 'edit', $response->get_links() );
 	}
 
 	protected function check_user_data( $user, $data, $context, $links ) {
@@ -261,7 +220,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'avatar_urls', $data );
 
 		$url = bp_core_get_user_domain( $data['id'], $user->user_nicename, $user->user_login );
-		//$this->assertEquals( $url, $data['link'] );
+		// $this->assertEquals( $url, $data['link'] );
 
 		if ( 'edit' === $context ) {
 			$this->assertEquals( $user->user_email, $data['email'] );
@@ -289,10 +248,47 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 	protected function allow_user_to_manage_multisite() {
 		wp_set_current_user( self::$user );
-		$user = wp_get_current_user();
 
 		if ( is_multisite() ) {
-			update_site_option( 'site_admins', array( $user->user_login ) );
+			update_site_option( 'site_admins', array( wp_get_current_user()->user_login ) );
 		}
+	}
+
+	public function test_get_item_schema() {
+		$request    = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
+		$response   = $this->server->dispatch( $request );
+		$data       = $response->get_data();
+		$properties = $data['schema']['properties'];
+
+		$this->assertEquals( 13, count( $properties ) );
+		$this->assertArrayHasKey( 'avatar_urls', $properties );
+		$this->assertArrayHasKey( 'email', $properties );
+		$this->assertArrayHasKey( 'capabilities', $properties );
+		$this->assertArrayHasKey( 'extra_capabilities', $properties );
+		$this->assertArrayHasKey( 'id', $properties );
+		$this->assertArrayHasKey( 'link', $properties );
+		$this->assertArrayHasKey( 'name', $properties );
+		$this->assertArrayHasKey( 'registered_date', $properties );
+		$this->assertArrayHasKey( 'password', $properties );
+		$this->assertArrayHasKey( 'roles', $properties );
+		$this->assertArrayHasKey( 'xprofile', $properties );
+	}
+
+	public function test_context_param() {
+		// Collection.
+		$request  = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
+		$response = $this->server->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
+		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+
+		// Single.
+		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', self::$user ) );
+		$response = $this->server->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
+		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 	}
 }
