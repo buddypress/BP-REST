@@ -112,8 +112,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_create_activity_empty_content', $response, 500 );
 	}
 
-	public function test_create_item_not_logged_in() {
-
+	public function test_create_item_user_not_logged_in() {
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
 
@@ -124,12 +123,14 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
 	}
 
+	// @todo
 	public function test_create_item_in_a_group() {
 		$this->markTestIncomplete(
 			'This test has not been fully implemented yet.'
 		);
 	}
 
+	// @todo
 	public function test_create_item_with_no_content_in_a_group() {
 		$this->markTestIncomplete(
 			'This test has not been fully implemented yet.'
@@ -170,8 +171,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_activity_invalid_id', $response, 404 );
 	}
 
-	public function test_update_item_not_logged_in() {
-
+	public function test_update_item_user_not_logged_in() {
 		$activity = $this->endpoint->get_activity_object( $this->activity_id );
 
 		$this->assertEquals( $this->activity_id, $activity->id );
@@ -210,7 +210,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 
 		$activity = $this->endpoint->get_activity_object( $activity_id );
-
 		$this->assertEquals( $activity_id, $activity->id );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
@@ -233,24 +232,24 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_activity_invalid_id', $response, 404 );
 	}
 
-	public function test_delete_item_not_logged_in() {
+	public function test_delete_item_user_not_logged_in() {
 		$activity = $this->endpoint->get_activity_object( $this->activity_id );
-
 		$this->assertEquals( $this->activity_id, $activity->id );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
-	public function delete_item_without_permission() {
+	public function test_delete_item_without_permission() {
 		$u = $this->factory->user->create();
 		wp_set_current_user( $u );
 
-		$activity = $this->endpoint->get_activity_object( $this->activity_id );
+		$activity_id  = $this->bp_factory->activity->create();
 
-		$this->assertEquals( $this->activity_id, $activity->id );
+		$activity = $this->endpoint->get_activity_object( $activity_id );
+		$this->assertEquals( $activity_id, $activity->id );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
 		$response = $this->server->dispatch( $request );
@@ -262,7 +261,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		wp_set_current_user( $this->user );
 
 		$activity = $this->endpoint->get_activity_object( $this->activity_id );
-
 		$this->assertEquals( $this->activity_id, $activity->id );
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $activity->id ) );

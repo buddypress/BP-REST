@@ -532,7 +532,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see( $request, true ) ) {
+		if ( false === $this->can_see( $request, true ) ) {
 			return new WP_Error( 'rest_user_cannot_delete_activity',
 				__( 'Sorry, you cannot delete the activity.', 'buddypress' ),
 				array(
@@ -733,41 +733,16 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function can_see( $request, $edit = false ) {
-		$user_id = bp_loggedin_user_id();
-		$retval  = false;
-
-		// Moderators as well.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
-		}
+		$user_id  = bp_loggedin_user_id();
+		$activity = $this->get_activity_object( $request );
+		$retval   = false;
 
 		// Fix for edit content.
 		if ( $edit && 'edit' === $request['context'] && ! bp_current_user_can( 'bp_moderate' ) ) {
 			return false;
 		}
 
-		$activity = $this->get_activity_object( $request );
-
-		$bp = buddypress();
-
-		// If activity is from a group, do an extra cap check.
-		if ( bp_is_active( 'groups' ) && $activity->component === $bp->groups->id ) {
-			$group_id = $activity->item_id;
-
-			// Check to see if the user has access to the activity's parent group.
-			$group = groups_get_group( $group_id );
-			if ( $group ) {
-				$retval = $group->user_has_access;
-			}
-
-			// Group admins and mods have access as well.
-			if ( groups_is_user_admin( $user_id, $group_id ) || groups_is_user_mod( $user_id, $group_id ) ) {
-				$retval = true;
-			}
-		}
-
-		// If activity author does not match logged_in user, block access.
-		if ( $user_id === $activity->user_id ) {
+		if ( bp_activity_user_can_read( $activity, $user_id ) ) {
 			$retval = true;
 		}
 
@@ -776,9 +751,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool   $retval   Return value.
-		 * @param int    $user_id  User ID.
-		 * @param object $activity Activity obhect.
+		 * @param bool                 $retval   Return value.
+		 * @param int                  $user_id  User ID.
+		 * @param BP_Activity_Activity $activity Activity object.
 		 */
 		return apply_filters( 'rest_activity_endpoint_can_see', $retval, $user_id, $activity );
 	}
