@@ -207,18 +207,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_item_permissions_check( $request ) {
-		return $this->get_items_permissions_check( $request );
-	}
-
-	/**
-	 * Check if a given request has access to activity items.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_Error|bool
-	 */
-	public function get_items_permissions_check( $request ) {
 		if ( ! $this->can_see( $request ) ) {
 			return new WP_Error( 'rest_user_cannot_view_activity',
 				__( 'Sorry, you cannot view the activities.', 'buddypress' ),
@@ -241,6 +229,29 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Check if a given request has access to activity items.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_Error|bool
+	 */
+	public function get_items_permissions_check( $request ) {
+
+		// Bail early.
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you are not allowed to see the activities.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Create an activity.
 	 *
 	 * @since 0.1.0
@@ -249,17 +260,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function create_item( $request ) {
-
-		// Bail early.
-		if ( empty( $request['content'] ) ) {
-			return new WP_Error( 'rest_create_activity_empty_content',
-				__( 'Please, enter some content.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
 		$prepared_activity = $this->prepare_item_for_database( $request );
 		$prime             = $request['prime_association'];
 		$id                = $request['id'];
@@ -267,9 +267,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$type              = $request['type'];
 		$activity_id       = 0;
 
-		if ( ( 'activity_update' === $type ) && bp_is_active( 'groups' ) && ( ! $prime ) ) {
+		if ( ( 'activity_update' === $type ) && bp_is_active( 'groups' ) && ! is_null( $prime ) ) {
 			$activity_id = groups_post_update( $prepared_activity );
-		} elseif ( ( 'activity_comment' === $type ) && ( ! $id ) && ( ! $parent ) ) {
+		} elseif ( ( 'activity_comment' === $type ) && ! is_null( $id ) && ! is_null( $parent ) ) {
 			$activity_id = bp_activity_new_comment( $prepared_activity );
 		} else {
 			$activity_id = bp_activity_post_update( $prepared_activity );
@@ -330,9 +330,19 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Bail early.
+		if ( empty( $request['content'] ) ) {
+			return new WP_Error( 'rest_create_activity_empty_content',
+				__( 'Please, enter some content.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		$acc = $request['prime_association'];
 
-		if ( ( 'activity_update' === $request['type'] ) && bp_is_active( 'groups' ) && ! empty( $acc ) ) {
+		if ( ( 'activity_update' === $request['type'] ) && bp_is_active( 'groups' ) && ! is_null( $acc ) ) {
 			if ( ! $this->show_hidden( 'groups', $acc ) ) {
 				return new WP_Error( 'rest_user_cannot_create_activity',
 					__( 'Sorry, you are not allowed to create activity to this group.', 'buddypress' ),
@@ -522,11 +532,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see( $request ) ) {
+		if ( false === $this->can_see( $request, true ) ) {
 			return new WP_Error( 'rest_user_cannot_delete_activity',
 				__( 'Sorry, you cannot delete the activity.', 'buddypress' ),
 				array(
-					'status' => rest_authorization_required_code(),
+					'status' => 500,
 				)
 			);
 		}
@@ -723,42 +733,17 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function can_see( $request, $edit = false ) {
-		$user_id = bp_loggedin_user_id();
-		$retval  = true;
-
-		// Moderators as well.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
-		}
+		$user_id  = bp_loggedin_user_id();
+		$activity = $this->get_activity_object( $request );
+		$retval   = false;
 
 		// Fix for edit content.
 		if ( $edit && 'edit' === $request['context'] && ! bp_current_user_can( 'bp_moderate' ) ) {
 			return false;
 		}
 
-		$activity = $this->get_activity_object( $request );
-
-		$bp = buddypress();
-
-		// If activity is from a group, do an extra cap check.
-		if ( bp_is_active( 'groups' ) && $activity->component === $bp->groups->id ) {
-			$group_id = $bp->groups->id;
-
-			// Check to see if the user has access to the activity's parent group.
-			$group = groups_get_group( $activity->item_id );
-			if ( $group ) {
-				$retval = $group->user_has_access;
-			}
-
-			// Group admins and mods have access as well.
-			if ( groups_is_user_admin( $user_id, $group_id ) || groups_is_user_mod( $user_id, $group_id ) ) {
-				$retval = true;
-			}
-		}
-
-		// If activity author does not match logged_in user, block access.
-		if ( true === $retval && $user_id !== $activity->user_id ) {
-			$retval = false;
+		if ( bp_activity_user_can_read( $activity, $user_id ) ) {
+			$retval = true;
 		}
 
 		/**
@@ -766,9 +751,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool   $retval   Return value.
-		 * @param int    $user_id  User ID.
-		 * @param object $activity Activity obhect.
+		 * @param bool                 $retval   Return value.
+		 * @param int                  $user_id  User ID.
+		 * @param BP_Activity_Activity $activity Activity object.
 		 */
 		return apply_filters( 'rest_activity_endpoint_can_see', $retval, $user_id, $activity );
 	}
@@ -818,7 +803,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @param string|null $date Optional. Date object.
 	 * @return string|null ISO8601/RFC3339 formatted datetime.
 	 */
-	protected function prepare_date_response( $date_gmt, $date = null ) {
+	public function prepare_date_response( $date_gmt, $date = null ) {
 		if ( isset( $date ) ) {
 			return mysql_to_rfc3339( $date );
 		}
@@ -838,14 +823,18 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @param  WP_REST_Request $request Full details about the request.
 	 * @return object An activity object.
 	 */
-	protected function get_activity_object( $request ) {
+	public function get_activity_object( $request ) {
 		$activity_id = is_numeric( $request ) ? $request : (int) $request['id'];
 
-		$activity = bp_activity_get( array(
-			'in' => $activity_id,
+		$activity = bp_activity_get_specific( array(
+			'activity_ids' => array( $activity_id ),
 		) );
 
-		return $activity['activities'][0];
+		if ( is_array( $activity ) && isset( $activity['activities'][0] ) ) {
+			return $activity['activities'][0];
+		}
+
+		return '';
 	}
 
 	/**

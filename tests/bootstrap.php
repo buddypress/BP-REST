@@ -38,11 +38,6 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 // Start up the WP testing environment.
 require_once $_tests_dir . '/includes/bootstrap.php';
 
-// Helper classes.
-if ( ! class_exists( 'WP_Test_REST_TestCase' ) ) {
-	require_once dirname( __FILE__ ) . '/class-wp-test-rest-testcase.php';
-}
-
 // Load the REST controllers.
 require_once $_tests_dir . '/includes/testcase-rest-controller.php';
 
