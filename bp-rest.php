@@ -85,4 +85,4 @@ add_action( 'bp_rest_api_init', function() {
 		$controller = new BP_REST_Members_Endpoint();
 		$controller->register_routes();
 	}
-}
+} );
