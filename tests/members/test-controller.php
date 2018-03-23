@@ -167,7 +167,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->allow_user_to_manage_multisite();
 		wp_set_current_user( self::$user );
 
-		$userdata = get_userdata( $user_id ); // cache for later.
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $user_id ) );
 		$request->set_param( 'force', true );
 		$request->set_param( 'reassign', false );
@@ -175,7 +174,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		// Not implemented in multisite.
 		if ( is_multisite() ) {
-			$this->assertErrorResponse( 'rest_cannot_delete', $response, 501 );
+			$this->assertErrorResponse( 'rest_authorization_required_code', $response, 501 );
 			return;
 		}
 
@@ -183,6 +182,51 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data = $response->get_data();
 		$this->assertTrue( $data['deleted'] );
 		$this->assertEquals( 'Deleted User', $data['previous']['name'] );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_invalid_id() {
+		wp_set_current_user( self::$user );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request->set_param( 'force', true );
+		$request->set_param( 'reassign', false );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_member_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_user_not_logged_in() {
+		$u = $this->factory->user->create();
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $u ) );
+		$request->set_param( 'force', true );
+		$request->set_param( 'reassign', false );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_member_cannot_delete', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_without_permission() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		wp_set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $u2 ) );
+		$request->set_param( 'force', true );
+		$request->set_param( 'reassign', false );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_member_cannot_delete', $response, rest_authorization_required_code() );
 	}
 
 	public function test_prepare_item() {
