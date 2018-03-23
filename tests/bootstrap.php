@@ -44,7 +44,7 @@ if ( ! class_exists( 'WP_Test_REST_TestCase' ) ) {
 }
 
 // Load the REST controllers.
-require_once $test_root . '/includes/testcase-rest-controller.php';
+require_once $_tests_dir . '/includes/testcase-rest-controller.php';
 
 // Load the BP test files.
 echo "Loading BuddyPress testcase...\n";
