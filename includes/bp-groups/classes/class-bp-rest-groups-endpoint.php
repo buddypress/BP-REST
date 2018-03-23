@@ -221,7 +221,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @param boolean         $is_raw   Optional, not used. Defaults to false.
 	 * @return WP_REST_Response
 	 */
-	protected function prepare_item_for_response( $item, $request, $is_raw = false ) {
+	public function prepare_item_for_response( $item, $request, $is_raw = false ) {
 		$data = array(
 			'avatar_urls'        => array(),
 			'creator_id'         => bp_get_group_creator_id( $item ),

@@ -77,7 +77,13 @@ function bp_rest_api_endpoints() {
 		$controller->register_routes();
 	}
 
-	// Member response filters.
-	require_once( dirname( __FILE__ ) . '/includes/bp-members/bp-members-filters.php' );
+	if ( bp_is_active( 'members' ) ) {
+		// Member response filters.
+		require_once( dirname( __FILE__ ) . '/includes/bp-members/bp-members-filters.php' );
+
+		require_once( dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-members-endpoint.php' );
+		$controller = new BP_REST_Members_Endpoint();
+		$controller->register_routes();
+	}
 }
 add_action( 'bp_rest_api_init', 'bp_rest_api_endpoints' );

@@ -2,7 +2,7 @@
 /**
  * PHPUnit bootstrap file
  *
- * @package Bp_Rest
+ * @package BP_REST
  */
 
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
@@ -19,13 +19,34 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 // Give access to tests_add_filter() function.
 require_once $_tests_dir . '/includes/functions.php';
 
+if ( ! defined( 'BP_TESTS_DIR' ) ) {
+	define( 'BP_TESTS_DIR', dirname( __FILE__ ) . '/../../buddypress/tests/phpunit' );
+}
+
 /**
  * Manually load the plugin being tested.
  */
 function _manually_load_plugin() {
-	require dirname( dirname( __FILE__ ) ) . '/bp-rest.php';
+	// Make sure BP is installed and loaded first.
+	require BP_TESTS_DIR . '/includes/loader.php';
+
+	// Load our plugin.
+	require_once dirname( __FILE__ ) . '/../bp-rest.php';
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
 // Start up the WP testing environment.
-require $_tests_dir . '/includes/bootstrap.php';
+require_once $_tests_dir . '/includes/bootstrap.php';
+
+// Helper classes.
+if ( ! class_exists( 'WP_Test_REST_TestCase' ) ) {
+	require_once dirname( __FILE__ ) . '/class-wp-test-rest-testcase.php';
+}
+
+// Load the REST controllers.
+require_once $_tests_dir . '/includes/testcase-rest-controller.php';
+
+// Load the BP test files.
+echo "Loading BuddyPress testcase...\n";
+require_once BP_TESTS_DIR . '/includes/testcase.php';
+
