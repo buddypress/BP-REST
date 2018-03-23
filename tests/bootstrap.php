@@ -38,5 +38,10 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 // Start up the WP testing environment.
 require_once $_tests_dir . '/includes/bootstrap.php';
 
+// Load the REST controllers.
+require_once $_tests_dir . '/includes/testcase-rest-controller.php';
+
+// Load the BP test files.
 echo "Loading BuddyPress testcase...\n";
 require_once BP_TESTS_DIR . '/includes/testcase.php';
+

@@ -7,10 +7,10 @@
  * Author URI: https://buddypress.org/
  * Version: 0.1.0
  * Text Domain: bp-rest
- * Domain Path: /languages/
+ * Domain Path: languages/
  * Requires at least: 4.7.0
  * Tested up to: 4.9.1
- * Requires PHP: 5.5
+ * Requires PHP: 5.6
  * License: GPLv2
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  *
@@ -43,7 +43,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 0.1.0
  */
-function bp_rest_api_endpoints() {
+add_action( 'bp_rest_api_init', function() {
 	// Bail early if no core rest support.
 	if ( ! class_exists( 'WP_REST_Controller' ) ) {
 		return;
@@ -77,7 +77,12 @@ function bp_rest_api_endpoints() {
 		$controller->register_routes();
 	}
 
-	// Member response filters.
-	require_once( dirname( __FILE__ ) . '/includes/bp-members/bp-members-filters.php' );
+	if ( bp_is_active( 'members' ) ) {
+		// Member response filters.
+		require_once( dirname( __FILE__ ) . '/includes/bp-members/bp-members-filters.php' );
+
+		require_once( dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-members-endpoint.php' );
+		$controller = new BP_REST_Members_Endpoint();
+		$controller->register_routes();
+	}
 }
-add_action( 'bp_rest_api_init', 'bp_rest_api_endpoints' );
