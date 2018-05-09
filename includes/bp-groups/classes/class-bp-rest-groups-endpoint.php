@@ -394,20 +394,17 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			return true;
 		}
 
-		$user_id = bp_loggedin_user_id();
-		$retval = false;
-
 		// Moderators as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
+			return true;
 		}
 
 		// User is a member of the group.
-		if ( (bool) groups_is_user_member( $user_id, $group->id ) ) {
-			$retval = true;
+		if ( (bool) groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) {
+			return true;
 		}
 
-		return (bool) $retval;
+		return false;
 	}
 
 	/**
@@ -420,7 +417,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function sanitize_group_types( $value ) {
 		if ( empty( $value ) ) {
-			return $value;
+			return null;
 		}
 
 		$types = explode( ',', $value );
@@ -645,11 +642,12 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['group_type'] = array(
-			'description'       => __( 'Limit results set to groups of a certain type.', 'buddypress' ),
+			'description'       => __( 'Limit results set to a certain type.', 'buddypress' ),
 			'default'           => '',
 			'type'              => 'string',
 			'enum'              => bp_groups_get_group_types(),
-			'validate_callback' => 'rest_validate_request_arg',
+			'sanitize_callback' => array( $this, 'sanitize_group_types' ),
+			'validate_callback' => array( $this, 'validate_group_types' ),
 		);
 
 		$params['group_type__in'] = array(
