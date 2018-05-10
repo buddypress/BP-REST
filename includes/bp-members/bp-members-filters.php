@@ -1,6 +1,6 @@
 <?php
 /**
- * BP REST: Member Filter
+ * BP REST: Member Filters/Hooks
  *
  * @package BuddyPress
  * @since 0.1.0
@@ -9,19 +9,19 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Replace the standard WP "author" link with a link to the BuddyPress user domain.
+ * Removes `has_published_posts` from the query args so even users who have not
+ * published content are returned by the request.
  *
- * @since 0.1.0
+ * @see https://developer.wordpress.org/reference/classes/wp_user_query/
  *
- * @param WP_REST_Response $response  The response object.
- * @param object           $user      User object used to create response.
- * @param WP_REST_Request  $request   Request object.
+ * @param array           $prepared_args Array of arguments for WP_User_Query.
+ * @param WP_REST_Request $request       The current request.
+ *
+ * @return array
  */
-function bp_rest_filter_user_link( $response, $user, $request ) {
-	if ( $user->ID ) {
-		$response->data['link'] = bp_core_get_user_domain( $user->ID );
-	}
+function bp_remove_has_published_posts_from_wp_api_user_query( $prepared_args, $request ) {
+	unset( $prepared_args['has_published_posts'] );
 
-	return $response;
+	return $prepared_args;
 }
-add_filter( 'rest_prepare_user', 'bp_rest_filter_user_link', 10, 3 );
+add_filter( 'rest_user_query', 'bp_remove_has_published_posts_from_wp_api_user_query', 10, 2 );
