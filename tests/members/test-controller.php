@@ -175,6 +175,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_member_cannot_update', $response, rest_authorization_required_code() );
 	}
 
+	/**
+	 * @group update_item
+	 */
 	public function test_update_item_invalid_id() {
 		wp_set_current_user( self::$user );
 

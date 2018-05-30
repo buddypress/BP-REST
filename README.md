@@ -4,14 +4,6 @@ Access your BuddyPress site's data through an easy-to-use HTTP REST API.
 
 [![Build Status](https://travis-ci.org/buddypress/BP-REST.svg?branch=master)](https://travis-ci.org/buddypress/BP-REST)
 
-## WARNING
-
-The **"master"** branch is undergoing substantial changes and is **NOT COMPLETE OR STABLE**.
-
-The **"beta"** branch represents a **BETA** of our next version release.
-
-The latest **stable** version will be available from the [WordPress Plugin Directory](https://wordpress.org/plugins). (plugin not available yet)
-
 ## About
 
 WordPress is moving towards becoming a fully-fledged application framework. BuddyPress can benefit from this new API by adding endpoints to access social data.
