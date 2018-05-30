@@ -19,12 +19,12 @@ Please use and provide feedback!
 - [x] Activity
 - [ ] Activity Favorites (Under consideration)
 - [x] Members
-- [x] Messages
-- [x] Groups
+- [ ] Messages (Partially supported)
+- [ ] Groups (Partially supported)
 - [ ] Group Invites (Under consideration)
 - [ ] Group Members (Under consideration)
-- [x] XProfile Fields
-- [x] XProfile Groups
+- [ ] XProfile Fields (Partially supported)
+- [ ] XProfile Groups (Partially supported)
 - [ ] Emails
 - [ ] Friends
 - [ ] Signups
