@@ -18,7 +18,11 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 
 		if ( is_multisite() ) {
-			self::$site = $factory->blog->create( array( 'domain' => 'rest.wordpress.org', 'path' => '/' ) );
+			self::$site = $factory->blog->create( array(
+				'domain' => 'rest.wordpress.org',
+				'path' => '/',
+			) );
+
 			update_site_option( 'site_admins', array( 'superadmin' ) );
 		}
 	}
@@ -31,15 +35,12 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		}
 	}
 
-	/**
-	 * This function is run before each method
-	 */
 	public function setUp() {
 		parent::setUp();
 
 		buddypress()->members->types = array();
 
-		$this->endpoint = new BP_REST_Members_Endpoint();
+		$this->endpoint     = new BP_REST_Members_Endpoint();
 		$this->endpoint_url = '/buddypress/v1/members';
 	}
 
@@ -101,33 +102,13 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
-	 * @todo  Pending creation.
+	 * @todo  Pending implementation.
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		return;
-
-		$this->allow_user_to_manage_multisite();
-		wp_set_current_user( self::$user );
-
-		$params = array(
-			'user_login'  => 'testuser',
-			'password'    => 'testpassword',
-			'email'       => 'test@example.com',
-			'name'        => 'Test User',
-			'slug'        => 'test-user',
-			'roles'       => array( 'editor' ),
+		$this->markTestIncomplete(
+			'This test has not been fully implemented yet.'
 		);
-
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
-		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
-		$request->set_body_params( $params );
-
-		$response = $this->server->dispatch( $request );
-		$data     = $response->get_data();
-
-		$this->assertEquals( array( 'editor' ), $data['roles'] );
-		$this->check_add_edit_user_response( $response );
 	}
 
 	/**

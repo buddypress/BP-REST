@@ -33,6 +33,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertCount( 3, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
 	}
 
+	/**
+	 * @group get_items
+	 */
 	public function test_get_items() {
 		wp_set_current_user( $this->user );
 
@@ -55,6 +58,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		}
 	}
 
+	/**
+	 * @group get_item
+	 */
 	public function test_get_item() {
 		wp_set_current_user( $this->user );
 
@@ -73,6 +79,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->check_activity_data( $activity, $all_data[0], 'view', $response->get_links() );
 	}
 
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item() {
 		wp_set_current_user( $this->user );
 
@@ -86,6 +95,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->check_create_activity_response( $response );
 	}
 
+	/**
+	 * @group create_item
+	 */
 	public function test_rest_create_item() {
 		wp_set_current_user( $this->user );
 
@@ -99,6 +111,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->check_create_activity_response( $response );
 	}
 
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item_with_no_content() {
 		wp_set_current_user( $this->user );
 
@@ -112,6 +127,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_create_activity_empty_content', $response, 500 );
 	}
 
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item_user_not_logged_in() {
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
@@ -137,6 +155,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		);
 	}
 
+	/**
+	 * @group update_item
+	 */
 	public function test_update_item() {
 		wp_set_current_user( $this->user );
 
@@ -162,6 +183,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $params['content'], $activity->content );
 	}
 
+	/**
+	 * @group update_item
+	 */
 	public function test_update_item_invalid_id() {
 		wp_set_current_user( $this->user );
 
@@ -171,6 +195,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_activity_invalid_id', $response, 404 );
 	}
 
+	/**
+	 * @group update_item
+	 */
 	public function test_update_item_user_not_logged_in() {
 		$activity = $this->endpoint->get_activity_object( $this->activity_id );
 
@@ -182,6 +209,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
 	}
 
+	/**
+	 * @group update_item
+	 */
 	public function test_update_item_without_permission() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$a = $this->bp_factory->activity->create( array( 'user_id' => $u ) );
@@ -202,6 +232,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_activity_cannot_update', $response, 500 );
 	}
 
+	/**
+	 * @group delete_item
+	 */
 	public function test_delete_item() {
 		wp_set_current_user( $this->user );
 
@@ -223,6 +256,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 'Deleted activity', $data['content'] );
 	}
 
+	/**
+	 * @group delete_item
+	 */
 	public function test_delete_item_invalid_id() {
 		wp_set_current_user( $this->user );
 
@@ -232,6 +268,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_activity_invalid_id', $response, 404 );
 	}
 
+	/**
+	 * @group delete_item
+	 */
 	public function test_delete_item_user_not_logged_in() {
 		$activity = $this->endpoint->get_activity_object( $this->activity_id );
 		$this->assertEquals( $this->activity_id, $activity->id );
@@ -242,6 +281,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
+	/**
+	 * @group delete_item
+	 */
 	public function test_delete_item_without_permission() {
 		$u = $this->factory->user->create();
 		wp_set_current_user( $u );
@@ -331,10 +373,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = rest_ensure_response( $response );
 
 		$this->assertEquals( 200, $response->get_status() );
-
-		// Location header is missing. Why?!
-		// $headers = $response->get_headers();
-		// $this->assertArrayHasKey( 'Location', $headers );
 
 		$data = $response->get_data();
 
