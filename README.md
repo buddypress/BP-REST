@@ -4,6 +4,38 @@ Access your BuddyPress site's data through an easy-to-use HTTP REST API.
 
 [![Build Status](https://travis-ci.org/buddypress/BP-REST.svg?branch=master)](https://travis-ci.org/buddypress/BP-REST)
 
+The current endpoints are pretty much in flux, as we work toward adding and updating them.
+
+Please use and provide feedback!
+
+## System Requirements
+
+* PHP >= 5.3
+* WP >= 4.7
+* BuddyPress trunk (development version).
+
+## Current Endpoints Supported
+
+- [x] Activity
+- [ ] Activity Favorites
+- [x] Member
+- [x] Messages
+- [x] Groups
+- [ ] Group Invites
+- [ ] Group Members
+- [x] XProfile Fields
+- [x] XProfile Groups
+- [ ] Emails
+- [ ] Friends
+- [ ] Signups
+- [ ] Tools
+- [ ] Components
+
+
+## Installation
+
+Drop this directory in and activate it. You need at least [WordPress 4.7](https://wordpress.org/download/) to use the plugin.
+
 ## About
 
 WordPress is moving towards becoming a fully-fledged application framework. BuddyPress can benefit from this new API by adding endpoints to access social data.
@@ -13,14 +45,6 @@ site's data in simple JSON format, including users, groups, xprofile and more.
 Retrieving or updating data is as simple as sending a HTTP request.
 
 There's no fixed timeline for integration into BuddyPress core at this time, the BP REST API will be available as a feature plugin!
-
-## Installation
-
-Drop this directory in and activate it. You need at least [WordPress 4.7](https://wordpress.org/download/) to use the plugin.
-
-## Issue Tracking
-
-All tickets for the project are being tracked via [GitHub Issues](https://github.com/buddypress/BP-REST/issues).
 
 ## Get Involved
 

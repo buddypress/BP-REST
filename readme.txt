@@ -7,7 +7,6 @@ Stable tag:        0.1.0
 License:           GPLv2
 License URI:       http://www.gnu.org/licenses/gpl-2.0.html
 
-
 == Description ==
 
 Access your BuddyPress site's data through an easy-to-use HTTP REST API.
