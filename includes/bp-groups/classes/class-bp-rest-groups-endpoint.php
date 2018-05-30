@@ -226,7 +226,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'avatar_urls'        => array(),
 			'creator_id'         => bp_get_group_creator_id( $item ),
 			'date_created'       => $this->prepare_date_response( $item->date_created ),
-			'decription'         => bp_get_group_description( $item ),
+			'description'        => bp_get_group_description( $item ),
 			'enable_forum'       => bp_group_is_forum_enabled( $item ),
 			'id'                 => $item->id,
 			'link'               => bp_get_group_permalink( $item ),
@@ -254,7 +254,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'type'    => 'full',
 		) );
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context = ( ! empty( $request['context'] ) ) ? $request['context'] : 'view';
 
 		// If this is the 'edit' context, fill in more details--similar to "populate_extras".
 		if ( 'edit' === $context ) {
@@ -438,6 +438,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|boolean
 	 */
 	public function validate_group_types( $value, $request, $param ) {
+
 		// Bail early.
 		if ( empty( $value ) ) {
 			return true;
