@@ -1,6 +1,6 @@
 <?php
 /**
- * Members Test.
+ * Members Endpoint Tests.
  *
  * @package BP_REST
  */
@@ -101,6 +101,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @todo  Pending creation.
 	 * @group create_item
 	 */
 	public function test_create_item() {
@@ -134,9 +135,8 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 */
 	public function test_update_item() {
 		$u = $this->factory->user->create( array(
-			'user_email' => 'test@example.com',
-			'user_pass'  => 'sjflsfls',
-			'user_login' => 'test_update',
+			'email' => 'test@example.com',
+			'name' => 'User Name',
 		) );
 
 		$this->allow_user_to_manage_multisite();
@@ -145,7 +145,8 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$userdata  = get_userdata( $u );
 		$pw_before = $userdata->user_pass;
 
-		$_POST['email'] = $userdata->user_email;
+		$_POST['email'] = 'new@example.com';
+		$_POST['name'] = 'New User Name';
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
@@ -154,8 +155,80 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 		$this->check_add_edit_user_response( $response, true );
 
-		// https://core.trac.wordpress.org/ticket/21429.
+		// Check that it has been updated correctly.
+		$new_data = $response->get_data();
+
 		$this->assertEquals( $pw_before, $userdata->user_pass );
+		$this->assertEquals( 'new@example.com', $new_data['email'] );
+		$this->assertEquals( 'New User Name', $new_data['name'] );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_username_attempt() {
+		$user1 = $this->factory->user->create( array( 'user_login' => 'test_json_user', 'user_email' => 'testjson@example.com' ) );
+		$user2 = $this->factory->user->create( array( 'user_login' => 'test_json_user2', 'user_email' => 'testjson2@example.com' ) );
+
+		$this->allow_user_to_manage_multisite();
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $user2 ) );
+		$request->set_param( 'username', 'test_json_user' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertInstanceOf( 'WP_Error', $response->as_error() );
+		$this->assertEquals( 'rest_member_cannot_update', $response->as_error()->get_error_code() );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_user_not_logged_in() {
+		$u = $this->factory->user->create();
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
+		$request->set_param( 'username', 'test_json_user' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_member_cannot_update', $response, rest_authorization_required_code() );
+	}
+
+	public function test_update_item_invalid_id() {
+		wp_set_current_user( self::$user );
+
+		$params = array(
+			'id'       => '156',
+			'username' => 'test_user',
+			'password' => 'reallysimplepassword',
+			'email'    => 'reallydumbguy@example.com',
+		);
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$request->set_body_params( $params );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_member_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_without_permission() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		wp_set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u2 ) );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$request->set_body_params( $_POST );
+
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_member_cannot_update', $response, rest_authorization_required_code() );
 	}
 
 	/**

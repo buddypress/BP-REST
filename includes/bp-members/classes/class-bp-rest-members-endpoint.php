@@ -123,6 +123,38 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
+	 * Check if a given request has access to update a member.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function update_item_permissions_check( $request ) {
+		$user = $this->get_user( $request['id'] );
+
+		if ( is_wp_error( $user ) ) {
+			return new WP_Error( 'rest_member_invalid_id',
+				__( 'Invalid member id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		if ( ! current_user_can( 'bp_moderate' ) ) {
+			return new WP_Error( 'rest_member_cannot_update',
+				__( 'Sorry, you are not allowed to update this member.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Check if a given request has access to delete a member.
 	 *
 	 * @since 0.1.0
@@ -189,7 +221,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
-	 * Can this user see a member?
+	 * Can we see a member?
 	 *
 	 * @since 0.1.0
 	 *
