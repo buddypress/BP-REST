@@ -38,12 +38,12 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		) );
 	}
 	/**
-	 * Retrieve threads.
+	 * Retrieve notifications.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request Thread object data.
+	 * @return WP_REST_Request Notification object data.
 	 */
 	public function get_items( $request ) {
 		$args = array(
@@ -56,18 +56,18 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		);
 		$notifications_box = new BP_Notifications_Box_Template( $args );
 		$retval = array();
-		foreach ( $notifications_box->threads as $thread ) {
+		foreach ( $notifications_box->notifications as $notification ) {
 			$retval[] = $this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $thread, $request )
+				$this->prepare_item_for_response( $notification, $request )
 			);
 		}
 		$retval = rest_ensure_response( $retval );
 		/**
-		 * Fires after a thread is fetched via the REST API.
+		 * Fires after a notification is fetched via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param object           $notifications_box Fetched thread.
+		 * @param object           $notifications_box Fetched notification.
 		 * @param WP_REST_Response $retval       The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
@@ -75,7 +75,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		return $retval;
 	}
 	/**
-	 * Check if a given request has access to thread items.
+	 * Check if a given request has access to notification items.
 	 *
 	 * @since 0.1.0
 	 *
@@ -95,25 +95,25 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		return true;
 	}
 	/**
-	 * Prepares thread data for return as an object.
+	 * Prepares notification data for return as an object.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass        $thread Thread data.
+	 * @param stdClass        $notification Notification data.
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response
 	 */
-	public function prepare_item_for_response( $thread, $request ) {
+	public function prepare_item_for_response( $notification, $request ) {
 		$data = array(
-			'id'                    => $thread->thread_id,
-			'prime_association'     => $thread->last_notification_id,
-			'secondary_association' => $thread->last_sender_id,
-			'subject'               => $thread->last_notification_subject,
-			'notification'               => $thread->last_notification_content,
-			'date'                  => $thread->last_notification_date,
-			'unread'                => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
-			'sender_ids'            => $thread->sender_ids,
-			'notifications'              => $thread->notifications,
+			'id'                    => $notification->notification_id,
+			'prime_association'     => $notification->last_notification_id,
+			'secondary_association' => $notification->last_sender_id,
+			'subject'               => $notification->last_notification_subject,
+			'notification'               => $notification->last_notification_content,
+			'date'                  => $notification->last_notification_date,
+			'unread'                => ! empty( $notification->unread_count ) ? $notification->unread_count : 0,
+			'sender_ids'            => $notification->sender_ids,
+			'notifications'              => $notification->notifications,
 		);
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 		$data = $this->add_additional_fields_to_object( $data, $request );
@@ -121,7 +121,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$response = rest_ensure_response( $data );
 		$response->add_links( $this->prepare_links( $activity ) );
 		/**
-		 * Filter a thread value returned from the API.
+		 * Filter a notification value returned from the API.
 		 *
 		 * @since 0.1.0
 		 *
@@ -135,12 +135,12 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $thread Thread.
+	 * @param array $notification Notification.
 	 * @return array Links for the given plugin.
 	 */
-	protected function prepare_links( $thread ) {
+	protected function prepare_links( $notification ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $thread->thread_id;
+		$url  = $base . $notification->notification_id;
 		// Entity meta.
 		$links = array(
 			'self'       => array(
@@ -150,7 +150,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'user'       => array(
-				'href' => rest_url( '/wp/v2/users/' . $thread->last_sender_id ),
+				'href' => rest_url( '/wp/v2/users/' . $notification->last_sender_id ),
 			),
 		);
 		return $links;
@@ -160,18 +160,18 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int $thread_id Thread ID.
+	 * @param int $notification_id Notification ID.
 	 * @return boolean
 	 */
-	protected function can_see( $thread_id = 0 ) {
+	protected function can_see( $notification_id = 0 ) {
 		$user_id = bp_loggedin_user_id();
 		$retval  = false;
 		// Moderators as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = true;
 		}
-		// Check thread access.
-		if ( ! empty( $thread_id ) && notifications_check_thread_access( $thread_id, $user_id ) ) {
+		// Check notification access.
+		if ( ! empty( $notification_id ) && notifications_check_notification_access( $notification_id, $user_id ) ) {
 			$retval = true;
 		}
 		/**
@@ -194,51 +194,53 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'thread',
+			'title'      => 'notification',
 			'type'       => 'object',
 			'properties' => array(
 				'id'                    => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
+					'description' => __( 'The notification ID.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'prime_association'     => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
+					'description' => __( 'The ID of the item associated with the notification.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'subject'               => array(
+				'secondary_association'     => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'HTML title of the object.', 'buddypress' ),
+					'description' => __( 'The ID of the secondary item associated with the notification.', 'buddypress' ),
+					'type'        => 'integer',
+				),
+				'user_id'                    => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'The ID of the user the notification is associated with.', 'buddypress' ),
+					'readonly'    => true,
+					'type'        => 'integer',
+				),
+				'component_name'               => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'The name of the component that the notification is for.', 'buddypress' ),
 					'type'        => 'string',
 				),
-				'notification'               => array(
+				'component_action'               => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'HTML content of the object.', 'buddypress' ),
+					'description' => __( 'The component action which the notification is related to.', 'buddypress' ),
 					'type'        => 'string',
 				),
-				'date'                  => array(
-					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
+				'date_notified'                  => array(
+					'description' => __( "The date  the notification was created, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 					'context'     => array( 'view', 'edit' ),
-				),
-				'secondary_association' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
-					'type'        => 'integer',
 				),
 				'unread'                => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'notifications'              => array(
-					'description' => __( 'Childrens of the object.', 'buddypress' ),
-					'type'        => 'array',
-					'context'     => array( 'view', 'edit' ),
-				),
+
 			),
 		);
 		return $schema;
@@ -261,7 +263,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 		$params['type'] = array(
-			'description'       => __( 'Filter the result by thread status.', 'buddypress' ),
+			'description'       => __( 'Filter the result by notification status.', 'buddypress' ),
 			'type'              => 'string',
 			'default'           => 'all',
 			'enum'              => array( 'all', 'read', 'unread' ),
