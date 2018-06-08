@@ -47,16 +47,23 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'user_id'      => $request['user_id'],
-			'box'          => $request['box'],
-			'type'         => $request['type'],
-			'page'         => $request['page'],
-			'per_page'     => $request['per_page'],
-			'search_terms' => $request['search'],
+			'id'                => $r['id'],
+			'user_id'           => $r['user_id'],
+			'item_id'           => $r['item_id'],
+			'secondary_item_id' => $r['secondary_item_id'],
+			'component_name'    => $r['component_name'],
+			'component_action'  => $r['component_action'],
+			'is_new'            => $r['is_new'],
+			'search_terms'      => $r['search_terms'],
+			'date_query'        => $r['date_query'],
+			'order_by'   => $r['order_by'],
+			'sort_order' => $r['sort_order'],
+			'page'     => $r['page'],
+			'per_page' => $r['per_page'],
 		);
-		$notifications_box = new BP_Notifications_Box_Template( $args );
+		$notifications = BP_Core_Notification::get( $args = array() )
 		$retval = array();
-		foreach ( $notifications_box->notifications as $notification ) {
+		foreach ( $notifications->notifications as $notification ) {
 			$retval[] = $this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $notification, $request )
 			);
@@ -67,11 +74,11 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param object           $notifications_box Fetched notification.
+		 * @param object           $notifications Fetched notification.
 		 * @param WP_REST_Response $retval       The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
-		do_action( 'rest_notifications_get_items', $notifications_box, $retval, $request );
+		do_action( 'rest_notifications_get_items', $notifications, $retval, $request );
 		return $retval;
 	}
 	/**
