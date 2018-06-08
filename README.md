@@ -28,7 +28,7 @@ Please use and provide feedback!
 - [ ] Emails
 - [ ] Friends
 - [ ] Signups
-- [ ] Notifications
+- [x] Notifications
 - [ ] Components
 - [ ] Settings (Under consideration)
 
