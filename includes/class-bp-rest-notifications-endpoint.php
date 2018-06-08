@@ -192,6 +192,19 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		return apply_filters( 'rest_notification_endpoint_can_see', $retval, $user_id );
 	}
 	/**
+	 * Mark all user notifications as read.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param int    $user_id           The ID of the user who the notifications are for.
+	 * @param int    $is_new            Mark as read (1) or unread (0).
+	 * @param int    $item_id           Item ID being acted on.
+	 * @param string $component_name    Name of component the notifications are for.
+	 * @param string $component_action  Name of the component action.
+	 * @param int    $secondary_item_id The ID of the secondary item.
+	 * @return int|false False on failure to update. ID on success.
+	 */
+	/**
 	 * Get the plugin schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
