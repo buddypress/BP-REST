@@ -153,16 +153,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
-		$user = $this->get_user( $request['id'] );
 
-		if ( is_wp_error( $user ) ) {
-			return new WP_Error( 'rest_member_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
 
 		if ( ! current_user_can( 'bp_moderate' ) ) {
 			return new WP_Error( 'rest_member_cannot_update',
@@ -185,16 +176,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
-		$user = $this->get_user( $request['id'] );
 
-		if ( is_wp_error( $user ) ) {
-			return new WP_Error( 'rest_member_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
 
 		if ( ! current_user_can( 'delete_user', $user->ID ) || ! current_user_can( 'bp_moderate' ) ) {
 			return new WP_Error( 'rest_member_cannot_delete',
@@ -255,7 +237,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$user_id = bp_loggedin_user_id();
 		$retval = false;
 
-		$user = $this->get_user( $request['id'] );
+		$user = $this->get_user_by('id', $request['id'] );
 		if ( is_wp_error( $user ) ) {
 			return false;
 		}
