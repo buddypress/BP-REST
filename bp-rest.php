@@ -86,7 +86,7 @@ add_action( 'bp_rest_api_init', function() {
 		$controller->register_routes();
 	}
 	if ( bp_is_active( 'notifications' ) ) {
-		require_once( dirname( __FILE__ ) . '/includes/class-bp-rest-notifications-endpoint.php' );
+		require_once( dirname( __FILE__ ) . '/includes/bp-notifications/classes/class-bp-rest-notifications-endpoint.php' );
 		$controller = new BP_REST_Notifications_Endpoint();
 		$controller->register_routes();
 	}
