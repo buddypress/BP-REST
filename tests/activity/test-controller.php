@@ -19,6 +19,10 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 			'role'          => 'administrator',
 			'user_email'    => 'admin@example.com',
 		) );
+
+		if ( ! $this->server ) {
+			$this->server = rest_get_server();
+		}
 	}
 
 	public function test_register_routes() {
@@ -283,12 +287,14 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 	/**
 	 * @group delete_item
+	 * @group imath
 	 */
 	public function test_delete_item_without_permission() {
-		$u = $this->factory->user->create();
-		wp_set_current_user( $u );
+		$u           = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$activity_id = $this->bp_factory->activity->create( array( 'user_id' => $u ) );
 
-		$activity_id  = $this->bp_factory->activity->create();
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u2 );
 
 		$activity = $this->endpoint->get_activity_object( $activity_id );
 		$this->assertEquals( $activity_id, $activity->id );
