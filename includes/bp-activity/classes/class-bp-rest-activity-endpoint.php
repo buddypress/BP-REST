@@ -827,7 +827,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$activity_id = is_numeric( $request ) ? $request : (int) $request['id'];
 
 		$activity = bp_activity_get_specific( array(
-			'activity_ids' => array( $activity_id ),
+			'activity_ids'     => array( $activity_id ),
+			'display_comments' => true,
 		) );
 
 		if ( is_array( $activity ) && isset( $activity['activities'][0] ) ) {
