@@ -42,6 +42,10 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->endpoint     = new BP_REST_Members_Endpoint();
 		$this->endpoint_url = '/buddypress/v1/members';
+
+		if ( ! $this->server ) {
+			$this->server = rest_get_server();
+		}
 	}
 
 	public function test_register_routes() {
