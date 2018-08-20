@@ -28,6 +28,7 @@ Please use and provide feedback!
 - [ ] Emails
 - [ ] Friends
 - [ ] Signups
+- [ ] Notifications (Partially supported)
 - [ ] Components
 - [ ] Settings (Under consideration)
 
