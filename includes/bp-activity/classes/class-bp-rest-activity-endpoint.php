@@ -444,8 +444,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// If activity author does not match logged_in user, block access.
-		if ( get_current_user_id() !== $activity->user_id ) {
+		// If activity author does not match logged_in user, or it is moderator, block access.
+		if ( bp_loggedin_user_id() !== $activity->user_id ) {
 			return new WP_Error( 'rest_activity_cannot_update',
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
