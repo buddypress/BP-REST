@@ -839,7 +839,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'display_comments' => true,
 		) );
 
-		if ( is_array( $activity ) && isset( $activity['activities'][0] ) ) {
+		if ( is_array( $activity ) && ! empty( $activity['activities'][0] ) ) {
 			return $activity['activities'][0];
 		}
 
