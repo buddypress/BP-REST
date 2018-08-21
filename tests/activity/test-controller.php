@@ -16,8 +16,8 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->activity_id  = $this->bp_factory->activity->create();
 
 		$this->user = $this->factory->user->create( array(
-			'role'          => 'administrator',
-			'user_email'    => 'admin@example.com',
+			'role'       => 'administrator',
+			'user_email' => 'admin@example.com',
 		) );
 
 		if ( ! $this->server ) {
@@ -43,9 +43,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_items() {
 		wp_set_current_user( $this->user );
 
-		$a1  = $this->bp_factory->activity->create();
-		$a2  = $this->bp_factory->activity->create();
-		$a3  = $this->bp_factory->activity->create();
+		$a1 = $this->bp_factory->activity->create();
+		$a2 = $this->bp_factory->activity->create();
+		$a3 = $this->bp_factory->activity->create();
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -68,7 +68,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_public_groups_items() {
 		$component = buddypress()->groups->id;
 
-		// Current user is $this->user
+		// Current user is $this->user.
 		$g1 = $this->bp_factory->group->create( array(
 			'status' => 'private',
 		) );
@@ -119,7 +119,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $u );
 
-		// Current user is $u
+		// Current user is $u.
 		$g1 = $this->bp_factory->group->create( array(
 			'status'     => 'private',
 			'creator_id' => $u,

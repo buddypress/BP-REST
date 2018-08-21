@@ -118,16 +118,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( isset( $request['primary_id'] ) ) {
 			$item_id                      = $request['primary_id'];
 			$args['filter']['primary_id'] = $item_id;
-
-			/**
-			 * Make sure the Item ID is an integer.
-			 *
-			 * @todo Check why the primary_id default's value is an array
-			 *       in $this->get_collection_params()?
-			 */
-			if ( is_array( $item_id ) ) {
-				$item_id = (int) reset( $item_id );
-			}
 		}
 
 		if ( isset( $request['secondary_id'] ) ) {
@@ -1045,16 +1035,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['user'] = array(
-			'description'       => __( 'Limit result set to items created by specific users.', 'buddypress' ),
-			'type'              => 'array',
-			'default'           => array(),
-			'sanitize_callback' => 'wp_parse_id_list',
-			'validate_callback' => 'rest_validate_request_arg',
+			'description'       => __( 'Limit result set to items created by a specific user.', 'buddypress' ),
+			'type'              => 'integer',
+			'default'           => '',
+			'sanitize_callback' => 'absint',
 		);
 
 		$params['status'] = array(
-			'default'           => 'published',
 			'description'       => __( 'Limit result set to items with a specific status.', 'buddypress' ),
+			'default'           => 'published',
 			'type'              => 'string',
 			'enum'              => array( 'published', 'spam' ),
 			'sanitize_callback' => 'sanitize_key',
@@ -1062,17 +1051,17 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['primary_id'] = array(
-			'description'       => __( 'Limit result set to items with a specific prime assocation.', 'buddypress' ),
-			'type'              => 'array',
-			'default'           => array(),
-			'sanitize_callback' => 'wp_parse_id_list',
+			'description'       => __( 'Limit result set to items with a specific prime association.', 'buddypress' ),
+			'type'              => 'integer',
+			'default'           => '',
+			'sanitize_callback' => 'absint',
 		);
 
 		$params['secondary_id'] = array(
-			'description'       => __( 'Limit result set to items with a specific secondary assocation.', 'buddypress' ),
-			'type'              => 'array',
-			'default'           => array(),
-			'sanitize_callback' => 'wp_parse_id_list',
+			'description'       => __( 'Limit result set to items with a specific secondary association.', 'buddypress' ),
+			'type'              => 'integer',
+			'default'           => '',
+			'sanitize_callback' => 'absint',
 		);
 
 		$params['component'] = array(
@@ -1100,7 +1089,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['display_comments'] = array(
-			'description'       => __( 'False for no comments. stream for within stream display, threaded for below each activity item..', 'buddypress' ),
+			'description'       => __( 'False for no comments. stream for within stream display, threaded for below each activity item.', 'buddypress' ),
 			'default'           => '',
 			'type'              => 'string',
 			'validate_callback' => 'rest_validate_request_arg',
