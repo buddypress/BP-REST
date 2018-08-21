@@ -120,11 +120,13 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$args['filter']['primary_id'] = $item_id;
 
 			/**
+			 * Make sure the Item ID is an integer.
+			 *
 			 * @todo Check why the primary_id default's value is an array
 			 *       in $this->get_collection_params()?
 			 */
 			if ( is_array( $item_id ) ) {
-				$item_id = reset( $item_id );
+				$item_id = (int) reset( $item_id );
 			}
 		}
 
@@ -792,7 +794,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			if ( groups_is_user_admin( $user_id, $item_id ) || groups_is_user_mod( $user_id, $item_id ) ) {
 				$retval = true;
 
-			// User is a member of the group.
+				// User is a member of the group.
 			} elseif ( (bool) groups_is_user_member( $user_id, $item_id ) ) {
 				$retval = true;
 			}
@@ -995,7 +997,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params = parent::get_collection_params();
+		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
 		$params['exclude'] = array(
