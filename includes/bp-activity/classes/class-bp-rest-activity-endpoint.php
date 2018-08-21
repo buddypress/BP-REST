@@ -321,6 +321,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error True if the request has access to create, WP_Error object otherwise.
 	 */
 	public function create_item_permissions_check( $request ) {
+
 		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
@@ -331,7 +332,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Bail early.
+		// Bail early, if no content.
 		if ( empty( $request['content'] ) ) {
 			return new WP_Error( 'rest_create_activity_empty_content',
 				__( 'Please, enter some content.', 'buddypress' ),
@@ -444,9 +445,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// If activity author does not match logged_in user, block access.
-		if ( bp_loggedin_user_id() !== $activity->user_id ) {
+		if ( get_current_user_id() !== $activity->user_id ) {
 			return new WP_Error( 'rest_activity_cannot_update',
-				__( 'You are not allowed to update this activity.', 'buddypress' ),
+				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
