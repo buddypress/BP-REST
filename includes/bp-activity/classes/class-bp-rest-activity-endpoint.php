@@ -114,8 +114,18 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$args['filter']['action'] = $request['type'];
 		}
 
+		$item_id = 0;
 		if ( isset( $request['primary_id'] ) ) {
-			$args['filter']['primary_id'] = $request['primary_id'];
+			$item_id                      = $request['primary_id'];
+			$args['filter']['primary_id'] = $item_id;
+
+			/**
+			 * @todo Check why the primary_id default's value is an array
+			 *       in $this->get_collection_params()?
+			 */
+			if ( is_array( $item_id ) ) {
+				$item_id = reset( $item_id );
+			}
 		}
 
 		if ( isset( $request['secondary_id'] ) ) {
@@ -126,7 +136,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$args['count_total'] = false;
 		}
 
-		if ( $this->show_hidden( $request['component'], $request['primary_id'] ) ) {
+		if ( $this->show_hidden( $request['component'], $item_id ) ) {
 			$args['show_hidden'] = true;
 		}
 
@@ -763,12 +773,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  string $component Group component.
-	 * @param  int    $group_id  Group ID.
+	 * @param  string $component The activity component.
+	 * @param  int    $item_id   The activity item ID.
 	 * @return boolean
 	 */
-	protected function show_hidden( $component, $group_id ) {
-		$user_id = bp_loggedin_user_id();
+	protected function show_hidden( $component, $item_id ) {
+		$user_id = get_current_user_id();
 		$retval  = false;
 
 		// Moderators as well.
@@ -777,21 +787,28 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// If activity is from a group, do an extra cap check.
-		if ( bp_is_active( 'groups' ) && 'groups' === $component ) {
-			$retval = true;
+		if ( ! $retval && ! empty( $item_id ) && bp_is_active( 'groups' ) && 'groups' === $component ) {
+			// Group admins and mods have access as well.
+			if ( groups_is_user_admin( $user_id, $item_id ) || groups_is_user_mod( $user_id, $item_id ) ) {
+				$retval = true;
 
 			// User is a member of the group.
-			if ( (bool) groups_is_user_member( $user_id, $group_id ) ) {
-				$retval = true;
-			}
-
-			// Group admins and mods have access as well.
-			if ( groups_is_user_admin( $user_id, $group_id ) || groups_is_user_mod( $user_id, $group_id ) ) {
+			} elseif ( (bool) groups_is_user_member( $user_id, $item_id ) ) {
 				$retval = true;
 			}
 		}
 
-		return (bool) $retval;
+		/**
+		 * Filter here to edit the `show_hidden` activity param for the given component/item_id.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param boolean $retval    True to include hidden activities. False otherwise.
+		 * @param integer $user_id   The current user ID.
+		 * @param string  $component The activity component.
+		 * @param integer $item_id   The activity item ID.
+		 */
+		return (bool) apply_filters( 'rest_activity_endpoint_show_hidden', $retval, $user_id, $component, $item_id );
 	}
 
 	/**

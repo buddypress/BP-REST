@@ -63,6 +63,105 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_public_groups_items() {
+		$component = buddypress()->groups->id;
+
+		// Current user is $this->user
+		$g1 = $this->bp_factory->group->create( array(
+			'status' => 'private',
+		) );
+
+		$g2 = $this->bp_factory->group->create( array(
+			'status' => 'public',
+		) );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'created_group',
+			'user_id'       => $this->user,
+			'item_id'       => $g1,
+			'hide_sitewide' => true,
+		) );
+
+		$a2 = $this->bp_factory->activity->create( array(
+			'component' => $component,
+			'type'      => 'created_group',
+			'user_id'   => $this->user,
+			'item_id'   => $g2,
+		) );
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'component' => $component,
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertNotContains( $a1, $a_ids );
+		$this->assertContains( $a2, $a_ids );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_private_group_items() {
+		$component = buddypress()->groups->id;
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		// Current user is $u
+		$g1 = $this->bp_factory->group->create( array(
+			'status'     => 'private',
+			'creator_id' => $u,
+		) );
+
+		$g2 = $this->bp_factory->group->create( array(
+			'status'     => 'public',
+			'creator_id' => $this->user,
+		) );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'created_group',
+			'user_id'       => $u,
+			'item_id'       => $g1,
+			'hide_sitewide' => true,
+		) );
+
+		$a2 = $this->bp_factory->activity->create( array(
+			'component' => $component,
+			'type'      => 'created_group',
+			'user_id'   => $this->user,
+			'item_id'   => $g2,
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'component'  => $component,
+			'primary_id' => $g1,
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertNotContains( $a2, $a_ids );
+		$this->assertContains( $a1, $a_ids );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
@@ -287,7 +386,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 	/**
 	 * @group delete_item
-	 * @group imath
 	 */
 	public function test_delete_item_without_permission() {
 		$u           = $this->factory->user->create( array( 'role' => 'subscriber' ) );
