@@ -5,13 +5,16 @@
  * @package BuddyPress
  * @since 0.1.0
  */
+
 defined( 'ABSPATH' ) || exit;
+
 /**
  * Notifications endpoints.
  *
  * @since 0.1.0
  */
 class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
+
 	/**
 	 * Constructor.
 	 *
@@ -21,6 +24,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$this->namespace = 'buddypress/v1';
 		$this->rest_base = buddypress()->notifications->id;
 	}
+
 	/**
 	 * Register the component routes.
 	 *
@@ -37,6 +41,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
 	}
+
 	/**
 	 * Retrieve notifications.
 	 *
@@ -46,14 +51,17 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request Notification object data.
 	 */
 	public function get_items( $request ) {
-		$notifications = bp_notifications_get_notifications_for_user( bp_loggedin_user_id(), $format = 'object' );
-		$retval = array();
+		$retval        = array();
+		$notifications = bp_notifications_get_notifications_for_user( get_current_user_id(), 'object' );
+
 		foreach ( $notifications as $notification ) {
 			$retval[] = $this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $notification, $request )
 			);
 		}
+
 		$retval = rest_ensure_response( $retval );
+
 		/**
 		 * Fires after a notification is fetched via the REST API.
 		 *
@@ -64,8 +72,10 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
 		do_action( 'rest_notifications_get_items', $notifications, $retval, $request );
+
 		return $retval;
 	}
+
 	/**
 	 * Check if a given request has access to notification items.
 	 *
@@ -75,7 +85,16 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		// Bail early.
+
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you are not allowed to see the notification.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
 		if ( ! $this->can_see() ) {
 			return new WP_Error( 'rest_user_cannot_view_notifications',
 				__( 'Sorry, you cannot view the notifications.', 'buddypress' ),
@@ -84,8 +103,10 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
+
 		return true;
 	}
+
 	/**
 	 * Prepares notification data for return as an object.
 	 *
@@ -98,20 +119,22 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	public function prepare_item_for_response( $notification, $request ) {
 		$data = array(
 			'id'                    => $notification->id,
-			'user_id'     => $notification->user_id,
-			'prime_association' => $notification->item_id,
-			'secondary_association'               => $notification->secondary_item_id,
-			'component'               => $notification->component_name,
-			'action'                  => $notification->component_action,
+			'user_id'               => $notification->user_id,
+			'prime_association'     => $notification->item_id,
+			'secondary_association' => $notification->secondary_item_id,
+			'component'             => $notification->component_name,
+			'action'                => $notification->component_action,
 			'date'                  => $notification->date_notified,
 			'unread'                => $notification->is_new,
-			'content'            => $notification->content,
-			'href'              => $notification->href,
+			'content'               => $notification->content,
+			'href'                  => $notification->href,
 		);
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
+
+		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data     = $this->add_additional_fields_to_object( $data, $request );
+		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
+
 		/**
 		 * Filter a notification value returned from the API.
 		 *
@@ -122,6 +145,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 */
 		return apply_filters( 'rest_prepare_buddypress_notification_value', $response, $request );
 	}
+
 	/**
 	 * Can this user see the notification?
 	 *
@@ -133,14 +157,17 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	protected function can_see( $notification_id = 0 ) {
 		$user_id = bp_loggedin_user_id();
 		$retval  = false;
-		// Moderators as well.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
-		}
+
 		// Check notification access.
 		if ( ! empty( $notification_id ) && notifications_check_notification_access( $notification_id, $user_id ) ) {
 			$retval = true;
 		}
+
+		// Moderators as well.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
+		}
+
 		/**
 		 * Filter the retval.
 		 *
@@ -151,6 +178,28 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 */
 		return apply_filters( 'rest_notification_endpoint_can_see', $retval, $user_id );
 	}
+
+	/**
+	 * Convert the input date to RFC3339 format.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string      $date_gmt Date GMT format.
+	 * @param string|null $date Optional. Date object.
+	 * @return string|null ISO8601/RFC3339 formatted datetime.
+	 */
+	public function prepare_date_response( $date_gmt, $date = null ) {
+		if ( isset( $date ) ) {
+			return mysql_to_rfc3339( $date );
+		}
+
+		if ( '0000-00-00 00:00:00' === $date_gmt ) {
+			return null;
+		}
+
+		return mysql_to_rfc3339( $date_gmt );
+	}
+
 	/**
 	 * Get the plugin schema, conforming to JSON Schema.
 	 *
@@ -220,6 +269,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 
 			),
 		);
+
 		return $schema;
 	}
 }

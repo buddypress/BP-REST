@@ -94,7 +94,16 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		// Bail early.
+
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you are not allowed to see the messages.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
 		if ( ! $this->can_see() ) {
 			return new WP_Error( 'rest_user_cannot_view_messages',
 				__( 'Sorry, you cannot view the messages.', 'buddypress' ),
@@ -188,13 +197,13 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$user_id = bp_loggedin_user_id();
 		$retval  = false;
 
-		// Moderators as well.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
+		// Check thread access.
+		if ( ! empty( $thread_id ) && messages_check_thread_access( $thread_id, $user_id ) ) {
 			$retval = true;
 		}
 
-		// Check thread access.
-		if ( ! empty( $thread_id ) && messages_check_thread_access( $thread_id, $user_id ) ) {
+		// Moderators as well.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = true;
 		}
 

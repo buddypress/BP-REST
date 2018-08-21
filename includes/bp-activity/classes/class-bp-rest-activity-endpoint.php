@@ -238,7 +238,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 
-		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the activities.', 'buddypress' ),
