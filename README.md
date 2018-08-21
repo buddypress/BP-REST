@@ -10,27 +10,33 @@ Please use and provide feedback!
 
 ## System Requirements
 
-* PHP >= 5.3
-* WP >= 4.7
+* PHP >= 5.6
+* WP >= 4.9
 * BuddyPress trunk (development version).
 
 ## Endpoints (Components) Supported
 
 - [x] Activity
-- [ ] Activity Favorites (Under consideration)
 - [x] Members
-- [ ] Messages (Partially supported)
-- [ ] Groups (Partially supported)
-- [ ] Group Invites (Under consideration)
-- [ ] Group Members (Under consideration)
-- [ ] XProfile Fields (Partially supported)
-- [ ] XProfile Groups (Partially supported)
 - [ ] Emails
 - [ ] Friends
 - [ ] Signups
-- [ ] Notifications (Partially supported)
 - [ ] Components
-- [ ] Settings (Under consideration)
+
+## Endpoints (Components) Partially Supported
+
+- Groups
+- Messages
+- XProfile Fields
+- XProfile Groups
+- Notifications
+
+## Endpoints (Components) Under Consideration
+
+- Activity Favorites
+- Group Invites
+- Group Members
+- Settings
 
 ## Installation
 

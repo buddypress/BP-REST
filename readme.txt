@@ -1,7 +1,7 @@
 === BP-REST ===
 Contributors:      The BuddyPress Community
 Donate link:       https://buddypress.org
-Requires at least: 4.7
+Requires at least: 4.9
 Tested up to:      4.9.1
 Stable tag:        0.1.0
 License:           GPLv2
