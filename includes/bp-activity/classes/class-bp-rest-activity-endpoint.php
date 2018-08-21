@@ -734,11 +734,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function can_see( $request, $edit = false ) {
-		$user_id  = bp_loggedin_user_id();
+		$user_id  = get_current_user_id();
 		$activity = $this->get_activity_object( $request );
 		$retval   = false;
 
-		// Fix for edit content.
+		// Fix for edit context.
 		if ( $edit && 'edit' === $request['context'] && ! bp_current_user_can( 'bp_moderate' ) ) {
 			return false;
 		}
@@ -754,9 +754,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param bool                 $retval   Return value.
 		 * @param int                  $user_id  User ID.
+		 * @param bool                 $edit     Edit content.
 		 * @param BP_Activity_Activity $activity Activity object.
 		 */
-		return apply_filters( 'rest_activity_endpoint_can_see', $retval, $user_id, $activity );
+		return (bool) apply_filters( 'rest_activity_endpoint_can_see', $retval, $user_id, $edit, $activity );
 	}
 
 	/**
