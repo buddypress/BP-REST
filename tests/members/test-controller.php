@@ -83,6 +83,27 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_items_with_edit_context() {
+		wp_set_current_user( self::$user );
+
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$u3 = $this->factory->user->create();
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		foreach ( $response->get_data() as $data ) {
+			$this->check_user_data( get_userdata( $data['id'] ), $data, 'edit', $data['_links'] );
+		}
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
@@ -94,7 +115,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		bp_set_member_type( $u, 'foo' );
 		bp_set_member_type( $u, 'bar', true );
 
-		// Set up xprofile data.
+		// Set the current user.
 		wp_set_current_user( self::$user );
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $u ) );
@@ -106,13 +127,39 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
-	 * @todo  Pending implementation.
+	 * @group get_item
+	 */
+	public function test_get_item_invalid_id() {
+		wp_set_current_user( self::$user );
+
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_invalid_id', $response, 404 );
+	}
+
+	/**
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		$this->markTestIncomplete(
-			'This test has not been fully implemented yet.'
+		$this->allow_user_to_manage_multisite();
+		wp_set_current_user( self::$user );
+
+		$params = array(
+			'password' => 'testpassword',
+			'email'    => 'test@example.com',
+			'name'     => 'Test User',
 		);
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$request->set_body_params( $params );
+		$response = $this->server->dispatch( $request );
+
+		$data = $response->get_data();
+
+		$this->assertEquals( 'Test User', $data['name'] );
+		$this->check_add_edit_user_response( $response );
 	}
 
 	/**
@@ -121,7 +168,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_update_item() {
 		$u = $this->factory->user->create( array(
 			'email' => 'test@example.com',
-			'name' => 'User Name',
+			'name'  => 'User Name',
 		) );
 
 		$this->allow_user_to_manage_multisite();
@@ -131,7 +178,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$pw_before = $userdata->user_pass;
 
 		$_POST['email'] = 'new@example.com';
-		$_POST['name'] = 'New User Name';
+		$_POST['name']  = 'New User Name';
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
@@ -152,8 +199,15 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group update_item
 	 */
 	public function test_update_item_username_attempt() {
-		$user1 = $this->factory->user->create( array( 'user_login' => 'test_json_user', 'user_email' => 'testjson@example.com' ) );
-		$user2 = $this->factory->user->create( array( 'user_login' => 'test_json_user2', 'user_email' => 'testjson2@example.com' ) );
+		$user1 = $this->factory->user->create( array(
+			'user_login' => 'test_json_user',
+			'user_email' => 'testjson@example.com',
+		) );
+
+		$user2 = $this->factory->user->create( array(
+			'user_login' => 'test_json_user2',
+			'user_email' => 'testjson2@example.com',
+		) );
 
 		$this->allow_user_to_manage_multisite();
 		wp_set_current_user( $this->user );
