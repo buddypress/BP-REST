@@ -244,18 +244,90 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
 	}
 
-	// @todo
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item_in_a_group() {
-		$this->markTestIncomplete(
-			'This test has not been fully implemented yet.'
-		);
+		wp_set_current_user( $this->user );
+		$g = $this->bp_factory->group->create( array(
+			'creator_id' => $this->user,
+		) );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data( array(
+			'component'         => buddypress()->groups->id,
+			'prime_association' => $g,
+		) );
+
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_create_activity_response( $response );
 	}
 
-	// @todo
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item_with_no_content_in_a_group() {
-		$this->markTestIncomplete(
-			'This test has not been fully implemented yet.'
-		);
+		wp_set_current_user( $this->user );
+		$g = $this->bp_factory->group->create( array(
+			'creator_id' => $this->user,
+		) );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data( array(
+			'component'         => buddypress()->groups->id,
+			'prime_association' => $g,
+			'content'           => ''
+		) );
+
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_create_activity_empty_content', $response, 500 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_blog_post_item() {
+		wp_set_current_user( $this->user );
+		$p = $this->factory->post->create();
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data( array(
+			'component'             => buddypress()->blogs->id,
+			'prime_association'     => get_current_blog_id(),
+			'secondary_association' => $p,
+			'type'                  => 'new_blog_post',
+			'hidden'                => true,
+		) );
+
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_create_activity_response( $response );
+
+		$activity = bp_activity_get( array(
+			'show_hidden'  => true,
+			'search_terms' => $params['content'],
+			'filter'       => array(
+				'object'       => buddypress()->blogs->id,
+				'primary_id'   => get_current_blog_id(),
+				'secondary_id' => $p,
+			),
+		) );
+
+		$activity = reset( $activity['activities'] );
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertContains( $activity->id, $a_ids );
 	}
 
 	/**
@@ -490,7 +562,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 14, count( $properties ) );
+		$this->assertEquals( 15, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'prime_association', $properties );
 		$this->assertArrayHasKey( 'secondary_association', $properties );
