@@ -146,9 +146,10 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		wp_set_current_user( self::$user );
 
 		$params = array(
-			'password' => 'testpassword',
-			'email'    => 'test@example.com',
-			'name'     => 'Test User',
+			'password'   => 'testpassword',
+			'email'      => 'test@example.com',
+			'user_login' => 'testuser',
+			'name'       => 'Test User',
 		);
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
