@@ -283,6 +283,25 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
+	 * Prepares a single user for creation or update.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return object $prepared_user User object.
+	 */
+	protected function prepare_item_for_database( $request ) {
+		$prepared_user = parent::prepare_item_for_database( $request );
+
+		// The parent class uses username instead of user_login.
+		if ( ! isset( $prepared_user->user_login ) && $request['user_login'] ) {
+			$prepared_user->user_login = $request['user_login'];
+		}
+
+		return $prepared_user;
+	}
+
+	/**
 	 * Get the plugin schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
@@ -332,8 +351,9 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'description' => __( 'An alphanumeric identifier for the member.', 'buddypress' ),
 					'type'        => 'string',
 					'context'     => array( 'embed', 'view', 'edit' ),
+					'required'    => true,
 					'arg_options' => array(
-						'sanitize_callback' => array( $this, 'sanitize_slug' ),
+						'sanitize_callback' => array( $this, 'check_username' ),
 					),
 				),
 
