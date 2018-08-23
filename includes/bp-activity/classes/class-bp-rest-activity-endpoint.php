@@ -266,14 +266,24 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$id                = $request['id'];
 		$parent            = $request['parent'];
 		$type              = $request['type'];
+		$show_hidden       = $request['hidden'];
 		$activity_id       = 0;
 
-		if ( ( 'activity_update' === $type ) && bp_is_active( 'groups' ) && ! is_null( $prime ) ) {
-			$activity_id = groups_post_update( $prepared_activity );
+		// Post a regular activity update.
+		if ( 'activity_update' === $type ) {
+			if ( bp_is_active( 'groups' ) && ! is_null( $prime ) ) {
+				$activity_id = groups_post_update( $prepared_activity );
+			} else {
+				$activity_id = bp_activity_post_update( $prepared_activity );
+			}
+
+			// Post an activity comment.
 		} elseif ( ( 'activity_comment' === $type ) && ! is_null( $id ) && ! is_null( $parent ) ) {
 			$activity_id = bp_activity_new_comment( $prepared_activity );
+
+			// Otherwise add an activity.
 		} else {
-			$activity_id = bp_activity_post_update( $prepared_activity );
+			$activity_id = bp_activity_add( $prepared_activity );
 		}
 
 		if ( ! is_numeric( $activity_id ) ) {
@@ -288,6 +298,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$activity = bp_activity_get( array(
 			'in'               => $activity_id,
 			'display_comments' => 'stream',
+			'show_hidden'      => $show_hidden,
 		) );
 
 		$retval = array(
@@ -342,10 +353,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$acc = $request['prime_association'];
+		$item_id = $request['prime_association'];
 
-		if ( ( 'activity_update' === $request['type'] ) && bp_is_active( 'groups' ) && ! is_null( $acc ) ) {
-			if ( ! $this->show_hidden( 'groups', $acc ) ) {
+		if ( buddypress()->groups->id === $request['component'] && bp_is_active( 'groups' ) && ! is_null( $item_id ) ) {
+			if ( ! $this->show_hidden( $request['component'], $item_id ) ) {
 				return new WP_Error( 'rest_user_cannot_create_activity',
 					__( 'Sorry, you are not allowed to create activity to this group.', 'buddypress' ),
 					array(
@@ -660,14 +671,40 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			}
 		}
 
+		// Activity author ID.
+		if ( ! empty( $schema['properties']['user'] ) && isset( $request['user'] ) ) {
+			$prepared_activity->user_id = (int) $request['user'];
+		} else {
+			$prepared_activity->user_id = get_current_user_id();
+		}
+
 		// Comment parent.
 		if ( ! empty( $schema['properties']['parent'] ) && ( 'activity_comment' === $request['type'] ) && isset( $request['parent'] ) ) {
 			$prepared_activity->parent_id = $request['parent'];
 		}
 
-		// Group ID.
-		if ( ! empty( $schema['properties']['prime_association'] ) && ( 'activity_update' === $request['type'] ) && isset( $request['prime_association'] ) ) {
-			$prepared_activity->group_id = (int) $request['prime_association'];
+		// Activity component.
+		if ( ! empty( $schema['properties']['component'] ) && isset( $request['component'] ) ) {
+			$prepared_activity->component = $request['component'];
+		}
+
+		// Activity Item ID.
+		if ( ! empty( $schema['properties']['prime_association'] ) && isset( $request['prime_association'] ) ) {
+			$item_id = (int) $request['prime_association'];
+
+			// Set the group ID of the activity.
+			if ( isset( $prepared_activity->component ) && buddypress()->groups->id === $prepared_activity->component ) {
+				$prepared_activity->group_id = $item_id;
+
+				// Use a generic item ID for other components.
+			} else {
+				$prepared_activity->item_id = $item_id;
+			}
+		}
+
+		// Secondary Item ID.
+		if ( ! empty( $schema['properties']['secondary_association'] ) && isset( $request['secondary_association'] ) ) {
+			$prepared_activity->secondary_item_id = (int) $request['secondary_association'];
 		}
 
 		// Activity type.
@@ -678,6 +715,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		// Activity content.
 		if ( ! empty( $schema['properties']['content'] ) && isset( $request['content'] ) ) {
 			$prepared_activity->content = $request['content'];
+		}
+
+		// Activity Sitewide visibility.
+		if ( ! empty( $schema['properties']['hidden'] ) && isset( $request['hidden'] ) ) {
+			$prepared_activity->hide_sitewide = (bool) $request['hidden'];
 		}
 
 		/**
@@ -780,7 +822,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// If activity is from a group, do an extra cap check.
-		if ( ! $retval && ! empty( $item_id ) && bp_is_active( 'groups' ) && 'groups' === $component ) {
+		if ( ! $retval && ! empty( $item_id ) && bp_is_active( $component ) && buddypress()->groups->id === $component ) {
 			// Group admins and mods have access as well.
 			if ( groups_is_user_admin( $user_id, $item_id ) || groups_is_user_mod( $user_id, $item_id ) ) {
 				$retval = true;
@@ -896,9 +938,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 				'component'             => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The BuddyPress component the object relates to.', 'buddypress' ),
+					'description' => __( 'The active BuddyPress component the object relates to.', 'buddypress' ),
 					'type'        => 'string',
-					'enum'        => array_keys( bp_core_get_components() ),
+					'enum'        => array_keys( buddypress()->active_components ),
 				),
 
 				'type'                  => array(
@@ -944,6 +986,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'description' => __( 'The ID for the parent of the object.', 'buddypress' ),
 					'type'        => 'array',
 					'context'     => array( 'view', 'edit' ),
+				),
+
+				'hidden'                => array(
+					'context'     => array( 'edit' ),
+					'description' => __( 'Whether the activity object should be sitewide hidden or not.', 'buddypress' ),
+					'type'        => 'boolean',
 				),
 			),
 		);
@@ -1067,9 +1115,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['component'] = array(
-			'description'       => __( 'Limit result set to items with a specific BuddyPress component.', 'buddypress' ),
+			'description'       => __( 'Limit result set to items with a specific active BuddyPress component.', 'buddypress' ),
 			'type'              => 'string',
-			'enum'              => array_keys( bp_core_get_components() ),
+			'enum'              => array_keys( buddypress()->active_components ),
 			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);

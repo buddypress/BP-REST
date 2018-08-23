@@ -294,7 +294,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$prepared_user = parent::prepare_item_for_database( $request );
 
 		// The parent class uses username instead of user_login.
-		if ( ! isset( $prepared_user->user_login ) && $request['user_login'] ) {
+		if ( ! isset( $prepared_user->user_login ) && isset( $request['user_login'] ) ) {
 			$prepared_user->user_login = $request['user_login'];
 		}
 
