@@ -355,7 +355,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$item_id = $request['prime_association'];
 
-		if ( buddypress()->groups->id === $request['component'] && bp_is_active( 'groups' ) && ! is_null( $item_id ) ) {
+		if ( bp_is_active( 'groups' ) && buddypress()->groups->id === $request['component'] && ! is_null( $item_id ) ) {
 			if ( ! $this->show_hidden( $request['component'], $item_id ) ) {
 				return new WP_Error( 'rest_user_cannot_create_activity',
 					__( 'Sorry, you are not allowed to create activity to this group.', 'buddypress' ),
@@ -666,7 +666,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				$prepared_activity->activity_id = $activity->id;
 			} else {
 				$prepared_activity->id         = $activity->id;
-				$prepared_activity->component  = buddypress()->activity->id;
 				$prepared_activity->error_type = 'wp_error';
 			}
 		}
@@ -686,6 +685,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		// Activity component.
 		if ( ! empty( $schema['properties']['component'] ) && isset( $request['component'] ) ) {
 			$prepared_activity->component = $request['component'];
+		} else {
+			$prepared_activity->component = buddypress()->activity->id;
 		}
 
 		// Activity Item ID.
@@ -693,7 +694,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$item_id = (int) $request['prime_association'];
 
 			// Set the group ID of the activity.
-			if ( isset( $prepared_activity->component ) && buddypress()->groups->id === $prepared_activity->component ) {
+			if ( bp_is_active( 'groups' ) && isset( $prepared_activity->component ) && buddypress()->groups->id === $prepared_activity->component ) {
 				$prepared_activity->group_id = $item_id;
 
 				// Use a generic item ID for other components.
