@@ -162,6 +162,42 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_paginated_items() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		$a = $this->bp_factory->activity->create( array( 'user_id' => $u ) );
+		$this->bp_factory->activity->create_many( 5, array( 'user_id' => $u ) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'page'      => 2,
+			'per_page'  => 5,
+			'user'      => $u,
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$headers = $response->get_headers();
+		$this->assertEquals( 6, $headers['X-WP-Total'] );
+		$this->assertEquals( 2, $headers['X-WP-TotalPages'] );
+
+		$all_data = $response->get_data();
+		$data     = $all_data;
+		foreach ( $all_data as $data ) {
+			$activity = $this->endpoint->get_activity_object( $data['id'] );
+			$this->check_activity_data( $activity, $data, 'view', $response->get_links() );
+		}
+
+		$a_ids = wp_list_pluck( $all_data, 'id' );
+		$this->assertContains( $a, $a_ids );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
