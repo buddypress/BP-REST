@@ -49,6 +49,8 @@ add_action( 'bp_rest_api_init', function() {
 		return;
 	}
 
+	require_once dirname( __FILE__ ) . '/includes/functions.php';
+
 	if ( bp_is_active( 'activity' ) ) {
 		require_once( dirname( __FILE__ ) . '/includes/bp-activity/classes/class-bp-rest-activity-endpoint.php' );
 		$controller = new BP_REST_Activity_Endpoint();

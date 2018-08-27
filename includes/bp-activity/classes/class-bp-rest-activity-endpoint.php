@@ -142,15 +142,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		$response = rest_ensure_response( $retval );
-
-		// Set headers to let the Client Script be aware of the pagination.
-		if ( ! empty( $activities['total'] ) && $args['per_page'] ) {
-			$total_activities = (int) $activities['total'];
-			$max_pages        = ceil( $total_activities / (int) $args['per_page'] );
-
-			$response->header( 'X-WP-Total', (int) $total_activities );
-			$response->header( 'X-WP-TotalPages', (int) $max_pages );
-		}
+		$response = bp_rest_response_add_total_headers( $response, $activities['total'], $args['per_page'] );
 
 		/**
 		 * Fires after a list of activities is fetched via the REST API.
