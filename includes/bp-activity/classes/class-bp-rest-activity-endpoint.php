@@ -79,7 +79,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request List of activities object data.
+	 * @return WP_REST_Response List of activities response data.
 	 */
 	public function get_items( $request ) {
 		$args = array(
@@ -141,7 +141,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$retval = rest_ensure_response( $retval );
+		$response = rest_ensure_response( $retval );
+		$response = bp_rest_response_add_total_headers( $response, $activities['total'], $args['per_page'] );
 
 		/**
 		 * Fires after a list of activities is fetched via the REST API.
@@ -149,12 +150,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param object           $activities Fetched activities.
-		 * @param WP_REST_Response $retval   The response data.
-		 * @param WP_REST_Request  $request  The request sent to the API.
+		 * @param WP_REST_Response $response   The response data.
+		 * @param WP_REST_Request  $request    The request sent to the API.
 		 */
-		do_action( 'rest_activity_get_items', $activities, $retval, $request );
+		do_action( 'rest_activity_get_items', $activities, $response, $request );
 
-		return $retval;
+		return $response;
 	}
 
 	/**
