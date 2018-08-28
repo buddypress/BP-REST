@@ -559,20 +559,68 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Renders the content of an activity.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param stdClass $activity Activity data.
+	 * @return string The rendered activity content.
+	 */
+	public function render_item( $activity ) {
+		$rendered = '';
+
+		if ( empty( $activity->content ) ) {
+			return $rendered;
+		}
+
+		// Do not truncate activities.
+		add_filter( 'bp_activity_maybe_truncate_entry', '__return_false' );
+
+		if ( 'activity_comment' === $activity->type ) {
+			$rendered = apply_filters( 'bp_get_activity_content', $activity->content );
+		} else {
+			$activities_template = null;
+
+			if ( isset( $GLOBALS['activities_template'] ) ) {
+				$activities_template = $GLOBALS['activities_template'];
+			}
+
+			// Set the `activities_template` global for the current activity.
+			$GLOBALS['activities_template'] = new stdClass;
+			$GLOBALS['activities_template']->activity = $activity;
+
+			// Set up activity oEmbed cache.
+			bp_activity_embed();
+
+			$rendered = apply_filters( 'bp_get_activity_content_body', $activity->content );
+
+			// Restore the `activities_template` global.
+			$GLOBALS['activities_template'] = $activities_template;
+		}
+
+		// Restore the filter to truncate activities.
+		remove_filter( 'bp_activity_maybe_truncate_entry', '__return_false' );
+
+		return $rendered;
+	}
+
+	/**
 	 * Prepares activity data for return as an object.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param stdClass        $activity Activity data.
-	 * @param WP_REST_Request $request Full details about the request.
-	 * @param boolean         $is_raw Optional, not used. Defaults to false.
+	 * @param WP_REST_Request $request  Full details about the request.
 	 * @return WP_REST_Response
 	 */
-	public function prepare_item_for_response( $activity, $request, $is_raw = false ) {
+	public function prepare_item_for_response( $activity, $request ) {
 		$data = array(
 			'user'                  => $activity->user_id,
 			'component'             => $activity->component,
-			'content'               => $activity->content,
+			'content'               => array(
+				'raw'      => $activity->content,
+				'rendered' => $this->render_item( $activity ),
+			),
 			'date'                  => $this->prepare_date_response( $activity->date_recorded ),
 			'id'                    => $activity->id,
 			'link'                  => bp_activity_get_permalink( $activity->id ),
@@ -716,7 +764,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		// Activity content.
 		if ( ! empty( $schema['properties']['content'] ) && isset( $request['content'] ) ) {
-			$prepared_activity->content = $request['content'];
+			if ( is_string( $request['content'] ) ) {
+				$prepared_activity->content = $request['content'];
+			} elseif ( isset( $request['content']['raw'] ) ) {
+				$prepared_activity->content = $request['content']['raw'];
+			}
 		}
 
 		// Activity Sitewide visibility.
@@ -961,7 +1013,24 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'content'               => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML content of the object.', 'buddypress' ),
-					'type'        => 'string',
+					'type'        => 'object',
+					'arg_options' => array(
+						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
+						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
+					),
+					'properties'  => array(
+						'raw'       => array(
+							'description' => __( 'Content for the object, as it exists in the database.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'edit' ),
+						),
+						'rendered'  => array(
+							'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'view', 'edit' ),
+							'readonly'    => true,
+						),
+					),
 				),
 
 				'date'                  => array(
