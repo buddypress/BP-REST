@@ -219,6 +219,49 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group render_item
+	 */
+	public function test_render_item() {
+		wp_set_current_user( $this->user );
+
+		$a = $this->bp_factory->activity->create( array(
+			'user_id' => $this->user,
+			'content' => 'links should be clickable: https://buddypress.org',
+		) );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $a ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$all_data = $response->get_data();
+		$a_data = reset( $all_data );
+
+		$this->assertTrue( false !== strpos( $a_data['content']['rendered'], '</a>' ) );
+	}
+
+	/**
+	 * @group render_item
+	 */
+	public function test_render_item_with_embed_post() {
+		wp_set_current_user( $this->user );
+		$p = $this->factory->post->create();
+
+		$a = $this->bp_factory->activity->create( array(
+			'user_id' => $this->user,
+			'content' => get_post_embed_url( $p ),
+		) );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $a ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$all_data = $response->get_data();
+		$a_data = reset( $all_data );
+
+		$this->assertTrue( false !== strpos( $a_data['content']['rendered'], 'wp-embedded-content' ) );
+	}
+
+	/**
 	 * @group create_item
 	 */
 	public function test_create_item() {
@@ -229,6 +272,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$params = $this->set_activity_data();
 		$request->set_body_params( $params );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->check_create_activity_response( $response );
@@ -245,6 +289,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$params = $this->set_activity_data();
 		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->check_create_activity_response( $response );
@@ -261,6 +306,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$params = $this->set_activity_data( array( 'content' => '' ) );
 		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'rest_create_activity_empty_content', $response, 500 );
@@ -275,6 +321,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$params = $this->set_activity_data();
 		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
@@ -298,6 +345,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 
 		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->check_create_activity_response( $response );
@@ -322,6 +370,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 
 		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'rest_create_activity_empty_content', $response, 500 );
@@ -346,6 +395,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 
 		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->check_create_activity_response( $response );
@@ -380,6 +430,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$params = $this->set_activity_data();
 		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->check_update_activity_response( $response );
@@ -388,7 +439,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$new_data = $new_data[0];
 
 		$this->assertEquals( $this->activity_id, $new_data['id'] );
-		$this->assertEquals( $params['content'], $new_data['content'] );
+		$this->assertEquals( $params['content'], $new_data['content']['raw'] );
 
 		$activity = $this->endpoint->get_activity_object( $this->activity_id );
 		$this->assertEquals( $params['content'], $activity->content );
@@ -457,6 +508,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $activity_id, $activity->id );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 		$this->assertNotInstanceOf( 'WP_Error', $response );
 
@@ -464,7 +516,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$data = $response->get_data();
 
-		$this->assertEquals( 'Deleted activity', $data['content'] );
+		$this->assertEquals( 'Deleted activity', $data['content']['raw'] );
 	}
 
 	/**
@@ -531,7 +583,13 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	protected function check_activity_data( $activity, $data, $context, $links ) {
 		$this->assertEquals( $activity->user_id, $data['user'] );
 		$this->assertEquals( $activity->component, $data['component'] );
-		$this->assertEquals( $activity->content, $data['content'] );
+
+		if ( 'view' === $context ) {
+			$this->assertEquals( wpautop( $activity->content ), $data['content']['rendered'] );
+		} else {
+			$this->assertEquals( $activity->content, $data['content']['raw'] );
+		}
+
 		$this->assertEquals( $activity->type, $data['type'] );
 		$this->assertEquals( $this->endpoint->prepare_date_response( $activity->date_recorded ), $data['date'] );
 		$this->assertEquals( $activity->id, $data['id'] );
