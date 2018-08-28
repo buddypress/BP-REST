@@ -98,7 +98,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$retval = rest_ensure_response( $retval );
+		$response = rest_ensure_response( $retval );
+		$response = bp_rest_response_add_total_headers( $response, $groups['total'], $args['per_page'] );
 
 		/**
 		 * Fires after a list of groups is fetched via the REST API.
@@ -106,12 +107,12 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param object           $groups   Fetched groups.
-		 * @param WP_REST_Response $retval   The response data.
+		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'rest_groups_get_items', $groups, $retval, $request );
+		do_action( 'rest_group_get_items', $groups, $response, $request );
 
-		return $retval;
+		return $response;
 	}
 
 	/**
