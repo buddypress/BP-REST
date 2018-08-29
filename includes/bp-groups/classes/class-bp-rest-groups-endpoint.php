@@ -154,7 +154,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		$retval = rest_ensure_response( $retval );
+		$response = rest_ensure_response( $retval );
 
 		/**
 		 * Fires after a group is fetched via the REST API.
@@ -162,12 +162,12 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param object           $group    Fetched group.
-		 * @param WP_REST_Response $retval   The response data.
+		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'rest_group_get_item', $group, $retval, $request );
+		do_action( 'rest_group_get_item', $group, $response, $request );
 
-		return $retval;
+		return $response;
 	}
 
 	/**
@@ -226,7 +226,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		$data = array(
 			'avatar_urls'        => array(),
 			'creator_id'         => bp_get_group_creator_id( $item ),
-			'date_created'       => $this->prepare_date_response( $item->date_created ),
+			'date_created'       => bp_rest_prepare_date_response( $item->date_created ),
 			'description'        => bp_get_group_description( $item ),
 			'enable_forum'       => bp_group_is_forum_enabled( $item ),
 			'id'                 => $item->id,
@@ -260,7 +260,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// If this is the 'edit' context, fill in more details--similar to "populate_extras".
 		if ( 'edit' === $context ) {
 			$data['total_member_count'] = groups_get_groupmeta( $item->id, 'total_member_count' );
-			$data['last_activity']      = $this->prepare_date_response( groups_get_groupmeta( $item->id, 'last_activity' ) );
+			$data['last_activity']      = bp_rest_prepare_date_response( groups_get_groupmeta( $item->id, 'last_activity' ) );
 
 			// Add admins and moderators to their respective arrays.
 			$admin_mods = groups_get_group_members( array(
@@ -291,10 +291,10 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array           $response
-		 * @param WP_REST_Request $request Request used to generate the response.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  Request used to generate the response.
 		 */
-		return apply_filters( 'rest_prepare_buddypress_group_value', $response, $request );
+		return apply_filters( 'rest_group_prepare_value', $response, $request );
 	}
 
 	/**
@@ -322,28 +322,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Convert the input date to RFC3339 format.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string      $date_gmt Date GMT format.
-	 * @param string|null $date Optional. Date object.
-	 * @return string|null ISO8601/RFC3339 formatted datetime.
-	 */
-	protected function prepare_date_response( $date_gmt, $date = null ) {
-		if ( isset( $date ) ) {
-			return mysql_to_rfc3339( $date );
-		}
-
-		if ( '0000-00-00 00:00:00' === $date_gmt ) {
-			return null;
-		}
-
-		return mysql_to_rfc3339( $date_gmt );
-	}
-
-	/**
-	 * Can this user see the activity?
+	 * Can this user see the group?
 	 *
 	 * @since 0.1.0
 	 *
@@ -375,10 +354,10 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool            $retval Return value.
+		 * @param bool            $retval  Return value.
 		 * @param WP_REST_Request $request Full details about the request.
 		 */
-		return apply_filters( 'rest_group_endpoint_can_see', $retval, $request );
+		return (bool) apply_filters( 'rest_group_can_see', $retval, $request );
 	}
 
 	/**
@@ -390,22 +369,33 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function show_hidden( $group ) {
-		// Bail early.
+		$user_id = bp_loggedin_user_id();
+		$retval  = false;
+
 		if ( 'hidden' !== $group->status ) {
-			return true;
+			$retval = true;
 		}
 
 		// Moderators as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
+			$retval = true;
 		}
 
 		// User is a member of the group.
-		if ( (bool) groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) {
-			return true;
+		if ( (bool) groups_is_user_member( $user_id, $group->id ) ) {
+			$retval = true;
 		}
 
-		return false;
+		/**
+		 * Filter the group show hidden.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param boolean $retval   True to include hidden groups. False otherwise.
+		 * @param integer $user_id  The current user ID.
+		 * @param object  $group    The group object.
+		 */
+		return (bool) apply_filters( 'rest_group_show_hidden', $retval, $user_id, $group );
 	}
 
 	/**
@@ -421,7 +411,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			return null;
 		}
 
-		$types = explode( ',', $value );
+		$types       = explode( ',', $value );
 		$valid_types = array_intersect( $types, bp_groups_get_group_types() );
 
 		return empty( $valid_types ) ? null : $valid_types;
@@ -445,12 +435,12 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			return true;
 		}
 
-		$types = explode( ',', $value );
+		$types            = explode( ',', $value );
 		$registered_types = bp_groups_get_group_types();
 		foreach ( $types as $type ) {
 			if ( ! in_array( $type, $registered_types, true ) ) {
 				/* translators: %1$s and %2$s is replaced with the registered types */
-				return new WP_Error( 'rest_invalid_group_type', sprintf( __( 'The group type you provided, %1$s, is not one of %2$s.' ), $type, implode( ', ', $registered_types ) ) );
+				return new WP_Error( 'rest_invalid_group_type', sprintf( __( 'The group type you provided, %1$s, is not one of %2$s.', 'buddypress' ), $type, implode( ', ', $registered_types ) ) );
 			}
 		}
 	}
@@ -586,7 +576,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params = parent::get_collection_params();
+		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
 		$params['type'] = array(
