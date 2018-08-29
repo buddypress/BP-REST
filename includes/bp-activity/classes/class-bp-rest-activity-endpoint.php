@@ -665,10 +665,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array           $response
-		 * @param WP_REST_Request $request Request used to generate the response.
+		 * @param object           $response The Response data.
+		 * @param WP_REST_Request  $request  Request used to generate the response.
+		 * @param WP_REST_Request  $activity The activity object.
 		 */
-		return apply_filters( 'rest_activity_prepare_value', $response, $request );
+		return apply_filters( 'rest_activity_prepare_value', $response, $request, $activity );
 	}
 
 	/**
@@ -676,7 +677,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  object          $comments Comments.
+	 * @param  array           $comments Comments.
 	 * @param  WP_REST_Request $request Full details about the request.
 	 * @return array           An array of activity comments.
 	 */
@@ -698,10 +699,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array           $data
-		 * @param WP_REST_Request $request Request used to generate the response.
+		 * @param array           $data     An array of activity comments.
+		 * @param WP_REST_Request $request  Request used to generate the response.
+		 * @param array           $comments Comments.
 		 */
-		return apply_filters( 'rest_activity_prepare_comments', $data, $request );
+		return apply_filters( 'rest_activity_prepare_comments', $data, $request, $comments );
 	}
 
 	/**
