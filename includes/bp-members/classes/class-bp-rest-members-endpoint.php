@@ -119,7 +119,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @param object           $user     User object used to create response.
 		 * @param WP_REST_Request  $request  Request object.
 		 */
-		return apply_filters( 'rest_prepare_user', $response, $user, $request );
+		return apply_filters( 'rest_member_prepare_user', $response, $user, $request );
 	}
 
 	/**
@@ -253,7 +253,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 */
 	protected function can_see( $request, $edit = false ) {
 		$user_id = bp_loggedin_user_id();
-		$retval = false;
+		$retval  = false;
 
 		$user = $this->get_user( $request['id'] );
 		if ( is_wp_error( $user ) ) {
@@ -279,7 +279,16 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$retval = true;
 		}
 
-		return (bool) $retval;
+		/**
+		 * Filter the retval.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool     $retval   Return value.
+		 * @param int      $user_id  User ID.
+		 * @param bool     $edit     Edit content.
+		 */
+		return (bool) apply_filters( 'rest_member_can_see', $retval, $user_id, $edit );
 	}
 
 	/**
@@ -298,7 +307,15 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$prepared_user->user_login = $request['user_login'];
 		}
 
-		return $prepared_user;
+		/**
+		 * Filters an user object before it is inserted or updated via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param stdClass        $prepared_user An object prepared for inserting or updating the database.
+		 * @param WP_REST_Request $request Request object.
+		 */
+		return apply_filters( 'rest_member_pre_insert_value', $prepared_user, $request );
 	}
 
 	/**
