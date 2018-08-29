@@ -60,7 +60,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$retval = rest_ensure_response( $retval );
+		$response = rest_ensure_response( $retval );
 
 		/**
 		 * Fires after a notification is fetched via the REST API.
@@ -68,12 +68,12 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param object           $notifications Fetched notification.
-		 * @param WP_REST_Response $retval       The response data.
-		 * @param WP_REST_Request  $request      The request sent to the API.
+		 * @param WP_REST_Response $response      The response data.
+		 * @param WP_REST_Request  $request       The request sent to the API.
 		 */
-		do_action( 'rest_notifications_get_items', $notifications, $retval, $request );
+		do_action( 'rest_notification_get_items', $notifications, $response, $request );
 
-		return $retval;
+		return $response;
 	}
 
 	/**
@@ -130,9 +130,10 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'href'                  => $notification->href,
 		);
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data     = $this->add_additional_fields_to_object( $data, $request );
-		$data     = $this->filter_response_by_context( $data, $context );
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data    = $this->add_additional_fields_to_object( $data, $request );
+		$data    = $this->filter_response_by_context( $data, $context );
+
 		$response = rest_ensure_response( $data );
 
 		/**
@@ -140,10 +141,10 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array           $response
-		 * @param WP_REST_Request $request Request used to generate the response.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  Request used to generate the response.
 		 */
-		return apply_filters( 'rest_prepare_buddypress_notification_value', $response, $request );
+		return apply_filters( 'rest_notification_prepare_value', $response, $request );
 	}
 
 	/**
@@ -173,31 +174,11 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool   $retval Return value.
-		 * @param int    $user_id User ID.
+		 * @param bool   $retval          Return value.
+		 * @param int    $user_id         User ID.
+		 * @param int    $notification_id Notification ID.
 		 */
-		return apply_filters( 'rest_notification_endpoint_can_see', $retval, $user_id );
-	}
-
-	/**
-	 * Convert the input date to RFC3339 format.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string      $date_gmt Date GMT format.
-	 * @param string|null $date Optional. Date object.
-	 * @return string|null ISO8601/RFC3339 formatted datetime.
-	 */
-	public function prepare_date_response( $date_gmt, $date = null ) {
-		if ( isset( $date ) ) {
-			return mysql_to_rfc3339( $date );
-		}
-
-		if ( '0000-00-00 00:00:00' === $date_gmt ) {
-			return null;
-		}
-
-		return mysql_to_rfc3339( $date_gmt );
+		return apply_filters( 'rest_notification_can_see', $retval, $user_id, $notification_id );
 	}
 
 	/**
