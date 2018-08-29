@@ -591,7 +591,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		}
 
 		$this->assertEquals( $activity->type, $data['type'] );
-		$this->assertEquals( $this->endpoint->prepare_date_response( $activity->date_recorded ), $data['date'] );
+		$this->assertEquals( bp_rest_prepare_date_response( $activity->date_recorded ), $data['date'] );
 		$this->assertEquals( $activity->id, $data['id'] );
 		$this->assertEquals( bp_activity_get_permalink( $activity->id ), $data['link'] );
 		$this->assertEquals( $activity->item_id, $data['prime_association'] );

@@ -240,7 +240,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the activities.', 'buddypress' ),
@@ -308,7 +307,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		$retval = rest_ensure_response( $retval );
+		$response = rest_ensure_response( $retval );
 
 		/**
 		 * Fires after an activity is created via the REST API.
@@ -316,12 +315,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param object           $activity The created activity.
-		 * @param WP_REST_Response $retval   The response data.
+		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'rest_activity_create_item', $activity, $retval, $request );
+		do_action( 'rest_activity_create_item', $activity, $response, $request );
 
-		return $retval;
+		return $response;
 	}
 
 	/**
@@ -409,7 +408,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		$retval = rest_ensure_response( $retval );
+		$response = rest_ensure_response( $retval );
 
 		/**
 		 * Fires after an activity is updated via the REST API.
@@ -417,12 +416,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param object           $activity The updated activity.
-		 * @param WP_REST_Response $retval   The response data.
+		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'rest_activity_update_item', $activity, $retval, $request );
+		do_action( 'rest_activity_update_item', $activity, $response, $request );
 
-		return $retval;
+		return $response;
 	}
 
 	/**
@@ -586,7 +585,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			}
 
 			// Set the `activities_template` global for the current activity.
-			$GLOBALS['activities_template'] = new stdClass;
+			$GLOBALS['activities_template']           = new stdClass();
 			$GLOBALS['activities_template']->activity = $activity;
 
 			// Set up activity oEmbed cache.
@@ -621,7 +620,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'raw'      => $activity->content,
 				'rendered' => $this->render_item( $activity ),
 			),
-			'date'                  => $this->prepare_date_response( $activity->date_recorded ),
+			'date'                  => bp_rest_prepare_date_response( $activity->date_recorded ),
 			'id'                    => $activity->id,
 			'link'                  => bp_activity_get_permalink( $activity->id ),
 			'parent'                => 'activity_comment' === $activity->type ? $activity->item_id : 0,
@@ -669,7 +668,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @param array           $response
 		 * @param WP_REST_Request $request Request used to generate the response.
 		 */
-		return apply_filters( 'rest_prepare_buddypress_activity_value', $response, $request );
+		return apply_filters( 'rest_activity_prepare_value', $response, $request );
 	}
 
 	/**
@@ -694,7 +693,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return $data;
+		/**
+		 * Filter activity comments returned from the API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $data
+		 * @param WP_REST_Request $request Request used to generate the response.
+		 */
+		return apply_filters( 'rest_activity_prepare_comments', $data, $request );
 	}
 
 	/**
@@ -784,7 +791,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @param stdClass        $prepared_activity An object prepared for inserting or updating the database.
 		 * @param WP_REST_Request $request Request object.
 		 */
-		return apply_filters( 'rest_pre_insert_buddypress_activity_value', $prepared_activity, $request );
+		return apply_filters( 'rest_activity_pre_insert_value', $prepared_activity, $request );
 	}
 
 	/**
@@ -792,7 +799,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $activity Activity.
+	 * @param object $activity Activity object.
 	 * @return array Links for the given plugin.
 	 */
 	protected function prepare_links( $activity ) {
@@ -854,7 +861,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @param bool                 $edit     Edit content.
 		 * @param BP_Activity_Activity $activity Activity object.
 		 */
-		return (bool) apply_filters( 'rest_activity_endpoint_can_see', $retval, $user_id, $edit, $activity );
+		return (bool) apply_filters( 'rest_activity_can_see', $retval, $user_id, $edit, $activity );
 	}
 
 	/**
@@ -897,28 +904,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @param string  $component The activity component.
 		 * @param integer $item_id   The activity item ID.
 		 */
-		return (bool) apply_filters( 'rest_activity_endpoint_show_hidden', $retval, $user_id, $component, $item_id );
-	}
-
-	/**
-	 * Convert the input date to RFC3339 format.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string      $date_gmt Date GMT format.
-	 * @param string|null $date Optional. Date object.
-	 * @return string|null ISO8601/RFC3339 formatted datetime.
-	 */
-	public function prepare_date_response( $date_gmt, $date = null ) {
-		if ( isset( $date ) ) {
-			return mysql_to_rfc3339( $date );
-		}
-
-		if ( '0000-00-00 00:00:00' === $date_gmt ) {
-			return null;
-		}
-
-		return mysql_to_rfc3339( $date_gmt );
+		return (bool) apply_filters( 'rest_activity_show_hidden', $retval, $user_id, $component, $item_id );
 	}
 
 	/**
