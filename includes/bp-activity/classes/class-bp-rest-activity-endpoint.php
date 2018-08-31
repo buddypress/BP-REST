@@ -679,7 +679,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( ! bp_activity_can_favorite() ) {
 			return new WP_Error( 'rest_activity_cannot_favorite',
-				__( 'Sorry, Activities cannot be favorited.', 'buddypress' ),
+				__( 'Sorry, Activity cannot be favorited.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
