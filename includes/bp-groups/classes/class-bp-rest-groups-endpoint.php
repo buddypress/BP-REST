@@ -339,12 +339,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		// Only bp_moderators and logged in users (viewing their own groups) can see hidden groups.
-		if ( ! empty( $request['show_hidden'] ) ) {
+		if ( ! empty( $request['show_hidden'] ) && ! bp_current_user_can( 'bp_moderate' ) ) {
 			if ( ! empty( $request['user_id'] ) && bp_loggedin_user_id() !== $request['user_id'] ) {
-				$retval = false;
-			}
-
-			if ( ! bp_current_user_can( 'bp_moderate' ) ) {
 				$retval = false;
 			}
 		}
