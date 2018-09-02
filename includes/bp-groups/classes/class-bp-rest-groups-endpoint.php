@@ -155,7 +155,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			$group->id = 0;
 
 			if ( empty( $group ) || empty( $group->id ) ) {
-				return new WP_Error( 'bp_rest_invalid_group',
+				return new WP_Error( 'bp_rest_invalid_group_id',
 					__( 'Invalid group id.', 'buddypress' ),
 					array(
 						'status' => 404,
@@ -294,9 +294,28 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
-				__( 'Sorry, you are not allowed to create groups.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to create groups.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		if ( ! bp_user_can_create_groups() ) {
+			return new WP_Error( 'rest_user_cannot_create_groups',
+				__( 'Sorry, you cannot create groups.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// If no group name.
+		if ( empty( $request['name'] ) ) {
+			return new WP_Error( 'rest_create_group_empty_name',
+				__( 'Please, enter the name of group.', 'buddypress' ),
+				array(
+					'status' => 500,
 				)
 			);
 		}
@@ -313,17 +332,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-
 		$group = groups_create_group( $this->prepare_item_for_database( $request ) );
-
-		if ( ! is_numeric( $group->id ) ) {
-			return new WP_Error( 'rest_user_cannot_update_group',
-				__( 'Cannot update existing group.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -360,7 +369,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
-				__( 'Sorry, you are not allowed to update this group.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to update this group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -379,7 +388,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		// If group author does not match logged_in user, block access.
-		if ( bp_loggedin_user_id() !== $group->user_id ) {
+		if ( bp_loggedin_user_id() !== $group->creator_id ) {
 			return new WP_Error( 'rest_group_cannot_update',
 				__( 'Sorry, you are not allowed to update this group.', 'buddypress' ),
 				array(
@@ -406,9 +415,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		$response = $this->prepare_item_for_response( $group, $request );
 
-		$retval = groups_delete_group( $group->id );
-
-		if ( ! $retval ) {
+		if ( ! groups_delete_group( $group->id ) ) {
 			return new WP_Error( 'rest_group_cannot_delete',
 				__( 'Could not delete the group.', 'buddypress' ),
 				array(
@@ -418,7 +425,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		/**
-		 * Fires after an group is deleted via the REST API.
+		 * Fires after a group is deleted via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
@@ -444,7 +451,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
-				__( 'Sorry, you are not allowed to delete this group.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to delete this group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -569,7 +576,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		// Group Creator ID.
 		if ( ! empty( $schema['properties']['creator_id'] ) && isset( $request['creator_id'] ) ) {
-			$prepared_group->creator_id = (int) $request['creator'];
+			$prepared_group->creator_id = (int) $request['creator_id'];
 		} else {
 			$prepared_group->creator_id = get_current_user_id();
 		}
@@ -614,19 +621,23 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param object $item Group item.
+	 * @param object $group Group item.
 	 * @return array Links for the given plugin.
 	 */
-	protected function prepare_links( $item ) {
+	protected function prepare_links( $group ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
+		$url  = $base . $group->group_id;
 
 		// Entity meta.
 		$links = array(
 			'self'       => array(
-				'href' => rest_url( $base . $item->id ),
+				'href' => rest_url( $url ),
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),
+			),
+			'user'       => array(
+				'href' => rest_url( sprintf( '/wp/v2/users/%d', $group->creator_id ) ),
 			),
 		);
 
@@ -646,7 +657,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		$retval = false;
 
 		if ( $edit && 'edit' === $request['context'] && ! bp_current_user_can( 'bp_moderate' ) ) {
-			return $retval;
+			$retval = true;
 		} else {
 
 			// Only bp_moderators and logged in users (viewing their own groups) can see hidden groups.
@@ -719,6 +730,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return array|null
 	 */
 	public function sanitize_group_types( $value ) {
+
+		// Bail early.
 		if ( empty( $value ) ) {
 			return null;
 		}
