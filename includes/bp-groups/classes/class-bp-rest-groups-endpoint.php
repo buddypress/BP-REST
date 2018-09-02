@@ -140,10 +140,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function get_item( $request ) {
-		$group_id = (int) $request['id'];
-
 		$group = groups_get_group( array(
-			'group_id'        => $group_id,
+			'group_id'        => (int) $request['id'],
 			'load_users'      => false,
 			'populate_extras' => false,
 		) );
@@ -154,7 +152,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			// Unset the group ID to ensure our error condition fires.
 			$group->id = 0;
 
-			if ( empty( $group ) || empty( $group->id ) ) {
+			if ( empty( $group->id ) ) {
 				return new WP_Error( 'bp_rest_invalid_group_id',
 					__( 'Invalid group id.', 'buddypress' ),
 					array(
@@ -469,7 +467,62 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		if ( ! bp_current_user_can( 'bp_moderate' ) ) {
+			return new WP_Error( 'rest_user_cannot_delete_group',
+				__( 'Sorry, you are not allowed to delete this group.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		return true;
+	}
+
+	/**
+	 * Renders the content of a group.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param stdClass $group Group data.
+	 * @return string The rendered group content.
+	 */
+	public function render_item( $group ) {
+		$rendered = '';
+
+		if ( empty( $group->description ) ) {
+			return $rendered;
+		}
+
+		// Do not truncate activities.
+		add_filter( 'bp_activity_maybe_truncate_entry', '__return_false' );
+
+		if ( 'activity_comment' === $activity->type ) {
+			$rendered = apply_filters( 'bp_get_activity_content', $activity->content );
+		} else {
+			$activities_template = null;
+
+			if ( isset( $GLOBALS['activities_template'] ) ) {
+				$activities_template = $GLOBALS['activities_template'];
+			}
+
+			// Set the `activities_template` global for the current activity.
+			$GLOBALS['activities_template']           = new stdClass();
+			$GLOBALS['activities_template']->activity = $activity;
+
+			// Set up activity oEmbed cache.
+			bp_activity_embed();
+
+			$rendered = apply_filters( 'bp_get_activity_content_body', $activity->content );
+
+			// Restore the `activities_template` global.
+			$GLOBALS['activities_template'] = $activities_template;
+		}
+
+		// Restore the filter to truncate activities.
+		remove_filter( 'bp_activity_maybe_truncate_entry', '__return_false' );
+
+		return $rendered;
 	}
 
 	/**
@@ -487,7 +540,10 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'avatar_urls'        => array(),
 			'creator_id'         => bp_get_group_creator_id( $item ),
 			'date_created'       => bp_rest_prepare_date_response( $item->date_created ),
-			'description'        => bp_get_group_description( $item ),
+			'description'        => array(
+				'raw'      => $item->description,
+				'rendered' => bp_get_group_description( $item ),
+			),
 			'enable_forum'       => bp_group_is_forum_enabled( $item ),
 			'link'               => bp_get_group_permalink( $item ),
 			'name'               => bp_get_group_name( $item ),
@@ -575,8 +631,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		// Group Creator ID.
-		if ( ! empty( $schema['properties']['creator_id'] ) && isset( $request['creator_id'] ) ) {
-			$prepared_group->creator_id = (int) $request['creator_id'];
+		if ( ! empty( $schema['properties']['creator_id'] ) && isset( $request['user_id'] ) ) {
+			$prepared_group->creator_id = (int) $request['user_id'];
 		} else {
 			$prepared_group->creator_id = get_current_user_id();
 		}
@@ -843,7 +899,24 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'description'        => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The description of the group.', 'buddypress' ),
-					'type'        => 'string',
+					'type'        => 'object',
+					'arg_options' => array(
+						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
+						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
+					),
+					'properties'  => array(
+						'raw'       => array(
+							'description' => __( 'Content for the group, as it exists in the database.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'edit' ),
+						),
+						'rendered'  => array(
+							'description' => __( 'HTML content for the group, transformed for display.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'view', 'edit' ),
+							'readonly'    => true,
+						),
+					),
 				),
 
 				'status'             => array(
