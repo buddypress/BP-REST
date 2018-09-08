@@ -18,5 +18,5 @@
     "repository" : {
         "type" : "git",
         "url" : "buddypress/BP-REST"
-    },
+    }
 }
