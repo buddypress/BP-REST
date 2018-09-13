@@ -320,6 +320,16 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 			// Post an activity comment.
 		} elseif ( ( 'activity_comment' === $type ) && ! is_null( $id ) && ! is_null( $parent ) ) {
+			// ID of the root activity item.
+			if ( ! empty( $schema['properties']['prime_association'] ) && isset( $request['prime_association'] ) ) {
+				$prepared_activity->activity_id = (int) $request['prime_association'];
+			}
+
+			// ID of a parent comment.
+			if ( ! empty( $schema['properties']['secondary_association'] ) && isset( $request['secondary_association'] ) ) {
+				$prepared_activity->parent_id = (int) $request['secondary_association'];
+			}
+
 			$activity_id = bp_activity_new_comment( $prepared_activity );
 
 			// Otherwise add an activity.
@@ -877,11 +887,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$prepared_activity->user_id = (int) $request['user'];
 		} else {
 			$prepared_activity->user_id = get_current_user_id();
-		}
-
-		// Comment parent.
-		if ( ! empty( $schema['properties']['parent'] ) && ( 'activity_comment' === $request['type'] ) && isset( $request['parent'] ) ) {
-			$prepared_activity->parent_id = $request['parent'];
 		}
 
 		// Activity component.
