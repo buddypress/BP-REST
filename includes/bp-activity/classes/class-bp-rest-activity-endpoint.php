@@ -865,7 +865,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( ! empty( $schema['properties']['id'] ) && ! empty( $activity->id ) ) {
 			if ( 'activity_comment' === $request['type'] ) {
-				$prepared_activity->activity_id = $activity->id;
+				$prepared_activity->id = $activity->id;
 			} else {
 				$prepared_activity->id         = $activity->id;
 				$prepared_activity->error_type = 'wp_error';
