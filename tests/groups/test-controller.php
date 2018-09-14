@@ -3,6 +3,7 @@
  * Group Endpoint Tests.
  *
  * @package BP_REST
+ * @group group
  */
 class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
@@ -11,8 +12,9 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Groups_Endpoint();
+		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/buddypress/v1/' . buddypress()->groups->id;
-		$this->user = $this->factory->user->create( array(
+		$this->user         = $this->factory->user->create( array(
 			'role'       => 'administrator',
 			'user_email' => 'admin@example.com',
 		) );
@@ -45,7 +47,10 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 */
 	public function test_get_items() {
 		wp_set_current_user( $this->user );
-		$this->bp_factory->group->create_many( 5, array( 'creator_id' => $this->user ) );
+
+		$a1 = $this->bp_factory->group->create();
+		$a2 = $this->bp_factory->group->create();
+		$a3 = $this->bp_factory->group->create();
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -53,7 +58,10 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		foreach ( $response->get_data() as $data ) {
+		$all_data = $response->get_data();
+		$data     = $all_data;
+
+		foreach ( $all_data as $data ) {
 			$group = $this->endpoint->get_group_object( $data['id'] );
 			$this->check_group_data( $group, $data, 'view', $response->get_links() );
 		}
@@ -80,29 +88,145 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
+
 		$headers = $response->get_headers();
 		$this->assertEquals( 6, $headers['X-WP-Total'] );
 		$this->assertEquals( 2, $headers['X-WP-TotalPages'] );
 
 		$all_data = $response->get_data();
-
+		$data     = $all_data;
 		foreach ( $all_data as $data ) {
 			$group = $this->endpoint->get_group_object( $data['id'] );
 			$this->check_group_data( $group, $data, 'view', $response->get_links() );
 		}
-
-		$a_ids = wp_list_pluck( $all_data, 'id' );
-		$this->assertContains( $a, $a_ids );
 	}
 
 	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		wp_set_current_user( $this->user );
+		$u = $this->factory->user->create();
+		wp_set_current_user( $u );
 
 		$group = $this->endpoint->get_group_object( $this->group_id );
 		$this->assertEquals( $this->group_id, $group->id );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->check_group_data( $group, $all_data[0], 'view', $response->get_links() );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_hidden_group() {
+		$u = $this->factory->user->create();
+		$g = $this->bp_factory->group->create( array(
+			'status' => 'hidden',
+		) );
+
+		$group = $this->endpoint->get_group_object( $g );
+
+		$this->bp->add_user_to_group( $u, $group->id );
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->check_group_data( $group, $all_data[0], 'view', $response->get_links() );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_private_group() {
+		$u = $this->factory->user->create();
+		$g = $this->bp_factory->group->create( array(
+			'status' => 'private',
+		) );
+
+		$group = $this->endpoint->get_group_object( $g );
+
+		$this->bp->add_user_to_group( $u, $group->id );
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->check_group_data( $group, $all_data[0], 'view', $response->get_links() );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_hidden_group_without_being_from_group() {
+		$u = $this->factory->user->create();
+		$g = $this->bp_factory->group->create( array(
+			'status' => 'hidden',
+		) );
+
+		$group = $this->endpoint->get_group_object( $g );
+
+		wp_set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_cannot_view_group', $response, 403 );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_private_group_without_being_from_group() {
+		$u = $this->factory->user->create();
+		$g = $this->bp_factory->group->create( array(
+			'status' => 'private',
+		) );
+
+		$group = $this->endpoint->get_group_object( $g );
+		$this->assertEquals( $g, $group->id );
+
+		wp_set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_cannot_view_group', $response, 403 );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_private_group_mods() {
+		$g = $this->bp_factory->group->create( array(
+			'status' => 'private',
+		) );
+
+		$group = $this->endpoint->get_group_object( $g );
+		$this->assertEquals( $g, $group->id );
+
+		wp_set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $group->id ) );
 		$request->set_param( 'context', 'view' );
@@ -121,13 +245,12 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_render_item() {
 		wp_set_current_user( $this->user );
 
-		$a = $this->bp_factory->group->create( array(
+		$g = $this->bp_factory->group->create( array(
 			'name'        => 'Group Test',
 			'description' => 'links should be clickable: https://buddypress.org',
-			'creator_id'  => $this->user,
 		) );
 
-		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $a ) );
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $g ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
@@ -135,29 +258,6 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$a_data   = reset( $all_data );
 
 		$this->assertTrue( false !== strpos( $a_data['description']['rendered'], '</a>' ) );
-	}
-
-	/**
-	 * @group render_item
-	 */
-	public function test_render_item_with_embed_post() {
-		wp_set_current_user( $this->user );
-		$p = $this->factory->post->create();
-
-		$a = $this->bp_factory->group->create( array(
-			'name'        => 'Group Test',
-			'description' => get_post_embed_url( $p ),
-			'creator_id'  => $this->user,
-		) );
-
-		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $a ) );
-		$request->set_param( 'context', 'view' );
-		$response = $this->server->dispatch( $request );
-
-		$all_data = $response->get_data();
-		$a_data   = reset( $all_data );
-
-		$this->assertTrue( false !== strpos( $a_data['description']['rendered'], 'wp-embedded-content' ) );
 	}
 
 	/**
@@ -230,15 +330,15 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group update_item
 	 */
 	public function test_update_item() {
-		wp_set_current_user( $this->user );
-
 		$group = $this->endpoint->get_group_object( $this->group_id );
 		$this->assertEquals( $this->group_id, $group->id );
+
+		wp_set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $group->id ) );
 		$request->add_header( 'content-type', 'application/json' );
 
-		$params = $this->set_group_data();
+		$params = $this->set_group_data( array( 'description' => 'Updated Description' ) );
 		$request->set_body( wp_json_encode( $params ) );
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
@@ -251,7 +351,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $this->group_id, $new_data['id'] );
 		$this->assertEquals( $params['description'], $new_data['description']['raw'] );
 
-		$group = $this->endpoint->get_group_object( $this->group_id );
+		$group = $this->endpoint->get_group_object( $new_data['id'] );
 		$this->assertEquals( $params['description'], $group->description );
 	}
 
@@ -275,7 +375,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( $this->group_id, $group->id );
 
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $group->id ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
@@ -359,7 +459,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item_without_permission() {
-		$u           = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u        = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$group_id = $this->bp_factory->group->create( array( 'creator_id' => $u ) );
 
 		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -392,15 +492,21 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	protected function check_group_data( $group, $data, $context, $links ) {
-
 		$this->assertEquals( $group->id, $data['id'] );
 		$this->assertEquals( $group->creator_id, $data['creator_id'] );
+		$this->assertEquals( bp_rest_prepare_date_response( $group->date_created ), $data['date_created'] );
+		$this->assertEquals( $group->enable_forum, $data['enable_forum'] );
+		$this->assertEquals( bp_get_group_permalink( $group ), $data['link'] );
 		$this->assertEquals( $group->name, $data['name'] );
+		$this->assertEquals( $group->slug, $data['slug'] );
+		$this->assertEquals( $group->status, $data['status'] );
 
 		if ( 'view' === $context ) {
 			$this->assertEquals( wpautop( $group->description ), $data['description']['rendered'] );
 		} else {
 			$this->assertEquals( $group->description, $data['description']['raw'] );
+			$this->assertEquals( $group->total_member_count, $data['total_member_count'] );
+			$this->assertEquals( bp_rest_prepare_date_response( $group->last_activity ), $data['last_activity'] );
 		}
 	}
 

@@ -3,6 +3,7 @@
  * Members Endpoint Tests.
  *
  * @package BP_REST
+ * @group member
  */
 class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 

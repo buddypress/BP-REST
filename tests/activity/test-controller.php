@@ -3,6 +3,7 @@
  * Activity Endpoint Tests.
  *
  * @package BP_REST
+ * @group activity
  */
 class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
@@ -173,9 +174,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
-			'page'      => 2,
-			'per_page'  => 5,
-			'user'      => $u,
+			'page'     => 2,
+			'per_page' => 5,
+			'user'     => $u,
 		) );
 
 		$request->set_param( 'context', 'view' );
