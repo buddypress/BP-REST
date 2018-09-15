@@ -33,7 +33,6 @@ Please use and provide feedback!
 
 ## Endpoints (Components) Under Consideration
 
-- Activity Favorites
 - Group Invites
 - Group Members
 - Settings
