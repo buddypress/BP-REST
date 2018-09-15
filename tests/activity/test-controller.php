@@ -13,7 +13,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Activity_Endpoint();
 		$this->endpoint_url = '/buddypress/v1/' . buddypress()->activity->id;
-
 		$this->activity_id  = $this->bp_factory->activity->create();
 
 		$this->user = $this->factory->user->create( array(
@@ -61,6 +60,20 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$activity = $this->endpoint->get_activity_object( $data['id'] );
 			$this->check_activity_data( $activity, $data, 'view', $response->get_links() );
 		}
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_user_not_logged_in() {
+		$a1 = $this->bp_factory->activity->create();
+		$a2 = $this->bp_factory->activity->create();
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
 	}
 
 	/**
@@ -199,13 +212,60 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_items_with_favorite() {
+		wp_set_current_user( $this->user );
+
+		$a1 = $this->bp_factory->activity->create();
+		$a2 = $this->bp_factory->activity->create();
+		$a3 = $this->bp_factory->activity->create();
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		bp_activity_add_user_favorite( $a2, $u );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$f_ids = wp_filter_object_list( $response->get_data(), array( 'favorited' => true ), 'AND', 'id' );
+		$f_id = reset( $f_ids );
+		$this->assertEquals( $a2, $f_id );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_with_no_favorite() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		$this->bp_factory->activity->create_many( 3, array( 'user_id' => $u ) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$request->set_query_params( array(
+			'user' => $u,
+		) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$f_ids = wp_filter_object_list( $response->get_data(), array( 'favorited' => false ), 'AND', 'id' );
+		$this->assertTrue( 3 === count( $f_ids ) );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
 		wp_set_current_user( $this->user );
 
 		$activity = $this->endpoint->get_activity_object( $this->activity_id );
-
 		$this->assertEquals( $this->activity_id, $activity->id );
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
@@ -235,7 +295,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$all_data = $response->get_data();
-		$a_data = reset( $all_data );
+		$a_data   = reset( $all_data );
 
 		$this->assertTrue( false !== strpos( $a_data['content']['rendered'], '</a>' ) );
 	}
@@ -257,7 +317,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$all_data = $response->get_data();
-		$a_data = reset( $all_data );
+		$a_data   = reset( $all_data );
 
 		$this->assertTrue( false !== strpos( $a_data['content']['rendered'], 'wp-embedded-content' ) );
 	}
@@ -367,7 +427,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$params = $this->set_activity_data( array(
 			'component'         => buddypress()->groups->id,
 			'prime_association' => $g,
-			'content'           => ''
+			'content'           => '',
 		) );
 
 		$request->set_body( wp_json_encode( $params ) );
@@ -564,6 +624,72 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'rest_user_cannot_delete_activity', $response, 500 );
 	}
 
+	/**
+	 * @group update_favorite
+	 */
+	public function test_update_favorite() {
+		$a = $this->bp_factory->activity->create( array(
+			'user_id' => $this->user,
+		) );
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d/favorite', $a ) );
+		$request->add_header( 'content-type', 'application/json' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$f_ids = wp_filter_object_list( $response->get_data(), array( 'favorited' => true ), 'AND', 'id' );
+		$f_id = reset( $f_ids );
+		$this->assertEquals( $a, $f_id );
+	}
+
+	/**
+	 * @group update_favorite
+	 */
+	public function test_update_favorite_remove() {
+		$a = $this->bp_factory->activity->create( array(
+			'user_id' => $this->user,
+		) );
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		bp_activity_add_user_favorite( $a, $u );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d/favorite', $a ) );
+		$request->add_header( 'content-type', 'application/json' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$f_ids = wp_filter_object_list( $response->get_data(), array( 'favorited' => true ), 'AND', 'id' );
+		$this->assertEmpty( $f_ids );
+	}
+
+	/**
+	 * @group update_favorite
+	 */
+	public function test_update_favorite_when_disabled() {
+		$a = $this->bp_factory->activity->create( array(
+			'user_id' => $this->user,
+		) );
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		add_filter( 'bp_activity_can_favorite', '__return_false' );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d/favorite', $a ) );
+		$request->add_header( 'content-type', 'application/json' );
+		$response = $this->server->dispatch( $request );
+
+		remove_filter( 'bp_activity_can_favorite', '__return_false' );
+
+		$this->assertErrorResponse( 'rest_activity_cannot_favorite', $response, 500 );
+	}
+
 	public function test_prepare_item() {
 		wp_set_current_user( $this->user );
 
@@ -657,7 +783,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 15, count( $properties ) );
+		$this->assertEquals( 16, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'prime_association', $properties );
 		$this->assertArrayHasKey( 'secondary_association', $properties );
@@ -672,6 +798,8 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'parent', $properties );
 		$this->assertArrayHasKey( 'comments', $properties );
 		$this->assertArrayHasKey( 'user_avatar', $properties );
+		$this->assertArrayHasKey( 'hidden', $properties );
+		$this->assertArrayHasKey( 'favorited', $properties );
 	}
 
 	public function test_context_param() {
