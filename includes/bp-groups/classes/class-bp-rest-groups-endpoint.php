@@ -312,6 +312,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	public function update_item( $request ) {
 		$group_id = groups_create_group( $this->prepare_item_for_database( $request ) );
 
+		// If the update was fired but returned an error,
+		// send a custom error to the api.
 		if ( ! is_numeric( $group_id ) ) {
 			return new WP_Error( 'rest_user_cannot_update_group',
 				__( 'Cannot update existing group.', 'buddypress' ),
@@ -376,8 +378,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// If group author does not match logged_in user, block access.
-		if ( get_current_user_id() !== $group->creator_id || ! bp_current_user_can( 'bp_moderate' ) ) {
+		// If group author does not match logged_in user, block update.
+		if ( ! $this->can_user_delete_or_update( $group ) ) {
 			return new WP_Error( 'rest_group_cannot_update',
 				__( 'Sorry, you are not allowed to update this group.', 'buddypress' ),
 				array(
@@ -458,7 +460,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( get_current_user_id() !== $group->creator_id || ! bp_current_user_can( 'bp_moderate' ) ) {
+		if ( ! $this->can_user_delete_or_update( $group ) ) {
 			return new WP_Error( 'rest_user_cannot_delete_group',
 				__( 'Sorry, you are not allowed to delete this group.', 'buddypress' ),
 				array(
@@ -694,6 +696,25 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * See if user can delete or update a group.
+	 *
+	 * @param  object $group Group object.
+	 * @return bool
+	 */
+	protected function can_user_delete_or_update( $group ) {
+
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			return true;
+		}
+
+		if ( get_current_user_id() === $group->creator_id ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Get group object.
 	 *
 	 * @since 0.1.0
@@ -778,7 +799,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
 			'title'      => 'group',
 			'type'       => 'object',
-
 			'properties' => array(
 				'id'                 => array(
 					'context'     => array( 'view', 'edit' ),
@@ -797,19 +817,27 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The name of the group.', 'buddypress' ),
 					'type'        => 'string',
+					'required'    => true,
+					'arg_options' => array(
+						'sanitize_callback' => 'sanitize_text_field',
+					),
 				),
 
 				'slug'               => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The URL-friendly slug for the group.', 'buddypress' ),
 					'type'        => 'string',
+					'arg_options' => array(
+						'sanitize_callback' => 'groups_check_slug',
+					),
 				),
 
 				'link'               => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
-					'format'      => 'url',
 					'type'        => 'string',
+					'format'      => 'uri',
+					'readonly'    => true,
 				),
 
 				'description'        => array(
@@ -840,6 +868,9 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'description' => __( 'The status of the group.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array( 'public', 'private', 'hidden' ),
+					'arg_options' => array(
+						'sanitize_callback' => 'sanitize_key',
+					),
 				),
 
 				'enable_forum'       => array(

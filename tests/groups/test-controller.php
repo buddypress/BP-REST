@@ -361,7 +361,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_update_item_invalid_id() {
 		wp_set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'rest_group_invalid_id', $response, 404 );
@@ -405,18 +405,55 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group update_item
+	 */
+	public function test_moderators_can_update_item() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$g = $this->bp_factory->group->create( array(
+			'creator_id'  => $u,
+			'description' => 'New Description',
+		) );
+
+		$group = $this->endpoint->get_group_object( $g );
+		$this->assertEquals( $g, $group->id );
+
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_group_data( array( 'description' => 'Updated Description' ) );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_update_group_response( $response );
+
+		$new_data = $response->get_data();
+		$new_data = $new_data[0];
+
+		$this->assertEquals( $g, $new_data['id'] );
+		$this->assertEquals( $params['description'], $new_data['description']['raw'] );
+
+		$group = $this->endpoint->get_group_object( $new_data['id'] );
+		$this->assertEquals( $params['description'], $group->description );
+	}
+
+	/**
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
-		wp_set_current_user( $this->user );
-
+		$u        = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$group_id = $this->bp_factory->group->create( array(
 			'name'        => 'Group name',
 			'description' => 'Deleted group',
+			'creator_id'  => $u,
 		) );
 
 		$group = $this->endpoint->get_group_object( $group_id );
 		$this->assertEquals( $group_id, $group->id );
+
+		wp_set_current_user( $u );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $group->id ) );
 		$request->set_param( 'context', 'edit' );
@@ -472,6 +509,34 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'rest_user_cannot_delete_group', $response, 500 );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_moderators_can_delete_item() {
+		$u        = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$group_id = $this->bp_factory->group->create( array(
+			'name'        => 'Group name',
+			'description' => 'Deleted group',
+			'creator_id'  => $u,
+		) );
+
+		$group = $this->endpoint->get_group_object( $group_id );
+		$this->assertEquals( $group_id, $group->id );
+
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		$this->assertEquals( 'Deleted group', $data['description']['raw'] );
 	}
 
 	public function test_prepare_item() {
