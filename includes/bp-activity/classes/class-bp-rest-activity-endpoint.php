@@ -236,25 +236,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Checks if the current user is logged in and set their favorites.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return boolean True if the user is logged in. False otherwise.
-	 */
-	public function get_user_permission_check() {
-		if ( ! is_user_logged_in() ) {
-			return false;
-		}
-
-		// Current user favorites.
-		$user_favorites       = bp_activity_get_user_favorites( get_current_user_id() );
-		$this->user_favorites = array_filter( wp_parse_id_list( $user_favorites ) );
-
-		return true;
-	}
-
-	/**
 	 * Check if a given request has access to get information about a specific activity.
 	 *
 	 * @since 0.1.0
@@ -980,6 +961,25 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		return $links;
+	}
+
+	/**
+	 * Checks if the current user is logged in and set their favorites.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return boolean True if the user is logged in. False otherwise.
+	 */
+	protected function get_user_permission_check() {
+		if ( ! is_user_logged_in() ) {
+			return false;
+		}
+
+		// Current user favorites.
+		$user_favorites       = bp_activity_get_user_favorites( get_current_user_id() );
+		$this->user_favorites = array_filter( wp_parse_id_list( $user_favorites ) );
+
+		return true;
 	}
 
 	/**
