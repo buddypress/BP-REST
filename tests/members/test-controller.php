@@ -3,6 +3,7 @@
  * Members Endpoint Tests.
  *
  * @package BP_REST
+ * @group member
  */
 class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
@@ -20,7 +21,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		if ( is_multisite() ) {
 			self::$site = $factory->blog->create( array(
 				'domain' => 'rest.wordpress.org',
-				'path' => '/',
+				'path'   => '/',
 			) );
 
 			update_site_option( 'site_admins', array( 'superadmin' ) );
@@ -123,7 +124,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$this->check_get_user_response( $response, 'view' );
+		$this->check_get_user_response( $response );
 	}
 
 	/**
@@ -143,7 +144,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 */
 	public function test_create_item() {
 		$this->allow_user_to_manage_multisite();
-		wp_set_current_user( self::$user );
 
 		$params = array(
 			'password'   => 'testpassword',
@@ -164,6 +164,28 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group create_item
+	 */
+	public function test_create_item_without_permission() {
+		$u = $this->factory->user->create();
+		wp_set_current_user( $u );
+
+		$params = array(
+			'password'   => 'testpassword',
+			'email'      => 'test@example.com',
+			'user_login' => 'testuser',
+			'name'       => 'Test User',
+		);
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$request->set_body_params( $params );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_member_cannot_create', $response, rest_authorization_required_code() );
+	}
+
+	/**
 	 * @group update_item
 	 */
 	public function test_update_item() {
@@ -173,7 +195,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 
 		$this->allow_user_to_manage_multisite();
-		wp_set_current_user( self::$user );
 
 		$userdata  = get_userdata( $u );
 		$pw_before = $userdata->user_pass;
@@ -194,31 +215,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $pw_before, $userdata->user_pass );
 		$this->assertEquals( 'new@example.com', $new_data['email'] );
 		$this->assertEquals( 'New User Name', $new_data['name'] );
-	}
-
-	/**
-	 * @group update_item
-	 */
-	public function test_update_item_username_attempt() {
-		$user1 = $this->factory->user->create( array(
-			'user_login' => 'test_json_user',
-			'user_email' => 'testjson@example.com',
-		) );
-
-		$user2 = $this->factory->user->create( array(
-			'user_login' => 'test_json_user2',
-			'user_email' => 'testjson2@example.com',
-		) );
-
-		$this->allow_user_to_manage_multisite();
-		wp_set_current_user( $this->user );
-
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $user2 ) );
-		$request->set_param( 'username', 'test_json_user' );
-		$response = $this->server->dispatch( $request );
-
-		$this->assertInstanceOf( 'WP_Error', $response->as_error() );
-		$this->assertEquals( 'rest_member_cannot_update', $response->as_error()->get_error_code() );
 	}
 
 	/**
@@ -278,12 +274,11 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
-		$user_id = $this->factory->user->create( array( 'display_name' => 'Deleted User' ) );
+		$u = $this->factory->user->create( array( 'display_name' => 'Deleted User' ) );
 
 		$this->allow_user_to_manage_multisite();
-		wp_set_current_user( self::$user );
 
-		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $user_id ) );
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $u ) );
 		$request->set_param( 'force', true );
 		$request->set_param( 'reassign', false );
 		$response = $this->server->dispatch( $request );
@@ -295,7 +290,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		}
 
 		$this->assertEquals( 200, $response->get_status() );
+
 		$data = $response->get_data();
+
 		$this->assertTrue( $data['deleted'] );
 		$this->assertEquals( 'Deleted User', $data['previous']['name'] );
 	}
@@ -377,33 +374,30 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	protected function check_user_data( $user, $data, $context, $links ) {
 		$this->assertEquals( $user->ID, $data['id'] );
 		$this->assertEquals( $user->display_name, $data['name'] );
+		$this->assertEquals( $user->user_email, $data['email'] );
+		$this->assertEquals( $user->user_login, $data['user_login'] );
 		$this->assertArrayHasKey( 'avatar_urls', $data );
-
-		$url = bp_core_get_user_domain( $data['id'], $user->user_nicename, $user->user_login );
-		// $this->assertEquals( $url, $data['link'] );
+		$this->assertArrayHasKey( 'thumb', $data['avatar_urls'] );
+		$this->assertArrayHasKey( 'full', $data['avatar_urls'] );
+		$this->assertArrayHasKey( 'member_types', $data );
+		$this->assertEquals(
+			bp_core_get_user_domain( $data['id'], $user->user_nicename, $user->user_login ),
+			$data['link']
+		);
 
 		if ( 'edit' === $context ) {
-			$this->assertEquals( $user->user_email, $data['email'] );
 			$this->assertEquals( (object) $user->allcaps, $data['capabilities'] );
 			$this->assertEquals( (object) $user->caps, $data['extra_capabilities'] );
-			$this->assertEquals( date( 'c', strtotime( $user->user_registered ) ), $data['registered_date'] );
-			$this->assertEquals( $user->display_name, $data['name'] );
 			$this->assertEquals( $user->roles, $data['roles'] );
-		}
-
-		if ( 'edit' !== $context ) {
+			$this->assertArrayHasKey( 'xprofile', $data );
+			$this->assertEquals( bp_rest_prepare_date_response( $user->user_registered ), $data['registered_date'] );
+		} else {
 			$this->assertArrayNotHasKey( 'roles', $data );
 			$this->assertArrayNotHasKey( 'capabilities', $data );
-			$this->assertArrayNotHasKey( 'registered', $data );
 			$this->assertArrayNotHasKey( 'extra_capabilities', $data );
+			$this->assertArrayNotHasKey( 'xprofile', $data );
+			$this->assertArrayNotHasKey( 'registered_date', $data );
 		}
-
-		$this->assertEqualSets( array(
-			'self',
-			'collection',
-		), array_keys( $links ) );
-
-		$this->assertArrayNotHasKey( 'password', $data );
 	}
 
 	protected function allow_user_to_manage_multisite() {

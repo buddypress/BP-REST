@@ -26,103 +26,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
-	 * Prepares a single user output for response.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param stdClass        $user User data.
-	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Response
-	 */
-	public function prepare_item_for_response( $user, $request ) {
-		$data   = array();
-		$schema = $this->get_item_schema();
-
-		if ( ! empty( $schema['properties']['id'] ) ) {
-			$data['id'] = $user->ID;
-		}
-
-		if ( ! empty( $schema['properties']['name'] ) ) {
-			$data['name'] = $user->display_name;
-		}
-
-		if ( ! empty( $schema['properties']['email'] ) ) {
-			$data['email'] = $user->user_email;
-		}
-
-		if ( ! empty( $schema['properties']['link'] ) ) {
-			$data['link'] = bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login );
-		}
-
-		if ( ! empty( $schema['properties']['user_login'] ) ) {
-			$data['user_login'] = bp_is_username_compatibility_mode() ? $user->user_login : $user->user_nicename;
-		}
-
-		if ( ! empty( $schema['properties']['registered_date'] ) ) {
-			$data['registered_date'] = date( 'c', strtotime( $user->user_registered ) );
-		}
-
-		if ( ! empty( $schema['properties']['avatar_urls'] ) ) {
-			$data['avatar_urls'] = array(
-				'full'  => bp_core_fetch_avatar( array(
-					'item_id' => $user->ID,
-					'html'    => false,
-					'type'    => 'full',
-				) ),
-
-				'thumb' => bp_core_fetch_avatar( array(
-					'item_id' => $user->ID,
-					'html'    => false,
-				) ),
-			);
-		}
-
-		// Member types.
-		if ( ! empty( $schema['properties']['member_types'] ) ) {
-			$data['member_types'] = bp_get_member_type( $user->ID, false );
-			if ( false === $data['member_types'] ) {
-				$data['member_types'] = array();
-			}
-		}
-
-		// Defensively call array_values() to ensure an array is returned.
-		if ( ! empty( $schema['properties']['roles'] ) ) {
-			$data['roles'] = array_values( $user->roles );
-		}
-
-		if ( ! empty( $schema['properties']['capabilities'] ) ) {
-			$data['capabilities'] = (object) $user->allcaps;
-		}
-
-		if ( ! empty( $schema['properties']['extra_capabilities'] ) ) {
-			$data['extra_capabilities'] = (object) $user->caps;
-		}
-
-		if ( ! empty( $schema['properties']['xprofile'] ) ) {
-			$data['xprofile'] = $this->xprofile_data( $user->ID );
-		}
-
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'embed';
-
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
-
-		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $user ) );
-
-		/**
-		 * Filters user data returned from the REST API.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param WP_REST_Response $response The response object.
-		 * @param object           $user     User object used to create response.
-		 * @param WP_REST_Request  $request  Request object.
-		 */
-		return apply_filters( 'rest_member_prepare_user', $response, $user, $request );
-	}
-
-	/**
 	 * Checks if a given request has access create members.
 	 *
 	 * @since 0.1.0
@@ -131,7 +34,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return true|WP_Error True if the request has access to create items, WP_Error object otherwise.
 	 */
 	public function create_item_permissions_check( $request ) {
-
 		if ( ! current_user_can( 'bp_moderate' ) ) {
 			return new WP_Error( 'rest_member_cannot_create',
 				__( 'Sorry, you are not allowed to create new members.', 'buddypress' ),
@@ -164,7 +66,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		if ( ! current_user_can( 'bp_moderate' ) ) {
+		if ( ! $this->can_manage_member( $user ) ) {
 			return new WP_Error( 'rest_member_cannot_update',
 				__( 'Sorry, you are not allowed to update this member.', 'buddypress' ),
 				array(
@@ -196,7 +98,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		if ( ! current_user_can( 'delete_user', $user->ID ) || ! current_user_can( 'bp_moderate' ) ) {
+		if ( ! $this->can_manage_member( $user ) ) {
 			return new WP_Error( 'rest_member_cannot_delete',
 				__( 'Sorry, you are not allowed to delete this member.', 'buddypress' ),
 				array(
@@ -262,7 +164,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		// Me, myself and I are always allowed access.
 		if ( $user_id === $user->ID ) {
-			return true;
+			$retval = true;
 		}
 
 		// Moderators as well.
@@ -289,6 +191,96 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @param bool     $edit     Edit content.
 		 */
 		return (bool) apply_filters( 'rest_member_can_see', $retval, $user_id, $edit );
+	}
+
+	/**
+	 * Can user manage (delete/update) a member?
+	 *
+	 * @param  WP_User $user User object.
+	 * @return bool
+	 */
+	protected function can_manage_member( $user ) {
+
+		if ( current_user_can( 'bp_moderate' ) ) {
+			return true;
+		}
+
+		if ( current_user_can( 'delete_user', $user->ID ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Prepares a single user output for response.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_User         $user    User object.
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response
+	 */
+	public function prepare_item_for_response( $user, $request ) {
+		$data = array(
+			'id'                 => $user->ID,
+			'name'               => $user->display_name,
+			'email'              => $user->user_email,
+			'user_login'         => $user->user_login,
+			'link'               => bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login ),
+			'registered_date'    => bp_rest_prepare_date_response( $user->user_registered ),
+			'member_types'       => bp_get_member_type( $user->ID, false ),
+			'avatar_urls'        => array(),
+			'roles'              => array(),
+			'capabilities'       => array(),
+			'extra_capabilities' => array(),
+			'xprofile'           => null,
+		);
+
+		// Avatars.
+		$data['avatar_urls'] = array(
+			'full'  => bp_core_fetch_avatar( array(
+				'item_id' => $user->ID,
+				'html'    => false,
+				'type'    => 'full',
+			) ),
+			'thumb' => bp_core_fetch_avatar( array(
+				'item_id' => $user->ID,
+				'html'    => false,
+				'type'    => 'thumb',
+			) ),
+		);
+
+		// Fallback.
+		if ( false === $data['member_types'] ) {
+			$data['member_types'] = array();
+		}
+
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+
+		if ( 'edit' === $context ) {
+			$data['roles']              = array_values( $user->roles );
+			$data['capabilities']       = (object) $user->allcaps;
+			$data['extra_capabilities'] = (object) $user->caps;
+			$data['xprofile']           = $this->xprofile_data( $user->ID );
+		}
+
+		$data = $this->add_additional_fields_to_object( $data, $request );
+		$data = $this->filter_response_by_context( $data, $context );
+
+		$response = rest_ensure_response( $data );
+		$response->add_links( $this->prepare_links( $user ) );
+
+		/**
+		 * Filters user data returned from the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param WP_REST_Response $response The response object.
+		 * @param WP_User          $user     The user object.
+		 * @param WP_REST_Request  $request  The request object.
+		 */
+		return apply_filters( 'rest_member_prepare_user', $response, $user, $request );
 	}
 
 	/**
@@ -330,7 +322,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
 			'title'      => 'member',
 			'type'       => 'object',
-
 			'properties' => array(
 				'id'          => array(
 					'description' => __( 'Unique identifier for the member.', 'buddypress' ),
@@ -352,7 +343,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'description' => __( 'The email address for the member.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'email',
-					'context'     => array( 'edit' ),
+					'context'     => array( 'embed', 'view', 'edit' ),
 					'required'    => true,
 				),
 
@@ -360,7 +351,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'description' => __( 'Profile URL of the member.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'uri',
-					'context'     => array( 'embed', 'view' ),
+					'context'     => array( 'embed', 'view', 'edit' ),
 					'readonly'    => true,
 				),
 
@@ -372,6 +363,13 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'arg_options' => array(
 						'sanitize_callback' => array( $this, 'check_username' ),
 					),
+				),
+
+				'member_types' => array(
+					'description' => __( 'Member types associated with the member.', 'buddypress' ),
+					'type'        => 'object',
+					'context'     => array( 'embed', 'view', 'edit' ),
+					'readonly'    => true,
 				),
 
 				'registered_date' => array(
@@ -415,17 +413,10 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'readonly'    => true,
 				),
 
-				'member_types' => array(
-					'description' => __( 'Member types associated with the member.', 'buddypress' ),
-					'type'        => 'object',
-					'context'     => array( 'embed', 'view', 'edit' ),
-					'readonly'    => true,
-				),
-
 				'xprofile' => array(
 					'description' => __( 'Member XProfile groups and its fields.', 'buddypress' ),
 					'type'        => 'array',
-					'context'     => array( 'embed', 'view', 'edit' ),
+					'context'     => array( 'edit' ),
 					'readonly'    => true,
 				),
 			),
