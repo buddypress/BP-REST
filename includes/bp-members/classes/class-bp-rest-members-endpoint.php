@@ -230,7 +230,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'link'               => bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login ),
 			'registered_date'    => bp_rest_prepare_date_response( $user->user_registered ),
 			'member_types'       => bp_get_member_type( $user->ID, false ),
-			'avatar_urls'        => array(),
 			'roles'              => array(),
 			'capabilities'       => array(),
 			'extra_capabilities' => array(),
@@ -247,7 +246,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'thumb' => bp_core_fetch_avatar( array(
 				'item_id' => $user->ID,
 				'html'    => false,
-				'type'    => 'thumb',
 			) ),
 		);
 

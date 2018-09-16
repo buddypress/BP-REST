@@ -62,7 +62,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request List of activity object data.
+	 * @return WP_REST_Response List of activity object data.
 	 */
 	public function get_items( $request ) {
 		$args = array(
@@ -83,72 +83,36 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		$retval = array();
 		foreach ( $field_groups as $item ) {
 			$retval[] = $this->prepare_response_for_collection(
-				$this->prepare_groups_for_response( $item, $request )
+				$this->prepare_item_for_response( $item, $request )
 			);
 		}
 
-		$retval = rest_ensure_response( $retval );
+		$response = rest_ensure_response( $retval );
 
 		/**
 		 * Fires after a field groups is fetched via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param object           $field_groups Fetched field groups.
-		 * @param WP_REST_Response $retval       The response data.
+		 * @param array            $field_groups Fetched field groups.
+		 * @param WP_REST_Response $response     The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
-		do_action( 'rest_xprofile_field_group_get_items', $field_groups, $retval, $request );
+		do_action( 'rest_xprofile_field_group_get_items', $field_groups, $response, $request );
 
-		return $retval;
+		return $response;
 	}
 
 	/**
-	 * Prepares XProfile groups for return as an object.
+	 * Check if a given request has access to xprofile group items.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass        $item Xprofile group data.
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @param boolean         $is_raw Optional, not used. Defaults to false.
-	 * @return WP_REST_Response
+	 * @return WP_Error|bool
 	 */
-	public function prepare_groups_for_response( $item, $request, $is_raw = false ) {
-		$data = array(
-			'id'          => (int) $item->id,
-			'name'        => $item->name,
-			'description' => $item->description,
-			'group_order' => (int) $item->group_order,
-			'can_delete'  => (bool) $item->can_delete,
-		);
-
-		// If the fields have been requested, we populate them.
-		if ( $request['fetch_fields'] ) {
-			$data['fields']    = array();
-			$fields_controller = new BP_REST_XProfile_Fields_Endpoint();
-
-			foreach ( $item->fields as $field ) {
-				$data['fields'][] = $fields_controller->assemble_response_data( $field, $request );
-			}
-		}
-
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
-
-		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $item ) );
-
-		/**
-		 * Filter the xprofile groups overview value returned from the API.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param array           $response
-		 * @param WP_REST_Request $request Request used to generate the response.
-		 */
-		return apply_filters( 'rest_prepare_buddypress_xprofile_groups_value', $response, $request );
+	public function get_items_permissions_check( $request ) {
+		return true;
 	}
 
 	/**
@@ -191,7 +155,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		$retval = rest_ensure_response( $retval );
+		$response = rest_ensure_response( $retval );
 
 		/**
 		 * Fires after a field group is fetched via the REST API.
@@ -199,12 +163,24 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param object           $field_group Fetched field group.
-		 * @param WP_REST_Response $retval      The response data.
+		 * @param WP_REST_Response $response    The response data.
 		 * @param WP_REST_Request  $request     The request sent to the API.
 		 */
-		do_action( 'rest_xprofile_field_group_get_item', $field_group, $retval, $request );
+		do_action( 'rest_xprofile_field_group_get_item', $field_group, $response, $request );
 
-		return $retval;
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to get information about a specific field group.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return bool
+	 */
+	public function get_item_permissions_check( $request ) {
+		return true;
 	}
 
 	/**
@@ -212,12 +188,11 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass        $item Xprofile group data.
+	 * @param stdClass        $item    XProfile group data.
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @param boolean         $is_raw Optional, not used. Defaults to false.
 	 * @return WP_REST_Response
 	 */
-	public function prepare_item_for_response( $item, $request, $is_raw = false ) {
+	public function prepare_item_for_response( $item, $request ) {
 		$data = array(
 			'id'          => (int) $item->id,
 			'name'        => $item->name,
@@ -245,38 +220,14 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		$response->add_links( $this->prepare_links( $item ) );
 
 		/**
-		 * Filter the xprofile groups overview value returned from the API.
+		 * Filter the XProfile groups value returned from the API.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array           $response
-		 * @param WP_REST_Request $request Request used to generate the response.
+		 * @param WP_REST_Response $response
+		 * @param WP_REST_Request  $request Request used to generate the response.
 		 */
 		return apply_filters( 'rest_prepare_buddypress_xprofile_group_value', $response, $request );
-	}
-
-	/**
-	 * Check if a given request has access to get information about a specific field group.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return bool
-	 */
-	public function get_item_permissions_check( $request ) {
-		return $this->get_items_permissions_check( $request );
-	}
-
-	/**
-	 * Check if a given request has access to xprofile group items.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_Error|bool
-	 */
-	public function get_items_permissions_check( $request ) {
-		return true;
 	}
 
 	/**
@@ -284,16 +235,17 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $item Xprofile group.
+	 * @param array $item XProfile group.
 	 * @return array Links for the given plugin.
 	 */
 	protected function prepare_links( $item ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
+		$url  = $base . $item->id;
 
 		// Entity meta.
 		$links = array(
 			'self'       => array(
-				'href' => rest_url( $base . $item->id ),
+				'href' => rest_url( $url ),
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),

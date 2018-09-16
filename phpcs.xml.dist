@@ -7,6 +7,7 @@
 		<exclude name="Generic.Formatting.MultipleStatementAlignment.NotSameWarning" />
 		<exclude name="WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned" />
 	</rule>
+
 	<rule ref="WordPress-Docs" />
 
 	<!-- Check all PHP files in directory tree by default. -->

@@ -48,7 +48,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request Notification object data.
+	 * @return WP_REST_Response Notification object data.
 	 */
 	public function get_items( $request ) {
 		$retval        = array();
