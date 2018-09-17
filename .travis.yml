@@ -39,11 +39,7 @@ before_install:
     fi
 
 install:
-  - composer install
   - bash bin/install-wp-tests.sh
-
-before_script:
-  - composer validate
 
 script:
   - bash bin/test.sh
