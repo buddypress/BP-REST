@@ -25,26 +25,25 @@ matrix:
     - php: 7.0
       env: WP_VERSION=latest
     - php: 5.6
-      env: WP_VERSION=4.7
+      env: WP_VERSION=4.9
     - php: 5.6
       env: WP_VERSION=trunk
 
-before_script:
-  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+before_install:
   - |
+    # Remove Xdebug for a huge performance increase:
     if [ -f ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ]; then
       phpenv config-rm xdebug.ini
     else
       echo "xdebug.ini does not exist"
     fi
-  - |
-    if [[ ! -z "$WP_VERSION" ]] ; then
-      bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
-      composer global require "phpunit/phpunit=4.8.*|5.7.*"
-    fi
+
+install:
+  - composer install
+  - bash bin/install-package-tests.sh
+
+before_script:
+  - composer validate
 
 script:
-  - |
-    if [[ ! -z "$WP_VERSION" ]] ; then
-      phpunit
-    fi
+  - bash bin/test.sh
