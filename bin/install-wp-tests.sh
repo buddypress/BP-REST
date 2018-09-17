@@ -92,14 +92,6 @@ install_wp() {
 	download https://raw.github.com/markoheijnen/wp-mysqli/master/db.php $WP_CORE_DIR/wp-content/db.php
 }
 
-install_bp() {
-	git clone --depth=1 git://buddypress.git.wordpress.org/ $WP_CORE_DIR/src/wp-content/plugins/buddypress
-	plugin_slug=$(basename $(pwd))
-	plugin_dir=$WP_CORE_DIR/src/wp-content/plugins/$plugin_slug
-	cd ..
-	mv $plugin_slug $plugin_dir
-}
-
 install_test_suite() {
 	# portable in-place argument for both GNU sed and Mac OSX sed
 	if [[ $(uname -s) == 'Darwin' ]]; then
@@ -156,6 +148,5 @@ install_db() {
 }
 
 install_wp
-install_bp
 install_test_suite
 install_db
