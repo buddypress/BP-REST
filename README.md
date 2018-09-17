@@ -18,24 +18,24 @@ Please use and provide feedback!
 
 - [x] Activity
 - [x] Members
-- [ ] Emails
-- [ ] Friends
-- [ ] Signups
-- [ ] Components
+- [x] Groups
 
 ## Endpoints (Components) Partially Supported
 
-- Groups
 - Messages
 - XProfile Fields
 - XProfile Groups
 - Notifications
 
-## Endpoints (Components) Under Consideration
+## Endpoints (Components) Pending
 
-- Group Invites
-- Group Members
-- Settings
+- [ ] Emails
+- [ ] Friends
+- [ ] Signups
+- [ ] Components
+- [ ] Group Invites
+- [ ] Group Members
+- [ ] Settings
 
 ## Installation
 

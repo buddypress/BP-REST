@@ -3,6 +3,7 @@
  * Notifications Endpoint Tests.
  *
  * @package BP_REST
+ * @group notification
  */
 class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testcase {
 
