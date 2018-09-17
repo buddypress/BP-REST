@@ -17,6 +17,10 @@ cache:
     - vendor
     - $HOME/.composer/cache
 
+env:
+  global:
+    PATH="$TRAVIS_BUILD_DIR/vendor/bin:$PATH"
+
 matrix:
   include:
     - php: 7.2
