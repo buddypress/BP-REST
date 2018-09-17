@@ -40,7 +40,7 @@ before_install:
 
 install:
   - composer install
-  - bash bin/install-package-tests.sh
+  - bash bin/install-wp-tests.sh
 
 before_script:
   - composer validate
