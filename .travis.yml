@@ -32,34 +32,19 @@ matrix:
     - php: 5.6
       env: WP_TRAVISCI=phpcs
 
-before_script:
-  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+before_install:
   - |
+    # Remove Xdebug for a huge performance increase:
     if [ -f ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ]; then
       phpenv config-rm xdebug.ini
     else
       echo "xdebug.ini does not exist"
     fi
-  - |
-    if [[ ! -z "$WP_VERSION" ]] ; then
-      bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
-      export BP_SRC_DIR=/tmp/bp-src/
-      svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk/src $BP_SRC_DIR
-      composer global require "phpunit/phpunit=4.8.*|5.7.*"
-    fi
-  - |
-    if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
-      composer global require wp-coding-standards/wpcs
-      phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs
-    fi
+
+install:
+  - bash bin/install-wp-tests.sh
+  - export BP_SRC_DIR=/tmp/bp-src/
+  - svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk/src $BP_SRC_DIR
 
 script:
-  - |
-    if [[ ! -z "$WP_VERSION" ]] ; then
-      phpunit
-      WP_MULTISITE=1 phpunit
-    fi
-  - |
-    if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
-      phpcs
-    fi
+  - bash bin/test.sh
