@@ -362,8 +362,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error True if the request has access to create, WP_Error object otherwise.
 	 */
 	public function create_item_permissions_check( $request ) {
-
-		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
 				__( 'Sorry, you are not allowed to create activities.', 'buddypress' ),
@@ -409,17 +407,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-
-		// Bail early.
-		if ( empty( $request['content'] ) ) {
-			return new WP_Error( 'rest_update_activity_empty_content',
-				__( 'Please, enter some content.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
 		$activity_id = bp_activity_add( $this->prepare_item_for_database( $request ) );
 
 		if ( ! is_numeric( $activity_id ) ) {
@@ -464,9 +451,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
-
-		// Bail early.
-		if ( ! is_user_logged_in() ) {
+		if ( ! $this->get_user_permission_check() ) {
 			return new WP_Error( 'rest_authorization_required',
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
@@ -489,6 +474,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( ! bp_activity_user_can_delete( $activity ) ) {
 			return new WP_Error( 'rest_activity_cannot_update',
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		if ( empty( $request['content'] ) ) {
+			return new WP_Error( 'rest_update_activity_empty_content',
+				__( 'Please, enter some content.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
@@ -553,9 +547,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
-
-		// Bail early.
-		if ( ! is_user_logged_in() ) {
+		if ( ! $this->get_user_permission_check() ) {
 			return new WP_Error( 'rest_authorization_required',
 				__( 'Sorry, you are not allowed to delete this activity.', 'buddypress' ),
 				array(
@@ -656,21 +648,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_favorite_permissions_check( $request ) {
-		// Bail early.
 		if ( ! $this->get_user_permission_check() ) {
 			return new WP_Error( 'rest_authorization_required',
 				__( 'Sorry, you need to be logged in to update your favorites.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		if ( ! bp_activity_can_favorite() ) {
-			return new WP_Error( 'rest_activity_cannot_favorite',
-				__( 'Sorry, Activity cannot be favorited.', 'buddypress' ),
-				array(
-					'status' => 500,
 				)
 			);
 		}
@@ -686,6 +668,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		if ( ! bp_activity_can_favorite() ) {
+			return new WP_Error( 'rest_activity_cannot_favorite',
+				__( 'Sorry, Activity cannot be favorited.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		return true;
 	}
 
@@ -694,7 +685,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass $activity Activity data.
+	 * @param BP_Activity_Activity $activity Activity data.
 	 * @return string The rendered activity content.
 	 */
 	public function render_item( $activity ) {
@@ -740,8 +731,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass        $activity Activity data.
-	 * @param WP_REST_Request $request  Full details about the request.
+	 * @param BP_Activity_Activity $activity Activity data.
+	 * @param WP_REST_Request      $request  Full details about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $activity, $request ) {
@@ -797,11 +788,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
+		 * @param BP_Activity_Activity $activity The activity object.
 		 * @param WP_REST_Response     $response The Response data.
 		 * @param WP_REST_Request      $request  Request used to generate the response.
-		 * @param BP_Activity_Activity $activity The activity object.
 		 */
-		return apply_filters( 'rest_activity_prepare_value', $response, $request, $activity );
+		return apply_filters( 'rest_activity_prepare_value', $activity, $response, $request );
 	}
 
 	/**
@@ -832,10 +823,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param array           $data     An array of activity comments.
-		 * @param WP_REST_Request $request  Request used to generate the response.
 		 * @param array           $comments Comments.
+		 * @param WP_REST_Request $request  Request used to generate the response.
 		 */
-		return apply_filters( 'rest_activity_prepare_comments', $data, $request, $comments );
+		return apply_filters( 'rest_activity_prepare_comments', $data, $comments, $request );
 	}
 
 	/**

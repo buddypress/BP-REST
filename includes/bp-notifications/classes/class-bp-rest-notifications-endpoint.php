@@ -67,7 +67,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param object           $notifications Fetched notification.
+		 * @param array            $notifications Fetched notification.
 		 * @param WP_REST_Response $response      The response data.
 		 * @param WP_REST_Request  $request       The request sent to the API.
 		 */
@@ -77,7 +77,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check if a given request has access to notification items.
+	 * Check if a given request has access to the notification items.
 	 *
 	 * @since 0.1.0
 	 *
@@ -85,7 +85,6 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the notification.', 'buddypress' ),

@@ -176,7 +176,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param object           $group    Fetched group.
+		 * @param BP_Groups_Group  $group    Fetched group.
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
@@ -191,7 +191,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return bool
+	 * @return WP_Error|bool
 	 */
 	public function get_item_permissions_check( $request ) {
 		if ( ! $this->can_see( $request ) ) {
@@ -250,7 +250,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param object           $group    The created group.
+		 * @param BP_Groups_Group  $group    The created group.
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
@@ -338,7 +338,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param object           $group    The updated group.
+		 * @param BP_Groups_Group  $group    The updated group.
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
@@ -438,8 +438,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
-
-		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
 				__( 'Sorry, you need to be logged in to delete this group.', 'buddypress' ),
@@ -477,7 +475,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass        $item     Group data.
+	 * @param BP_Groups_Group $item     Group object.
 	 * @param WP_REST_Request $request  Full details about the request.
 	 * @return WP_REST_Response
 	 */
@@ -624,7 +622,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param object $group Group item.
+	 * @param BP_Groups_Group $group Group item.
 	 * @return array Links for the given plugin.
 	 */
 	protected function prepare_links( $group ) {
@@ -698,7 +696,9 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	/**
 	 * See if user can delete or update a group.
 	 *
-	 * @param  object $group Group object.
+	 * @since 0.1.0
+	 *
+	 * @param  BP_Groups_Group $group Group item.
 	 * @return bool
 	 */
 	protected function can_user_delete_or_update( $group ) {
@@ -720,7 +720,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return bool|object A group object.
+	 * @return bool|BP_Groups_Group
 	 */
 	public function get_group_object( $request ) {
 		$group_id = is_numeric( $request ) ? $request : (int) $request['id'];

@@ -14,6 +14,8 @@ defined( 'ABSPATH' ) || exit;
  *
  * @see https://developer.wordpress.org/reference/classes/wp_user_query/
  *
+ * @since 0.1.0
+ *
  * @param array           $prepared_args Array of arguments for WP_User_Query.
  * @param WP_REST_Request $request       The current request.
  *

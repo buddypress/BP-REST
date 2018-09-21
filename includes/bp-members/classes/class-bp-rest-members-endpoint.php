@@ -275,10 +275,9 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param WP_REST_Response $response The response object.
-		 * @param WP_User          $user     The user object.
 		 * @param WP_REST_Request  $request  The request object.
 		 */
-		return apply_filters( 'rest_member_prepare_user', $response, $user, $request );
+		return apply_filters( 'rest_member_prepare_user', $response, $request );
 	}
 
 	/**
