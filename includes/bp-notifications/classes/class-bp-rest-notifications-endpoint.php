@@ -52,6 +52,11 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 					) ),
 				),
 			),
+			array(
+				'methods'             => WP_REST_Server::DELETABLE,
+				'callback'            => array( $this, 'delete_item' ),
+				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
 	}
@@ -206,6 +211,76 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Delete a notification.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function delete_item( $request ) {
+		$notification = $this->get_notification_object( $request );
+
+		$request->set_param( 'context', 'edit' );
+
+		$response = $this->prepare_item_for_response( $notification, $request );
+
+		if ( ! BP_Notifications_Notification::delete( array( 'id' => $notification->id ) ) ) {
+			return new WP_Error( 'rest_notification_invalid_id',
+				__( 'Invalid notification id.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		/**
+		 * Fires after a notification is deleted via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_Notifications_Notification $notification The deleted notification.
+		 * @param WP_REST_Response              $response     The response data.
+		 * @param WP_REST_Request               $request      The request sent to the API.
+		 */
+		do_action( 'rest_notification_delete_item', $notification, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to delete a notification.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function delete_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you need to be logged in to delete a notification.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		$notification = $this->get_notification_object( $request );
+
+		if ( ! $this->can_see( $notification->id ) ) {
+			return new WP_Error( 'rest_user_cannot_delete_notification',
+				__( 'Sorry, you cannot delete this notification.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Prepares notification data for return as an object.
 	 *
 	 * @since 0.1.0
@@ -291,11 +366,11 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 
 		$notification = bp_notifications_get_notification( $notification_id );
 
-		if ( ! empty( $notification->id ) || is_object( $notification ) ) {
-			return $notification;
+		if ( empty( $notification->id ) ) {
+			return '';
 		}
 
-		return '';
+		return $notification;
 	}
 
 	/**

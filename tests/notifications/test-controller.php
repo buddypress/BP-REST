@@ -34,7 +34,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
-		$this->assertCount( 1, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
+		$this->assertCount( 2, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
 	}
 
 	/**
@@ -115,10 +115,9 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_item
 	 */
 	public function test_get_item_user_not_logged_in() {
-		$n = $this->bp_factory->notification->create();
-		$notification = $this->endpoint->get_notification_object( $n );
+		$n = $this->bp_factory->notification->create( $this->set_notification_data() );
 
-		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $notification->id ) );
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $n ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
@@ -143,33 +142,93 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertErrorResponse( 'rest_user_cannot_view_notification', $response, 500 );
 	}
 
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item() {
 		$this->assertTrue( true );
 	}
 
+	/**
+	 * @group update_item
+	 */
 	public function test_update_item() {
 		$this->assertTrue( true );
 	}
 
+	/**
+	 * @group delete_item
+	 */
 	public function test_delete_item() {
-		$this->assertTrue( true );
+		$notification_id = $this->bp_factory->notification->create( $this->set_notification_data() );
+
+		$notification = $this->endpoint->get_notification_object( $notification_id );
+		$this->assertEquals( $notification_id, $notification->id );
+
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $notification_id ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->check_notification_data( $notification, $all_data, 'view', $response->get_links() );
 	}
 
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_invalid_id() {
+		wp_set_current_user( $this->user );
+
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_notification_invalid_id', $response, 500 );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_user_not_logged_in() {
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->notification_id ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_user_without_access() {
+		$notification_id = $this->bp_factory->notification->create( $this->set_notification_data() );
+
+		$notification = $this->endpoint->get_notification_object( $notification_id );
+		$this->assertEquals( $notification_id, $notification->id );
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $notification_id ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_cannot_delete_notification', $response, 500 );
+	}
+
+	/**
+	 * @group prepare_item
+	 */
 	public function test_prepare_item() {
+		wp_set_current_user( $this->user );
 
-		$this->assertTrue( true );
-
-		return;
-
-		$n = $this->bp_factory->notification->create( array(
-			'component_name' => 'messages',
-			'user_id'        => $this->user,
-			'is_new'         => true,
-		) );
-
-		$notification = BP_Notifications_Notification::get( array(
-			'user_id' => $this->user,
-		) );
+		$notification = $this->endpoint->get_notification_object( $this->notification_id );
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $notification->id ) );
 		$request->set_query_params( array( 'context' => 'edit' ) );
@@ -179,7 +238,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$all_data = $response->get_data();
 
-		$this->check_activity_data( $notification, $all_data[0], 'edit', $response->get_links() );
+		$this->check_notification_data( $notification, $all_data[0], 'edit', $response->get_links() );
 	}
 
 	protected function check_notification_data( $notification, $data, $context, $links ) {
