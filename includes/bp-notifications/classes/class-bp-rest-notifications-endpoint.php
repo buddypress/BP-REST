@@ -38,6 +38,12 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				'args'                => $this->get_collection_params(),
 			),
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'create_item' ),
+				'permission_callback' => array( $this, 'create_item_permissions_check' ),
+				'args'                => $this->get_endpoint_args_for_item_schema( true ),
+			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
 
@@ -211,6 +217,80 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Create a notification.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
+	 */
+	public function create_item( $request ) {
+		$notification_id = bp_notifications_add_notification( $this->prepare_item_for_database( $request ) );
+
+		if ( ! is_numeric( $notification_id ) ) {
+			return new WP_Error( 'rest_user_cannot_create_notification',
+				__( 'Cannot create new notification.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$notification = $this->get_notification_object( $notification_id );
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $notification, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a notification is created via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_Notifications_Notification  $notification The created notification.
+		 * @param WP_REST_Response               $response     The response data.
+		 * @param WP_REST_Request                $request      The request sent to the API.
+		 */
+		do_action( 'rest_notification_create_item', $notification, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Checks if a given request has access to create a notification.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return true|WP_Error True if the request has access to create, WP_Error object otherwise.
+	 */
+	public function create_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you need to be logged in to create a notification.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		if ( ! $this->can_see() ) {
+			return new WP_Error( 'rest_user_cannot_create_notification',
+				__( 'Sorry, you cannot create a notification.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Delete a notification.
 	 *
 	 * @since 0.1.0
@@ -291,14 +371,14 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $notification, $request ) {
 		$data = array(
-			'id'                    => $notification->id,
-			'user_id'               => $notification->user_id,
-			'prime_association'     => $notification->item_id,
-			'secondary_association' => $notification->secondary_item_id,
-			'component'             => $notification->component_name,
-			'action'                => $notification->component_action,
-			'date'                  => bp_rest_prepare_date_response( $notification->date_notified ),
-			'unread'                => $notification->is_new,
+			'id'                => $notification->id,
+			'user_id'           => $notification->user_id,
+			'item_id'           => $notification->item_id,
+			'secondary_item_id' => $notification->secondary_item_id,
+			'component'         => $notification->component_name,
+			'action'            => $notification->component_action,
+			'date'              => bp_rest_prepare_date_response( $notification->date_notified ),
+			'unread'            => $notification->is_new,
 		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -317,6 +397,92 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param BP_Notifications_Notification $notification Notification object.
 		 */
 		return apply_filters( 'rest_notification_prepare_value', $response, $request, $notification );
+	}
+
+	/**
+	 * Prepare a notification for create or update.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return stdClass|WP_Error Object or WP_Error.
+	 */
+	protected function prepare_item_for_database( $request ) {
+		$prepared_notification = new stdClass();
+		$schema                = $this->get_item_schema();
+		$notification          = $this->get_notification_object( $request );
+
+		if ( ! empty( $schema['properties']['id'] ) && ! empty( $notification->id ) ) {
+			$prepared_notification->id = $notification->id;
+		}
+
+		if ( ! empty( $schema['properties']['user_id'] ) && isset( $request['user_id'] ) ) {
+			$prepared_notification->user_id = (int) $request['user_id'];
+		} else {
+			$prepared_notification->user_id = get_current_user_id();
+		}
+
+		if ( ! empty( $schema['properties']['item_id'] ) && isset( $request['item_id'] ) ) {
+			$prepared_notification->item_id = $request['item_id'];
+		}
+
+		if ( ! empty( $schema['properties']['secondary_item_id'] ) && isset( $request['secondary_item_id'] ) ) {
+			$prepared_notification->secondary_item_id = $request['secondary_item_id'];
+		}
+
+		if ( ! empty( $schema['properties']['component'] ) && isset( $request['component'] ) ) {
+			$prepared_notification->component_name = $request['component'];
+		}
+
+		if ( ! empty( $schema['properties']['action'] ) && isset( $request['action'] ) ) {
+			$prepared_notification->component_action = $request['action'];
+		}
+
+		if ( ! empty( $schema['properties']['unread'] ) && isset( $request['unread'] ) ) {
+			$prepared_notification->is_new = $request['unread'];
+		}
+
+		if ( ! empty( $schema['properties']['date'] ) && isset( $request['date'] ) ) {
+			$prepared_notification->date_notified = $request['date'];
+		}
+
+		/**
+		 * Filters a notification before it is inserted or updated via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param stdClass        $prepared_notification An object prepared for inserting or updating the database.
+		 * @param WP_REST_Request $request Request object.
+		 */
+		return apply_filters( 'rest_notification_pre_insert_value', $prepared_notification, $request );
+	}
+
+	/**
+	 * Prepare links for the request.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param BP_Notifications_Notification $notification Notification item.
+	 * @return array Links for the given plugin.
+	 */
+	protected function prepare_links( $notification ) {
+		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
+		$url  = $base . $notification->id;
+
+		// Entity meta.
+		$links = array(
+			'self'       => array(
+				'href' => rest_url( $url ),
+			),
+			'collection' => array(
+				'href' => rest_url( $base ),
+			),
+			'user'       => array(
+				'href' => rest_url( sprintf( '/wp/v2/users/%d', $notification->user_id ) ),
+			),
+		);
+
+		return $links;
 	}
 
 	/**
@@ -392,12 +558,12 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-				'prime_association'     => array(
+				'item_id'     => array(
 					'context'     => array( 'view', 'embed', 'edit' ),
 					'description' => __( 'The ID of the item associated with the notification.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'secondary_association'     => array(
+				'secondary_item_id'     => array(
 					'context'     => array( 'view', 'embed', 'edit' ),
 					'description' => __( 'The ID of the secondary item associated with the notification.', 'buddypress' ),
 					'type'        => 'integer',
@@ -429,16 +595,6 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				// 'content'                => array(
-				// 	'context'     => array( 'view', 'embed', 'edit' ),
-				// 	'description' => __( 'Content to display.', 'buddypress' ),
-				// 	'type'        => 'string',
-				// ),
-				// 'href'                => array(
-				// 	'context'     => array( 'view', 'embed', 'edit' ),
-				// 	'description' => __( 'Target href of the notification.', 'buddypress' ),
-				// 	'type'        => 'string',
-				// ),
 			),
 		);
 

@@ -30,7 +30,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 
 		// Main.
 		$this->assertArrayHasKey( $this->endpoint_url, $routes );
-		$this->assertCount( 1, $routes[ $this->endpoint_url ] );
+		$this->assertCount( 2, $routes[ $this->endpoint_url ] );
 
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
@@ -146,7 +146,67 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		$this->assertTrue( true );
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+
+		$params = $this->set_notification_data();
+		$request->set_body_params( $params );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_create_notification_response( $response );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_rest_create_item() {
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_notification_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_create_notification_response( $response );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_user_not_logged_in() {
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_notification_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_user_cannot_create() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_notification_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_cannot_create_notification', $response, 500 );
 	}
 
 	/**
@@ -244,7 +304,8 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	protected function check_notification_data( $notification, $data, $context, $links ) {
 		$this->assertEquals( $notification->id, $data['id'] );
 		$this->assertEquals( $notification->user_id, $data['user_id'] );
-		$this->assertEquals( $notification->secondary_item_id, $data['secondary_association'] );
+		$this->assertEquals( $notification->item_id, $data['item_id'] );
+		$this->assertEquals( $notification->secondary_item_id, $data['secondary_item_id'] );
 		$this->assertEquals( $notification->component_name, $data['component'] );
 		$this->assertEquals( $notification->component_action, $data['action'] );
 		$this->assertEquals( bp_rest_prepare_date_response( $notification->date_notified ), $data['date'] );
@@ -258,6 +319,18 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		) );
 	}
 
+	protected function check_create_notification_response( $response ) {
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$response = rest_ensure_response( $response );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		$notification = $this->endpoint->get_notification_object( $data[0]['id'] );
+		$this->check_notification_data( $notification, $data[0], 'edit', $response->get_links() );
+	}
+
 	public function test_get_item_schema() {
 		$request    = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
 		$response   = $this->server->dispatch( $request );
@@ -266,8 +339,8 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->assertEquals( 8, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
-		$this->assertArrayHasKey( 'prime_association', $properties );
-		$this->assertArrayHasKey( 'secondary_association', $properties );
+		$this->assertArrayHasKey( 'item_id', $properties );
+		$this->assertArrayHasKey( 'secondary_item_id', $properties );
 		$this->assertArrayHasKey( 'user_id', $properties );
 		$this->assertArrayHasKey( 'component', $properties );
 		$this->assertArrayHasKey( 'action', $properties );
