@@ -41,11 +41,9 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		wp_set_current_user( $this->user );
+		$this->bp_factory->notification->create_many( 5 );
 
-		$a1 = $this->bp_factory->notification->create();
-		$a2 = $this->bp_factory->notification->create();
-		$a3 = $this->bp_factory->notification->create();
+		wp_set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -66,8 +64,6 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_items
 	 */
 	public function test_get_items_user_not_logged_in() {
-		$n = $this->bp_factory->notification->create();
-
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -210,6 +206,9 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	/**
+	 * The notifications component has no UPDATE method.
+	 * This method is here as it is required by WP_Test_REST_Controller_Testcase class.
+	 *
 	 * @group update_item
 	 */
 	public function test_update_item() {

@@ -19,13 +19,13 @@ Please use and provide feedback!
 - [x] Activity
 - [x] Members
 - [x] Groups
+- [x] Notifications
 
 ## Endpoints (Components) Partially Supported
 
 - Messages
 - XProfile Fields
 - XProfile Groups
-- Notifications
 
 ## Endpoints (Components) Pending
 
