@@ -34,7 +34,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
-		$this->assertCount( 2, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
+		$this->assertCount( 3, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
 	}
 
 	/**
@@ -206,13 +206,91 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	/**
-	 * The notifications component has no UPDATE method.
-	 * This method is here as it is required by WP_Test_REST_Controller_Testcase class.
-	 *
 	 * @group update_item
 	 */
 	public function test_update_item() {
-		$this->assertTrue( true );
+		$notification_id = $this->bp_factory->notification->create( $this->set_notification_data() );
+
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $notification_id ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_notification_data( [ 'is_new' => 0 ] );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_update_notification_response( $response );
+
+		$new_data = $response->get_data();
+		$new_data = $new_data[0];
+
+		$n = $this->endpoint->get_notification_object( $new_data['id'] );
+		$this->assertEquals( $params['is_new'], $n->is_new );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_invalid_id() {
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_notification_data( [ 'is_new' => 0 ] );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_notification_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_user_not_logged_in() {
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->notification_id ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_user_without_access() {
+		$notification_id = $this->bp_factory->notification->create( $this->set_notification_data() );
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $notification_id ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_cannot_update_notification', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_same_status() {
+		$notification_id = $this->bp_factory->notification->create( $this->set_notification_data() );
+
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $notification_id ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_notification_data( [ 'is_new' => 1 ] );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_cannot_update_notification_status', $response, 500 );
 	}
 
 	/**
@@ -268,9 +346,6 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	public function test_delete_item_user_without_access() {
 		$notification_id = $this->bp_factory->notification->create( $this->set_notification_data() );
 
-		$notification = $this->endpoint->get_notification_object( $notification_id );
-		$this->assertEquals( $notification_id, $notification->id );
-
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $u );
 
@@ -315,7 +390,23 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		return wp_parse_args( $args, array(
 			'component_name' => 'groups',
 			'user_id'        => $this->user,
+			'is_new'         => 1,
 		) );
+	}
+
+	protected function check_update_notification_response( $response ) {
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$response = rest_ensure_response( $response );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$headers = $response->get_headers();
+		$this->assertArrayNotHasKey( 'Location', $headers );
+
+		$data = $response->get_data();
+
+		$group = $this->endpoint->get_notification_object( $data[0]['id'] );
+		$this->check_notification_data( $group, $data[0], 'edit', $response->get_links() );
 	}
 
 	protected function check_create_notification_response( $response ) {

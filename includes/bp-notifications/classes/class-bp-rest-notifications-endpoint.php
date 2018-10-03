@@ -59,6 +59,12 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 				),
 			),
 			array(
+				'methods'             => WP_REST_Server::EDITABLE,
+				'callback'            => array( $this, 'update_item' ),
+				'permission_callback' => array( $this, 'update_item_permissions_check' ),
+				'args'                => $this->get_endpoint_args_for_item_schema( false ),
+			),
+			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array( $this, 'delete_item' ),
 				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
@@ -222,7 +228,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
+	 * @return WP_REST_Request|WP_Error
 	 */
 	public function create_item( $request ) {
 		$notification_id = bp_notifications_add_notification( $this->prepare_item_for_database( $request ) );
@@ -266,7 +272,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return true|WP_Error True if the request has access to create, WP_Error object otherwise.
+	 * @return WP_Error|bool
 	 */
 	public function create_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
@@ -281,6 +287,103 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		if ( ! $this->can_see() ) {
 			return new WP_Error( 'rest_user_cannot_create_notification',
 				__( 'Sorry, you cannot create a notification.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Update a notification.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function update_item( $request ) {
+		$notification = $this->get_notification_object( $request );
+
+		$updated = BP_Notifications_Notification::update(
+			array( 'is_new' => $request['is_new'] ),
+			array( 'id' => $notification->id )
+		);
+
+		if ( ! (bool) $updated ) {
+			return new WP_Error( 'rest_user_cannot_update_notification',
+				__( 'Cannot update the status of this notification.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $notification, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a notification is updated via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_Notifications_Notification $notification The updated activity.
+		 * @param WP_REST_Response              $response     The response data.
+		 * @param WP_REST_Request               $request      The request sent to the API.
+		 */
+		do_action( 'rest_notification_update_item', $notification, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to update a notification.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return WP_Error|bool
+	 */
+	public function update_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you need to be logged in to update a notification.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		$notification = $this->get_notification_object( $request );
+
+		if ( empty( $notification->user_id ) ) {
+			return new WP_Error( 'rest_notification_invalid_id',
+				__( 'Invalid notification id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		if ( ! $this->can_see( $notification->id ) ) {
+			return new WP_Error( 'rest_user_cannot_update_notification',
+				__( 'Sorry, you are not allowed to update this this notification.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		if ( $request['is_new'] === $notification->is_new ) {
+			return new WP_Error( 'rest_user_cannot_update_notification_status',
+				__( 'Notification is already with the status you are trying to update into.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
@@ -585,14 +688,14 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 					'type'        => 'string',
 				),
 				'date'                  => array(
-					'description' => __( "The date  the notification was created, in the site's timezone.", 'buddypress' ),
+					'description' => __( "The date the notification was created, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 					'context'     => array( 'view', 'embed', 'edit' ),
 				),
 				'unread'                => array(
 					'context'     => array( 'view', 'embed', 'edit' ),
-					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
+					'description' => __( 'The status of the notification.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 			),
