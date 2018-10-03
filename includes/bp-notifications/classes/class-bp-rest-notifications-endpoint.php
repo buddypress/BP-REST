@@ -88,8 +88,8 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		);
 
 		$notifications = BP_Notifications_Notification::get( $args );
-		$retval        = array();
 
+		$retval = array();
 		foreach ( $notifications as $notification ) {
 			$retval[] = $this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $notification, $request )

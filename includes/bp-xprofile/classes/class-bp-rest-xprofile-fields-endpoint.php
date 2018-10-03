@@ -45,7 +45,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Retrieve single xprofile field.
+	 * Retrieve single XProfile field.
 	 *
 	 * @since 0.1.0
 	 *
@@ -55,7 +55,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	public function get_item( $request ) {
 		$profile_field_id = (int) $request['id'];
 
-		$field = xprofile_get_field( $profile_field_id );
+		$field = $this->get_xprofile_field_object( $profile_field_id );
 
 		if ( ! empty( $request['user_id'] ) ) {
 			$field->data = new stdClass();
@@ -63,7 +63,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			// Ensure that the requester is allowed to see this field.
 			$hidden_user_fields = bp_xprofile_get_hidden_fields_for_user( $request['user_id'] );
 
-			$field->data->value = ( in_array( $profile_field_id, $hidden_user_fields, true ) )
+			$field->data->value = in_array( $profile_field_id, $hidden_user_fields, true )
 				? __( 'Value suppressed.', 'buddypress' )
 				: xprofile_get_field_data( $profile_field_id, $request['user_id'] );
 
@@ -72,8 +72,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( empty( $profile_field_id ) || empty( $field->id ) ) {
-			return new WP_Error( 'bp_rest_invalid_field_id',
-				__( 'Invalid resource id.', 'buddypress' ),
+			return new WP_Error( 'rest_xprofile_field_invalid_id',
+				__( 'Invalid field id.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -89,13 +89,13 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		$response = rest_ensure_response( $retval );
 
 		/**
-		 * Fires after XProfile fields is fetched via the REST API.
+		 * Fires after XProfile field is fetched via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param object           $field    Fetched field.
-		 * @param WP_REST_Response $response The response data.
-		 * @param WP_REST_Request  $request  The request sent to the API.
+		 * @param BP_XProfile_Field $field    Fetched field.
+		 * @param WP_REST_Response  $response The response data.
+		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
 		do_action( 'rest_xprofile_field_get_item', $field, $response, $request );
 
@@ -108,20 +108,65 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return bool
+	 * @return bool|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you need to be logged in to get a XProfile field.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		if ( ! $this->can_see() ) {
+			return new WP_Error( 'rest_user_cannot_view_xprofile_field',
+				__( 'Sorry, you cannot view this XProfile field.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		return true;
 	}
 
 	/**
-	 * Assembles single xprofile field data for return as an object.
+	 * Prepares single XProfile field data to return as an object.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass        $item    XProfile group data.
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return Array
+	 * @param BP_XProfile_Field $field   XProfile field.
+	 * @param WP_REST_Request   $request Full data about the request.
+	 * @return WP_REST_Response
+	 */
+	public function prepare_item_for_response( $field, $request ) {
+		$data = $this->assemble_response_data( $field, $request );
+
+		$response = rest_ensure_response( $data );
+		$response->add_links( $this->prepare_links( $field ) );
+
+		/**
+		 * Filter the XProfile field returned from the API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param WP_REST_Response  $response The response data.
+		 * @param WP_REST_Request   $request  Request used to generate the response.
+		 * @param BP_XProfile_Field $field    XProfile field object.
+		 */
+		return apply_filters( 'rest_xprofile_field_prepare_value', $response, $request, $field );
+	}
+
+	/**
+	 * Assembles single XProfile field data for return as an object.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param BP_XProfile_Field $item    XProfile field data.
+	 * @param WP_REST_Request   $request Full data about the request.
+	 * @return array
 	 */
 	public function assemble_response_data( $item, $request ) {
 		$data = array(
@@ -159,37 +204,11 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Prepares single XProfile field data to return as an object.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param stdClass        $item XProfile group data.
-	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Response
-	 */
-	public function prepare_item_for_response( $item, $request ) {
-		$data = $this->assemble_response_data( $item, $request );
-
-		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $item ) );
-
-		/**
-		 * Filter the xprofile groups overview value returned from the API.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param WP_REST_Response $response
-		 * @param WP_REST_Request  $request Request used to generate the response.
-		 */
-		return apply_filters( 'rest_prepare_buddypress_xprofile_fields_value', $response, $request );
-	}
-
-	/**
 	 * Prepare links for the request.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $item Field.
+	 * @param BP_XProfile_Field $item XProfile field.
 	 * @return array Links for the given plugin.
 	 */
 	protected function prepare_links( $item ) {
@@ -210,7 +229,56 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get the extended profile field schema, conforming to JSON Schema.
+	 * Can this user see the XProfile field?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param BP_XProfile_Field $field XProfile field.
+	 * @return boolean
+	 */
+	protected function can_see( $field = null ) {
+		$user_id = bp_loggedin_user_id();
+		$retval  = false;
+
+		// Moderators as well.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
+		}
+
+		/**
+		 * Filter the retval.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool              retval          Return value.
+		 * @param int               $user_id        User ID.
+		 * @param BP_XProfile_Field $field XProfile Field.
+		 */
+		return apply_filters( 'rest_xprofile_field_can_see', $retval, $user_id, $field );
+	}
+
+	/**
+	 * Get XProfile field object.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return BP_XProfile_Field|string XProfile field object.
+	 */
+	public function get_xprofile_field_object( $request ) {
+		$field_id = is_numeric( $request ) ? $request : (int) $request['id'];
+
+		$field = xprofile_get_field( $field_id );
+
+		if ( empty( $field ) ) {
+			return '';
+		}
+
+		return $field;
+	}
+
+	/**
+	 * Get the XProfile field schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
 	 *
@@ -219,7 +287,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'xprofile_groups_overview',
+			'title'      => 'xprofile_fields',
 			'type'       => 'object',
 			'properties' => array(
 				'id'                => array(
@@ -322,7 +390,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get the query params for collections of xprofile fields.
+	 * Get the query params for collections of XProfile fields.
 	 *
 	 * @since 0.1.0
 	 *
@@ -336,7 +404,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get the query params for single xprofile fields.
+	 * Get the query params for a XProfile field.
 	 *
 	 * @since 0.1.0
 	 *
