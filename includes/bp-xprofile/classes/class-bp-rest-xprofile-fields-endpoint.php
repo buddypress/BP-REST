@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * XProfile fields endpoints.
  *
+ * Use /xprofile/fields
  * Use /xprofile/fields/{id}
  *
  * @since 0.1.0

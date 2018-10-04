@@ -30,7 +30,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 
 		// Main.
 		$this->assertArrayHasKey( $this->endpoint_url, $routes );
-		$this->assertCount( 1, $routes[ $this->endpoint_url ] );
+		$this->assertCount( 2, $routes[ $this->endpoint_url ] );
 
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
@@ -151,7 +151,67 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		$this->assertTrue( true );
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+
+		$params = $this->set_field_group_data();
+		$request->set_body_params( $params );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_create_field_group_response( $response );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_rest_create_item() {
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_group_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_create_field_group_response( $response );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_user_not_logged_in() {
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_group_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_user_without_permission() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_group_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_cannot_create_field_group', $response, 500 );
 	}
 
 	/**
@@ -234,6 +294,26 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$all_data = $response->get_data();
 
 		$this->check_group_data( $group, $all_data[0], 'edit', $response->get_links() );
+	}
+
+	protected function check_create_field_group_response( $response ) {
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$response = rest_ensure_response( $response );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		$field_group = $this->endpoint->get_xprofile_field_group_object( $data[0]['id'] );
+		$this->check_group_data( $field_group, $data[0], 'edit', $response->get_links() );
+	}
+
+	protected function set_field_group_data( $args = array() ) {
+		return wp_parse_args( $args, array(
+			'description' => 'Field Group Description',
+			'name'        => 'Test Field Name',
+			'can_delete'  => true,
+		) );
 	}
 
 	protected function check_group_data( $group, $data, $context, $links ) {

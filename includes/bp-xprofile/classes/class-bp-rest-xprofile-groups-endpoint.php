@@ -41,6 +41,12 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				'args'                => $this->get_collection_params(),
 			),
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'create_item' ),
+				'permission_callback' => array( $this, 'create_item_permissions_check' ),
+				'args'                => $this->get_endpoint_args_for_item_schema( true ),
+			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
 
@@ -207,6 +213,88 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		if ( ! $this->can_see() ) {
 			return new WP_Error( 'rest_user_cannot_view_field_group',
 				__( 'Sorry, you cannot view this field group.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Create a XProfile field group.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function create_item( $request ) {
+		$args = array(
+			'name'        => $request['name'],
+			'description' => $request['description'],
+			'can_delete'  => $request['can_delete'],
+		);
+
+		$group_id = xprofile_insert_field_group( $args );
+
+		if ( ! $group_id ) {
+			return new WP_Error( 'rest_user_cannot_create_xprofile_field_group',
+				__( 'Cannot create new XProfile field group.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$field_group = $this->get_xprofile_field_group_object( $group_id );
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $field_group, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a XProfile field group is created via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_XProfile_Group $field_group Created field group object.
+		 * @param WP_REST_Response  $response    The response data.
+		 * @param WP_REST_Request   $request     The request sent to the API.
+		 */
+		do_action( 'rest_xprofile_field_group_create_item', $field_group, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to create a XProfile field group.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 *
+	 * @return WP_Error|bool
+	 */
+	public function create_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you are not allowed to create a XProfile field group.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		if ( ! $this->can_see() ) {
+			return new WP_Error( 'rest_user_cannot_create_field_group',
+				__( 'Sorry, you cannot create a XProfile field group.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
