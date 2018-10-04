@@ -35,7 +35,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
-		$this->assertCount( 1, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
+		$this->assertCount( 2, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
 	}
 
 	/**
@@ -121,7 +121,55 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
-		$this->assertTrue( true );
+		wp_set_current_user( $this->user );
+
+		$field = $this->endpoint->get_xprofile_field_object( $this->field_id );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $field->id ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->check_field_data( $field, $all_data[0], 'view', $response->get_links() );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_invalid_id() {
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_invalid_field_id', $response, 404 );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_user_not_logged_in() {
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_without_permission() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_cannot_delete_field', $response, 500 );
 	}
 
 	/**
@@ -131,7 +179,6 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		wp_set_current_user( $this->user );
 
 		$field = $this->endpoint->get_xprofile_field_object( $this->field_id );
-		$this->assertEquals( $this->field_id, $field->id );
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $field->id ) );
 		$request->set_param( 'context', 'view' );

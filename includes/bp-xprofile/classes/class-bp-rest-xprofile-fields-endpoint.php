@@ -40,6 +40,11 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'get_item_permissions_check' ),
 				'args'                => $this->get_item_params(),
 			),
+			array(
+				'methods'             => WP_REST_Server::DELETABLE,
+				'callback'            => array( $this, 'delete_item' ),
+				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
 	}
@@ -125,6 +130,93 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		if ( ! $this->can_see() ) {
 			return new WP_Error( 'rest_user_cannot_view_xprofile_field',
 				__( 'Sorry, you cannot view this XProfile field.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Delete a XProfile field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function delete_item( $request ) {
+		$field = $this->get_xprofile_field_object( $request );
+
+		$request->set_param( 'context', 'edit' );
+
+		if ( ! xprofile_delete_field( $field->id ) ) {
+			return new WP_Error( 'rest_xprofile_field_cannot_delete',
+				__( 'Could not delete XProfile field.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $field, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a XProfile field is deleted via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_XProfile_Field $field     Deleted field object.
+		 * @param WP_REST_Response  $response  The response data.
+		 * @param WP_REST_Request   $request   The request sent to the API.
+		 */
+		do_action( 'rest_xprofile_field_delete_item', $field, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to delete a XProfile field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 *
+	 * @return WP_Error|bool
+	 */
+	public function delete_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you are not allowed to delete this field.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		$field = $this->get_xprofile_field_object( $request );
+
+		if ( empty( $field->id ) ) {
+			return new WP_Error( 'rest_invalid_field_id',
+				__( 'Invalid field id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		if ( ! $this->can_see( $field ) ) {
+			return new WP_Error( 'rest_user_cannot_delete_field',
+				__( 'Sorry, you cannot delete this field.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)

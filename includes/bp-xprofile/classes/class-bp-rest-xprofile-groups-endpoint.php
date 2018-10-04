@@ -192,15 +192,6 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see() ) {
-			return new WP_Error( 'rest_user_cannot_view_field_group',
-				__( 'Sorry, you cannot view this field group.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
 		$field_group = $this->get_xprofile_field_group_object( $request );
 
 		if ( empty( $field_group->id ) ) {
@@ -208,6 +199,15 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 				__( 'Invalid field group id.', 'buddypress' ),
 				array(
 					'status' => 404,
+				)
+			);
+		}
+
+		if ( ! $this->can_see() ) {
+			return new WP_Error( 'rest_user_cannot_view_field_group',
+				__( 'Sorry, you cannot view this field group.', 'buddypress' ),
+				array(
+					'status' => 500,
 				)
 			);
 		}
@@ -229,9 +229,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 		$request->set_param( 'context', 'edit' );
 
-		$retval = xprofile_delete_field_group( $field_group->id );
-
-		if ( ! $retval ) {
+		if ( ! xprofile_delete_field_group( $field_group->id ) ) {
 			return new WP_Error( 'rest_xprofile_field_group_cannot_delete',
 				__( 'Could not delete XProfile field group.', 'buddypress' ),
 				array(
@@ -274,7 +272,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	public function delete_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
-				__( 'Sorry, you are not allowed to see this field group.', 'buddypress' ),
+				__( 'Sorry, you are not allowed to delete this field group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -283,7 +281,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 		if ( ! $this->can_see() ) {
 			return new WP_Error( 'rest_user_cannot_delete_field_group',
-				__( 'Sorry, you cannot view this field group.', 'buddypress' ),
+				__( 'Sorry, you cannot delete this field group.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
