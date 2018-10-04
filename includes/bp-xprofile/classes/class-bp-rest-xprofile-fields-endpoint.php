@@ -50,7 +50,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
+	 *
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
 		$profile_field_id = (int) $request['id'];
@@ -93,7 +94,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param BP_XProfile_Field $field    Fetched field.
+		 * @param BP_XProfile_Field $field    Fetched field object.
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
@@ -103,17 +104,18 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check if a given request has access to get information about a specific field.
+	 * Check if a given request has access to get information about a specific XProfile field.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
+	 *
 	 * @return bool|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
-				__( 'Sorry, you need to be logged in to get a XProfile field.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to view a XProfile field.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -137,8 +139,9 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param BP_XProfile_Field $field   XProfile field.
+	 * @param BP_XProfile_Field $field   XProfile field object.
 	 * @param WP_REST_Request   $request Full data about the request.
+	 *
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $field, $request ) {
@@ -164,35 +167,36 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param BP_XProfile_Field $item    XProfile field data.
+	 * @param BP_XProfile_Field $field   XProfile field object.
 	 * @param WP_REST_Request   $request Full data about the request.
+	 *
 	 * @return array
 	 */
-	public function assemble_response_data( $item, $request ) {
+	public function assemble_response_data( $field, $request ) {
 		$data = array(
-			'id'                => (int) $item->id,
-			'group_id'          => (int) $item->group_id,
-			'parent_id'         => (int) $item->parent_id,
-			'type'              => $item->type,
-			'name'              => $item->name,
-			'description'       => $item->description,
-			'is_required'       => (bool) $item->is_required,
-			'can_delete'        => (bool) $item->can_delete,
-			'field_order'       => (int) $item->field_order,
-			'option_order'      => (int) $item->option_order,
-			'order_by'          => $item->order_by,
-			'is_default_option' => (bool) $item->is_default_option,
+			'id'                => (int) $field->id,
+			'group_id'          => (int) $field->group_id,
+			'parent_id'         => (int) $field->parent_id,
+			'type'              => $field->type,
+			'name'              => $field->name,
+			'description'       => $field->description,
+			'is_required'       => (bool) $field->is_required,
+			'can_delete'        => (bool) $field->can_delete,
+			'field_order'       => (int) $field->field_order,
+			'option_order'      => (int) $field->option_order,
+			'order_by'          => $field->order_by,
+			'is_default_option' => (bool) $field->is_default_option,
 		);
 
 		if ( ! empty( $request['fetch_visibility_level'] ) ) {
-			$data['visibility_level'] = $item->visibility_level;
+			$data['visibility_level'] = $field->visibility_level;
 		}
 
 		if ( ! empty( $request['fetch_field_data'] ) ) {
-			if ( isset( $item->data->id ) ) {
-				$data['data']['id'] = $item->data->id;
+			if ( isset( $field->data->id ) ) {
+				$data['data']['id'] = $field->data->id;
 			}
-			$data['data']['value'] = maybe_unserialize( $item->data->value );
+			$data['data']['value'] = maybe_unserialize( $field->data->value );
 		}
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -208,12 +212,13 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param BP_XProfile_Field $item XProfile field.
+	 * @param BP_XProfile_Field $field XProfile field object.
+	 *
 	 * @return array Links for the given plugin.
 	 */
-	protected function prepare_links( $item ) {
+	protected function prepare_links( $field ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $item->id;
+		$url  = $base . $field->id;
 
 		// Entity meta.
 		$links = array(
@@ -233,7 +238,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param BP_XProfile_Field $field XProfile field.
+	 * @param BP_XProfile_Field $field XProfile field object.
+	 *
 	 * @return boolean
 	 */
 	protected function can_see( $field = null ) {
@@ -250,9 +256,9 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool              retval          Return value.
-		 * @param int               $user_id        User ID.
-		 * @param BP_XProfile_Field $field XProfile Field.
+		 * @param bool              retval   Return value.
+		 * @param int               $user_id User ID.
+		 * @param BP_XProfile_Field $field   XProfile field object.
 		 */
 		return apply_filters( 'rest_xprofile_field_can_see', $retval, $user_id, $field );
 	}
@@ -263,6 +269,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
+	 *
 	 * @return BP_XProfile_Field|string XProfile field object.
 	 */
 	public function get_xprofile_field_object( $request ) {
@@ -314,7 +321,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 					'description' => __( 'The type of field, like checkbox or select.', 'buddypress' ),
 					'type'        => 'string',
 					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_text_field',
+						'sanitize_callback' => 'sanitize_key',
 					),
 				),
 
