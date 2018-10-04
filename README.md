@@ -1,4 +1,4 @@
-# BP REST API v1.0 (BP-API)
+# BuddyPress RESTful API
 
 Access your BuddyPress site's data through an easy-to-use HTTP REST API.
 
@@ -20,22 +20,20 @@ Please use and provide feedback!
 - [x] Members
 - [x] Groups
 - [x] Notifications
-
-## Endpoints (Components) Partially Supported
-
-- Messages
-- XProfile Fields
-- XProfile Groups
+- [x] XProfile Fields
+- [x] XProfile Groups
 
 ## Endpoints (Components) Pending
 
-- [ ] Emails
-- [ ] Friends
-- [ ] Signups
-- [ ] Components
-- [ ] Group Invites
-- [ ] Group Members
-- [ ] Settings
+- Messages
+- XProfile Data
+- Emails
+- Friends
+- Signups
+- Components
+- Group Invites
+- Group Members
+- Settings
 
 ## Installation
 
@@ -50,7 +48,3 @@ site's data in simple JSON format, including users, groups, xprofile and more.
 Retrieving or updating data is as simple as sending a HTTP request.
 
 There's no fixed timeline for integration into BuddyPress core at this time, the BP REST API will be available as a feature plugin!
-
-## Get Involved
-
-Weekly BP REST API dev chat are held on Wednesdays at 22:00 UTC in WordPress Slack channel [#buddypress](https://wordpress.slack.com/archives/buddypress)

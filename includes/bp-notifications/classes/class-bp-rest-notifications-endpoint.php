@@ -99,11 +99,11 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$response = rest_ensure_response( $retval );
 
 		/**
-		 * Fires after a notification is fetched via the REST API.
+		 * Fires after notifications are fetched via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array            $notifications Fetched notification.
+		 * @param array            $notifications Fetched notifications.
 		 * @param WP_REST_Response $response      The response data.
 		 * @param WP_REST_Request  $request       The request sent to the API.
 		 */
@@ -113,7 +113,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check if a given request has access to the notification items.
+	 * Check if a given request has access to notification items.
 	 *
 	 * @since 0.1.0
 	 *
@@ -148,7 +148,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
+	 * @return WP_REST_Response
 	 */
 	public function get_item( $request ) {
 		$notification = $this->get_notification_object( $request );
