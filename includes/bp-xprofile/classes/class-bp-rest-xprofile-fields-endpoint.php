@@ -33,6 +33,16 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
+		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'create_item' ),
+				'permission_callback' => array( $this, 'create_item_permissions_check' ),
+				'args'                => $this->create_item_params(),
+			),
+			'schema' => array( $this, 'get_item_schema' ),
+		) );
+
 		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -44,6 +54,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array( $this, 'delete_item' ),
 				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+				'args'                => $this->delete_item_params(),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -115,7 +126,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
 	 *
-	 * @return bool|WP_Error
+	 * @return WP_Error|bool
 	 */
 	public function get_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
@@ -127,9 +138,93 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see() ) {
+		$field = $this->get_xprofile_field_object( $request );
+
+		if ( ! $this->can_see( $field ) ) {
 			return new WP_Error( 'rest_user_cannot_view_xprofile_field',
 				__( 'Sorry, you cannot view this XProfile field.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Create a XProfile field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function create_item( $request ) {
+		$args = array(
+			'type'           => $request['type'],
+			'name'           => $request['name'],
+			'field_group_id' => $request['field-group-id'],
+		);
+
+		$field_id = xprofile_insert_field( $args );
+
+		if ( ! $field_id ) {
+			return new WP_Error( 'rest_user_cannot_create_xprofile_field',
+				__( 'Cannot create new XProfile field.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$field = $this->get_xprofile_field_object( $field_id );
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $field, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a XProfile field is created via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_XProfile_Field $field     Created field object.
+		 * @param WP_REST_Response  $response  The response data.
+		 * @param WP_REST_Request   $request   The request sent to the API.
+		 */
+		do_action( 'rest_xprofile_field_create_item', $field, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to create a XProfile field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 *
+	 * @return WP_Error|bool
+	 */
+	public function create_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you are not allowed to create a XProfile field.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		if ( ! $this->can_see() ) {
+			return new WP_Error( 'rest_user_cannot_create_field',
+				__( 'Sorry, you cannot create a XProfile field.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
@@ -149,11 +244,12 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		$field = $this->get_xprofile_field_object( $request );
+		$field   = new BP_XProfile_Field( (int) $request['id'] );
+		$deleted = $field->delete( $request['delete_data'] );
 
 		$request->set_param( 'context', 'edit' );
 
-		if ( ! xprofile_delete_field( $field->id ) ) {
+		if ( ! $deleted ) {
 			return new WP_Error( 'rest_xprofile_field_cannot_delete',
 				__( 'Could not delete XProfile field.', 'buddypress' ),
 				array(
@@ -518,6 +614,63 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'type'              => 'integer',
 			'default'           => bp_loggedin_user_id(),
 			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		return $params;
+	}
+
+	/**
+	 * Get the query params for a XProfile field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array
+	 */
+	public function create_item_params() {
+		$params                       = parent::get_collection_params();
+		$params['context']['default'] = 'edit';
+
+		$params['type'] = array(
+			'description'       => __( 'Required if you want to add a XProfile field type.', 'buddypress' ),
+			'type'              => 'string',
+			'enum'              => buddypress()->profile->field_types,
+			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['name'] = array(
+			'description'       => __( 'Required if you want to add the name of XProfile field.', 'buddypress' ),
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['field-group-id'] = array(
+			'description'       => __( 'ID of the group you want to add the XProfile field into.', 'buddypress' ),
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		return $params;
+	}
+
+	/**
+	 * Get the query params for a XProfile field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array
+	 */
+	public function delete_item_params() {
+		$params                       = parent::get_collection_params();
+		$params['context']['default'] = 'edit';
+
+		$params['delete_data'] = array(
+			'description'       => __( 'Required if you want to delete user\'s data for the field.', 'buddypress' ),
+			'type'              => 'boolean',
+			'default'           => false,
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
