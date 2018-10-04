@@ -35,6 +35,12 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	public function register_routes() {
 		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
 			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_items' ),
+				'permission_callback' => array( $this, 'get_items_permissions_check' ),
+				'args'                => $this->get_collection_params(),
+			),
+			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'create_item' ),
 				'permission_callback' => array( $this, 'create_item_permissions_check' ),
@@ -58,6 +64,88 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
+	}
+
+	/**
+	 * Retrieve XProfile fields.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function get_items( $request ) {
+		$args = array(
+			'profile_group_id'       => $request['profile_group_id'],
+			'user_id'                => $request['user_id'],
+			'member_type'            => $request['member_type'],
+			'hide_empty_groups'      => $request['hide_empty_groups'],
+			'hide_empty_fields'      => $request['hide_empty_fields'],
+			'fetch_field_data'       => $request['fetch_field_data'],
+			'fetch_visibility_level' => $request['fetch_visibility_level'],
+			'exclude_groups'         => $request['exclude_groups'],
+			'exclude_fields'         => $request['exclude_fields'],
+			'update_meta_cache'      => $request['update_meta_cache'],
+			'fetch_fields'           => true,
+		);
+
+		$field_groups = bp_xprofile_get_groups( $args );
+
+		$retval = array();
+		foreach ( $field_groups as $group ) {
+			foreach ( $group->fields as $field ) {
+				$retval[] = $this->prepare_response_for_collection(
+					$this->prepare_item_for_response( $field, $request )
+				);
+			}
+		}
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a list of field are fetched via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array            $field_groups Fetched field groups.
+		 * @param WP_REST_Response $response     The response data.
+		 * @param WP_REST_Request  $request      The request sent to the API.
+		 */
+		do_action( 'rest_xprofile_field_get_items', $field_groups, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to xprofile fields.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 *
+	 * @return WP_Error|bool
+	 */
+	public function get_items_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'rest_authorization_required',
+				__( 'Sorry, you are not allowed to see the XProfile fields.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		if ( ! $this->can_see() ) {
+			return new WP_Error( 'rest_user_cannot_view_xprofile_fields',
+				__( 'Sorry, you cannot view the XProfile fields.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return true;
 	}
 
 	/**
@@ -585,7 +673,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get the query params for collections of XProfile fields.
+	 * Get the query params for XProfile fields.
 	 *
 	 * @since 0.1.0
 	 *
@@ -594,6 +682,85 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	public function get_collection_params() {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
+
+		$params['profile_group_id'] = array(
+			'description'       => __( 'ID of the field group that have fields.', 'buddypress' ),
+			'type'              => 'integer',
+			'default'           => 0,
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['hide_empty_groups'] = array(
+			'description'       => __( 'True to hide groups that do not have any fields.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['user_id'] = array(
+			'description'       => __( 'Required if you want to load a specific user\'s data.', 'buddypress' ),
+			'type'              => 'integer',
+			'default'           => bp_loggedin_user_id(),
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['member_type'] = array(
+			'description'       => __( 'Limit fields by those restricted to a given member type, or array of member types. If `$user_id` is provided, the value of `$member_type` will be overridden by the member types of the provided user. The special value of \'any\' will return only those fields that are unrestricted by member type - i.e., those applicable to any type.', 'buddypress' ),
+			'type'              => 'array',
+			'default'           => null,
+			'sanitize_callback' => 'bp_rest_sanitize_member_types',
+			'validate_callback' => 'bp_rest_validate_member_types',
+		);
+
+		$params['hide_empty_groups'] = array(
+			'description'       => __( 'True to hide field groups where the user has not provided data.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['hide_empty_fields'] = array(
+			'description'       => __( 'True to hide fields where the user has not provided data.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['fetch_field_data'] = array(
+			'description'       => __( 'Whether to fetch data for each field. Requires a $user_id.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['fetch_visibility_level'] = array(
+			'description'       => __( 'Whether to fetch the visibility level for each field.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['exclude_groups'] = array(
+			'description'       => __( 'Ensure result set excludes specific profile field groups.', 'buddypress' ),
+			'type'              => 'array',
+			'default'           => false,
+			'sanitize_callback' => 'wp_parse_id_list',
+		);
+
+		$params['exclude_fields'] = array(
+			'description'       => __( 'Ensure result set excludes specific profile fields.', 'buddypress' ),
+			'type'              => 'array',
+			'default'           => false,
+			'sanitize_callback' => 'wp_parse_id_list',
+		);
+
+		$params['update_meta_cache'] = array(
+			'description'       => __( 'Whether to pre-fetch xprofilemeta for all retrieved groups, fields, and data.', 'buddypress' ),
+			'default'           => true,
+			'type'              => 'boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
 
 		return $params;
 	}

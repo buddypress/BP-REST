@@ -70,7 +70,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**

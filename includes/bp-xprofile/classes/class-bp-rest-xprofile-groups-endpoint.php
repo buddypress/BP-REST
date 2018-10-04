@@ -71,6 +71,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
+			'profile_group_id'       => $request['profile_group_id'],
 			'user_id'                => $request['user_id'],
 			'member_type'            => $request['member_type'],
 			'hide_empty_groups'      => $request['hide_empty_groups'],
@@ -120,7 +121,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	public function get_items_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
-				__( 'Sorry, you are not allowed to see the field groups.', 'buddypress' ),
+				__( 'Sorry, you are not allowed to see the XProfile field groups.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -129,7 +130,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 		if ( ! $this->can_see() ) {
 			return new WP_Error( 'rest_user_cannot_view_field_groups',
-				__( 'Sorry, you cannot view the field groups.', 'buddypress' ),
+				__( 'Sorry, you cannot view the XProfile field groups.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
@@ -438,55 +439,6 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Clean up member_type input.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $value Comma-separated list of group types.
-	 *
-	 * @return array|null
-	 */
-	public function sanitize_member_types( $value ) {
-		if ( ! empty( $value ) ) {
-			$types              = explode( ',', $value );
-			$registered_types   = bp_get_member_types();
-			$registered_types[] = 'any';
-			$valid_types        = array_intersect( $types, $registered_types );
-
-			return ( ! empty( $valid_types ) ) ? $valid_types : null;
-		}
-		return $value;
-	}
-
-	/**
-	 * Validate member_type input.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param  mixed           $value   Mixed value.
-	 * @param  WP_REST_Request $request Full details about the request.
-	 * @param  string          $param   String.
-	 *
-	 * @return WP_Error|boolean
-	 */
-	public function validate_member_types( $value, $request, $param ) {
-		if ( ! empty( $value ) ) {
-			$types            = explode( ',', $value );
-			$registered_types = bp_get_member_types();
-
-			// Add the special value.
-			$registered_types[] = 'any';
-			foreach ( $types as $type ) {
-				if ( ! in_array( $type, $registered_types, true ) ) {
-					/* translators: %1$s and %2$s is replaced with the registered types */
-					return new WP_Error( 'rest_invalid_group_type', sprintf( __( 'The member type you provided, %$1s, is not one of %$2s.' ), $type, implode( ', ', $registered_types ) ) );
-				}
-			}
-		}
-		return true;
-	}
-
-	/**
 	 * Get the XProfile field group schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
@@ -555,6 +507,13 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
+		$params['profile_group_id'] = array(
+			'description'       => __( 'ID of the field group that have fields.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		$params['hide_empty_groups'] = array(
 			'description'       => __( 'True to hide groups that do not have any fields.', 'buddypress' ),
 			'default'           => false,
@@ -574,8 +533,8 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Limit fields by those restricted to a given member type, or array of member types. If `$user_id` is provided, the value of `$member_type` will be overridden by the member types of the provided user. The special value of \'any\' will return only those fields that are unrestricted by member type - i.e., those applicable to any type.', 'buddypress' ),
 			'type'              => 'array',
 			'default'           => null,
-			'sanitize_callback' => array( $this, 'sanitize_member_types' ),
-			'validate_callback' => array( $this, 'validate_member_types' ),
+			'sanitize_callback' => 'bp_rest_sanitize_member_types',
+			'validate_callback' => 'bp_rest_validate_member_types',
 		);
 
 		$params['hide_empty_groups'] = array(

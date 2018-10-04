@@ -31,7 +31,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 
 		// Main.
 		$this->assertArrayHasKey( $this->endpoint_url, $routes );
-		$this->assertCount( 1, $routes[ $this->endpoint_url ] );
+		$this->assertCount( 2, $routes[ $this->endpoint_url ] );
 
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
@@ -42,7 +42,52 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		$this->assertTrue( true );
+		wp_set_current_user( $this->user );
+
+		$this->bp_factory->xprofile_field->create_many( 5, [ 'field_group_id' => $this->group_id ] );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$data     = $all_data;
+
+		foreach ( $all_data as $data ) {
+			$field = $this->endpoint->get_xprofile_field_object( $data['id'] );
+			$this->check_field_data( $field, $data, 'view', $response->get_links() );
+		}
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_user_not_logged_in() {
+		$this->bp_factory->xprofile_field->create_many( 5, [ 'field_group_id' => $this->group_id ] );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_user_cannot_see_xprofile_field_groups() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		$this->bp_factory->xprofile_field->create_many( 5, [ 'field_group_id' => $this->group_id ] );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_cannot_view_xprofile_fields', $response, 500 );
 	}
 
 	/**
