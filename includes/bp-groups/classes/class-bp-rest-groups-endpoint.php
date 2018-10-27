@@ -89,6 +89,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'orderby'            => $request['orderby'],
 			'user_id'            => $request['user_id'],
 			'include'            => $request['include'],
+			'parent_id'          => $request['parent_id'],
 			'exclude'            => $request['exclude'],
 			'search_terms'       => $request['search'],
 			'group_type'         => $request['group_type'],
@@ -483,6 +484,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		$data = array(
 			'id'                 => $item->id,
 			'creator_id'         => bp_get_group_creator_id( $item ),
+			'parent_id'          => $item->parent_id,
 			'date_created'       => bp_rest_prepare_date_response( $item->date_created ),
 			'description'        => array(
 				'raw'      => $item->description,
@@ -606,13 +608,23 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			$prepared_group->status = $request['status'];
 		}
 
+		// Group Forum Enabled.
+		if ( ! empty( $schema['properties']['enable_forum'] ) && isset( $request['enable_forum'] ) ) {
+			$prepared_group->enable_forum = (bool) $request['enable_forum'];
+		}
+
+		// Group Parent ID.
+		if ( ! empty( $schema['properties']['parent_id'] ) && isset( $request['parent_id'] ) ) {
+			$prepared_group->parent_id = $request['parent_id'];
+		}
+
 		/**
 		 * Filters a group before it is inserted or updated via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
 		 * @param stdClass        $prepared_group An object prepared for inserting or updating the database.
-		 * @param WP_REST_Request $request Request object.
+		 * @param WP_REST_Request $request        Request object.
 		 */
 		return apply_filters( 'rest_group_pre_insert_value', $prepared_group, $request );
 	}
@@ -879,6 +891,12 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'type'        => 'boolean',
 				),
 
+				'parent_id'       => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'ID of the parent group.', 'buddypress' ),
+					'type'        => 'integer',
+				),
+
 				'date_created'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the group was created, in the site's timezone.", 'buddypress' ),
@@ -997,6 +1015,13 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		$params['parent_id'] = array(
+			'description'       => __( 'Get groups that are children of the specified group(s) ids.', 'buddypress' ),
+			'default'           => null,
+			'type'              => 'array',
+			'sanitize_callback' => 'wp_parse_id_list',
+		);
+
 		$params['include'] = array(
 			'description'       => __( 'Ensure result set includes groups with specific IDs.', 'buddypress' ),
 			'default'           => array(),
@@ -1042,6 +1067,13 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'type'              => 'array',
 			'sanitize_callback' => array( $this, 'sanitize_group_types' ),
 			'validate_callback' => array( $this, 'validate_group_types' ),
+		);
+
+		$params['enable_forum'] = array(
+			'description'       => __( 'Whether the group should have a forum enabled.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['show_hidden'] = array(
