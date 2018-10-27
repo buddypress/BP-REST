@@ -16,12 +16,12 @@ Please use and provide feedback!
 
 ## Endpoints (Components) Supported
 
-- [x] Activity
-- [x] Members
-- [x] Groups
-- [x] Notifications
-- [x] XProfile Fields
-- [x] XProfile Groups
+- [x] Activity `http://site.com/wp-json/buddypress/v1/activity`
+- [x] Groups `http://site.com/wp-json/buddypress/v1/groups`
+- [x] Notifications `http://site.com/wp-json/buddypress/v1/notifications`
+- [x] XProfile Fields `http://site.com/wp-json/buddypress/v1/xprofile/fields`
+- [x] XProfile Groups `http://site.com/wp-json/buddypress/v1/xprofile/groups`
+- [x] Members `http://site.com/wp-json/buddypress/v1/members`
 
 ## Endpoints (Components) Pending
 
@@ -37,7 +37,7 @@ Please use and provide feedback!
 
 ## Installation
 
-Drop this plugin in the wp-content/plugins directory and activate it. You need at least [WordPress 4.9](https://wordpress.org/download/) to use the plugin.
+Drop this plugin in the wp-content/plugins directory and activate it. You need at least [WordPress 4.9](https://wordpress.org/download/) and [BuddyPress](https://buddypress.org/download/) to use the plugin.
 
 ## About
 
