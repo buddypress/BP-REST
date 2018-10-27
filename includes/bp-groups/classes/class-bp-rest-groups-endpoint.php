@@ -92,6 +92,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'parent_id'          => $request['parent_id'],
 			'exclude'            => $request['exclude'],
 			'search_terms'       => $request['search'],
+			'meta_query'         => $request['meta'], // WPCS: slow query ok.
 			'group_type'         => $request['group_type'],
 			'group_type__in'     => $request['group_type__in'],
 			'group_type__not_in' => $request['group_type__not_in'],
@@ -1020,6 +1021,13 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => null,
 			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
+		);
+
+		$params['meta'] = array(
+			'description'       => __( 'Get groups based on their meta data information.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'array',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['include'] = array(
