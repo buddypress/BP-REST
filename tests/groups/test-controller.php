@@ -565,6 +565,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $group->name, $data['name'] );
 		$this->assertEquals( $group->slug, $data['slug'] );
 		$this->assertEquals( $group->status, $data['status'] );
+		$this->assertEquals( $group->parent_id, $data['parent_id'] );
 
 		if ( 'view' === $context ) {
 			$this->assertEquals( wpautop( $group->description ), $data['description']['rendered'] );
@@ -629,7 +630,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 14, count( $properties ) );
+		$this->assertEquals( 15, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'creator_id', $properties );
 		$this->assertArrayHasKey( 'name', $properties );
@@ -641,6 +642,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'date_created', $properties );
 		$this->assertArrayHasKey( 'admins', $properties );
 		$this->assertArrayHasKey( 'mods', $properties );
+		$this->assertArrayHasKey( 'parent_id', $properties );
 		$this->assertArrayHasKey( 'total_member_count', $properties );
 		$this->assertArrayHasKey( 'last_activity', $properties );
 	}
