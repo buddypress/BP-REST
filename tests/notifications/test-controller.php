@@ -221,8 +221,6 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->check_update_notification_response( $response );
-
 		$new_data = $response->get_data();
 		$new_data = $new_data[0];
 
