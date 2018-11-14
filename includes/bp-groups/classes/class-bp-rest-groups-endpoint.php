@@ -993,10 +993,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		$params['status'] = array(
 			'description'       => __( 'Group statuses to limit results to.', 'buddypress' ),
-			'default'           => 'public',
-			'type'              => 'string',
-			'enum'              => array( 'public', 'private', 'hidden' ),
-			'sanitize_callback' => 'sanitize_key',
+			'default' 			=> array(),
+			'type'              => 'array',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
