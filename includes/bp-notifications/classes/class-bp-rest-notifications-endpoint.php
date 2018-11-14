@@ -581,7 +581,8 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'user'       => array(
-				'href' => rest_url( sprintf( '/wp/v2/users/%d', $notification->user_id ) ),
+				'href'       => rest_url( sprintf( '/wp/v2/users/%d', $notification->user_id ) ),
+				'embeddable' => true,
 			),
 		);
 

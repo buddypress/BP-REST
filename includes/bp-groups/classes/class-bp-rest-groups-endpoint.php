@@ -651,7 +651,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'user'       => array(
-				'href' => rest_url( sprintf( '/wp/v2/users/%d', $group->creator_id ) ),
+				'href'       => rest_url( sprintf( '/wp/v2/users/%d', $group->creator_id ) ),
+				'embeddable' => true,
 			),
 		);
 

@@ -934,7 +934,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'user'       => array(
-				'href' => rest_url( sprintf( '/wp/v2/users/%d', $activity->user_id ) ),
+				'href'       => rest_url( sprintf( '/wp/v2/users/%d', $activity->user_id ) ),
+				'embeddable' => true,
 			),
 		);
 
