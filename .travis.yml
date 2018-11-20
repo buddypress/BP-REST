@@ -45,6 +45,28 @@ before_install:
       echo "xdebug.ini does not exist"
     fi
 
+before_script:
+- |
+  # Install the specified version of PHPUnit depending on the PHP version:
+  case "$TRAVIS_PHP_VERSION" in
+    7.3|7.2|7.1|7.0|nightly)
+      echo "Using PHPUnit 6.x"
+      travis_retry composer global require "phpunit/phpunit:^6"
+      ;;
+    5.6|5.5|5.4|5.3)
+      echo "Using PHPUnit 4.x"
+      travis_retry composer global require "phpunit/phpunit:^4"
+      ;;
+    5.2)
+      # Do nothing, use default PHPUnit 3.6.x
+      echo "Using default PHPUnit, hopefully 3.6"
+      ;;
+    *)
+      echo "No PHPUnit version handling for PHP version $TRAVIS_PHP_VERSION"
+      exit 1
+      ;;
+  esac
+
 install:
   - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
   - export BP_SRC_DIR=/tmp/bp-src/
