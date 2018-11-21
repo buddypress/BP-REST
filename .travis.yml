@@ -33,8 +33,6 @@ matrix:
       env: WP_VERSION=4.9
     - php: 5.6
       env: WP_VERSION=master
-    - php: 5.6
-      env: WP_TRAVISCI=phpcs
 
 before_install:
   - |
@@ -66,11 +64,6 @@ install:
   - cd ..
   - mv $plugin_slug $plugin_dir
   - svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk $WP_DEVELOP_DIR/src/wp-content/plugins/buddypress
-  - |
-    # Remove Xdebug for a huge performance increase:
-    if [[ -f ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ]]; then
-      phpenv config-rm xdebug.ini
-    fi
 
   # set up tests config
   - cd $WP_DEVELOP_DIR
