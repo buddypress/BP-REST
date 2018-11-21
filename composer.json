@@ -1,0 +1,6 @@
+{
+    "name": "buddypress/bp-rest",
+    "description": "WP REST API endpoints for BuddyPress",
+    "type": "library",
+    "require": {}
+}
