@@ -14,6 +14,13 @@ defined( 'ABSPATH' ) || exit;
  * @since 0.1.0
  */
 class BP_REST_Activity_Endpoint extends WP_REST_Controller {
+	/**
+	 * User favorites.
+	 *
+	 * @since 0.1.0
+	 * @param array
+	 */
+	protected $user_favorites = null;
 
 	/**
 	 * Constructor.
@@ -21,9 +28,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace      = 'buddypress/v1';
-		$this->rest_base      = buddypress()->activity->id;
-		$this->user_favorites = array();
+		$this->namespace = 'buddypress/v1';
+		$this->rest_base = buddypress()->activity->id;
 	}
 
 	/**
@@ -580,6 +586,26 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Gets the current user's favorites.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array Array of activity IDs.
+	 */
+	public function get_user_favorites() {
+		if ( null === $this->user_favorites ) {
+			if ( is_user_logged_in() ) {
+				$user_favorites       = bp_activity_get_user_favorites( get_current_user_id() );
+				$this->user_favorites = array_filter( wp_parse_id_list( $user_favorites ) );
+			} else {
+				$user_favorites = array();
+			}
+		}
+
+		return $this->user_favorites;
+	}
+
+	/**
 	 * Adds or removes the activity from the current user's favorites.
 	 *
 	 * @since 0.1.0
@@ -592,12 +618,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$user_id  = get_current_user_id();
 
 		$result = false;
-		if ( in_array( $activity->id, $this->user_favorites, true ) ) {
+		if ( in_array( $activity->id, $this->get_user_favorites(), true ) ) {
 			$result  = bp_activity_remove_user_favorite( $activity->id, $user_id );
 			$message = __( 'Sorry, you cannot remove the activity from your favorites.', 'buddypress' );
 
 			// Update the user favorites, removing the activity ID.
-			$this->user_favorites = array_diff( $this->user_favorites, array( $activity->id ) );
+			$this->user_favorites = array_diff( $this->get_user_favorites(), array( $activity->id ) );
 		} else {
 			$result  = bp_activity_add_user_favorite( $activity->id, $user_id );
 			$message = __( 'Sorry, you cannot add the activity to your favorites.', 'buddypress' );
@@ -634,7 +660,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response     $response       The response data.
 		 * @param WP_REST_Request      $request        The request sent to the API.
 		 */
-		do_action( 'rest_activity_update_favorite', $activity, $this->user_favorites, $response, $request );
+		do_action( 'rest_activity_update_favorite', $activity, $this->get_user_favorites(), $response, $request );
 
 		return $response;
 	}
@@ -752,7 +778,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'status'                => $activity->is_spam ? 'spam' : 'published',
 			'title'                 => $activity->action,
 			'type'                  => $activity->type,
-			'favorited'             => in_array( $activity->id, $this->user_favorites, true ),
+			'favorited'             => in_array( $activity->id, $this->get_user_favorites(), true ),
 		);
 
 		$schema = $this->get_item_schema();
@@ -965,10 +991,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( ! is_user_logged_in() ) {
 			return false;
 		}
-
-		// Current user favorites.
-		$user_favorites       = bp_activity_get_user_favorites( get_current_user_id() );
-		$this->user_favorites = array_filter( wp_parse_id_list( $user_favorites ) );
 
 		return true;
 	}
