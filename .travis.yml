@@ -53,10 +53,10 @@ before_script:
 install:
   - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
   - export WP_CORE_DIR=/tmp/wordpress
-  - export BP_SRC_DIR="${WP_CORE_DIR}/wp-content/plugins/buddypress"
-  - svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk/src $BP_SRC_DIR
+  - export BP_DIR="${WP_CORE_DIR}/wp-content/plugins/buddypress"
+  - svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk $BP_DIR
+  - export BP_SRC_DIR="${BP_DIR}/src"
+  - export BP_TESTS_DIR="${BP_DIR}/tests/phpunit"
 
 script:
-  - pwd
-  - ls -la
   - ./vendor/bin/phpunit
