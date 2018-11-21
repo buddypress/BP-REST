@@ -46,12 +46,18 @@ before_install:
     fi
 
 before_script:
-  - if [[ ${TRAVIS_PHP_VERSION:0:3} == "5.3" ]]; then composer require --dev phpunit/phpunit ^4; fi
-  - if [[ ${TRAVIS_PHP_VERSION:0:3} == "5.6" ]]; then composer require --dev phpunit/phpunit ^5; composer install; fi
-  - if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.2" ]]; then composer require --dev phpunit/phpunit ^6; composer install; fi
+  - |
+    if [[ ${TRAVIS_PHP_VERSION:0:3} == "5.6" ]]; then
+      composer require --dev phpunit/phpunit ^5;
+      composer install
+    else
+      composer require --dev phpunit/phpunit ^6;
+      composer install;
+    fi
 
 install:
   - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
+  - export WP_DEVELOP_DIR=/tmp/wordpress/
   - export WP_CORE_DIR=/tmp/wordpress
   - export BP_DIR="${WP_CORE_DIR}/wp-content/plugins/buddypress"
   - svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk $BP_DIR
