@@ -57,4 +57,4 @@ install:
   - svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk/src $BP_SRC_DIR
 
 script:
-  - bash bin/test.sh
+  - ./vendor/bin/phpunit
