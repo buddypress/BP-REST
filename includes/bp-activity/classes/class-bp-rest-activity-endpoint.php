@@ -108,7 +108,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'per_page'          => $request['per_page'],
 			'search_terms'      => $request['search'],
 			'sort'              => $request['order'],
-			'spam'              => 'spam' === $request['status'] ? 'spam_only' : 'ham_only',
+			'spam'              => $request['status'],
 			'display_comments'  => $request['display_comments'],
 			'count_total'       => true,
 			'fields'            => 'all',
@@ -1335,9 +1335,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$params['status'] = array(
 			'description'       => __( 'Limit result set to items with a specific status.', 'buddypress' ),
-			'default'           => 'published',
+			'default'           => 'ham_only',
 			'type'              => 'string',
-			'enum'              => array( 'published', 'spam' ),
+			'enum'              => array( 'ham_only', 'spam_only', 'all' ),
 			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
