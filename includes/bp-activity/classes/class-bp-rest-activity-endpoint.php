@@ -291,7 +291,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	public function create_item( $request ) {
 		$prepared_activity = $this->prepare_item_for_database( $request );
 		$type              = $request['type'];
-		$prime             = $request['prime_association'];
+		$prime             = $request['primary_item_id'];
 		$activity_id       = 0;
 
 		// Post a regular activity update.
@@ -306,13 +306,13 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		} elseif ( ( 'activity_comment' === $type ) && ! is_null( $request['id'] ) && ! is_null( $request['parent'] ) ) {
 
 			// ID of the root activity item.
-			if ( ! empty( $schema['properties']['prime_association'] ) && isset( $prime ) ) {
+			if ( ! empty( $schema['properties']['primary_item_id'] ) && isset( $prime ) ) {
 				$prepared_activity->activity_id = (int) $prime;
 			}
 
 			// ID of a parent comment.
-			if ( ! empty( $schema['properties']['secondary_association'] ) && isset( $request['secondary_association'] ) ) {
-				$prepared_activity->parent_id = (int) $request['secondary_association'];
+			if ( ! empty( $schema['properties']['secondary_item_id'] ) && isset( $request['secondary_item_id'] ) ) {
+				$prepared_activity->parent_id = (int) $request['secondary_item_id'];
 			}
 
 			$activity_id = bp_activity_new_comment( $prepared_activity );
@@ -387,7 +387,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$item_id   = $request['prime_association'];
+		$item_id   = $request['primary_item_id'];
 		$component = $request['component'];
 
 		if ( bp_is_active( 'groups' ) && buddypress()->groups->id === $component && ! is_null( $item_id ) ) {
@@ -763,22 +763,22 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $activity, $request ) {
 		$data = array(
-			'user'                  => $activity->user_id,
-			'component'             => $activity->component,
-			'content'               => array(
+			'user'              => $activity->user_id,
+			'component'         => $activity->component,
+			'content'           => array(
 				'raw'      => $activity->content,
 				'rendered' => $this->render_item( $activity ),
 			),
-			'date'                  => bp_rest_prepare_date_response( $activity->date_recorded ),
-			'id'                    => $activity->id,
-			'link'                  => bp_activity_get_permalink( $activity->id ),
-			'parent'                => 'activity_comment' === $activity->type ? $activity->item_id : 0,
-			'prime_association'     => $activity->item_id,
-			'secondary_association' => $activity->secondary_item_id,
-			'status'                => $activity->is_spam ? 'spam' : 'published',
-			'title'                 => $activity->action,
-			'type'                  => $activity->type,
-			'favorited'             => in_array( $activity->id, $this->get_user_favorites(), true ),
+			'date'              => bp_rest_prepare_date_response( $activity->date_recorded ),
+			'id'                => $activity->id,
+			'link'              => bp_activity_get_permalink( $activity->id ),
+			'parent'            => 'activity_comment' === $activity->type ? $activity->item_id : 0,
+			'primary_item_id'   => $activity->item_id,
+			'secondary_item_id' => $activity->secondary_item_id,
+			'status'            => $activity->is_spam ? 'spam' : 'published',
+			'title'             => $activity->action,
+			'type'              => $activity->type,
+			'favorited'         => in_array( $activity->id, $this->get_user_favorites(), true ),
 		);
 
 		$schema = $this->get_item_schema();
@@ -891,8 +891,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// Activity Item ID.
-		if ( ! empty( $schema['properties']['prime_association'] ) && isset( $request['prime_association'] ) ) {
-			$item_id = (int) $request['prime_association'];
+		if ( ! empty( $schema['properties']['primary_item_id'] ) && isset( $request['primary_item_id'] ) ) {
+			$item_id = (int) $request['primary_item_id'];
 
 			// Set the group ID of the activity.
 			if ( bp_is_active( 'groups' ) && isset( $prepared_activity->component ) && buddypress()->groups->id === $prepared_activity->component ) {
@@ -905,8 +905,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// Secondary Item ID.
-		if ( ! empty( $schema['properties']['secondary_association'] ) && isset( $request['secondary_association'] ) ) {
-			$prepared_activity->secondary_item_id = (int) $request['secondary_association'];
+		if ( ! empty( $schema['properties']['secondary_item_id'] ) && isset( $request['secondary_item_id'] ) ) {
+			$prepared_activity->secondary_item_id = (int) $request['secondary_item_id'];
 		}
 
 		// Activity type.
@@ -1117,13 +1117,13 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'type'        => 'integer',
 				),
 
-				'prime_association'     => array(
+				'primary_item_id'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 
-				'secondary_association' => array(
+				'secondary_item_id' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
 					'type'        => 'integer',

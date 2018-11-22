@@ -401,8 +401,8 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->add_header( 'content-type', 'application/json' );
 
 		$params = $this->set_activity_data( array(
-			'component'         => buddypress()->groups->id,
-			'prime_association' => $g,
+			'component'       => buddypress()->groups->id,
+			'primary_item_id' => $g,
 		) );
 
 		$request->set_body( wp_json_encode( $params ) );
@@ -425,9 +425,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->add_header( 'content-type', 'application/json' );
 
 		$params = $this->set_activity_data( array(
-			'component'         => buddypress()->groups->id,
-			'prime_association' => $g,
-			'content'           => '',
+			'component'       => buddypress()->groups->id,
+			'primary_item_id' => $g,
+			'content'         => '',
 		) );
 
 		$request->set_body( wp_json_encode( $params ) );
@@ -448,11 +448,11 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->add_header( 'content-type', 'application/json' );
 
 		$params = $this->set_activity_data( array(
-			'component'             => buddypress()->blogs->id,
-			'prime_association'     => get_current_blog_id(),
-			'secondary_association' => $p,
-			'type'                  => 'new_blog_post',
-			'hidden'                => true,
+			'component'         => buddypress()->blogs->id,
+			'primary_item_id'   => get_current_blog_id(),
+			'secondary_item_id' => $p,
+			'type'              => 'new_blog_post',
+			'hidden'            => true,
 		) );
 
 		$request->set_body( wp_json_encode( $params ) );
@@ -472,7 +472,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 
 		$activity = reset( $activity['activities'] );
-		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
+		$a_ids    = wp_list_pluck( $response->get_data(), 'id' );
 
 		$this->assertContains( $activity->id, $a_ids );
 	}
@@ -721,8 +721,8 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( bp_rest_prepare_date_response( $activity->date_recorded ), $data['date'] );
 		$this->assertEquals( $activity->id, $data['id'] );
 		$this->assertEquals( bp_activity_get_permalink( $activity->id ), $data['link'] );
-		$this->assertEquals( $activity->item_id, $data['prime_association'] );
-		$this->assertEquals( $activity->secondary_item_id, $data['secondary_association'] );
+		$this->assertEquals( $activity->item_id, $data['primary_item_id'] );
+		$this->assertEquals( $activity->secondary_item_id, $data['secondary_item_id'] );
 		$this->assertEquals( $activity->action, $data['title'] );
 		$this->assertEquals( $activity->type, $data['type'] );
 		$this->assertEquals( $activity->is_spam ? 'spam' : 'published', $data['status'] );
@@ -785,8 +785,8 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 16, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
-		$this->assertArrayHasKey( 'prime_association', $properties );
-		$this->assertArrayHasKey( 'secondary_association', $properties );
+		$this->assertArrayHasKey( 'primary_item_id', $properties );
+		$this->assertArrayHasKey( 'secondary_item_id', $properties );
 		$this->assertArrayHasKey( 'user', $properties );
 		$this->assertArrayHasKey( 'link', $properties );
 		$this->assertArrayHasKey( 'component', $properties );
