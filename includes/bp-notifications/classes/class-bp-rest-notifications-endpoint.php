@@ -93,6 +93,17 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'date_query'        => $request['date'],
 		);
 
+		/**
+		 * Filter the query arguments for the request.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $args    Key value array of query var to query value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$args = apply_filters( 'rest_notifications_get_items_query_args', $args, $request );
+
+		// Actually, query it.
 		$notifications = BP_Notifications_Notification::get( $args );
 
 		$retval = array();

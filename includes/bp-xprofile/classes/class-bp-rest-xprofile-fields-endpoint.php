@@ -91,6 +91,17 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'fetch_fields'           => true,
 		);
 
+		/**
+		 * Filter the query arguments for the request.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $args    Key value array of query var to query value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$args = apply_filters( 'rest_xprofile_field_get_items_query_args', $args, $request );
+
+		// Actually, query it.
 		$field_groups = bp_xprofile_get_groups( $args );
 
 		$retval = array();
