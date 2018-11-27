@@ -135,8 +135,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$item_id = 0;
 		if ( ! empty( $request['primary_id'] ) ) {
-			$args['filter']['primary_id'] = $request['primary_id'];
-			$item_id                      = current( $request['primary_id'] );
+			$primary_id                   = $request['primary_id'];
+			$args['filter']['primary_id'] = $primary_id;
+			$item_id                      = $primary_id[0];
 		}
 
 		if ( ! empty( $request['secondary_id'] ) ) {
