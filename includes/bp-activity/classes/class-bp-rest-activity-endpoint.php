@@ -134,12 +134,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		$item_id = 0;
-		if ( isset( $request['primary_id'] ) ) {
-			$item_id                      = $request['primary_id'];
-			$args['filter']['primary_id'] = $item_id;
+		if ( ! empty( $request['primary_id'] ) ) {
+			$args['filter']['primary_id'] = $request['primary_id'];
+			$item_id                      = current( $request['primary_id'] );
 		}
 
-		if ( isset( $request['secondary_id'] ) ) {
+		if ( ! empty( $request['secondary_id'] ) ) {
 			$args['filter']['secondary_id'] = $request['secondary_id'];
 		}
 
@@ -286,7 +286,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
 		$prepared_activity = $this->prepare_item_for_database( $request );
@@ -339,7 +339,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$retval = array(
 			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $activity['activities'][0], $request )
+				$this->prepare_item_for_response( current( $activity['activities'] ), $request )
 			),
 		);
 
@@ -1344,16 +1344,16 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$params['primary_id'] = array(
 			'description'       => __( 'Limit result set to items with a specific prime association.', 'buddypress' ),
-			'type'              => 'integer',
-			'default'           => '',
-			'sanitize_callback' => 'absint',
+			'type'              => 'array',
+			'default'           => array(),
+			'sanitize_callback' => 'wp_parse_id_list',
 		);
 
 		$params['secondary_id'] = array(
 			'description'       => __( 'Limit result set to items with a specific secondary association.', 'buddypress' ),
-			'type'              => 'integer',
-			'default'           => '',
-			'sanitize_callback' => 'absint',
+			'type'              => 'array',
+			'default'           => array(),
+			'sanitize_callback' => 'wp_parse_id_list',
 		);
 
 		$params['component'] = array(
