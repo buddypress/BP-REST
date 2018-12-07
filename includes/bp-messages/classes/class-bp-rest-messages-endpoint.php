@@ -138,15 +138,15 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $thread, $request ) {
 		$data = array(
-			'id'                    => $thread->thread_id,
-			'prime_association'     => $thread->last_message_id,
-			'secondary_association' => $thread->last_sender_id,
-			'subject'               => $thread->last_message_subject,
-			'message'               => $thread->last_message_content,
-			'date'                  => $thread->last_message_date,
-			'unread'                => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
-			'sender_ids'            => $thread->sender_ids,
-			'messages'              => $thread->messages,
+			'id'                => $thread->thread_id,
+			'primary_item_id'   => $thread->last_message_id,
+			'secondary_item_id' => $thread->last_sender_id,
+			'subject'           => $thread->last_message_subject,
+			'message'           => $thread->last_message_content,
+			'date'              => $thread->last_message_date,
+			'unread'            => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
+			'sender_ids'        => $thread->sender_ids,
+			'messages'          => $thread->messages,
 		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -251,9 +251,15 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					'type'        => 'integer',
 				),
 
-				'prime_association'     => array(
+				'primary_item_id'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
+					'type'        => 'integer',
+				),
+
+				'secondary_item_id' => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 
@@ -274,12 +280,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					'type'        => 'string',
 					'format'      => 'date-time',
 					'context'     => array( 'view', 'edit' ),
-				),
-
-				'secondary_association' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
-					'type'        => 'integer',
 				),
 
 				'unread'                => array(
