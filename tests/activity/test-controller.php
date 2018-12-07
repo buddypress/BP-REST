@@ -65,20 +65,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_items
 	 */
-	public function test_get_items_user_not_logged_in() {
-		$a1 = $this->bp_factory->activity->create();
-		$a2 = $this->bp_factory->activity->create();
-
-		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
-		$request->set_param( 'context', 'view' );
-		$response = $this->server->dispatch( $request );
-
-		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
-	}
-
-	/**
-	 * @group get_items
-	 */
 	public function test_get_public_groups_items() {
 		$component = buddypress()->groups->id;
 

@@ -14,11 +14,13 @@ defined( 'ABSPATH' ) || exit;
  * @since 0.1.0
  */
 class BP_REST_Activity_Endpoint extends WP_REST_Controller {
+
 	/**
 	 * User favorites.
 	 *
 	 * @since 0.1.0
-	 * @param array
+	 *
+	 * @var array|null
 	 */
 	protected $user_favorites = null;
 
@@ -184,18 +186,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_Error|bool
+	 * @return bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		if ( ! $this->get_user_permission_check() ) {
-			return new WP_Error( 'rest_authorization_required',
-				__( 'Sorry, you are not allowed to see the activities.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
 		return true;
 	}
 
@@ -248,18 +241,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_Error|bool
+	 * @return bool|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		if ( ! $this->get_user_permission_check() ) {
-			return new WP_Error( 'rest_authorization_required',
-				__( 'Sorry, you are not allowed to see the activity.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
 		if ( ! $this->can_see( $request ) ) {
 			return new WP_Error( 'rest_user_cannot_view_activity',
 				__( 'Sorry, you cannot view the activities.', 'buddypress' ),
@@ -366,10 +350,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return true|WP_Error True if the request has access to create, WP_Error object otherwise.
+	 * @return bool|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
-		if ( ! $this->get_user_permission_check() ) {
+		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
 				__( 'Sorry, you are not allowed to create activities.', 'buddypress' ),
 				array(
@@ -458,7 +442,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
-		if ( ! $this->get_user_permission_check() ) {
+		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
@@ -554,7 +538,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
-		if ( ! $this->get_user_permission_check() ) {
+		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
 				__( 'Sorry, you are not allowed to delete this activity.', 'buddypress' ),
 				array(
@@ -675,7 +659,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_favorite_permissions_check( $request ) {
-		if ( ! $this->get_user_permission_check() ) {
+		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_authorization_required',
 				__( 'Sorry, you need to be logged in to update your favorites.', 'buddypress' ),
 				array(
@@ -979,21 +963,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		return $links;
-	}
-
-	/**
-	 * Checks if the current user is logged in and set their favorites.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return boolean True if the user is logged in. False otherwise.
-	 */
-	protected function get_user_permission_check() {
-		if ( ! is_user_logged_in() ) {
-			return false;
-		}
-
-		return true;
 	}
 
 	/**

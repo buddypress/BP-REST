@@ -139,18 +139,9 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_Error|bool
+	 * @return bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
-				__( 'Sorry, you are not allowed to see the groups.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
 		return true;
 	}
 
