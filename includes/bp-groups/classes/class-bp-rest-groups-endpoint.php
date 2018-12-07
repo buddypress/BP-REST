@@ -840,7 +840,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'description' => __( 'The URL-friendly slug for the group.', 'buddypress' ),
 					'type'        => 'string',
 					'arg_options' => array(
-						'sanitize_callback' => 'groups_check_slug',
+						'sanitize_callback' => 'sanitize_title',
 					),
 				),
 
