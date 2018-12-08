@@ -148,7 +148,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		if ( ! $this->can_see_hidden_group( $request ) ) {
+		if ( ! $this->can_see_hidden_groups( $request ) ) {
 			return new WP_Error( 'rest_user_cannot_view_hidden_groups',
 				__( 'Sorry, you cannot view hidden groups.', 'buddypress' ),
 				array(
@@ -740,7 +740,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return bool
 	 */
-	protected function can_see_hidden_group( $request ) {
+	protected function can_see_hidden_groups( $request ) {
 		if ( $request['show_hidden'] ) {
 			if ( bp_current_user_can( 'bp_moderate' ) ) {
 				return true;
