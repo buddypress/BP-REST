@@ -594,7 +594,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				$user_favorites       = bp_activity_get_user_favorites( get_current_user_id() );
 				$this->user_favorites = array_filter( wp_parse_id_list( $user_favorites ) );
 			} else {
-				$user_favorites = array();
+				$this->user_favorites = array();
 			}
 		}
 
