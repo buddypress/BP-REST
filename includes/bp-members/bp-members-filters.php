@@ -22,6 +22,10 @@ defined( 'ABSPATH' ) || exit;
  * @return array
  */
 function bp_remove_has_published_posts_from_wp_api_user_query( $prepared_args, $request ) {
+	if ( 0 !== strpos( $request->get_route(), '/buddypress/v1/members' ) ) {
+		return $prepared_args;
+	}
+
 	unset( $prepared_args['has_published_posts'] );
 
 	return $prepared_args;
