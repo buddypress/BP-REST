@@ -45,7 +45,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		if ( 'edit' === $request['context'] && ! current_user_can( 'list_users' ) ) {
-			return new WP_Error( 'rest_user_cannot_view',
+			return new WP_Error( 'rest_member_cannot_view',
 				__( 'Sorry, you are not allowed to list users.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
