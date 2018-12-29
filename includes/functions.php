@@ -9,7 +9,9 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Get user endpoint.
+ * Get user url with new.
+ *
+ * @todo Update members path to the filterable one.
  *
  * @since 0.1.0
  *
