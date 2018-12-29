@@ -142,6 +142,101 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
+	 * Prepares a single user output for response.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_User         $user    User object.
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response
+	 */
+	public function prepare_item_for_response( $user, $request ) {
+		$data = array(
+			'id'                 => $user->ID,
+			'name'               => $user->display_name,
+			'email'              => $user->user_email,
+			'user_login'         => $user->user_login,
+			'link'               => bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login ),
+			'registered_date'    => bp_rest_prepare_date_response( $user->user_registered ),
+			'member_types'       => bp_get_member_type( $user->ID, false ),
+			'roles'              => array(),
+			'capabilities'       => array(),
+			'extra_capabilities' => array(),
+			'xprofile'           => $this->xprofile_data( $user->ID ),
+		);
+
+		// Avatars.
+		$data['avatar_urls'] = array(
+			'full'  => bp_core_fetch_avatar( array(
+				'item_id' => $user->ID,
+				'html'    => false,
+				'type'    => 'full',
+			) ),
+			'thumb' => bp_core_fetch_avatar( array(
+				'item_id' => $user->ID,
+				'html'    => false,
+			) ),
+		);
+
+		// Fallback.
+		if ( false === $data['member_types'] ) {
+			$data['member_types'] = array();
+		}
+
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+
+		if ( 'edit' === $context ) {
+			$data['roles']              = array_values( $user->roles );
+			$data['capabilities']       = (object) $user->allcaps;
+			$data['extra_capabilities'] = (object) $user->caps;
+		}
+
+		$data = $this->add_additional_fields_to_object( $data, $request );
+		$data = $this->filter_response_by_context( $data, $context );
+
+		$response = rest_ensure_response( $data );
+		$response->add_links( $this->prepare_links( $user ) );
+
+		/**
+		 * Filters user data returned from the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param WP_REST_Response $response The response object.
+		 * @param WP_User          $user     WP_User object.
+		 * @param WP_REST_Request  $request  The request object.
+		 */
+		return apply_filters( 'rest_member_prepare_user', $response, $user, $request );
+	}
+
+	/**
+	 * Prepares a single user for creation or update.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return object $prepared_user User object.
+	 */
+	protected function prepare_item_for_database( $request ) {
+		$prepared_user = parent::prepare_item_for_database( $request );
+
+		// The parent class uses username instead of user_login.
+		if ( ! isset( $prepared_user->user_login ) && isset( $request['user_login'] ) ) {
+			$prepared_user->user_login = $request['user_login'];
+		}
+
+		/**
+		 * Filters an user object before it is inserted or updated via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param stdClass        $prepared_user An object prepared for inserting or updating the database.
+		 * @param WP_REST_Request $request Request object.
+		 */
+		return apply_filters( 'rest_member_pre_insert_value', $prepared_user, $request );
+	}
+
+	/**
 	 * Get XProfile info from the user.
 	 *
 	 * @since 0.1.0
@@ -151,7 +246,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 */
 	protected function xprofile_data( $user_id ) {
 
-		// Get XProfile group info.
+		// Get XProfile groups.
 		$groups = bp_xprofile_get_groups( array(
 			'user_id'          => $user_id,
 			'fetch_fields'     => true,
@@ -192,101 +287,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Prepares a single user output for response.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_User         $user    User object.
-	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Response
-	 */
-	public function prepare_item_for_response( $user, $request ) {
-		$data = array(
-			'id'                 => $user->ID,
-			'name'               => $user->display_name,
-			'email'              => $user->user_email,
-			'user_login'         => $user->user_login,
-			'link'               => bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login ),
-			'registered_date'    => bp_rest_prepare_date_response( $user->user_registered ),
-			'member_types'       => bp_get_member_type( $user->ID, false ),
-			'roles'              => array(),
-			'capabilities'       => array(),
-			'extra_capabilities' => array(),
-			'xprofile'           => null,
-		);
-
-		// Avatars.
-		$data['avatar_urls'] = array(
-			'full'  => bp_core_fetch_avatar( array(
-				'item_id' => $user->ID,
-				'html'    => false,
-				'type'    => 'full',
-			) ),
-			'thumb' => bp_core_fetch_avatar( array(
-				'item_id' => $user->ID,
-				'html'    => false,
-			) ),
-		);
-
-		// Fallback.
-		if ( false === $data['member_types'] ) {
-			$data['member_types'] = array();
-		}
-
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-
-		if ( 'edit' === $context ) {
-			$data['roles']              = array_values( $user->roles );
-			$data['capabilities']       = (object) $user->allcaps;
-			$data['extra_capabilities'] = (object) $user->caps;
-			$data['xprofile']           = $this->xprofile_data( $user->ID );
-		}
-
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
-
-		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $user ) );
-
-		/**
-		 * Filters user data returned from the REST API.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param WP_REST_Response $response The response object.
-		 * @param WP_REST_Request  $request  The request object.
-		 */
-		return apply_filters( 'rest_member_prepare_user', $response, $request );
-	}
-
-	/**
-	 * Prepares a single user for creation or update.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Request object.
-	 * @return object $prepared_user User object.
-	 */
-	protected function prepare_item_for_database( $request ) {
-		$prepared_user = parent::prepare_item_for_database( $request );
-
-		// The parent class uses username instead of user_login.
-		if ( ! isset( $prepared_user->user_login ) && isset( $request['user_login'] ) ) {
-			$prepared_user->user_login = $request['user_login'];
-		}
-
-		/**
-		 * Filters an user object before it is inserted or updated via the REST API.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param stdClass        $prepared_user An object prepared for inserting or updating the database.
-		 * @param WP_REST_Request $request Request object.
-		 */
-		return apply_filters( 'rest_member_pre_insert_value', $prepared_user, $request );
 	}
 
 	/**
@@ -395,7 +395,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				'xprofile' => array(
 					'description' => __( 'Member XProfile groups and its fields.', 'buddypress' ),
 					'type'        => 'array',
-					'context'     => array( 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 					'readonly'    => true,
 				),
 			),
