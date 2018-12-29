@@ -9,6 +9,18 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
+ * Get user endpoint.
+ *
+ * @since 0.1.0
+ *
+ * @param  int $user_id User ID.
+ * @return string
+ */
+function bp_rest_get_user_url( $user_id ) {
+	return sprintf( '/buddypress/v1/members/%d', $user_id );
+}
+
+/**
  * Set headers to let the Client Script be aware of the pagination.
  *
  * @since 0.1.0

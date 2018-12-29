@@ -189,7 +189,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'user'       => array(
-				'href'       => rest_url( sprintf( '/wp/v2/users/%d', $thread->last_sender_id ) ),
+				'href'       => rest_url( bp_rest_get_user_url( $thread->last_sender_id ) ),
 				'embeddable' => true,
 			),
 		);
