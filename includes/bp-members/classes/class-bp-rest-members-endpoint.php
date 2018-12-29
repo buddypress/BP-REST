@@ -26,12 +26,43 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
+	 * Checks if a given request has access to read a user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return boolean|WP_Error
+	 */
+	public function get_item_permissions_check( $request ) {
+		$user = $this->get_user( $request['id'] );
+
+		if ( is_wp_error( $user ) ) {
+			return $user;
+		}
+
+		if ( get_current_user_id() === $user->ID ) {
+			return true;
+		}
+
+		if ( 'edit' === $request['context'] && ! current_user_can( 'list_users' ) ) {
+			return new WP_Error( 'rest_user_cannot_view',
+				__( 'Sorry, you are not allowed to list users.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Checks if a given request has access create members.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return true|WP_Error True if the request has access to create items, WP_Error object otherwise.
+	 * @return boolean|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
 		if ( ! current_user_can( 'bp_moderate' ) ) {
@@ -52,7 +83,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return boolean|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
 		$user = $this->get_user( $request['id'] );
@@ -142,55 +173,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		return $data;
-	}
-
-	/**
-	 * Can we see a member?
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param  WP_REST_Request $request Full details about the request.
-	 * @param  boolean         $edit Edit fallback.
-	 * @return boolean
-	 */
-	protected function can_see( $request, $edit = false ) {
-		$user_id = bp_loggedin_user_id();
-		$retval  = false;
-
-		$user = $this->get_user( $request['id'] );
-		if ( is_wp_error( $user ) ) {
-			return false;
-		}
-
-		// Me, myself and I are always allowed access.
-		if ( $user_id === $user->ID ) {
-			$retval = true;
-		}
-
-		// Moderators as well.
-		if ( current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
-		}
-
-		if ( current_user_can( 'list_users' ) ) {
-			$retval = true;
-		}
-
-		// Fix for edit content.
-		if ( $edit && 'edit' === $request['context'] && $retval ) {
-			$retval = true;
-		}
-
-		/**
-		 * Filter the retval.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool     $retval   Return value.
-		 * @param int      $user_id  User ID.
-		 * @param bool     $edit     Edit content.
-		 */
-		return (bool) apply_filters( 'rest_member_can_see', $retval, $user_id, $edit );
 	}
 
 	/**
