@@ -211,15 +211,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see( $request, true ) ) {
-			return new WP_Error( 'rest_forbidden_context',
-				__( 'Sorry, you cannot view this resource with edit context.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
 		return true;
 	}
 
@@ -666,39 +657,31 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Can user see this group?
+	 * Can a user see a group?
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @param  boolean         $edit Edit fallback.
 	 * @return boolean
 	 */
-	protected function can_see( $request, $edit = false ) {
+	protected function can_see( $request ) {
 		$retval  = false;
-		$mod     = bp_current_user_can( 'bp_moderate' );
 		$user_id = bp_loggedin_user_id();
+		$group   = $this->get_group_object( $request );
 
-		if ( $edit && 'edit' === $request['context'] && $mod ) {
+		// If it is not a hidden/private group, user can see it.
+		if ( 'public' === $group->status ) {
 			$retval = true;
 		} else {
 
-			$group = $this->get_group_object( $request );
-
-			// If it is not a hidden/private group, user can see it.
-			if ( 'public' === $group->status ) {
+			// User is a member of the group.
+			if ( groups_is_user_member( $user_id, $group->id ) ) {
 				$retval = true;
-			} else {
+			}
 
-				// User is a member of the group.
-				if ( groups_is_user_member( $user_id, $group->id ) ) {
-					$retval = true;
-				}
-
-				// Moderators.
-				if ( $mod ) {
-					$retval = true;
-				}
+			// Moderators.
+			if ( bp_current_user_can( 'bp_moderate' ) ) {
+				$retval = true;
 			}
 		}
 
@@ -708,9 +691,11 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param bool            $retval  Return value.
+		 * @param int             $user_id User id.
+		 * @param BP_Groups_Group $group   BP_Groups_Group object.
 		 * @param WP_REST_Request $request Full details about the request.
 		 */
-		return (bool) apply_filters( 'rest_group_can_see', $retval, $request );
+		return (bool) apply_filters( 'rest_group_can_see', $retval, $user_id, $group, $request );
 	}
 
 	/**
