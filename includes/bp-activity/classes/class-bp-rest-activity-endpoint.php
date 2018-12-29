@@ -214,16 +214,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	public function get_item( $request ) {
 		$activity = $this->get_activity_object( $request );
 
-		// Prevent non-members from seeing hidden activity.
-		if ( ! $this->show_hidden( $activity->component, $activity->item_id ) ) {
-			return new WP_Error( 'bp_rest_invalid_activity',
-				__( 'Invalid activity id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $activity, $request )

@@ -266,6 +266,49 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_item
+	 */
+	public function test_get_item_for_item_belonging_to_private_group() {
+		$component = buddypress()->groups->id;
+
+		// Current user is $this->user.
+		$g1 = $this->bp_factory->group->create( array(
+			'status' => 'private',
+		) );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'created_group',
+			'user_id'       => $this->user,
+			'item_id'       => $g1,
+			'hide_sitewide' => true,
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $a1 );
+
+		// Non-authenticated.
+		wp_set_current_user( 0 );
+		$response = $this->server->dispatch( $request );
+		$this->assertEquals( 401, $response->get_status() );
+
+		// Not a member of the group.
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+		$response = $this->server->dispatch( $request );
+		$this->assertEquals( 403, $response->get_status() );
+
+		// Member of the group.
+		$new_member               = new BP_Groups_Member;
+		$new_member->group_id     = $g1;
+		$new_member->user_id      = $u;
+		$new_member->is_confirmed = true;
+		$new_member->save();
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	/**
 	 * @group render_item
 	 */
 	public function test_render_item() {
