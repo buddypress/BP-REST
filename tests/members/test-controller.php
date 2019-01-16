@@ -395,7 +395,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$this->assertArrayNotHasKey( 'roles', $data );
 			$this->assertArrayNotHasKey( 'capabilities', $data );
 			$this->assertArrayNotHasKey( 'extra_capabilities', $data );
-			$this->assertArrayNotHasKey( 'xprofile', $data );
+			$this->assertArrayHasKey( 'xprofile', $data );
 			$this->assertArrayNotHasKey( 'registered_date', $data );
 		}
 	}
