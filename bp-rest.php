@@ -43,7 +43,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 0.1.0
  */
-add_action( 'bp_rest_api_init', function() {
+add_action( 'rest_api_init', function() {
 	// Bail early if no core rest support.
 	if ( ! class_exists( 'WP_REST_Controller' ) ) {
 		return;
