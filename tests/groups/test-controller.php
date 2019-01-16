@@ -191,7 +191,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_user_cannot_view_group', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_user_cannot_view_group', $response, 403 );
 	}
 
 	/**
@@ -212,7 +212,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_user_cannot_view_group', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_user_cannot_view_group', $response, 403 );
 	}
 
 	/**
@@ -308,7 +308,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_create_group_empty_name', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_create_group_empty_name', $response, 500 );
 	}
 
 	/**
@@ -323,7 +323,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
 	}
 
 	/**
@@ -364,7 +364,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_group_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -378,7 +378,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $group->id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
 	}
 
 	/**
@@ -401,7 +401,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_group_cannot_update', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_cannot_update', $response, 500 );
 	}
 
 	/**
@@ -476,7 +476,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_group_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -489,7 +489,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $group->id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -508,7 +508,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $group->id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_user_cannot_delete_group', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_user_cannot_delete_group', $response, 500 );
 	}
 
 	/**

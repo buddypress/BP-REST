@@ -136,7 +136,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_user_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_user_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -182,7 +182,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_body_params( $params );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_cannot_create', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_member_cannot_create', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -227,7 +227,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'username', 'test_json_user' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_cannot_update', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_member_cannot_update', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -249,7 +249,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_body_params( $params );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -267,7 +267,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_cannot_update', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_member_cannot_update', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -285,7 +285,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		// Not implemented in multisite.
 		if ( is_multisite() ) {
-			$this->assertErrorResponse( 'rest_authorization_required_code', $response, 501 );
+			$this->assertErrorResponse( 'bp_rest_authorization_required_code', $response, 501 );
 			return;
 		}
 
@@ -308,7 +308,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'reassign', false );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -322,7 +322,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'reassign', false );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_cannot_delete', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_member_cannot_delete', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -339,7 +339,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'reassign', false );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_cannot_delete', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_member_cannot_delete', $response, rest_authorization_required_code() );
 	}
 
 	public function test_prepare_item() {

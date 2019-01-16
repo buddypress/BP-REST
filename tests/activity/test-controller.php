@@ -399,7 +399,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_create_activity_empty_content', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_create_activity_empty_content', $response, 500 );
 	}
 
 	/**
@@ -414,7 +414,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
 	}
 
 	/**
@@ -463,7 +463,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_create_activity_empty_content', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_create_activity_empty_content', $response, 500 );
 	}
 
 	/**
@@ -544,7 +544,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_activity_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_activity_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -558,7 +558,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
 	}
 
 	/**
@@ -581,7 +581,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_activity_cannot_update', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_activity_cannot_update', $response, 500 );
 	}
 
 	/**
@@ -618,7 +618,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_activity_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_activity_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -631,7 +631,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -650,7 +650,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_user_cannot_delete_activity', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_user_cannot_delete_activity', $response, 500 );
 	}
 
 	/**
@@ -716,7 +716,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		remove_filter( 'bp_activity_can_favorite', '__return_false' );
 
-		$this->assertErrorResponse( 'rest_activity_cannot_favorite', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_activity_cannot_favorite', $response, 500 );
 	}
 
 	public function test_prepare_item() {
