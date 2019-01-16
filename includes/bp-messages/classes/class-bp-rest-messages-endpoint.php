@@ -68,7 +68,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param array           $args    Key value array of query var to query value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		$args = apply_filters( 'rest_messages_get_items_query_args', $args, $request );
+		$args = apply_filters( 'bp_rest_messages_get_items_query_args', $args, $request );
 
 		// Actually, query it.
 		$messages_box = new BP_Messages_Box_Template( $args );
@@ -91,7 +91,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $retval       The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
-		do_action( 'rest_messages_get_items', $messages_box, $retval, $request );
+		do_action( 'bp_rest_messages_get_items', $messages_box, $retval, $request );
 
 		return $retval;
 	}
@@ -107,7 +107,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	public function get_items_permissions_check( $request ) {
 
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the messages.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -116,7 +116,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! $this->can_see() ) {
-			return new WP_Error( 'rest_user_cannot_view_messages',
+			return new WP_Error( 'bp_rest_user_cannot_view_messages',
 				__( 'Sorry, you cannot view the messages.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -165,7 +165,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param array           $response
 		 * @param WP_REST_Request $request Request used to generate the response.
 		 */
-		return apply_filters( 'rest_prepare_buddypress_message_value', $response, $request );
+		return apply_filters( 'bp_rest_prepare_buddypress_message_value', $response, $request );
 	}
 
 	/**
@@ -227,7 +227,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param bool   $retval Return value.
 		 * @param int    $user_id User ID.
 		 */
-		return apply_filters( 'rest_message_endpoint_can_see', $retval, $user_id );
+		return apply_filters( 'bp_rest_message_endpoint_can_see', $retval, $user_id );
 	}
 
 	/**

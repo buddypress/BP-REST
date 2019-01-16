@@ -45,7 +45,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		if ( 'edit' === $request['context'] && ! current_user_can( 'list_users' ) ) {
-			return new WP_Error( 'rest_member_cannot_view',
+			return new WP_Error( 'bp_rest_member_cannot_view',
 				__( 'Sorry, you are not allowed to list users.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -66,7 +66,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 */
 	public function create_item_permissions_check( $request ) {
 		if ( ! current_user_can( 'bp_moderate' ) ) {
-			return new WP_Error( 'rest_member_cannot_create',
+			return new WP_Error( 'bp_rest_member_cannot_create',
 				__( 'Sorry, you are not allowed to create new members.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -89,7 +89,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$user = $this->get_user( $request['id'] );
 
 		if ( is_wp_error( $user ) ) {
-			return new WP_Error( 'rest_member_invalid_id',
+			return new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -98,7 +98,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		if ( ! $this->can_manage_member( $user ) ) {
-			return new WP_Error( 'rest_member_cannot_update',
+			return new WP_Error( 'bp_rest_member_cannot_update',
 				__( 'Sorry, you are not allowed to update this member.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -121,7 +121,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$user = $this->get_user( $request['id'] );
 
 		if ( is_wp_error( $user ) ) {
-			return new WP_Error( 'rest_member_invalid_id',
+			return new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -130,7 +130,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		if ( ! $this->can_manage_member( $user ) ) {
-			return new WP_Error( 'rest_member_cannot_delete',
+			return new WP_Error( 'bp_rest_member_cannot_delete',
 				__( 'Sorry, you are not allowed to delete this member.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -206,7 +206,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @param WP_User          $user     WP_User object.
 		 * @param WP_REST_Request  $request  The request object.
 		 */
-		return apply_filters( 'rest_member_prepare_user', $response, $user, $request );
+		return apply_filters( 'bp_rest_member_prepare_user', $response, $user, $request );
 	}
 
 	/**
@@ -233,7 +233,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @param stdClass        $prepared_user An object prepared for inserting or updating the database.
 		 * @param WP_REST_Request $request Request object.
 		 */
-		return apply_filters( 'rest_member_pre_insert_value', $prepared_user, $request );
+		return apply_filters( 'bp_rest_member_pre_insert_value', $prepared_user, $request );
 	}
 
 	/**

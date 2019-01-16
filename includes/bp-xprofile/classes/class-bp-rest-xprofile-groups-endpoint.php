@@ -98,7 +98,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param array           $args    Key value array of query var to query value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		$args = apply_filters( 'rest_xprofile_field_group_get_items_query_args', $args, $request );
+		$args = apply_filters( 'bp_rest_xprofile_field_group_get_items_query_args', $args, $request );
 
 		// Actually, query it.
 		$field_groups = bp_xprofile_get_groups( $args );
@@ -121,7 +121,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response     The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
-		do_action( 'rest_xprofile_field_group_get_items', $field_groups, $response, $request );
+		do_action( 'bp_rest_xprofile_field_group_get_items', $field_groups, $response, $request );
 
 		return $response;
 	}
@@ -137,7 +137,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the XProfile field groups.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -146,7 +146,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! $this->can_see() ) {
-			return new WP_Error( 'rest_user_cannot_view_field_groups',
+			return new WP_Error( 'bp_rest_user_cannot_view_field_groups',
 				__( 'Sorry, you cannot view the XProfile field groups.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -186,7 +186,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response    The response data.
 		 * @param WP_REST_Request   $request     The request sent to the API.
 		 */
-		do_action( 'rest_xprofile_field_group_get_item', $field_group, $response, $request );
+		do_action( 'bp_rest_xprofile_field_group_get_item', $field_group, $response, $request );
 
 		return $response;
 	}
@@ -202,7 +202,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see this field group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -213,7 +213,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		$field_group = $this->get_xprofile_field_group_object( $request );
 
 		if ( empty( $field_group->id ) ) {
-			return new WP_Error( 'rest_invalid_field_group_id',
+			return new WP_Error( 'bp_rest_invalid_field_group_id',
 				__( 'Invalid field group id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -222,7 +222,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! $this->can_see() ) {
-			return new WP_Error( 'rest_user_cannot_view_field_group',
+			return new WP_Error( 'bp_rest_user_cannot_view_field_group',
 				__( 'Sorry, you cannot view this field group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -252,7 +252,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		$group_id = xprofile_insert_field_group( $args );
 
 		if ( ! $group_id ) {
-			return new WP_Error( 'rest_user_cannot_create_xprofile_field_group',
+			return new WP_Error( 'bp_rest_user_cannot_create_xprofile_field_group',
 				__( 'Cannot create new XProfile field group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -279,7 +279,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response    The response data.
 		 * @param WP_REST_Request   $request     The request sent to the API.
 		 */
-		do_action( 'rest_xprofile_field_group_create_item', $field_group, $response, $request );
+		do_action( 'bp_rest_xprofile_field_group_create_item', $field_group, $response, $request );
 
 		return $response;
 	}
@@ -295,7 +295,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function create_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to create a XProfile field group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -304,7 +304,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! $this->can_see() ) {
-			return new WP_Error( 'rest_user_cannot_create_field_group',
+			return new WP_Error( 'bp_rest_user_cannot_create_field_group',
 				__( 'Sorry, you cannot create a XProfile field group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -330,7 +330,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		if ( ! xprofile_delete_field_group( $field_group->id ) ) {
-			return new WP_Error( 'rest_xprofile_field_group_cannot_delete',
+			return new WP_Error( 'bp_rest_xprofile_field_group_cannot_delete',
 				__( 'Could not delete XProfile field group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -355,7 +355,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response    The response data.
 		 * @param WP_REST_Request   $request     The request sent to the API.
 		 */
-		do_action( 'rest_xprofile_field_group_delete_item', $field_group, $response, $request );
+		do_action( 'bp_rest_xprofile_field_group_delete_item', $field_group, $response, $request );
 
 		return $response;
 	}
@@ -371,7 +371,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function delete_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to delete this field group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -380,7 +380,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! $this->can_see() ) {
-			return new WP_Error( 'rest_user_cannot_delete_field_group',
+			return new WP_Error( 'bp_rest_user_cannot_delete_field_group',
 				__( 'Sorry, you cannot delete this field group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -391,7 +391,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		$field_group = $this->get_xprofile_field_group_object( $request );
 
 		if ( empty( $field_group->id ) ) {
-			return new WP_Error( 'rest_invalid_field_group_id',
+			return new WP_Error( 'bp_rest_invalid_field_group_id',
 				__( 'Invalid field group id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -448,7 +448,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request   $request  Request used to generate the response.
 		 * @param BP_XProfile_Group $group    XProfile field group.
 		 */
-		return apply_filters( 'rest_xprofile_field_group_prepare_value', $response, $request, $group );
+		return apply_filters( 'bp_rest_xprofile_field_group_prepare_value', $response, $request, $group );
 	}
 
 	/**
@@ -500,7 +500,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param bool $retval  Return value.
 		 * @param int  $user_id User ID.
 		 */
-		return apply_filters( 'rest_xprofile_field_group_can_see', $retval, $user_id );
+		return apply_filters( 'bp_rest_xprofile_field_group_can_see', $retval, $user_id );
 	}
 
 	/**

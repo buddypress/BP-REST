@@ -101,7 +101,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param array           $args    Key value array of query var to query value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		$args = apply_filters( 'rest_notifications_get_items_query_args', $args, $request );
+		$args = apply_filters( 'bp_rest_notifications_get_items_query_args', $args, $request );
 
 		// Actually, query it.
 		$notifications = BP_Notifications_Notification::get( $args );
@@ -124,7 +124,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response      The response data.
 		 * @param WP_REST_Request  $request       The request sent to the API.
 		 */
-		do_action( 'rest_notification_get_items', $notifications, $response, $request );
+		do_action( 'bp_rest_notification_get_items', $notifications, $response, $request );
 
 		return $response;
 	}
@@ -139,7 +139,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the notifications.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -148,7 +148,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! $this->can_see() ) {
-			return new WP_Error( 'rest_user_cannot_view_notifications',
+			return new WP_Error( 'bp_rest_user_cannot_view_notifications',
 				__( 'Sorry, you cannot view the notifications.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -187,7 +187,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response              $response     The response data.
 		 * @param WP_REST_Request               $request      The request sent to the API.
 		 */
-		do_action( 'rest_notification_get_item', $notification, $response, $request );
+		do_action( 'bp_rest_notification_get_item', $notification, $response, $request );
 
 		return $response;
 	}
@@ -202,7 +202,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the notification.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -213,7 +213,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$notification = $this->get_notification_object( $request );
 
 		if ( empty( $notification->id ) ) {
-			return new WP_Error( 'rest_notification_invalid_id',
+			return new WP_Error( 'bp_rest_notification_invalid_id',
 				__( 'Invalid notification id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -222,7 +222,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! $this->can_see( $notification->id ) ) {
-			return new WP_Error( 'rest_user_cannot_view_notification',
+			return new WP_Error( 'bp_rest_user_cannot_view_notification',
 				__( 'Sorry, you cannot view this notification.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -245,7 +245,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$notification_id = bp_notifications_add_notification( $this->prepare_item_for_database( $request ) );
 
 		if ( ! is_numeric( $notification_id ) ) {
-			return new WP_Error( 'rest_user_cannot_create_notification',
+			return new WP_Error( 'bp_rest_user_cannot_create_notification',
 				__( 'Cannot create new notification.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -272,7 +272,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response               $response     The response data.
 		 * @param WP_REST_Request                $request      The request sent to the API.
 		 */
-		do_action( 'rest_notification_create_item', $notification, $response, $request );
+		do_action( 'bp_rest_notification_create_item', $notification, $response, $request );
 
 		return $response;
 	}
@@ -287,7 +287,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	public function create_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to create a notification.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -296,7 +296,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! $this->can_see() ) {
-			return new WP_Error( 'rest_user_cannot_create_notification',
+			return new WP_Error( 'bp_rest_user_cannot_create_notification',
 				__( 'Sorry, you cannot create a notification.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -324,7 +324,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		);
 
 		if ( ! (bool) $updated ) {
-			return new WP_Error( 'rest_user_cannot_update_notification',
+			return new WP_Error( 'bp_rest_user_cannot_update_notification',
 				__( 'Cannot update the status of this notification.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -349,7 +349,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response              $response     The response data.
 		 * @param WP_REST_Request               $request      The request sent to the API.
 		 */
-		do_action( 'rest_notification_update_item', $notification, $response, $request );
+		do_action( 'bp_rest_notification_update_item', $notification, $response, $request );
 
 		return $response;
 	}
@@ -364,7 +364,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	public function update_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to update a notification.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -375,7 +375,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$notification = $this->get_notification_object( $request );
 
 		if ( empty( $notification->user_id ) ) {
-			return new WP_Error( 'rest_notification_invalid_id',
+			return new WP_Error( 'bp_rest_notification_invalid_id',
 				__( 'Invalid notification id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -384,7 +384,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! $this->can_see( $notification->id ) ) {
-			return new WP_Error( 'rest_user_cannot_update_notification',
+			return new WP_Error( 'bp_rest_user_cannot_update_notification',
 				__( 'Sorry, you are not allowed to update this this notification.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -393,7 +393,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( $request['is_new'] === $notification->is_new ) {
-			return new WP_Error( 'rest_user_cannot_update_notification_status',
+			return new WP_Error( 'bp_rest_user_cannot_update_notification_status',
 				__( 'Notification is already with the status you are trying to update into.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -420,7 +420,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$response = $this->prepare_item_for_response( $notification, $request );
 
 		if ( ! BP_Notifications_Notification::delete( array( 'id' => $notification->id ) ) ) {
-			return new WP_Error( 'rest_notification_invalid_id',
+			return new WP_Error( 'bp_rest_notification_invalid_id',
 				__( 'Invalid notification id.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -437,7 +437,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response              $response     The response data.
 		 * @param WP_REST_Request               $request      The request sent to the API.
 		 */
-		do_action( 'rest_notification_delete_item', $notification, $response, $request );
+		do_action( 'bp_rest_notification_delete_item', $notification, $response, $request );
 
 		return $response;
 	}
@@ -452,7 +452,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	public function delete_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to delete a notification.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -463,7 +463,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$notification = $this->get_notification_object( $request );
 
 		if ( ! $this->can_see( $notification->id ) ) {
-			return new WP_Error( 'rest_user_cannot_delete_notification',
+			return new WP_Error( 'bp_rest_user_cannot_delete_notification',
 				__( 'Sorry, you cannot delete this notification.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -510,7 +510,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request               $request      Request used to generate the response.
 		 * @param BP_Notifications_Notification $notification Notification object.
 		 */
-		return apply_filters( 'rest_notification_prepare_value', $response, $request, $notification );
+		return apply_filters( 'bp_rest_notification_prepare_value', $response, $request, $notification );
 	}
 
 	/**
@@ -568,7 +568,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param stdClass        $prepared_notification An object prepared for inserting or updating the database.
 		 * @param WP_REST_Request $request Request object.
 		 */
-		return apply_filters( 'rest_notification_pre_insert_value', $prepared_notification, $request );
+		return apply_filters( 'bp_rest_notification_pre_insert_value', $prepared_notification, $request );
 	}
 
 	/**
@@ -631,7 +631,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param int  $user_id         User ID.
 		 * @param int  $notification_id Notification ID.
 		 */
-		return apply_filters( 'rest_notification_can_see', $retval, $user_id, $notification_id );
+		return apply_filters( 'bp_rest_notification_can_see', $retval, $user_id, $notification_id );
 	}
 
 	/**

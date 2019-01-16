@@ -110,7 +110,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param array           $args    Key value array of query var to query value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		$args = apply_filters( 'rest_groups_get_items_query_args', $args, $request );
+		$args = apply_filters( 'bp_rest_groups_get_items_query_args', $args, $request );
 
 		// Actually, query it.
 		$groups = groups_get_groups( $args );
@@ -134,7 +134,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'rest_group_get_items', $groups, $response, $request );
+		do_action( 'bp_rest_group_get_items', $groups, $response, $request );
 
 		return $response;
 	}
@@ -149,7 +149,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 		if ( ! $this->can_see_hidden_groups( $request ) ) {
-			return new WP_Error( 'rest_user_cannot_view_hidden_groups',
+			return new WP_Error( 'bp_rest_user_cannot_view_hidden_groups',
 				__( 'Sorry, you cannot view hidden groups.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -188,7 +188,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'rest_group_get_item', $group, $response, $request );
+		do_action( 'bp_rest_group_get_item', $group, $response, $request );
 
 		return $response;
 	}
@@ -203,7 +203,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 		if ( ! $this->can_see( $request ) ) {
-			return new WP_Error( 'rest_user_cannot_view_group',
+			return new WP_Error( 'bp_rest_user_cannot_view_group',
 				__( 'Sorry, you cannot view the group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -226,7 +226,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		$group_id = groups_create_group( $this->prepare_item_for_database( $request ) );
 
 		if ( ! is_numeric( $group_id ) ) {
-			return new WP_Error( 'rest_user_cannot_create_group',
+			return new WP_Error( 'bp_rest_user_cannot_create_group',
 				__( 'Cannot create new group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -253,7 +253,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'rest_group_create_item', $group, $response, $request );
+		do_action( 'bp_rest_group_create_item', $group, $response, $request );
 
 		return $response;
 	}
@@ -270,7 +270,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		// Bail early.
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to create groups.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -279,7 +279,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! bp_user_can_create_groups() ) {
-			return new WP_Error( 'rest_user_cannot_create_groups',
+			return new WP_Error( 'bp_rest_user_cannot_create_groups',
 				__( 'Sorry, you cannot create groups.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -289,7 +289,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		// If no group name.
 		if ( empty( $request['name'] ) ) {
-			return new WP_Error( 'rest_create_group_empty_name',
+			return new WP_Error( 'bp_rest_create_group_empty_name',
 				__( 'Please, enter the name of group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -314,7 +314,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// If the update was fired but returned an error,
 		// send a custom error to the api.
 		if ( ! is_numeric( $group_id ) ) {
-			return new WP_Error( 'rest_user_cannot_update_group',
+			return new WP_Error( 'bp_rest_user_cannot_update_group',
 				__( 'Cannot update existing group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -341,7 +341,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'rest_group_update_item', $group, $response, $request );
+		do_action( 'bp_rest_group_update_item', $group, $response, $request );
 
 		return $response;
 	}
@@ -358,7 +358,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		// Bail early.
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to update this group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -369,7 +369,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		$group = $this->get_group_object( $request );
 
 		if ( empty( $group->id ) ) {
-			return new WP_Error( 'rest_group_invalid_id',
+			return new WP_Error( 'bp_rest_group_invalid_id',
 				__( 'Invalid group id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -379,7 +379,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		// If group author does not match logged_in user, block update.
 		if ( ! $this->can_user_delete_or_update( $group ) ) {
-			return new WP_Error( 'rest_group_cannot_update',
+			return new WP_Error( 'bp_rest_group_cannot_update',
 				__( 'Sorry, you are not allowed to update this group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -406,7 +406,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		$response = $this->prepare_item_for_response( $group, $request );
 
 		if ( ! groups_delete_group( $group->id ) ) {
-			return new WP_Error( 'rest_group_cannot_delete',
+			return new WP_Error( 'bp_rest_group_cannot_delete',
 				__( 'Could not delete the group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -423,7 +423,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'rest_group_delete_item', $group, $response, $request );
+		do_action( 'bp_rest_group_delete_item', $group, $response, $request );
 
 		return $response;
 	}
@@ -438,7 +438,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function delete_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to delete this group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -449,7 +449,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		$group = $this->get_group_object( $request );
 
 		if ( empty( $group->id ) ) {
-			return new WP_Error( 'rest_group_invalid_id',
+			return new WP_Error( 'bp_rest_group_invalid_id',
 				__( 'Invalid group id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -458,7 +458,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! $this->can_user_delete_or_update( $group ) ) {
-			return new WP_Error( 'rest_user_cannot_delete_group',
+			return new WP_Error( 'bp_rest_user_cannot_delete_group',
 				__( 'Sorry, you are not allowed to delete this group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -554,7 +554,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  Request used to generate the response.
 		 */
-		return apply_filters( 'rest_group_prepare_value', $response, $request );
+		return apply_filters( 'bp_rest_group_prepare_value', $response, $request );
 	}
 
 	/**
@@ -624,7 +624,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param stdClass        $prepared_group An object prepared for inserting or updating the database.
 		 * @param WP_REST_Request $request        Request object.
 		 */
-		return apply_filters( 'rest_group_pre_insert_value', $prepared_group, $request );
+		return apply_filters( 'bp_rest_group_pre_insert_value', $prepared_group, $request );
 	}
 
 	/**
@@ -695,7 +695,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param BP_Groups_Group $group   BP_Groups_Group object.
 		 * @param WP_REST_Request $request Full details about the request.
 		 */
-		return (bool) apply_filters( 'rest_group_can_see', $retval, $user_id, $group, $request );
+		return (bool) apply_filters( 'bp_rest_group_can_see', $retval, $user_id, $group, $request );
 	}
 
 	/**
@@ -805,7 +805,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		foreach ( $types as $type ) {
 			if ( ! in_array( $type, $registered_types, true ) ) {
 				/* translators: %1$s and %2$s is replaced with the registered types */
-				return new WP_Error( 'rest_invalid_group_type', sprintf( __( 'The group type you provided, %1$s, is not one of %2$s.', 'buddypress' ), $type, implode( ', ', $registered_types ) ) );
+				return new WP_Error( 'bp_rest_invalid_group_type', sprintf( __( 'The group type you provided, %1$s, is not one of %2$s.', 'buddypress' ), $type, implode( ', ', $registered_types ) ) );
 			}
 		}
 	}
