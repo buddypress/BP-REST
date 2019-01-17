@@ -145,15 +145,6 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see() ) {
-			return new WP_Error( 'bp_rest_user_cannot_view_field_groups',
-				__( 'Sorry, you cannot view the XProfile field groups.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
 		return true;
 	}
 
@@ -217,15 +208,6 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 				__( 'Invalid field group id.', 'buddypress' ),
 				array(
 					'status' => 404,
-				)
-			);
-		}
-
-		if ( ! $this->can_see() ) {
-			return new WP_Error( 'bp_rest_user_cannot_view_field_group',
-				__( 'Sorry, you cannot view this field group.', 'buddypress' ),
-				array(
-					'status' => 500,
 				)
 			);
 		}
@@ -446,7 +428,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  Request used to generate the response.
-		 * @param BP_XProfile_Group $group    XProfile field group.
+		 * @param BP_XProfile_Group  $group    XProfile field group.
 		 */
 		return apply_filters( 'bp_rest_xprofile_field_group_prepare_value', $response, $request, $group );
 	}

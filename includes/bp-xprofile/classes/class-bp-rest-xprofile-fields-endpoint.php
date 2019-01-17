@@ -148,15 +148,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see() ) {
-			return new WP_Error( 'bp_rest_user_cannot_view_xprofile_fields',
-				__( 'Sorry, you cannot view the XProfile fields.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
 		return true;
 	}
 
@@ -234,17 +225,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 				__( 'Sorry, you need to be logged in to view a XProfile field.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		$field = $this->get_xprofile_field_object( $request );
-
-		if ( ! $this->can_see( $field ) ) {
-			return new WP_Error( 'bp_rest_user_cannot_view_xprofile_field',
-				__( 'Sorry, you cannot view this XProfile field.', 'buddypress' ),
-				array(
-					'status' => 500,
 				)
 			);
 		}
@@ -543,9 +523,9 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool              retval   Return value.
-		 * @param int               $user_id User ID.
-		 * @param BP_XProfile_Field $field   XProfile field object.
+		 * @param bool             $retval  Returned value.
+		 * @param int              $user_id User ID.
+		 * @param BP_XProfile_Field $field    XProfile field object.
 		 */
 		return apply_filters( 'bp_rest_xprofile_field_can_see', $retval, $user_id, $field );
 	}
