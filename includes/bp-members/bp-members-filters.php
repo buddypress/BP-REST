@@ -30,4 +30,4 @@ function bp_remove_has_published_posts_from_wp_api_user_query( $prepared_args, $
 
 	return $prepared_args;
 }
-add_filter( 'bp_rest_user_query', 'bp_remove_has_published_posts_from_wp_api_user_query', 10, 2 );
+add_filter( 'rest_user_query', 'bp_remove_has_published_posts_from_wp_api_user_query', 10, 2 );
