@@ -151,6 +151,46 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $user, $request ) {
+
+		$data = $this->user_data( $user );
+
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+
+		if ( 'edit' === $context ) {
+			$data['roles']              = array_values( $user->roles );
+			$data['capabilities']       = (object) $user->allcaps;
+			$data['extra_capabilities'] = (object) $user->caps;
+		}
+
+		$data = $this->add_additional_fields_to_object( $data, $request );
+		$data = $this->filter_response_by_context( $data, $context );
+
+		$response = rest_ensure_response( $data );
+		$response->add_links( $this->prepare_links( $user ) );
+
+		/**
+		 * Filters user data returned from the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param WP_REST_Response $response The response object.
+		 * @param WP_User          $user     WP_User object.
+		 * @param WP_REST_Request  $request  The request object.
+		 */
+		return apply_filters( 'bp_rest_member_prepare_user', $response, $user, $request );
+	}
+
+	/**
+	 * Method to facilitate fetching of user data.
+	 *
+	 * This was abstracted to be used in other BuddyPress endpoints.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_User $user User object.
+	 * @return array
+	 */
+	public function user_data( $user ) {
 		$data = array(
 			'id'                 => $user->ID,
 			'name'               => $user->display_name,
@@ -183,30 +223,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$data['member_types'] = array();
 		}
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-
-		if ( 'edit' === $context ) {
-			$data['roles']              = array_values( $user->roles );
-			$data['capabilities']       = (object) $user->allcaps;
-			$data['extra_capabilities'] = (object) $user->caps;
-		}
-
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
-
-		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $user ) );
-
-		/**
-		 * Filters user data returned from the REST API.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param WP_REST_Response $response The response object.
-		 * @param WP_User          $user     WP_User object.
-		 * @param WP_REST_Request  $request  The request object.
-		 */
-		return apply_filters( 'bp_rest_member_prepare_user', $response, $user, $request );
+		return $data;
 	}
 
 	/**
