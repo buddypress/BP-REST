@@ -46,7 +46,7 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array( $this, 'update_item' ),
 				'permission_callback' => array( $this, 'update_item_permissions_check' ),
-				'args'                => $this->get_items_params(),
+				'args'                => $this->get_item_params(),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
