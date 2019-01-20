@@ -22,7 +22,7 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 	 */
 	public function __construct() {
 		$this->namespace = 'buddypress/v1';
-		$this->rest_base = buddypress()->groups->id;
+		$this->rest_base = buddypress()->groups->id . '/members';
 	}
 
 	/**
@@ -31,10 +31,7 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-
-		$members_endpoint = '/' . $this->rest_base . '/members';
-
-		register_rest_route( $this->namespace, $members_endpoint, array(
+		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_items' ),
@@ -44,40 +41,36 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
 
-		register_rest_route( $this->namespace, $members_endpoint . '/(?P<id>[\d]+)', array(
+		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array( $this, 'update_item' ),
 				'permission_callback' => array( $this, 'update_item_permissions_check' ),
-				'args'                => $this->get_endpoint_args_for_item_schema( false ),
+				'args'                => $this->get_items_params(),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
 	}
 
 	/**
-	 * Retrieve group memberships.
+	 * Retrieve group members.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request List of group members object data.
+	 * @return WP_REST_Request List of group members.
 	 */
 	public function get_items( $request ) {
 		$args = array(
 			'group_id'            => $request['group_id'],
 			'group_role'          => $request['roles'],
-			'exclude_admins_mods' => true,
-
-			/*
-
-			'per_page'           => $request['per_page'],
-			'page'               => $request['page'],
-			'exclude'            => $request['exclude'],
-			'search_terms'       => $request['search'],
-
-			'exclude_banned'      => true,
-			'type'                => 'last_joined', */
+			'type'                => $request['status'],
+			'per_page'            => $request['per_page'],
+			'page'                => $request['page'],
+			'search_terms'        => $request['search'],
+			'exclude'             => $request['exclude'],
+			'exclude_admins_mods' => $request['exclude_admins'],
+			'exclude_banned'      => $request['exclude_banned'],
 		);
 
 		/**
@@ -101,14 +94,14 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 		}
 
 		$response = rest_ensure_response( $retval );
-		$response = bp_rest_response_add_total_headers( $response, $members['total'], $args['per_page'] );
+		$response = bp_rest_response_add_total_headers( $response, $members['count'], $args['per_page'] );
 
 		/**
-		 * Fires after a list of group members is fetched via the REST API.
+		 * Fires after a list of group members are fetched via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array            $members  Fetched members.
+		 * @param array            $members  Fetched group members.
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
@@ -139,15 +132,81 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 	 */
 	public function update_item( $request ) {
 
-		// $group_id = groups_create_group( $this->prepare_item_for_database( $request ) );
+		$user = $this->get_user( $request['id'] );
 
-		if ( ! is_numeric( $retval ) ) {
-			return new WP_Error( 'bp_rest_user_cannot_update_group_member',
-				__( 'Cannot update existing group member.', 'buddypress' ),
+		if ( empty( $user->ID ) ) {
+			return new WP_Error( 'bp_rest_group_member_invalid_id',
+				__( 'Invalid group member id.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => 404,
 				)
 			);
+		}
+
+		$group_id = $this->get_group_id( $request['group_id'] );
+
+		if ( ! $group_id ) {
+			return new WP_Error( 'bp_rest_invalid_group_id',
+				__( 'Invalid group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$action = $request['action'];
+		$role   = $request['role'];
+
+		if ( empty( $action ) ) {
+			return new WP_Error( 'bp_rest_invalid_group_member_update_action',
+				__( 'You must choose a group member update action.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		if ( 'add' === $action ) {
+
+			// Add member to the group.
+			$joined = groups_join_group( $group_id, $user->ID );
+
+			if ( ! $joined ) {
+				return new WP_Error( 'bp_rest_group_member_failed_to_join',
+					__( 'Could not add user to the group.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			}
+
+			// If new role set, promote it too.
+			if ( 'member' !== $role ) {
+				groups_promote_member( $user->ID, $group_id, $role );
+			}
+		} elseif ( 'promote' === $action ) {
+			$promoted_member = new BP_Groups_Member( $user->ID, $group_id );
+
+			if ( ! $promoted_member->promote( $role ) ) {
+				return new WP_Error( 'bp_rest_group_member_failed_to_promote',
+					__( 'Could not promote user from the group.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			}
+		} elseif ( in_array( $action, [ 'remove', 'promote', 'demote', 'ban', 'unban' ], true ) ) {
+
+			$updated_member = new BP_Groups_Member( $user->ID, $group_id );
+
+			if ( ! $updated_member->$action() ) {
+				return new WP_Error( 'bp_rest_group_member_failed_to_' . $action,
+					printf( __( 'Could not %s user from the group.', 'buddypress' ), $action ),
+					array(
+						'status' => 404,
+					)
+				);
+			}
 		}
 
 		$retval = array(
@@ -178,7 +237,7 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return WP_Error|boolean
 	 */
 	public function update_item_permissions_check( $request ) {
 
@@ -192,18 +251,7 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$member = $this->get_user( $request );
-
-		if ( empty( $member->id ) ) {
-			return new WP_Error( 'bp_rest_group_member_invalid_id',
-				__( 'Invalid group member id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		if ( ! $this->can_user_delete_or_update( $member ) ) {
+		if ( ! bp_current_user_can( 'bp_moderate' ) ) {
 			return new WP_Error( 'bp_rest_group_member_cannot_update',
 				__( 'Sorry, you are not allowed to update this group member.', 'buddypress' ),
 				array(
@@ -250,45 +298,16 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Prepare a group for
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Request object.
-	 * @return stdClass|WP_Error Object or WP_Error.
-	 */
-	protected function prepare_item_for_database( $request ) {
-		$prepared_group = new stdClass();
-		$schema         = $this->get_item_schema();
-		$member         = $this->get_user( $request );
-
-		// Member ID.
-		if ( ! empty( $schema['properties']['id'] ) && ! empty( $member->ID ) ) {
-			$prepared_group->id = $member->ID;
-		}
-
-		/**
-		 * Filters a group member before it is updated via the REST API.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param stdClass        $prepared_member An object prepared for updating the database.
-		 * @param WP_REST_Request $request         Request object.
-		 */
-		return apply_filters( 'bp_rest_group_member_pre_insert_value', $prepared_member, $request );
-	}
-
-	/**
 	 * Prepare links for the request.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_User $member User object.
+	 * @param WP_User $user User object.
 	 * @return array Links for the given plugin.
 	 */
-	protected function prepare_links( $member ) {
+	protected function prepare_links( $user ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $member->ID;
+		$url  = $base . $user->ID;
 
 		// Entity meta.
 		$links = array(
@@ -299,24 +318,12 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'user'       => array(
-				'href'       => rest_url( bp_rest_get_user_url( $member->ID ) ),
+				'href'       => rest_url( bp_rest_get_user_url( $user->ID ) ),
 				'embeddable' => true,
 			),
 		);
 
 		return $links;
-	}
-
-	/**
-	 * See if user can update a group member.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param  WP_User $member User object.
-	 * @return bool
-	 */
-	protected function can_user_delete_or_update( $member ) {
-		return ( bp_current_user_can( 'bp_moderate' ) || get_current_user_id() === $member->ID );
 	}
 
 	/**
@@ -346,220 +353,42 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Clean up group_type__in input.
+	 * Get a group ID from its identifier.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $value Comma-separated list of group types.
-	 * @return array|null
+	 * @param int $group_id Group ID.
+	 * @return int|bool
 	 */
-	public function sanitize_group_types( $value ) {
+	protected function get_group_id( $group_id ) {
 
-		// Bail early.
-		if ( empty( $value ) ) {
-			return null;
+		// Get group object.
+		$group_obj = groups_get_group( array(
+			'group_id' => $group_id,
+		) );
+
+		if ( empty( $group_obj->id ) ) {
+			return false;
 		}
 
-		$types       = explode( ',', $value );
-		$valid_types = array_intersect( $types, bp_groups_get_group_types() );
-
-		return empty( $valid_types ) ? null : $valid_types;
+		return intval( $group_obj->id );
 	}
 
 	/**
-	 * Validate group_type__in input.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param  mixed           $value mixed value.
-	 * @param  WP_REST_Request $request Full details about the request.
-	 * @param  string          $param string.
-	 *
-	 * @return WP_Error|bool
-	 */
-	public function validate_group_types( $value, $request, $param ) {
-
-		// Bail early.
-		if ( empty( $value ) ) {
-			return true;
-		}
-
-		$types            = explode( ',', $value );
-		$registered_types = bp_groups_get_group_types();
-		foreach ( $types as $type ) {
-			if ( ! in_array( $type, $registered_types, true ) ) {
-				/* translators: %1$s and %2$s is replaced with the registered types */
-				return new WP_Error( 'bp_rest_invalid_group_type', sprintf( __( 'The group type you provided, %1$s, is not one of %2$s.', 'buddypress' ), $type, implode( ', ', $registered_types ) ) );
-			}
-		}
-	}
-
-	/**
-	 * Get the group schema, conforming to JSON Schema.
+	 * Get the group member schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'group',
-			'type'       => 'object',
-			'properties' => array(
-				'id'                 => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
+		$members_endpoint = new BP_REST_Members_Endpoint();
 
-				'creator_id'         => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the user that created the group.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-
-				'name'               => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The name of the group.', 'buddypress' ),
-					'type'        => 'string',
-					'required'    => true,
-					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_text_field',
-					),
-				),
-
-				'slug'               => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The URL-friendly slug for the group.', 'buddypress' ),
-					'type'        => 'string',
-					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_title',
-					),
-				),
-
-				'link'               => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
-					'type'        => 'string',
-					'format'      => 'uri',
-					'readonly'    => true,
-				),
-
-				'description'        => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The description of the group.', 'buddypress' ),
-					'type'        => 'object',
-					'arg_options' => array(
-						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
-						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
-					),
-					'properties'  => array(
-						'raw'       => array(
-							'description' => __( 'Content for the group, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'edit' ),
-						),
-						'rendered'  => array(
-							'description' => __( 'HTML content for the group, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-							'readonly'    => true,
-						),
-					),
-				),
-
-				'status'             => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The status of the group.', 'buddypress' ),
-					'type'        => 'string',
-					'enum'        => array( 'public', 'private', 'hidden' ),
-					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_key',
-					),
-				),
-
-				'enable_forum'       => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the group has a forum or not.', 'buddypress' ),
-					'type'        => 'boolean',
-				),
-
-				'parent_id'       => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'ID of the parent group.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-
-				'date_created'       => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( "The date the group was created, in the site's timezone.", 'buddypress' ),
-					'type'        => 'string',
-					'format'      => 'date-time',
-				),
-
-				'admins'             => array(
-					'context'     => array( 'edit' ),
-					'description' => __( 'Group administrators.', 'buddypress' ),
-					'type'        => 'array',
-				),
-
-				'mods'               => array(
-					'context'     => array( 'edit' ),
-					'description' => __( 'Group moderators.', 'buddypress' ),
-					'type'        => 'array',
-				),
-
-				'total_member_count' => array(
-					'context'     => array( 'edit' ),
-					'description' => __( 'Count of all group members.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-
-				'last_activity'      => array(
-					'context'     => array( 'edit' ),
-					'description' => __( "The date the group was last active, in the site's timezone.", 'buddypress' ),
-					'type'        => 'string',
-					'format'      => 'date-time',
-				),
-			),
-		);
-
-		// Avatars.
-		if ( true === buddypress()->avatar->show_avatars ) {
-			$avatar_properties = array();
-
-			$avatar_properties['full'] = array(
-				/* translators: Full image size for the group Avatar */
-				'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_full_width() ), number_format_i18n( bp_core_avatar_full_height() ) ),
-				'type'        => 'string',
-				'format'      => 'uri',
-				'context'     => array( 'embed', 'view', 'edit' ),
-			);
-
-			$avatar_properties['thumb'] = array(
-				/* translators: Thumb imaze size for the group Avatar */
-				'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
-				'type'        => 'string',
-				'format'      => 'uri',
-				'context'     => array( 'embed', 'view', 'edit' ),
-			);
-
-			$schema['properties']['avatar_urls'] = array(
-				'description' => __( 'Avatar URLs for the group.', 'buddypress' ),
-				'type'        => 'object',
-				'context'     => array( 'embed', 'view', 'edit' ),
-				'readonly'    => true,
-				'properties'  => $avatar_properties,
-			);
-		}
-
-		return $schema;
+		return $members_endpoint->get_item_schema();
 	}
 
 	/**
-	 * Get the query params for collections of groups.
+	 * Get the query params for collections of group members.
 	 *
 	 * @since 0.1.0
 	 *
@@ -569,68 +398,24 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
-		$params['type'] = array(
-			'description'       => __( 'Shorthand for certain orderby/order combinations.', 'buddypress' ),
-			'default'           => 'active',
-			'type'              => 'string',
-			'enum'              => array( 'active', 'newest', 'alphabetical', 'random', 'popular', 'most-forum-topics', 'most-forum-posts' ),
-			'sanitize_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['order'] = array(
-			'description'       => __( 'Order sort attribute ascending or descending.', 'buddypress' ),
-			'default'           => 'desc',
-			'type'              => 'string',
-			'enum'              => array( 'asc', 'desc' ),
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['status'] = array(
-			'description'       => __( 'Group statuses to limit results to.', 'buddypress' ),
-			'default'           => array(),
-			'type'              => 'array',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['orderby'] = array(
-			'description'       => __( 'Order groups by which attribute.', 'buddypress' ),
-			'default'           => 'date_created',
-			'type'              => 'string',
-			'enum'              => array( 'date_created', 'last_activity', 'total_member_count', 'name', 'random' ),
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['user_id'] = array(
-			'description'       => __( 'Pass a user_id to limit to only groups that this user is a member of.', 'buddypress' ),
+		$params['group_id'] = array(
+			'description'       => __( 'ID of the group to limit results to.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['parent_id'] = array(
-			'description'       => __( 'Get groups that are children of the specified group(s) ids.', 'buddypress' ),
-			'default'           => null,
-			'type'              => 'array',
-			'sanitize_callback' => 'wp_parse_id_list',
+		$params['status'] = array(
+			'description'       => __( 'Sort the order of results by the status of the group members.', 'buddypress' ),
+			'default'           => 'last_joined',
+			'type'              => 'string',
+			'enum'              => array( 'last_joined', 'first_joined' ),
+			'sanitize_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['meta'] = array(
-			'description'       => __( 'Get groups based on their meta data information.', 'buddypress' ),
-			'default'           => array(),
-			'type'              => 'array',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['include'] = array(
-			'description'       => __( 'Ensure result set includes groups with specific IDs.', 'buddypress' ),
-			'default'           => array(),
-			'type'              => 'array',
-			'sanitize_callback' => 'wp_parse_id_list',
-		);
-
-		$params['exclude'] = array(
-			'description'       => __( 'Ensure result set excludes specific IDs.', 'buddypress' ),
+		$params['roles'] = array(
+			'description'       => __( 'Ensure result set includes specific group roles.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
@@ -641,45 +426,6 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 			'default'           => '',
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_text_field',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['group_type'] = array(
-			'description'       => __( 'Limit results set to a certain type.', 'buddypress' ),
-			'default'           => '',
-			'type'              => 'string',
-			'enum'              => bp_groups_get_group_types(),
-			'sanitize_callback' => array( $this, 'sanitize_group_types' ),
-			'validate_callback' => array( $this, 'validate_group_types' ),
-		);
-
-		$params['group_type__in'] = array(
-			'description'       => __( 'Limit results set to groups of certain types.', 'buddypress' ),
-			'default'           => '',
-			'type'              => 'array',
-			'sanitize_callback' => array( $this, 'sanitize_group_types' ),
-			'validate_callback' => array( $this, 'validate_group_types' ),
-		);
-
-		$params['group_type__not_in'] = array(
-			'description'       => __( 'Exclude groups of certain types.', 'buddypress' ),
-			'default'           => '',
-			'type'              => 'array',
-			'sanitize_callback' => array( $this, 'sanitize_group_types' ),
-			'validate_callback' => array( $this, 'validate_group_types' ),
-		);
-
-		$params['enable_forum'] = array(
-			'description'       => __( 'Whether the group should have a forum enabled.', 'buddypress' ),
-			'default'           => false,
-			'type'              => 'boolean',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['show_hidden'] = array(
-			'description'       => __( 'Whether results should include hidden groups.', 'buddypress' ),
-			'default'           => false,
-			'type'              => 'boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -697,6 +443,65 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['exclude'] = array(
+			'description'       => __( 'Ensure result set excludes specific member IDs.', 'buddypress' ),
+			'default'           => array(),
+			'type'              => 'array',
+			'sanitize_callback' => 'wp_parse_id_list',
+		);
+
+		$params['exclude_admins'] = array(
+			'description'       => __( 'Whether results should exclude group admins and mods.', 'buddypress' ),
+			'default'           => true,
+			'type'              => 'boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['exclude_banned'] = array(
+			'description'       => __( 'Whether results should exclude banned group members.', 'buddypress' ),
+			'default'           => true,
+			'type'              => 'boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		return $params;
+	}
+
+	/**
+	 * Get the query params for a group member update.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array
+	 */
+	public function get_item_params() {
+		$params                       = parent::get_collection_params();
+		$params['context']['default'] = 'view';
+
+		$params['action'] = array(
+			'description'       => __( 'Action used to update a member.', 'buddypress' ),
+			'default'           => '',
+			'type'              => 'string',
+			'enum'              => array( 'join', 'remove', 'promote', 'demote', 'ban', 'unban' ),
+			'sanitize_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['group_id'] = array(
+			'description'       => __( 'ID of the group.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['role'] = array(
+			'description'       => __( 'Member role to update him into.', 'buddypress' ),
+			'default'           => 'member',
+			'type'              => 'string',
+			'enum'              => array( 'member', 'mod', 'admin' ),
+			'sanitize_callback' => 'rest_validate_request_arg',
 		);
 
 		return $params;
