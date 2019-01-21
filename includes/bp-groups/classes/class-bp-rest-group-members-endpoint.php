@@ -1,6 +1,6 @@
 <?php
 /**
- * BP REST: BP_REST_Groups_Members_Endpoint class
+ * BP REST: BP_REST_Group_Members_Endpoint class
  *
  * @package BuddyPress
  * @since 0.1.0
@@ -88,7 +88,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		 * @param array           $args    Key value array of query var to query value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		$args = apply_filters( 'bp_rest_groups_members_get_items_query_args', $args, $request );
+		$args = apply_filters( 'bp_rest_group_members_get_items_query_args', $args, $request );
 
 		// Get our members.
 		$members = groups_get_group_members( $args );
@@ -113,7 +113,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_groups_members_get_items', $members, $group_id, $response, $request );
+		do_action( 'bp_rest_group_members_get_items', $members, $group_id, $response, $request );
 
 		return $response;
 	}
