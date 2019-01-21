@@ -132,17 +132,17 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		wp_set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
-		$request->add_header( 'content-type', 'application/json' );
-		$params = array(
-			'id'       => $u,
+		$request->set_query_params( array(
 			'group_id' => $this->group_id,
-			'action'   => 'promote',
-			'role'     => 'admin',
-		);
-		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'view' );
+			'id'       => $u,
+			'action'   => 'ban',
+		) );
 
+		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
 		$all_data = $response->get_data();
 
 		foreach ( $all_data as $data ) {
@@ -150,7 +150,43 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
 
 			$this->assertTrue( $u === $member_object->user_id );
-			$this->assertTrue( (bool) $member_object->is_admin );
+			$this->assertTrue( (bool) $member_object->is_banned );
+			$this->check_user_data( $user, $data, 'view', $response->get_links() );
+		}
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_promote_member() {
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$this->populate_group_with_members( [ $u ], $this->group_id );
+
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $this->group_id,
+			'id'       => $u,
+			'action'   => 'promote',
+			'role'     => 'mod',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		foreach ( $all_data as $data ) {
+			$user          = $this->endpoint->get_user( $data['id'] );
+			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
+
+			$this->assertTrue( $u === $member_object->user_id );
+			$this->assertTrue( (bool) $member_object->is_mod );
 			$this->check_user_data( $user, $data, 'view', $response->get_links() );
 		}
 	}

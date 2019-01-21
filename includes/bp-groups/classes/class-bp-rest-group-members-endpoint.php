@@ -203,7 +203,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 					)
 				);
 			}
-		} elseif ( in_array( $action, [ 'remove', 'demote', 'ban', 'unban' ], true ) ) {
+		} elseif ( in_array( $action, [ 'remove', 'demote', 'ban', 'unban' ] ) ) {
 			$updated_member = new BP_Groups_Member( $user->ID, $group_id );
 
 			if ( ! $updated_member->$action() ) {
@@ -508,7 +508,8 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			'default'           => 'join',
 			'type'              => 'string',
 			'enum'              => array( 'join', 'remove', 'promote', 'demote', 'ban', 'unban' ),
-			'sanitize_callback' => 'rest_validate_request_arg',
+			'sanitize_callback' => 'sanitize_text_field',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['role'] = array(
@@ -516,7 +517,8 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			'default'           => 'member',
 			'type'              => 'string',
 			'enum'              => array( 'member', 'mod', 'admin' ),
-			'sanitize_callback' => 'rest_validate_request_arg',
+			'sanitize_callback' => 'sanitize_text_field',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		return $params;
