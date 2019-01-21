@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 0.1.0
  */
-class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
+class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 
 	/**
 	 * Constructor.
@@ -38,10 +38,6 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				'args'                => $this->get_collection_params(),
 			),
-			'schema' => array( $this, 'get_item_schema' ),
-		) );
-
-		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array( $this, 'update_item' ),
@@ -61,16 +57,27 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request List of group members.
 	 */
 	public function get_items( $request ) {
+		$group_id = $this->get_group_id( $request['group_id'] );
+
+		if ( ! $group_id ) {
+			return new WP_Error( 'bp_rest_invalid_group_id',
+				__( 'Invalid group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
 		$args = array(
-			'group_id'            => $request['group_id'],
+			'group_id'            => $group_id,
 			'group_role'          => $request['roles'],
 			'type'                => $request['status'],
 			'per_page'            => $request['per_page'],
 			'page'                => $request['page'],
 			'search_terms'        => $request['search'],
 			'exclude'             => $request['exclude'],
-			'exclude_admins_mods' => $request['exclude_admins'],
-			'exclude_banned'      => $request['exclude_banned'],
+			'exclude_admins_mods' => (bool) $request['exclude_admins'],
+			'exclude_banned'      => (bool) $request['exclude_banned'],
 		);
 
 		/**
@@ -102,10 +109,11 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param array            $members  Fetched group members.
+		 * @param int              $group_id The group id.
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_groups_members_get_items', $members, $response, $request );
+		do_action( 'bp_rest_groups_members_get_items', $members, $group_id, $response, $request );
 
 		return $response;
 	}
@@ -166,7 +174,7 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( 'add' === $action ) {
+		if ( 'join' === $action ) {
 
 			// Add member to the group.
 			$joined = groups_join_group( $group_id, $user->ID );
@@ -195,8 +203,7 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 					)
 				);
 			}
-		} elseif ( in_array( $action, [ 'remove', 'promote', 'demote', 'ban', 'unban' ], true ) ) {
-
+		} elseif ( in_array( $action, [ 'remove', 'demote', 'ban', 'unban' ], true ) ) {
 			$updated_member = new BP_Groups_Member( $user->ID, $group_id );
 
 			if ( ! $updated_member->$action() ) {
@@ -211,7 +218,7 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 
 		$retval = array(
 			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $member, $request )
+				$this->prepare_item_for_response( $user, $request )
 			),
 		);
 
@@ -222,11 +229,11 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param WP_User          $member   The updated member.
+		 * @param WP_User          $user     The updated member.
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_member_update_item', $member, $response, $request );
+		do_action( 'bp_rest_group_member_update_item', $user, $response, $request );
 
 		return $response;
 	}
@@ -334,7 +341,7 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 	 * @param int $id Supplied ID.
 	 * @return WP_User|boolean
 	 */
-	protected function get_user( $id ) {
+	public function get_user( $id ) {
 
 		if ( (int) $id <= 0 ) {
 			return false;
@@ -480,12 +487,12 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
-		$params['action'] = array(
-			'description'       => __( 'Action used to update a member.', 'buddypress' ),
-			'default'           => '',
-			'type'              => 'string',
-			'enum'              => array( 'join', 'remove', 'promote', 'demote', 'ban', 'unban' ),
-			'sanitize_callback' => 'rest_validate_request_arg',
+		$params['id'] = array(
+			'description'       => __( 'ID of the member.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['group_id'] = array(
@@ -494,6 +501,14 @@ class BP_REST_Groups_Members_Endpoint extends WP_REST_Controller {
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['action'] = array(
+			'description'       => __( 'Action used to update a member.', 'buddypress' ),
+			'default'           => 'join',
+			'type'              => 'string',
+			'enum'              => array( 'join', 'remove', 'promote', 'demote', 'ban', 'unban' ),
+			'sanitize_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['role'] = array(
