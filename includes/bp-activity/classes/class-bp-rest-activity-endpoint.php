@@ -112,10 +112,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'sort'              => $request['order'],
 			'spam'              => $request['status'],
 			'display_comments'  => $request['display_comments'],
-
 			'site_id'           => $request['site_id'],
 			'group_id'          => $request['group_id'],
-
 			'count_total'       => true,
 			'fields'             => 'all',
 			'show_hidden'       => false,
@@ -131,19 +129,31 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$args['filter']['user_id'] = $request['user'];
 		}
 
-		if ( isset( $request['component'] ) ) {
-			$args['filter']['object'] = $request['component'];
+		if ( ! empty( $args['group_id'] ) ) {
+			$args['filter']['object']     = 'groups';
+			$args['filter']['primary_id'] = $args['group_id'];
+		}
+
+		if ( ! empty( $args['site_id'] ) ) {
+			$args['filter']['object']     = 'blogs';
+			$args['filter']['primary_id'] = $args['site_id'];
+		}
+
+		if ( empty( $args['group_id'] ) || empty( $args['site_id'] ) ) {
+			if ( isset( $request['component'] ) ) {
+				$args['filter']['object'] = $request['component'];
+			}
+
+			$item_id = 0;
+			if ( ! empty( $request['primary_id'] ) ) {
+				$primary_id                   = $request['primary_id'];
+				$args['filter']['primary_id'] = $primary_id;
+				$item_id                      = $primary_id[0];
+			}
 		}
 
 		if ( isset( $request['type'] ) ) {
 			$args['filter']['action'] = $request['type'];
-		}
-
-		$item_id = 0;
-		if ( ! empty( $request['primary_id'] ) ) {
-			$primary_id                   = $request['primary_id'];
-			$args['filter']['primary_id'] = $primary_id;
-			$item_id                      = $primary_id[0];
 		}
 
 		if ( ! empty( $request['secondary_id'] ) ) {
@@ -967,8 +977,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( 'groups' === $activity->components && ! empty( $activity->item_id ) ) {
-
+		if ( 'groups' === $activity->component && ! empty( $activity->item_id ) ) {
 			$group = groups_get_group( $activity->item_id );
 
 			$links['group'] = array(
@@ -1329,16 +1338,16 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$params['group_id'] = array(
 			'description'       => __( 'Limit result set to items created by a specific group.', 'buddypress' ),
-			'type'              => 'integer',
 			'default'           => 0,
+			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['site_id'] = array(
 			'description'       => __( 'Limit result set to items created by a specific site.', 'buddypress' ),
-			'type'              => 'integer',
 			'default'           => 0,
+			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);

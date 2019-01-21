@@ -111,6 +111,48 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group test
+	 */
+	public function test_get_public_groups_items_from_a_group() {
+		$component = buddypress()->groups->id;
+
+		$g2 = $this->bp_factory->group->create( array(
+			'status' => 'public',
+		) );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'created_group',
+			'user_id'       => $this->user,
+			'item_id'       => $g2,
+			'hide_sitewide' => true,
+		) );
+
+		$a2 = $this->bp_factory->activity->create( array(
+			'component' => $component,
+			'type'      => 'created_group',
+			'user_id'   => $this->user,
+			'item_id'   => $g2,
+		) );
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g2,
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertContains( $a2, $a_ids );
+	}
+
+	/**
 	 * @group get_items
 	 */
 	public function test_get_private_group_items() {
