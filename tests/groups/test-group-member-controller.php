@@ -194,6 +194,29 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	/**
 	 * @group update_item
 	 */
+	public function test_update_item_invalid_group_id() {
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		wp_set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER,
+			'id'       => $u,
+			'action'   => 'promote',
+			'role'     => 'mod',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_group_id', $response, 404 );
+	}
+
+	/**
+	 * @group update_item
+	 */
 	public function test_update_item_invalid_id() {
 		wp_set_current_user( $this->user );
 

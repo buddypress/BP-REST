@@ -42,7 +42,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array( $this, 'update_item' ),
 				'permission_callback' => array( $this, 'update_item_permissions_check' ),
-				'args'                => $this->get_item_params(),
+				'args'                => $this->get_update_collection_params(),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -164,15 +164,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 
 		$action = $request['action'];
 		$role   = $request['role'];
-
-		if ( empty( $action ) ) {
-			return new WP_Error( 'bp_rest_invalid_group_member_update_action',
-				__( 'You must choose a group member update action.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
 
 		if ( 'join' === $action ) {
 
@@ -483,7 +474,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 *
 	 * @return array
 	 */
-	public function get_item_params() {
+	public function get_update_collection_params() {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
