@@ -145,6 +145,8 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	/**
 	 * Check if a given request has access to group members.
 	 *
+	 * We are using the same permissions check done on group access.
+	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
@@ -337,10 +339,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),
-			),
-			'user'       => array(
-				'href'       => rest_url( bp_rest_get_user_url( $user->ID ) ),
-				'embeddable' => true,
 			),
 		);
 
