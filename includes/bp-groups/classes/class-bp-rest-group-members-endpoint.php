@@ -188,9 +188,10 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$action   = $request['action'];
-		$role     = $request['role'];
-		$group_id = $group->id;
+		$action       = $request['action'];
+		$role         = $request['role'];
+		$group_id     = $group->id;
+		$group_member = new BP_Groups_Member( $user->ID, $group_id );
 
 		if ( 'join' === $action ) {
 
@@ -211,9 +212,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 				groups_promote_member( $user->ID, $group_id, $role );
 			}
 		} elseif ( 'promote' === $action ) {
-			$promoted_member = new BP_Groups_Member( $user->ID, $group_id );
-
-			if ( ! $promoted_member->promote( $role ) ) {
+			if ( ! $group_member->promote( $role ) ) {
 				return new WP_Error( 'bp_rest_group_member_failed_to_promote',
 					__( 'Could not promote user from the group.', 'buddypress' ),
 					array(
@@ -222,9 +221,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 				);
 			}
 		} elseif ( in_array( $action, [ 'remove', 'demote', 'ban', 'unban' ] ) ) {
-			$updated_member = new BP_Groups_Member( $user->ID, $group_id );
-
-			if ( ! $updated_member->$action() ) {
+			if ( ! $group_member->$action() ) {
 				return new WP_Error( 'bp_rest_group_member_failed_to_' . $action,
 					printf( __( 'Could not %s user from the group.', 'buddypress' ), $action ),
 					array(
@@ -236,7 +233,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 
 		$retval = array(
 			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $user, $request )
+				$this->prepare_item_for_response( $group_member, $request )
 			),
 		);
 
@@ -247,12 +244,13 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param WP_User          $user     The updated member.
-		 * @param BP_Groups_Group  $group    The group object.
-		 * @param WP_REST_Response $response The response data.
-		 * @param WP_REST_Request  $request  The request sent to the API.
+		 * @param WP_User          $user         The updated member.
+		 * @param BP_Groups_Member $group_member The group member.
+		 * @param BP_Groups_Group  $group        The group object.
+		 * @param WP_REST_Response $response     The response data.
+		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_member_update_item', $user, $group, $response, $request );
+		do_action( 'bp_rest_group_member_update_item', $user, $group_member, $group, $response, $request );
 
 		return $response;
 	}
@@ -294,12 +292,24 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_User         $user     User object.
-	 * @param WP_REST_Request $request  Full details about the request.
+	 * @param BP_Groups_Member $group_member BP_Groups_Member object.
+	 * @param WP_REST_Request  $request      Full details about the request
 	 * @return WP_REST_Response
 	 */
-	public function prepare_item_for_response( $user, $request ) {
+	public function prepare_item_for_response( $group_member, $request ) {
+		$user = $this->get_user( $group_member->user_id );
 		$data = $this->members_endpoint->user_data( $user );
+
+		$bp_data = array(
+			'is_mod'       => (bool) $group_member->is_mod,
+			'is_admin'     => (bool) $group_member->is_admin,
+			'is_banned'    => (bool) $group_member->is_banned,
+			'is_confirmed'  => (bool) $group_member->is_confirmed,
+			'date_modified' => bp_rest_prepare_date_response( $group_member->date_modified ),
+		);
+
+		// Merge both info.
+		$data = array_merge( $data, $bp_data );
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
@@ -379,7 +389,40 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		return $this->members_endpoint->get_item_schema();
+		$schema = $this->members_endpoint->get_item_schema();
+
+		$schema['properties']['is_mod'] = array(
+			'context'     => array( 'view', 'edit' ),
+			'description' => __( 'Is this user a mod of the group?', 'buddypress' ),
+			'type'        => 'integer',
+		);
+
+		$schema['properties']['is_banned'] = array(
+			'context'     => array( 'view', 'edit' ),
+			'description' => __( 'Is this user banned from the group?', 'buddypress' ),
+			'type'        => 'integer',
+		);
+
+		$schema['properties']['is_admin'] = array(
+			'context'     => array( 'view', 'edit' ),
+			'description' => __( 'Is this user an admin of the group?', 'buddypress' ),
+			'type'        => 'integer',
+		);
+
+		$schema['properties']['is_confirmed'] = array(
+			'context'     => array( 'view', 'edit' ),
+			'description' => __( 'Is this user membership confirmed?', 'buddypress' ),
+			'type'        => 'integer',
+		);
+
+		$schema['properties']['date_modified'] = array(
+			'context'     => array( 'view', 'edit' ),
+			'description' => __( "The date of the last time this user was modified, in the site's timezone.", 'buddypress' ),
+			'type'        => 'string',
+			'format'      => 'date-time',
+		);
+
+		return $this->add_additional_fields_schema( $schema );
 	}
 
 	/**

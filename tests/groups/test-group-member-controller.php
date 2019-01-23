@@ -76,7 +76,9 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		// Verify user information.
 		foreach ( $all_data as $data ) {
 			$user = $this->endpoint->get_user( $data['id'] );
-			$this->check_user_data( $user, $data, 'view', $response->get_links() );
+			$member_object = new BP_Groups_Member( $user->ID, $g1 );
+
+			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
 		}
 	}
 
@@ -118,9 +120,12 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
+		// Verify user information.
 		foreach ( $all_data as $data ) {
 			$user = $this->endpoint->get_user( $data['id'] );
-			$this->check_user_data( $user, $data, 'view', $response->get_links() );
+			$member_object = new BP_Groups_Member( $user->ID, $g1 );
+
+			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
 		}
 	}
 
@@ -162,14 +167,13 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
 			$user          = $this->endpoint->get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
 
-			$this->assertTrue( $u === $member_object->user_id );
-			$this->assertTrue( (bool) $member_object->is_banned );
-			$this->check_user_data( $user, $data, 'view', $response->get_links() );
+			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
 		}
 	}
 
@@ -182,7 +186,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->populate_group_with_members( [ $u ], $this->group_id );
 
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -198,14 +202,13 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
 			$user          = $this->endpoint->get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
 
-			$this->assertTrue( $u === $member_object->user_id );
-			$this->assertTrue( (bool) $member_object->is_mod );
-			$this->check_user_data( $user, $data, 'view', $response->get_links() );
+			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
 		}
 	}
 
@@ -216,7 +219,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -236,7 +239,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group update_item
 	 */
 	public function test_update_item_invalid_id() {
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$request  = new WP_REST_Request( 'PUT', $this->endpoint_url );
 		$response = $this->server->dispatch( $request );
@@ -261,19 +264,17 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$u  = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
-		wp_set_current_user( $u2 );
+		$this->bp->set_current_user( $u2 );
 
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
-		$request->add_header( 'content-type', 'application/json' );
-
-		$params = array(
+		$request->set_query_params( array(
 			'user_id'  => $u,
 			'action'   => 'promote',
 			'group_id' => $this->group_id,
 			'role'     => 'admin',
-		);
+		) );
 
-		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_member_cannot_update', $response, 500 );
@@ -300,7 +301,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		}
 	}
 
-	protected function check_user_data( $user, $data, $context, $links ) {
+	protected function check_user_data( $user, $data, $member_object, $context, $links ) {
 		$this->assertEquals( $user->ID, $data['id'] );
 		$this->assertEquals( $user->display_name, $data['name'] );
 		$this->assertEquals( $user->user_email, $data['email'] );
@@ -318,6 +319,13 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertArrayNotHasKey( 'extra_capabilities', $data );
 		$this->assertArrayHasKey( 'xprofile', $data );
 		$this->assertArrayNotHasKey( 'registered_date', $data );
+
+		// Checking extra.
+		$this->assertEquals( $member_object->is_mod, (bool) $data['is_mod'] );
+		$this->assertEquals( $member_object->is_admin, (bool) $data['is_admin'] );
+		$this->assertEquals( $member_object->is_banned, (bool) $data['is_banned'] );
+		$this->assertEquals( $member_object->is_confirmed, (bool) $data['is_confirmed'] );
+		$this->assertEquals( bp_rest_prepare_date_response( $member_object->date_modified ), $data['date_modified'] );
 	}
 
 	public function test_get_item_schema() {
@@ -326,7 +334,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 13, count( $properties ) );
+		$this->assertEquals( 18, count( $properties ) );
 		$this->assertArrayHasKey( 'avatar_urls', $properties );
 		$this->assertArrayHasKey( 'email', $properties );
 		$this->assertArrayHasKey( 'capabilities', $properties );
@@ -338,6 +346,13 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertArrayHasKey( 'password', $properties );
 		$this->assertArrayHasKey( 'roles', $properties );
 		$this->assertArrayHasKey( 'xprofile', $properties );
+
+		// Extra fields.
+		$this->assertArrayHasKey( 'is_mod', $properties );
+		$this->assertArrayHasKey( 'is_admin', $properties );
+		$this->assertArrayHasKey( 'is_banned', $properties );
+		$this->assertArrayHasKey( 'is_confirmed', $properties );
+		$this->assertArrayHasKey( 'date_modified', $properties );
 	}
 
 	public function test_context_param() {

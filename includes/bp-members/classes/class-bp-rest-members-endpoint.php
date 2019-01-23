@@ -202,7 +202,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'roles'              => array(),
 			'capabilities'       => array(),
 			'extra_capabilities' => array(),
-			'xprofile'           => $this->xprofile_data( $user->ID ),
+			'xprofile'            => $this->xprofile_data( $user->ID ),
 		);
 
 		// Avatars.
