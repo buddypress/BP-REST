@@ -25,14 +25,24 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	protected $groups_endpoint;
 
 	/**
+	 * Reuse some parts of the BP_REST_Members_Endpoint class.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param object BP_REST_Members_Endpoint
+	 */
+	protected $members_endpoint;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace       = 'buddypress/v1';
-		$this->rest_base       = '/group/members';
-		$this->groups_endpoint = new BP_REST_Groups_Endpoint();
+		$this->namespace        = 'buddypress/v1';
+		$this->rest_base        = '/group/members';
+		$this->groups_endpoint  = new BP_REST_Groups_Endpoint();
+		$this->members_endpoint = new BP_REST_Members_Endpoint();
 	}
 
 	/**
@@ -287,10 +297,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $user, $request ) {
-
-		$members_endpoint = new BP_REST_Members_Endpoint();
-
-		$data = $members_endpoint->user_data( $user );
+		$data = $this->members_endpoint->user_data( $user );
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
@@ -374,9 +381,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$members_endpoint = new BP_REST_Members_Endpoint();
-
-		return $members_endpoint->get_item_schema();
+		return $this->members_endpoint->get_item_schema();
 	}
 
 	/**
