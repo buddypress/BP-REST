@@ -139,7 +139,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$args['filter']['primary_id'] = $args['site_id'];
 		}
 
-		if ( empty( $args['group_id'] ) || empty( $args['site_id'] ) ) {
+		if ( empty( $args['group_id'] ) && empty( $args['site_id'] ) ) {
 			if ( isset( $request['component'] ) ) {
 				$args['filter']['object'] = $request['component'];
 			}
