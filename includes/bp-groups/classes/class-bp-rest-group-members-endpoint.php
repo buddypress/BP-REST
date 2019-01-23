@@ -57,9 +57,9 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request List of group members.
 	 */
 	public function get_items( $request ) {
-		$group_id = $this->get_group_id( $request['group_id'] );
+		$group = $this->get_group_object( $request['group_id'] );
 
-		if ( ! $group_id ) {
+		if ( ! $group ) {
 			return new WP_Error( 'bp_rest_invalid_group_id',
 				__( 'Invalid group id.', 'buddypress' ),
 				array(
@@ -69,7 +69,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		}
 
 		$args = array(
-			'group_id'            => $group_id,
+			'group_id'            => $group->id,
 			'group_role'          => $request['roles'],
 			'type'                => $request['status'],
 			'per_page'            => $request['per_page'],
@@ -109,11 +109,11 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param array            $members  Fetched group members.
-		 * @param int              $group_id The group id.
+		 * @param BP_Groups_Group  $group    The group object.
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_members_get_items', $members, $group_id, $response, $request );
+		do_action( 'bp_rest_group_members_get_items', $members, $group, $response, $request );
 
 		return $response;
 	}
@@ -151,9 +151,9 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$group_id = $this->get_group_id( $request['group_id'] );
+		$group = $this->get_group_object( $request['group_id'] );
 
-		if ( ! $group_id ) {
+		if ( ! $group ) {
 			return new WP_Error( 'bp_rest_invalid_group_id',
 				__( 'Invalid group id.', 'buddypress' ),
 				array(
@@ -162,8 +162,9 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$action = $request['action'];
-		$role   = $request['role'];
+		$action   = $request['action'];
+		$role     = $request['role'];
+		$group_id = $group->id;
 
 		if ( 'join' === $action ) {
 
@@ -221,10 +222,11 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param WP_User          $user     The updated member.
+		 * @param BP_Groups_Group  $group    The group object.
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_member_update_item', $user, $response, $request );
+		do_action( 'bp_rest_group_member_update_item', $user, $group, $response, $request );
 
 		return $response;
 	}
@@ -351,14 +353,14 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get a group ID from its identifier.
+	 * Get group object from its identifier.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param int $group_id Group ID.
-	 * @return int|bool
+	 * @return bool|BP_Groups_Group
 	 */
-	protected function get_group_id( $group_id ) {
+	protected function get_group_object( $group_id ) {
 
 		// Get group object.
 		$group_obj = groups_get_group( array(
@@ -369,7 +371,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			return false;
 		}
 
-		return intval( $group_obj->id );
+		return $group_obj;
 	}
 
 	/**

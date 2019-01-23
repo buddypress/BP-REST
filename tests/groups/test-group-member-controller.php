@@ -39,7 +39,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	/**
-	 * @group get_items
+	 * @group test
 	 */
 	public function test_get_items() {
 		$u1 = $this->factory->user->create();
@@ -59,7 +59,6 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-		$data     = $all_data;
 
 		foreach ( $all_data as $data ) {
 			$user = $this->endpoint->get_user( $data['id'] );
