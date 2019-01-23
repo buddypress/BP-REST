@@ -359,7 +359,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			return false;
 		}
 
-		if ( is_multisite() && ! is_user_member_of_blog( $user->ID ) ) {
+		if ( ! is_user_member_of_blog( $user->ID ) ) {
 			return false;
 		}
 
