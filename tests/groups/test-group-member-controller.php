@@ -152,7 +152,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
 		$request->set_query_params( array(
 			'group_id' => $this->group_id,
-			'id'       => $u,
+			'user_id'  => $u,
 			'action'   => 'ban',
 		) );
 
@@ -187,7 +187,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
 		$request->set_query_params( array(
 			'group_id' => $this->group_id,
-			'id'       => $u,
+			'user_id'  => $u,
 			'action'   => 'promote',
 			'role'     => 'mod',
 		) );
@@ -221,7 +221,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
 		$request->set_query_params( array(
 			'group_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER,
-			'id'       => $u,
+			'user_id'  => $u,
 			'action'   => 'promote',
 			'role'     => 'mod',
 		) );
@@ -267,7 +267,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->add_header( 'content-type', 'application/json' );
 
 		$params = array(
-			'id'       => $u,
+			'user_id'  => $u,
 			'action'   => 'promote',
 			'group_id' => $this->group_id,
 			'role'     => 'admin',

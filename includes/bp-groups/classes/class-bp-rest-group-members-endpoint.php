@@ -154,7 +154,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 */
 	public function update_item( $request ) {
 
-		$user = $this->get_user( $request['id'] );
+		$user = $this->get_user( $request['user_id'] );
 
 		if ( empty( $user->ID ) ) {
 			return new WP_Error( 'bp_rest_group_member_invalid_id',
@@ -473,7 +473,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
-		$params['id'] = array(
+		$params['user_id'] = array(
 			'description'       => __( 'ID of the member.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
