@@ -112,11 +112,13 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'sort'              => $request['order'],
 			'spam'              => $request['status'],
 			'display_comments'  => $request['display_comments'],
+			'site_id'           => $request['site_id'],
+			'group_id'          => $request['group_id'],
 			'count_total'       => true,
-			'fields'            => 'all',
+			'fields'             => 'all',
 			'show_hidden'       => false,
 			'update_meta_cache' => true,
-			'filter'            => false,
+			'filter'             => false,
 		);
 
 		if ( isset( $request['after'] ) ) {
@@ -127,19 +129,37 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$args['filter']['user_id'] = $request['user'];
 		}
 
-		if ( isset( $request['component'] ) ) {
-			$args['filter']['object'] = $request['component'];
+		$item_id = 0;
+		if ( ! empty( $args['group_id'] ) ) {
+			$args['filter']['object']     = 'groups';
+			$args['filter']['primary_id'] = $args['group_id'];
+
+			$item_id = $args['group_id'];
+		}
+
+		if ( ! empty( $args['site_id'] ) ) {
+			$args['filter']['object']     = 'blogs';
+			$args['filter']['primary_id'] = $args['site_id'];
+
+			$item_id = $args['site_id'];
+		}
+
+		if ( empty( $args['group_id'] ) && empty( $args['site_id'] ) ) {
+			if ( isset( $request['component'] ) ) {
+				$args['filter']['object'] = $request['component'];
+			}
+
+			if ( ! empty( $request['primary_id'] ) ) {
+				$primary_id                  = $request['primary_id'];
+				$args['filter']['primary_id'] = $primary_id;
+
+				// Only the first item of the array.
+				$item_id = $primary_id[0];
+			}
 		}
 
 		if ( isset( $request['type'] ) ) {
 			$args['filter']['action'] = $request['type'];
-		}
-
-		$item_id = 0;
-		if ( ! empty( $request['primary_id'] ) ) {
-			$primary_id                   = $request['primary_id'];
-			$args['filter']['primary_id'] = $primary_id;
-			$item_id                      = $primary_id[0];
 		}
 
 		if ( ! empty( $request['secondary_id'] ) ) {
@@ -963,6 +983,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		if ( 'groups' === $activity->component && ! empty( $activity->item_id ) ) {
+			$group = groups_get_group( $activity->item_id );
+
+			$links['group'] = array(
+				'href'       => bp_get_group_permalink( $group ),
+				'embeddable' => true,
+			);
+		}
+
 		return $links;
 	}
 
@@ -1310,6 +1339,22 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'type'              => 'string',
 			'enum'              => array( 'ham_only', 'spam_only', 'all' ),
 			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['group_id'] = array(
+			'description'       => __( 'Limit result set to items created by a specific group.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['site_id'] = array(
+			'description'       => __( 'Limit result set to items created by a specific site.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
