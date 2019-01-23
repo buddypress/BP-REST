@@ -129,14 +129,19 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$args['filter']['user_id'] = $request['user'];
 		}
 
+		$item_id = 0;
 		if ( ! empty( $args['group_id'] ) ) {
 			$args['filter']['object']     = 'groups';
 			$args['filter']['primary_id'] = $args['group_id'];
+
+			$item_id = $args['group_id'];
 		}
 
 		if ( ! empty( $args['site_id'] ) ) {
 			$args['filter']['object']     = 'blogs';
 			$args['filter']['primary_id'] = $args['site_id'];
+
+			$item_id = $args['site_id'];
 		}
 
 		if ( empty( $args['group_id'] ) && empty( $args['site_id'] ) ) {
@@ -144,11 +149,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				$args['filter']['object'] = $request['component'];
 			}
 
-			$item_id = 0;
 			if ( ! empty( $request['primary_id'] ) ) {
-				$primary_id                   = $request['primary_id'];
+				$primary_id                  = $request['primary_id'];
 				$args['filter']['primary_id'] = $primary_id;
-				$item_id                      = $primary_id[0];
+
+				// Only the first item of the array.
+				$item_id = $primary_id[0];
 			}
 		}
 
