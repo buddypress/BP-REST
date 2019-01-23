@@ -39,18 +39,24 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	/**
-	 * @group test
+	 * @group get_items
 	 */
 	public function test_get_items() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
 		$u3 = $this->factory->user->create();
 
-		$this->populate_group_with_members( [ $u1, $u2, $u3 ], $this->group_id );
+		$g1 = $this->bp_factory->group->create( array(
+			'status' => 'hidden',
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
+
+		$this->bp->set_current_user( $u1 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
-			'group_id' => $this->group_id,
+			'group_id' => $g1,
 		) );
 
 		$request->set_param( 'context', 'view' );
@@ -59,7 +65,15 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
+		$u_ids = wp_list_pluck( $all_data, 'id' );
+
+		// Check results.
+		$this->assertEqualSets( [ $u1, $u2 ], $u_ids );
+		$this->assertNotContains( $u3, $u_ids );
+
+		// Verify user information.
 		foreach ( $all_data as $data ) {
 			$user = $this->endpoint->get_user( $data['id'] );
 			$this->check_user_data( $user, $data, 'view', $response->get_links() );
@@ -77,11 +91,17 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$u5 = $this->factory->user->create();
 		$u6 = $this->factory->user->create();
 
-		$this->populate_group_with_members( [ $u1, $u2, $u3, $u4, $u5, $u6 ], $this->group_id );
+		$g1 = $this->bp_factory->group->create( array(
+			'status' => 'hidden',
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2, $u3, $u4, $u5, $u6 ], $g1 );
+
+		$this->bp->set_current_user( $u1 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
-			'group_id' => $this->group_id,
+			'group_id' => $g1,
 			'page'     => 2,
 			'per_page' => 3,
 		) );
@@ -92,12 +112,11 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$headers = $response->get_headers();
-
-		// $this->assertEquals( 6, $headers['X-WP-Total'] );
-		// $this->assertEquals( 2, $headers['X-WP-TotalPages'] );
+		$this->assertEquals( 6, $headers['X-WP-Total'] );
+		$this->assertEquals( 2, $headers['X-WP-TotalPages'] );
 
 		$all_data = $response->get_data();
-		$data     = $all_data;
+		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
 			$user = $this->endpoint->get_user( $data['id'] );
@@ -128,7 +147,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->populate_group_with_members( [ $u ], $this->group_id );
 
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -277,7 +296,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	protected function populate_group_with_members( $members, $group_id ) {
 		// Add member to the group.
 		foreach ( $members as $member_id ) {
-			groups_join_group( $group_id, $member_id );
+			$this->bp->add_user_to_group( $member_id, $group_id );
 		}
 	}
 

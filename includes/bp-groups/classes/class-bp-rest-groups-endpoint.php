@@ -750,7 +750,13 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool|BP_Groups_Group
 	 */
 	public function get_group_object( $request ) {
-		$group_id = is_numeric( $request ) ? $request : (int) $request['id'];
+		if ( is_numeric( $request ) ) {
+			$group_id = $request;
+		} elseif ( isset( $request['group_id'] ) ) {
+			$group_id = (int) $request['group_id'];
+		} else {
+			$group_id = (int) $request['id'];
+		}
 
 		$group = groups_get_group( $group_id );
 

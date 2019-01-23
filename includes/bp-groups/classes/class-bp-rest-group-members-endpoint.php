@@ -16,13 +16,23 @@ defined( 'ABSPATH' ) || exit;
 class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 
 	/**
+	 * Reuse some parts of the BP_REST_Groups_Endpoint class.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param object BP_REST_Groups_Endpoint
+	 */
+	protected $groups_endpoint;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace = 'buddypress/v1';
-		$this->rest_base = '/group/members';
+		$this->namespace       = 'buddypress/v1';
+		$this->rest_base       = '/group/members';
+		$this->groups_endpoint = new BP_REST_Groups_Endpoint();
 	}
 
 	/**
@@ -57,7 +67,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request List of group members.
 	 */
 	public function get_items( $request ) {
-		$group = $this->get_group_object( $request['group_id'] );
+		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
 
 		if ( ! $group ) {
 			return new WP_Error( 'bp_rest_invalid_group_id',
@@ -79,6 +89,10 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			'exclude_admins_mods' => (bool) $request['exclude_admins'],
 			'exclude_banned'      => (bool) $request['exclude_banned'],
 		);
+
+		if ( empty( $args['exclude'] ) ) {
+			$args['exclude'] = false;
+		}
 
 		/**
 		 * Filter the query arguments for the request.
@@ -124,10 +138,10 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return bool
+	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
-		return true;
+		return $this->groups_endpoint->get_item_permissions_check( $request );
 	}
 
 	/**
@@ -151,7 +165,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$group = $this->get_group_object( $request['group_id'] );
+		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
 
 		if ( ! $group ) {
 			return new WP_Error( 'bp_rest_invalid_group_id',
@@ -353,28 +367,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get group object from its identifier.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param int $group_id Group ID.
-	 * @return bool|BP_Groups_Group
-	 */
-	protected function get_group_object( $group_id ) {
-
-		// Get group object.
-		$group_obj = groups_get_group( array(
-			'group_id' => $group_id,
-		) );
-
-		if ( empty( $group_obj->id ) ) {
-			return false;
-		}
-
-		return $group_obj;
-	}
-
-	/**
 	 * Get the group member schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
@@ -411,14 +403,15 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			'default'           => 'last_joined',
 			'type'              => 'string',
 			'enum'              => array( 'last_joined', 'first_joined' ),
-			'sanitize_callback' => 'rest_validate_request_arg',
+			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['roles'] = array(
 			'description'       => __( 'Ensure result set includes specific group roles.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
-			'sanitize_callback' => 'wp_parse_id_list',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 		);
 
 		$params['search'] = array(
