@@ -1359,15 +1359,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$params['primary_id'] = array(
 			'description'       => __( 'Limit result set to items with a specific prime association.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => array(),
+			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
 		);
 
 		$params['secondary_id'] = array(
 			'description'       => __( 'Limit result set to items with a specific secondary association.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => array(),
+			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
 		);
 

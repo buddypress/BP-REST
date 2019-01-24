@@ -745,23 +745,23 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 
 		$params['user_id'] = array(
 			'description'       => __( 'Limit result set to items created by a specific user.', 'buddypress' ),
-			'type'              => 'integer',
 			'default'           => bp_loggedin_user_id(),
+			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['item_id'] = array(
 			'description'       => __( 'Limit result set to items with a specific item id.', 'buddypress' ),
-			'type'              => 'integer',
 			'default'           => '',
+			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 		);
 
 		$params['secondary_item_id'] = array(
 			'description'       => __( 'Limit result set to items with a secondary item id.', 'buddypress' ),
-			'type'              => 'integer',
 			'default'           => '',
+			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 		);
 

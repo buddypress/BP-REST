@@ -671,8 +671,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		$params['profile_group_id'] = array(
 			'description'       => __( 'ID of the field group that have fields.', 'buddypress' ),
-			'type'              => 'integer',
 			'default'           => 0,
+			'type'              => 'integer',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -685,16 +685,16 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		$params['user_id'] = array(
 			'description'       => __( 'Required if you want to load a specific user\'s data.', 'buddypress' ),
-			'type'              => 'integer',
 			'default'           => bp_loggedin_user_id(),
+			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['member_type'] = array(
 			'description'       => __( 'Limit fields by those restricted to a given member type, or array of member types. If `$user_id` is provided, the value of `$member_type` will be overridden by the member types of the provided user. The special value of \'any\' will return only those fields that are unrestricted by member type - i.e., those applicable to any type.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => null,
+			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_member_types',
 			'validate_callback' => 'bp_rest_validate_member_types',
 		);
@@ -729,16 +729,16 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		$params['exclude_groups'] = array(
 			'description'       => __( 'Ensure result set excludes specific profile field groups.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => false,
-			'sanitize_callback' => 'wp_parse_id_list',
+			'type'              => 'array',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 		);
 
 		$params['exclude_fields'] = array(
 			'description'       => __( 'Ensure result set excludes specific profile fields.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => false,
-			'sanitize_callback' => 'wp_parse_id_list',
+			'type'              => 'array',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 		);
 
 		$params['update_meta_cache'] = array(
@@ -764,8 +764,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		$params['user_id'] = array(
 			'description'       => __( 'Required if you want to load a specific user\'s data.', 'buddypress' ),
-			'type'              => 'integer',
 			'default'           => bp_loggedin_user_id(),
+			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
@@ -822,8 +822,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		$params['delete_data'] = array(
 			'description'       => __( 'Required if you want to delete user\'s data for the field.', 'buddypress' ),
-			'type'              => 'boolean',
 			'default'           => false,
+			'type'              => 'boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

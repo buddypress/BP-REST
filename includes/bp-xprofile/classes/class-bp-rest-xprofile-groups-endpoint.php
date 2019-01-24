@@ -645,14 +645,14 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Ensure result set excludes specific profile field groups.', 'buddypress' ),
 			'type'              => 'array',
 			'default'           => false,
-			'sanitize_callback' => 'wp_parse_id_list',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 		);
 
 		$params['exclude_fields'] = array(
 			'description'       => __( 'Ensure result set excludes specific profile fields.', 'buddypress' ),
 			'type'              => 'array',
 			'default'           => false,
-			'sanitize_callback' => 'wp_parse_id_list',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 		);
 
 		$params['update_meta_cache'] = array(
@@ -688,8 +688,8 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Limit fields by those restricted to a given member type, or array of member types. If `$user_id` is provided, the value of `$member_type` will be overridden by the member types of the provided user. The special value of \'any\' will return only those fields that are unrestricted by member type - i.e., those applicable to any type.', 'buddypress' ),
 			'type'              => 'array',
 			'default'           => null,
-			'sanitize_callback' => array( $this, 'sanitize_member_types' ),
-			'validate_callback' => array( $this, 'validate_member_types' ),
+			'sanitize_callback' => 'bp_rest_sanitize_member_types',
+			'validate_callback' => 'bp_rest_validate_member_types',
 		);
 
 		$params['hide_empty_fields'] = array(
@@ -722,9 +722,9 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 		$params['exclude_fields'] = array(
 			'description'       => __( 'Ensure result set excludes specific profile fields.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => false,
-			'sanitize_callback' => 'wp_parse_id_list',
+			'type'              => 'array',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 		);
 
 		$params['update_meta_cache'] = array(
