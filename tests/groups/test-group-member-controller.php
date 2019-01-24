@@ -180,8 +180,287 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	/**
 	 * @group update_item
 	 */
-	public function test_promote_member() {
+	public function test_admin_add_member_anyone() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $this->group_id,
+			'user_id'  => $u,
+			'action'   => 'join',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$user          = $this->endpoint->get_user( $data['id'] );
+			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
+
+			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
+		}
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_member_can_add_himself_to_public_group() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $this->group_id,
+			'user_id'  => $u,
+			'action'   => 'join',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$user          = $this->endpoint->get_user( $data['id'] );
+			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
+
+			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
+		}
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_member_can_not_add_himself_to_private_group() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'status' => 'private',
+		) );
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+			'user_id'  => $u,
+			'action'   => 'join',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_join', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_member_can_not_add_himself_to_hidden_group() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'status' => 'hidden',
+		) );
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+			'user_id'  => $u,
+			'action'   => 'join',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_join', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_member_can_remove_himself_from_group() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u3 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u3,
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
+
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+			'user_id'  => $u1,
+			'action'   => 'remove',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$user = $this->endpoint->get_user( $data['id'] );
+			$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
+		}
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_member_can_not_remove_others_from_group() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u3 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u3,
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
+
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+			'user_id'  => $u2,
+			'action'   => 'remove',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_remove', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_admin_can_remove_member_from_group() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u3 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u3,
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+			'user_id'  => $u1,
+			'action'   => 'remove',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$user = $this->endpoint->get_user( $data['id'] );
+			$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
+		}
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_group_admin_can_remove_member_from_group() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u3 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u3,
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
+
+		$this->bp->set_current_user( $u3 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+			'user_id'  => $u1,
+			'action'   => 'remove',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$user = $this->endpoint->get_user( $data['id'] );
+			$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
+		}
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_group_admin_can_not_remove_himself_from_group() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u2,
+		) );
+
+		$this->populate_group_with_members( [ $u1 ], $g1 );
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+			'user_id'  => $u2,
+			'action'   => 'remove',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_remove', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_admin_can_promote_member() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
 		$this->populate_group_with_members( [ $u ], $this->group_id );
@@ -215,6 +494,145 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	/**
 	 * @group update_item
 	 */
+	public function test_group_admin_can_promote_member() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u2,
+		) );
+
+		$this->populate_group_with_members( [ $u1 ], $this->group_id );
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+			'user_id'  => $u1,
+			'action'   => 'promote',
+			'role'     => 'mod',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$user          = $this->endpoint->get_user( $data['id'] );
+			$member_object = new BP_Groups_Member( $user->ID, $g1 );
+
+			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
+		}
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_member_can_not_promote_other_member() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u3 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u2,
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
+
+		$this->bp->set_current_user( $u3 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+			'user_id'  => $u1,
+			'action'   => 'promote',
+			'role'     => 'mod',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_promote', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_admin_can_demote_member() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u3 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u2,
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+			'user_id'  => $u2,
+			'action'   => 'demote',
+			'role'     => 'member',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$user          = $this->endpoint->get_user( $data['id'] );
+			$member_object = new BP_Groups_Member( $user->ID, $g1 );
+
+			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
+		}
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_member_can_not_demote_other_member() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u3 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u2,
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
+
+		$this->bp->set_current_user( $u3 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+			'user_id'  => $u2,
+			'action'   => 'demote',
+			'role'     => 'member',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_demote', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
 	public function test_update_item_invalid_group_id() {
 
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -232,19 +650,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_invalid_group_id', $response, 404 );
-	}
-
-	/**
-	 * @group update_item
-	 */
-	public function test_update_item_invalid_id() {
-		$this->bp->set_current_user( $this->user );
-
-		$request  = new WP_REST_Request( 'PUT', $this->endpoint_url );
-		$response = $this->server->dispatch( $request );
-
-		$this->assertErrorResponse( 'bp_rest_group_member_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -255,29 +661,6 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
-	}
-
-	/**
-	 * @group update_item
-	 */
-	public function test_update_item_without_permission() {
-		$u  = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-
-		$this->bp->set_current_user( $u2 );
-
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
-		$request->set_query_params( array(
-			'user_id'  => $u,
-			'action'   => 'promote',
-			'group_id' => $this->group_id,
-			'role'     => 'admin',
-		) );
-
-		$request->set_param( 'context', 'view' );
-		$response = $this->server->dispatch( $request );
-
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_update', $response, 500 );
 	}
 
 	/**

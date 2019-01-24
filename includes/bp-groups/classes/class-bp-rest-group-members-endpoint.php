@@ -165,42 +165,25 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-
-		$user = $this->get_user( $request['user_id'] );
-
-		if ( empty( $user->ID ) ) {
-			return new WP_Error( 'bp_rest_group_member_invalid_id',
-				__( 'Invalid group member id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-
-		if ( ! $group ) {
-			return new WP_Error( 'bp_rest_invalid_group_id',
-				__( 'Invalid group id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
+		$user         = $this->get_user( $request['user_id'] );
+		$group        = $this->groups_endpoint->get_group_object( $request['group_id'] );
 		$action       = $request['action'];
 		$role         = $request['role'];
 		$group_id     = $group->id;
 		$group_member = new BP_Groups_Member( $user->ID, $group_id );
 
+		// Add member to the group.
 		if ( 'join' === $action ) {
+			$group_member->group_id     = $group_id;
+			$group_member->user_id      = $user->ID;
+			$group_member->is_admin     = 0;
+			$group_member->date_modified = bp_core_current_time();
+			$group_member->is_confirmed  = 1;
+			$saved                      = $group_member->save();
 
-			// Add member to the group.
-			$joined = groups_join_group( $group_id, $user->ID );
-
-			if ( ! $joined ) {
+			if ( ! $saved ) {
 				return new WP_Error( 'bp_rest_group_member_failed_to_join',
-					__( 'Could not add user to the group.', 'buddypress' ),
+					__( 'Could not add member to the group.', 'buddypress' ),
 					array(
 						'status' => 404,
 					)
@@ -208,22 +191,22 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			}
 
 			// If new role set, promote it too.
-			if ( 'member' !== $role ) {
+			if ( $saved && 'member' !== $role ) {
 				groups_promote_member( $user->ID, $group_id, $role );
 			}
 		} elseif ( 'promote' === $action ) {
 			if ( ! $group_member->promote( $role ) ) {
 				return new WP_Error( 'bp_rest_group_member_failed_to_promote',
-					__( 'Could not promote user from the group.', 'buddypress' ),
+					__( 'Could not promote member.', 'buddypress' ),
 					array(
 						'status' => 404,
 					)
 				);
 			}
-		} elseif ( in_array( $action, [ 'remove', 'demote', 'ban', 'unban' ] ) ) {
+		} elseif ( in_array( $action, [ 'remove', 'demote', 'ban', 'unban' ], true ) ) {
 			if ( ! $group_member->$action() ) {
 				return new WP_Error( 'bp_rest_group_member_failed_to_' . $action,
-					printf( __( 'Could not %s user from the group.', 'buddypress' ), $action ),
+					sprintf( __( 'Could not %s member from the group.', 'buddypress' ), esc_attr( $action ) ),
 					array(
 						'status' => 404,
 					)
@@ -245,7 +228,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param WP_User          $user         The updated member.
-		 * @param BP_Groups_Member $group_member The group member.
+		 * @param BP_Groups_Member $group_member The group member object.
 		 * @param BP_Groups_Group  $group        The group object.
 		 * @param WP_REST_Response $response     The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
@@ -256,32 +239,106 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check if a given request has access to update a group.
+	 * Check if a given request has access to update a group member.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return WP_Error|boolean
+	 * @return WP_Error|bool
 	 */
 	public function update_item_permissions_check( $request ) {
 
 		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to update this group member.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to make an update.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
 
-		if ( ! bp_current_user_can( 'bp_moderate' ) ) {
-			return new WP_Error( 'bp_rest_group_member_cannot_update',
-				__( 'Sorry, you are not allowed to update this group member.', 'buddypress' ),
+		$user = $this->get_user( $request['user_id'] );
+
+		if ( empty( $user->ID ) ) {
+			return new WP_Error( 'bp_rest_group_member_invalid_id',
+				__( 'Invalid group member id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+
+		if ( ! $group ) {
+			return new WP_Error( 'bp_rest_group_invalid_id',
+				__( 'Invalid group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$loggedin_user_id = bp_loggedin_user_id();
+
+		/**
+		 * Join check.
+		 *
+		 * Make sure one can't join a private or hidden group without proper access.
+		 *
+		 * @since 0.1.0
+		 */
+		if ( 'join' === $request['action'] && in_array( $group->status, [ 'private', 'hidden' ], true ) && ! groups_is_user_member( $user->ID, $group->id ) ) {
+			return new WP_Error( 'bp_rest_group_member_cannot_join',
+				__( 'Sorry, you are not allowed to join this group.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
 			);
+		}
+
+		/**
+		 * Admins, groups admins, and mods can do everything.
+		 *
+		 * @since 0.1.0
+		 */
+		if ( $this->admins_can_update( $request['action'], $group->id, $user, $loggedin_user_id ) ) {
+			return true;
+		}
+
+		/**
+		 * Remove checks.
+		 *
+		 * Make sure group admins don't remove themselves, neither members removing other members, etc.
+		 *
+		 * @since 0.1.0
+		 */
+		if ( ! $this->remove_can_update( $request['action'], $group->id, $user, $loggedin_user_id ) ) {
+			return new WP_Error( 'bp_rest_group_member_cannot_remove',
+				__( 'Sorry, you are not allowed to leave this group.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		/**
+		 * Promote/demote checks.
+		 *
+		 * Members can not promote/demote each others.
+		 *
+		 * @since 0.1.0
+		 */
+		if ( in_array( $request['action'], [ 'promote', 'demote' ], true ) ) {
+			if ( groups_is_user_member( $loggedin_user_id, $group->id ) && $user->ID !== $loggedin_user_id ) {
+				return new WP_Error( 'bp_rest_group_member_cannot_' . $request['action'],
+					sprintf( __( 'Sorry, you are not allowed to %s this group member.', 'buddypress' ), esc_attr( $request['action'] ) ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
 		}
 
 		return true;
@@ -292,24 +349,22 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param BP_Groups_Member $group_member BP_Groups_Member object.
-	 * @param WP_REST_Request  $request      Full details about the request
+	 * @param BP_Groups_Member $group_member Group member object.
+	 * @param WP_REST_Request  $request      Full details about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $group_member, $request ) {
 		$user = $this->get_user( $group_member->user_id );
 		$data = $this->members_endpoint->user_data( $user );
 
-		$bp_data = array(
+		// Merge both info.
+		$data = array_merge( $data, array(
 			'is_mod'       => (bool) $group_member->is_mod,
 			'is_admin'     => (bool) $group_member->is_admin,
 			'is_banned'    => (bool) $group_member->is_banned,
 			'is_confirmed'  => (bool) $group_member->is_confirmed,
 			'date_modified' => bp_rest_prepare_date_response( $group_member->date_modified ),
-		);
-
-		// Merge both info.
-		$data = array_merge( $data, $bp_data );
+		) );
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
@@ -358,6 +413,8 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	/**
 	 * Get the user, if the ID is valid.
 	 *
+	 * Method is public to be used in unit tests as well.
+	 *
 	 * @since 0.1.0
 	 *
 	 * @param int $id Supplied ID.
@@ -375,6 +432,90 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		}
 
 		return $user;
+	}
+
+	/**
+	 * Check for admins, group admins and mods status.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string  $action           Action.
+	 * @param int     $group_id         Group ID.
+	 * @param WP_User $user             User object.
+	 * @param int     $loggedin_user_id Loggedin User ID.
+	 * @return boolean
+	 */
+	protected function remove_can_update( $action, $group_id, $user, $loggedin_user_id ) {
+		if ( 'remove' === $action ) {
+			if ( ! $this->group_admin_is_logged_in( $group_id, $user, $loggedin_user_id ) ) {
+				return false;
+			}
+
+			// Members can remove themselves.
+			if ( groups_is_user_member( $loggedin_user_id, $group_id ) && $user->ID === $loggedin_user_id ) {
+				return true;
+			}
+
+			// Members cannot remove other members.
+			if ( groups_is_user_member( $loggedin_user_id, $group_id ) && $user->ID !== $loggedin_user_id ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Checks for admins and group admins and mods.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string  $action           Action.
+	 * @param int     $group_id         Group ID.
+	 * @param WP_User $user             User object.
+	 * @param int     $loggedin_user_id Loggedin User ID.
+	 * @return boolean
+	 */
+	protected function admins_can_update( $action, $group_id, $user, $loggedin_user_id ) {
+		if ( in_array( $action, [ 'remove', 'ban', 'unban', 'promote', 'demote' ], true ) ) {
+
+			// Admins can do it all.
+			if ( bp_current_user_can( 'bp_moderate' ) ) {
+				return true;
+			}
+
+			if ( ! $this->group_admin_is_logged_in( $group_id, $user, $loggedin_user_id ) ) {
+				return false;
+			}
+
+			// Group admins and mods can do it all.
+			if ( groups_is_user_admin( $loggedin_user_id, $group_id ) || groups_is_user_mod( $loggedin_user_id, $group_id ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Confirm if the group admin of the verified group is the logged in user.
+	 *
+	 * Used to stop admins from abandoning their own group.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int     $group_id         Group ID.
+	 * @param WP_User $user             User object.
+	 * @param int     $loggedin_user_id Loggedin User ID.
+	 * @return boolean
+	 */
+	protected function group_admin_is_logged_in( $group_id, $user, $loggedin_user_id ) {
+		$group_admins = groups_get_group_admins( $group_id );
+		if ( 1 === count( $group_admins ) && $loggedin_user_id === $group_admins[0]->user_id && $user->ID === $loggedin_user_id ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -516,7 +657,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		$params['context']['default'] = 'view';
 
 		$params['user_id'] = array(
-			'description'       => __( 'ID of the member.', 'buddypress' ),
+			'description'       => __( 'ID of the group member.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
