@@ -108,11 +108,32 @@ function bp_rest_validate_member_types( $value, $request, $param ) {
 		$registered_types[] = 'any';
 		foreach ( $types as $type ) {
 			if ( ! in_array( $type, $registered_types, true ) ) {
-				/* translators: %1$s and %2$s is replaced with the registered types */
-				return new WP_Error( 'rest_invalid_group_type', sprintf( __( 'The member type you provided, %$1s, is not one of %$2s.' ), $type, implode( ', ', $registered_types ) ) );
+				/* translators: %1$s and %2$s is replaced with the registered type(s) */
+				return new WP_Error( 'bp_rest_invalid_group_type',
+					sprintf( __( 'The member type you provided, %$1s, is not one of %$2s.' ),
+						$type,
+						implode( ', ', $registered_types )
+					)
+				);
 			}
 		}
 	}
 
 	return true;
+}
+
+/**
+ * Clean up an array, comma- or space-separated list of strings.
+ *
+ * @since 0.1.0
+ *
+ * @param array|string $list List of strings.
+ * @return array Sanitized array of strings.
+ */
+function bp_rest_sanitize_string_list( $list ) {
+	if ( ! is_array( $list ) ) {
+		$list = preg_split('/[\s,]+/', $list);
+	}
+
+	return array_unique( array_map( 'sanitize_text_field', $list ) );
 }

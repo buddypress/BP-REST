@@ -113,6 +113,61 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_items
 	 */
+	public function test_get_items_from_a_specific_group() {
+		$component = buddypress()->groups->id;
+
+		$g1 = $this->bp_factory->group->create( array( 'status' => 'public' ) );
+		$g2 = $this->bp_factory->group->create( array( 'status' => 'public' ) );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component' => $component,
+			'type'      => 'created_group',
+			'user_id'   => $this->user,
+			'item_id'   => $g2,
+		) );
+
+		$a2 = $this->bp_factory->activity->create( array(
+			'component' => $component,
+			'type'      => 'created_group',
+			'user_id'   => $this->user,
+			'item_id'   => $g2,
+		) );
+
+		$a3 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'created_group',
+			'user_id'       => $this->user,
+			'item_id'       => $g2,
+			'hide_sitewide' => true,
+		) );
+
+		$a4 = $this->bp_factory->activity->create( array(
+			'component' => $component,
+			'type'      => 'created_group',
+			'user_id'   => $this->user,
+			'item_id'   => $g1,
+		) );
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array( 'group_id' => $g2 ) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertEqualSets( [ $a1, $a2 ], $a_ids );
+		$this->assertNotContains( $a3, $a_ids );
+		$this->assertNotContains( $a4, $a_ids );
+	}
+
+	/**
+	 * @group get_items
+	 */
 	public function test_get_private_group_items() {
 		$component = buddypress()->groups->id;
 
@@ -581,7 +636,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_activity_cannot_update', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_activity_cannot_update', $response, 403 );
 	}
 
 	/**
@@ -650,7 +705,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_delete_activity', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_user_cannot_delete_activity', $response, 403 );
 	}
 
 	/**
@@ -716,7 +771,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		remove_filter( 'bp_activity_can_favorite', '__return_false' );
 
-		$this->assertErrorResponse( 'bp_rest_activity_cannot_favorite', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_activity_cannot_favorite', $response, 403 );
 	}
 
 	public function test_prepare_item() {

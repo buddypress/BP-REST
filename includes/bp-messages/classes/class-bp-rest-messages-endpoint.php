@@ -119,7 +119,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_view_messages',
 				__( 'Sorry, you cannot view the messages.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -312,16 +312,16 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		$params['box'] = array(
 			'description'       => __( 'Filter the result by box.', 'buddypress' ),
-			'type'              => 'string',
 			'default'           => 'sentbox',
+			'type'              => 'string',
 			'enum'              => array( 'notices', 'sentbox', 'inbox' ),
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['type'] = array(
 			'description'       => __( 'Filter the result by thread status.', 'buddypress' ),
-			'type'              => 'string',
 			'default'           => 'all',
+			'type'              => 'string',
 			'enum'              => array( 'all', 'read', 'unread' ),
 			'validate_callback' => 'rest_validate_request_arg',
 		);

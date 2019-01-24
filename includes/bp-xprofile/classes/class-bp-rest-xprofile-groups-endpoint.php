@@ -153,12 +153,20 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 *
+	 * @param WP_REST_Request $request Full data about the request
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
 		$field_group = $this->get_xprofile_field_group_object( $request );
+
+		if ( empty( $field_group->id ) ) {
+			return new WP_Error( 'bp_rest_invalid_field_group_id',
+				__( 'Invalid field group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -187,8 +195,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 *
+	 * @param WP_REST_Request $request Full data about the request
 	 * @return WP_Error|bool
 	 */
 	public function get_item_permissions_check( $request ) {
@@ -201,17 +208,6 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$field_group = $this->get_xprofile_field_group_object( $request );
-
-		if ( empty( $field_group->id ) ) {
-			return new WP_Error( 'bp_rest_invalid_field_group_id',
-				__( 'Invalid field group id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
 		return true;
 	}
 
@@ -220,8 +216,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 *
+	 * @param WP_REST_Request $request Full data about the request
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
@@ -271,8 +266,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 *
+	 * @param WP_REST_Request $request Full data about the request
 	 * @return WP_Error|bool
 	 */
 	public function create_item_permissions_check( $request ) {
@@ -289,7 +283,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_create_field_group',
 				__( 'Sorry, you cannot create a XProfile field group.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -303,11 +297,19 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 *
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
 		$field_group = $this->get_xprofile_field_group_object( $request );
+
+		if ( empty( $field_group->id ) ) {
+			return new WP_Error( 'bp_rest_invalid_field_group_id',
+				__( 'Invalid field group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
 
 		$request->set_param( 'context', 'edit' );
 
@@ -348,7 +350,6 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 *
 	 * @return WP_Error|bool
 	 */
 	public function delete_item_permissions_check( $request ) {
@@ -365,18 +366,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_delete_field_group',
 				__( 'Sorry, you cannot delete this field group.', 'buddypress' ),
 				array(
-					'status' => 500,
-				)
-			);
-		}
-
-		$field_group = $this->get_xprofile_field_group_object( $request );
-
-		if ( empty( $field_group->id ) ) {
-			return new WP_Error( 'bp_rest_invalid_field_group_id',
-				__( 'Invalid field group id.', 'buddypress' ),
-				array(
-					'status' => 404,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -491,7 +481,6 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 *
 	 * @return BP_XProfile_Group|string XProfile field group object.
 	 */
 	public function get_xprofile_field_group_object( $request ) {
@@ -656,14 +645,14 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Ensure result set excludes specific profile field groups.', 'buddypress' ),
 			'type'              => 'array',
 			'default'           => false,
-			'sanitize_callback' => 'wp_parse_id_list',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 		);
 
 		$params['exclude_fields'] = array(
 			'description'       => __( 'Ensure result set excludes specific profile fields.', 'buddypress' ),
 			'type'              => 'array',
 			'default'           => false,
-			'sanitize_callback' => 'wp_parse_id_list',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 		);
 
 		$params['update_meta_cache'] = array(
@@ -699,8 +688,8 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Limit fields by those restricted to a given member type, or array of member types. If `$user_id` is provided, the value of `$member_type` will be overridden by the member types of the provided user. The special value of \'any\' will return only those fields that are unrestricted by member type - i.e., those applicable to any type.', 'buddypress' ),
 			'type'              => 'array',
 			'default'           => null,
-			'sanitize_callback' => array( $this, 'sanitize_member_types' ),
-			'validate_callback' => array( $this, 'validate_member_types' ),
+			'sanitize_callback' => 'bp_rest_sanitize_member_types',
+			'validate_callback' => 'bp_rest_validate_member_types',
 		);
 
 		$params['hide_empty_fields'] = array(
@@ -733,9 +722,9 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 		$params['exclude_fields'] = array(
 			'description'       => __( 'Ensure result set excludes specific profile fields.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => false,
-			'sanitize_callback' => 'wp_parse_id_list',
+			'type'              => 'array',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 		);
 
 		$params['update_meta_cache'] = array(

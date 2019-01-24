@@ -112,11 +112,13 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'sort'              => $request['order'],
 			'spam'              => $request['status'],
 			'display_comments'  => $request['display_comments'],
+			'site_id'           => $request['site_id'],
+			'group_id'          => $request['group_id'],
 			'count_total'       => true,
-			'fields'            => 'all',
+			'fields'             => 'all',
 			'show_hidden'       => false,
 			'update_meta_cache' => true,
-			'filter'            => false,
+			'filter'             => false,
 		);
 
 		if ( isset( $request['after'] ) ) {
@@ -127,19 +129,37 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$args['filter']['user_id'] = $request['user'];
 		}
 
-		if ( isset( $request['component'] ) ) {
-			$args['filter']['object'] = $request['component'];
+		$item_id = 0;
+		if ( ! empty( $args['group_id'] ) ) {
+			$args['filter']['object']     = 'groups';
+			$args['filter']['primary_id'] = $args['group_id'];
+
+			$item_id = $args['group_id'];
+		}
+
+		if ( ! empty( $args['site_id'] ) ) {
+			$args['filter']['object']     = 'blogs';
+			$args['filter']['primary_id'] = $args['site_id'];
+
+			$item_id = $args['site_id'];
+		}
+
+		if ( empty( $args['group_id'] ) && empty( $args['site_id'] ) ) {
+			if ( isset( $request['component'] ) ) {
+				$args['filter']['object'] = $request['component'];
+			}
+
+			if ( ! empty( $request['primary_id'] ) ) {
+				$primary_id                  = $request['primary_id'];
+				$args['filter']['primary_id'] = $primary_id;
+
+				// Only the first item of the array.
+				$item_id = $primary_id[0];
+			}
 		}
 
 		if ( isset( $request['type'] ) ) {
 			$args['filter']['action'] = $request['type'];
-		}
-
-		$item_id = 0;
-		if ( ! empty( $request['primary_id'] ) ) {
-			$primary_id                   = $request['primary_id'];
-			$args['filter']['primary_id'] = $primary_id;
-			$item_id                      = $primary_id[0];
 		}
 
 		if ( ! empty( $request['secondary_id'] ) ) {
@@ -381,7 +401,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				return new WP_Error( 'bp_rest_user_cannot_create_activity',
 					__( 'Sorry, you are not allowed to create activity to this group.', 'buddypress' ),
 					array(
-						'status' => 500,
+						'status' => rest_authorization_required_code(),
 					)
 				);
 			}
@@ -467,7 +487,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_activity_cannot_update',
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -563,7 +583,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_delete_activity',
 				__( 'Sorry, you cannot delete the activity.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -601,7 +621,17 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	public function update_favorite( $request ) {
 		$activity = $this->get_activity_object( $request );
-		$user_id  = get_current_user_id();
+
+		if ( empty( $activity->id ) ) {
+			return new WP_Error( 'bp_rest_activity_invalid_id',
+				__( 'Invalid activity id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$user_id = get_current_user_id();
 
 		$result = false;
 		if ( in_array( $activity->id, $this->get_user_favorites(), true ) ) {
@@ -669,22 +699,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$activity = $this->get_activity_object( $request );
-
-		if ( empty( $activity->id ) ) {
-			return new WP_Error( 'bp_rest_activity_invalid_id',
-				__( 'Invalid activity id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
 		if ( ! bp_activity_can_favorite() ) {
 			return new WP_Error( 'bp_rest_activity_cannot_favorite',
 				__( 'Sorry, Activity cannot be favorited.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -960,6 +979,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( bp_activity_can_favorite() ) {
 			$links['favorite'] = array(
 				'href' => rest_url( $url . '/favorite' ),
+			);
+		}
+
+		if ( 'groups' === $activity->component && ! empty( $activity->item_id ) ) {
+			$group = groups_get_group( $activity->item_id );
+
+			$links['group'] = array(
+				'href'       => bp_get_group_permalink( $group ),
+				'embeddable' => true,
 			);
 		}
 
@@ -1313,17 +1341,33 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		$params['group_id'] = array(
+			'description'       => __( 'Limit result set to items created by a specific group.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['site_id'] = array(
+			'description'       => __( 'Limit result set to items created by a specific site.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		$params['primary_id'] = array(
 			'description'       => __( 'Limit result set to items with a specific prime association.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => array(),
+			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
 		);
 
 		$params['secondary_id'] = array(
 			'description'       => __( 'Limit result set to items with a specific secondary association.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => array(),
+			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
 		);
 

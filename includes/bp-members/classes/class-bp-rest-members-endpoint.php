@@ -151,37 +151,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $user, $request ) {
-		$data = array(
-			'id'                 => $user->ID,
-			'name'               => $user->display_name,
-			'email'              => $user->user_email,
-			'user_login'         => $user->user_login,
-			'link'               => bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login ),
-			'registered_date'    => bp_rest_prepare_date_response( $user->user_registered ),
-			'member_types'       => bp_get_member_type( $user->ID, false ),
-			'roles'              => array(),
-			'capabilities'       => array(),
-			'extra_capabilities' => array(),
-			'xprofile'           => $this->xprofile_data( $user->ID ),
-		);
 
-		// Avatars.
-		$data['avatar_urls'] = array(
-			'full'  => bp_core_fetch_avatar( array(
-				'item_id' => $user->ID,
-				'html'    => false,
-				'type'    => 'full',
-			) ),
-			'thumb' => bp_core_fetch_avatar( array(
-				'item_id' => $user->ID,
-				'html'    => false,
-			) ),
-		);
-
-		// Fallback.
-		if ( false === $data['member_types'] ) {
-			$data['member_types'] = array();
-		}
+		$data = $this->user_data( $user );
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
@@ -207,6 +178,52 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @param WP_REST_Request  $request  The request object.
 		 */
 		return apply_filters( 'bp_rest_member_prepare_user', $response, $user, $request );
+	}
+
+	/**
+	 * Method to facilitate fetching of user data.
+	 *
+	 * This was abstracted to be used in other BuddyPress endpoints.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_User $user User object.
+	 * @return array
+	 */
+	public function user_data( $user ) {
+		$data = array(
+			'id'                 => $user->ID,
+			'name'               => $user->display_name,
+			'email'              => $user->user_email,
+			'user_login'         => $user->user_login,
+			'link'               => bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login ),
+			'registered_date'    => bp_rest_prepare_date_response( $user->user_registered ),
+			'member_types'       => bp_get_member_type( $user->ID, false ),
+			'roles'              => array(),
+			'capabilities'       => array(),
+			'extra_capabilities' => array(),
+			'xprofile'            => $this->xprofile_data( $user->ID ),
+		);
+
+		// Avatars.
+		$data['avatar_urls'] = array(
+			'full'  => bp_core_fetch_avatar( array(
+				'item_id' => $user->ID,
+				'html'    => false,
+				'type'    => 'full',
+			) ),
+			'thumb' => bp_core_fetch_avatar( array(
+				'item_id' => $user->ID,
+				'html'    => false,
+			) ),
+		);
+
+		// Fallback.
+		if ( false === $data['member_types'] ) {
+			$data['member_types'] = array();
+		}
+
+		return $data;
 	}
 
 	/**
