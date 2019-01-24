@@ -181,7 +181,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_create_field_group', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_user_cannot_create_field_group', $response, 403 );
 	}
 
 	/**
@@ -243,7 +243,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_delete_field_group', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_user_cannot_delete_field_group', $response, 403 );
 	}
 
 	/**

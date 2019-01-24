@@ -73,7 +73,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 *
 	 * @return WP_REST_Response
 	 */
 	public function get_items( $request ) {
@@ -156,8 +155,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 *
+	 * @param WP_REST_Request $request Full data about the request
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
@@ -215,8 +213,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 *
+	 * @param WP_REST_Request $request Full data about the request
 	 * @return WP_Error|bool
 	 */
 	public function get_item_permissions_check( $request ) {
@@ -237,8 +234,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 *
+	 * @param WP_REST_Request $request Full data about the request
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
@@ -306,7 +302,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_create_field',
 				__( 'Sorry, you cannot create a XProfile field.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -319,8 +315,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 *
+	 * @param WP_REST_Request $request Full data about the request
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
@@ -394,7 +389,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_delete_field',
 				__( 'Sorry, you cannot delete this field.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}

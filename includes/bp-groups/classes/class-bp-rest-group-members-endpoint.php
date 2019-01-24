@@ -185,7 +185,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 				return new WP_Error( 'bp_rest_group_member_failed_to_join',
 					__( 'Could not add member to the group.', 'buddypress' ),
 					array(
-						'status' => 404,
+						'status' => 500,
 					)
 				);
 			}
@@ -199,7 +199,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 				return new WP_Error( 'bp_rest_group_member_failed_to_promote',
 					__( 'Could not promote member.', 'buddypress' ),
 					array(
-						'status' => 404,
+						'status' => 500,
 					)
 				);
 			}
@@ -208,7 +208,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 				return new WP_Error( 'bp_rest_group_member_failed_to_' . $action,
 					sprintf( __( 'Could not %s member from the group.', 'buddypress' ), esc_attr( $action ) ),
 					array(
-						'status' => 404,
+						'status' => 500,
 					)
 				);
 			}
@@ -296,7 +296,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 						return new WP_Error( 'bp_rest_group_member_cannot_join',
 							__( 'Sorry, you are not allowed to join this group.', 'buddypress' ),
 							array(
-								'status' => 500,
+								'status' => rest_authorization_required_code(),
 							)
 						);
 					} else {
@@ -310,7 +310,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 						return new WP_Error( 'bp_rest_group_member_cannot_remove',
 							__( 'Sorry, you are not allowed to leave this group.', 'buddypress' ),
 							array(
-								'status' => 500,
+								'status' => rest_authorization_required_code(),
 							)
 						);
 					} else {
@@ -333,7 +333,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 						return new WP_Error( 'bp_rest_group_member_cannot_' . $request['action'],
 							sprintf( __( 'Sorry, you are not allowed to %s this group member.', 'buddypress' ), esc_attr( $request['action'] ) ),
 							array(
-								'status' => 500,
+								'status' => rest_authorization_required_code(),
 							)
 						);
 					} else {

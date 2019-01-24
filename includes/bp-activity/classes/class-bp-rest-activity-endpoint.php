@@ -401,7 +401,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				return new WP_Error( 'bp_rest_user_cannot_create_activity',
 					__( 'Sorry, you are not allowed to create activity to this group.', 'buddypress' ),
 					array(
-						'status' => 500,
+						'status' => rest_authorization_required_code(),
 					)
 				);
 			}
@@ -487,7 +487,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_activity_cannot_update',
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -583,7 +583,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_delete_activity',
 				__( 'Sorry, you cannot delete the activity.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -621,7 +621,17 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	public function update_favorite( $request ) {
 		$activity = $this->get_activity_object( $request );
-		$user_id  = get_current_user_id();
+
+		if ( empty( $activity->id ) ) {
+			return new WP_Error( 'bp_rest_activity_invalid_id',
+				__( 'Invalid activity id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$user_id = get_current_user_id();
 
 		$result = false;
 		if ( in_array( $activity->id, $this->get_user_favorites(), true ) ) {
@@ -689,22 +699,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$activity = $this->get_activity_object( $request );
-
-		if ( empty( $activity->id ) ) {
-			return new WP_Error( 'bp_rest_activity_invalid_id',
-				__( 'Invalid activity id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
 		if ( ! bp_activity_can_favorite() ) {
 			return new WP_Error( 'bp_rest_activity_cannot_favorite',
 				__( 'Sorry, Activity cannot be favorited.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}

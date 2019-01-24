@@ -267,8 +267,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error True if the request has access to create, WP_Error object otherwise.
 	 */
 	public function create_item_permissions_check( $request ) {
-
-		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to create groups.', 'buddypress' ),
@@ -282,7 +280,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_create_groups',
 				__( 'Sorry, you cannot create groups.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -382,7 +380,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_group_cannot_update',
 				__( 'Sorry, you are not allowed to update this group.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -461,7 +459,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_delete_group',
 				__( 'Sorry, you are not allowed to delete this group.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}

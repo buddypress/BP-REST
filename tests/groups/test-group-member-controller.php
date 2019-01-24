@@ -261,7 +261,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_join', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_join', $response, 403 );
 	}
 
 	/**
@@ -286,7 +286,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_join', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_join', $response, 403 );
 	}
 
 	/**
@@ -374,7 +374,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_remove', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_remove', $response, 403 );
 	}
 
 	/**
@@ -476,7 +476,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_remove', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_remove', $response, 403 );
 	}
 
 	/**
@@ -579,7 +579,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_promote', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_promote', $response, 403 );
 	}
 
 	/**
@@ -649,7 +649,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_demote', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_demote', $response, 403 );
 	}
 
 	/**

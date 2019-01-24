@@ -119,7 +119,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_view_messages',
 				__( 'Sorry, you cannot view the messages.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}

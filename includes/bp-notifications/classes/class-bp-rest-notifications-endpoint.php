@@ -151,7 +151,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_view_notifications',
 				__( 'Sorry, you cannot view the notifications.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -225,7 +225,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_view_notification',
 				__( 'Sorry, you cannot view this notification.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -299,7 +299,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_create_notification',
 				__( 'Sorry, you cannot create a notification.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -317,6 +317,15 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	public function update_item( $request ) {
 		$notification = $this->get_notification_object( $request );
+
+		if ( $request['is_new'] === $notification->is_new ) {
+			return new WP_Error( 'bp_rest_user_cannot_update_notification_status',
+				__( 'Notification is already with the status you are trying to update into.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
 
 		$updated = BP_Notifications_Notification::update(
 			array( 'is_new' => $request['is_new'] ),
@@ -387,16 +396,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_update_notification',
 				__( 'Sorry, you are not allowed to update this this notification.', 'buddypress' ),
 				array(
-					'status' => 500,
-				)
-			);
-		}
-
-		if ( $request['is_new'] === $notification->is_new ) {
-			return new WP_Error( 'bp_rest_user_cannot_update_notification_status',
-				__( 'Notification is already with the status you are trying to update into.', 'buddypress' ),
-				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -466,7 +466,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			return new WP_Error( 'bp_rest_user_cannot_delete_notification',
 				__( 'Sorry, you cannot delete this notification.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -506,8 +506,8 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param WP_REST_Response              $response     The response data.
-		 * @param WP_REST_Request               $request      Request used to generate the response.
+		 * @param WP_REST_Response            $response    The response data.
+		 * @param WP_REST_Request             $request     Request used to generate the response.
 		 * @param BP_Notifications_Notification $notification Notification object.
 		 */
 		return apply_filters( 'bp_rest_notification_prepare_value', $response, $request, $notification );
