@@ -292,6 +292,28 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	/**
 	 * @group update_item
 	 */
+	public function test_member_cannot_add_others_to_public_group() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $this->group_id,
+			'user_id'  => $u2,
+			'action'   => 'join',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_forbidden', $response, 403 );
+	}
+
+	/**
+	 * @group update_item
+	 */
 	public function test_member_can_remove_himself_from_group() {
 		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );

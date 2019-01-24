@@ -280,68 +280,70 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$loggedin_user_id = bp_loggedin_user_id();
-
-		/**
-		 * Join check.
-		 *
-		 * Make sure one can't join a private or hidden group without proper access.
-		 *
-		 * @since 0.1.0
-		 */
-		if ( 'join' === $request['action'] && in_array( $group->status, [ 'private', 'hidden' ], true ) && ! groups_is_user_member( $user->ID, $group->id ) ) {
-			return new WP_Error( 'bp_rest_group_member_cannot_join',
-				__( 'Sorry, you are not allowed to join this group.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
-		/**
-		 * Admins, groups admins, and mods can do everything.
-		 *
-		 * @since 0.1.0
-		 */
-		if ( $this->admins_can_update( $request['action'], $group->id, $user, $loggedin_user_id ) ) {
+		// Site administrators can do anything.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
 			return true;
 		}
 
-		/**
-		 * Remove checks.
-		 *
-		 * Make sure group admins don't remove themselves, neither members removing other members, etc.
-		 *
-		 * @since 0.1.0
-		 */
-		if ( ! $this->remove_can_update( $request['action'], $group->id, $user, $loggedin_user_id ) ) {
-			return new WP_Error( 'bp_rest_group_member_cannot_remove',
-				__( 'Sorry, you are not allowed to leave this group.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
+		$loggedin_user_id = bp_loggedin_user_id();
 
-		/**
-		 * Promote/demote checks.
-		 *
-		 * Members can not promote/demote each others.
-		 *
-		 * @since 0.1.0
-		 */
-		if ( in_array( $request['action'], [ 'promote', 'demote' ], true ) ) {
-			if ( groups_is_user_member( $loggedin_user_id, $group->id ) && $user->ID !== $loggedin_user_id ) {
-				return new WP_Error( 'bp_rest_group_member_cannot_' . $request['action'],
-					sprintf( __( 'Sorry, you are not allowed to %s this group member.', 'buddypress' ), esc_attr( $request['action'] ) ),
-					array(
-						'status' => 500,
-					)
-				);
+		if ( $loggedin_user_id === $user->ID ) {
+			// Case 1: User is making a self-request.
+			switch ( $request['action'] ) {
+				case 'join' :
+					// Users may only freely join public groups. @todo Private requests.
+					if ( 'public' !== $group->status && ! groups_is_user_member( $loggedin_user_id, $group->id ) ) {
+						return new WP_Error( 'bp_rest_group_member_cannot_join',
+							__( 'Sorry, you are not allowed to join this group.', 'buddypress' ),
+							array(
+								'status' => 500,
+							)
+						);
+					} else {
+						return true;
+					}
+
+				case 'remove' :
+					// Users may not leave group if it'll leave the group without an admin.
+					$group_admins = groups_get_group_admins( $group->id );
+					if ( 1 === count( $group_admins ) && $loggedin_user_id === $group_admins[0]->user_id && $user->ID === $loggedin_user_id ) {
+						return new WP_Error( 'bp_rest_group_member_cannot_remove',
+							__( 'Sorry, you are not allowed to leave this group.', 'buddypress' ),
+							array(
+								'status' => 500,
+							)
+						);
+					} else {
+						return true;
+					}
+
+				default :
+					return false;
+			}
+
+		} else {
+			// Case 2: User is making a request about another user.
+			switch ( $request['action'] ) {
+				case 'remove' :
+				case 'ban' :
+				case 'unban' :
+				case 'promote' :
+				case 'demote' :
+					if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
+						return new WP_Error( 'bp_rest_group_member_cannot_' . $request['action'],
+							sprintf( __( 'Sorry, you are not allowed to %s this group member.', 'buddypress' ), esc_attr( $request['action'] ) ),
+							array(
+								'status' => 500,
+							)
+						);
+					} else {
+						return true;
+					}
+
+				default :
+					return false;
 			}
 		}
-
-		return true;
 	}
 
 	/**
@@ -432,90 +434,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		}
 
 		return $user;
-	}
-
-	/**
-	 * Check for admins, group admins and mods status.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string  $action           Action.
-	 * @param int     $group_id         Group ID.
-	 * @param WP_User $user             User object.
-	 * @param int     $loggedin_user_id Loggedin User ID.
-	 * @return boolean
-	 */
-	protected function remove_can_update( $action, $group_id, $user, $loggedin_user_id ) {
-		if ( 'remove' === $action ) {
-			if ( ! $this->group_admin_is_logged_in( $group_id, $user, $loggedin_user_id ) ) {
-				return false;
-			}
-
-			// Members can remove themselves.
-			if ( groups_is_user_member( $loggedin_user_id, $group_id ) && $user->ID === $loggedin_user_id ) {
-				return true;
-			}
-
-			// Members cannot remove other members.
-			if ( groups_is_user_member( $loggedin_user_id, $group_id ) && $user->ID !== $loggedin_user_id ) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	/**
-	 * Checks for admins and group admins and mods.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string  $action           Action.
-	 * @param int     $group_id         Group ID.
-	 * @param WP_User $user             User object.
-	 * @param int     $loggedin_user_id Loggedin User ID.
-	 * @return boolean
-	 */
-	protected function admins_can_update( $action, $group_id, $user, $loggedin_user_id ) {
-		if ( in_array( $action, [ 'remove', 'ban', 'unban', 'promote', 'demote' ], true ) ) {
-
-			// Admins can do it all.
-			if ( bp_current_user_can( 'bp_moderate' ) ) {
-				return true;
-			}
-
-			if ( ! $this->group_admin_is_logged_in( $group_id, $user, $loggedin_user_id ) ) {
-				return false;
-			}
-
-			// Group admins and mods can do it all.
-			if ( groups_is_user_admin( $loggedin_user_id, $group_id ) || groups_is_user_mod( $loggedin_user_id, $group_id ) ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Confirm if the group admin of the verified group is the logged in user.
-	 *
-	 * Used to stop admins from abandoning their own group.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param int     $group_id         Group ID.
-	 * @param WP_User $user             User object.
-	 * @param int     $loggedin_user_id Loggedin User ID.
-	 * @return boolean
-	 */
-	protected function group_admin_is_logged_in( $group_id, $user, $loggedin_user_id ) {
-		$group_admins = groups_get_group_admins( $group_id );
-		if ( 1 === count( $group_admins ) && $loggedin_user_id === $group_admins[0]->user_id && $user->ID === $loggedin_user_id ) {
-			return false;
-		}
-
-		return true;
 	}
 
 	/**
