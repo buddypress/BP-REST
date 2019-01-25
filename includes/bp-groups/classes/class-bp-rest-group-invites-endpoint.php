@@ -50,6 +50,15 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
+
+		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
+			array(
+				'methods'             => WP_REST_Server::DELETABLE,
+				'callback'            => array( $this, 'delete_item' ),
+				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+			),
+			'schema' => array( $this, 'get_item_schema' ),
+		) );
 	}
 
 	/**
@@ -138,15 +147,105 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Site administrators can do anything.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
+		if ( ! $this->can_see( $group->id ) ) {
+			return new WP_Error( 'bp_rest_user_cannot_view_group_invite',
+				__( 'Sorry, you are not allowed to list the group invitations.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
 		}
 
-		$loggedin_user_id = bp_loggedin_user_id();
-		if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
-			return new WP_Error( 'bp_rest_user_cannot_view_group_invitations',
-				__( 'Sorry, you are not allowed to list the group invitations.', 'buddypress' ),
+		return true;
+	}
+
+	/**
+	 * Delete a group invitation.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function delete_item( $request ) {
+		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+		$user  = $this->get_user( $request['id'] );
+
+		if ( empty( $user->ID ) ) {
+			return new WP_Error( 'bp_rest_member_invalid_id',
+				__( 'Invalid member id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$request->set_param( 'context', 'edit' );
+
+		$retval = groups_delete_invite( $user->ID, $group->id );
+
+		if ( ! $retval ) {
+			return new WP_Error( 'bp_rest_group_invite_cannot_delete',
+				__( 'Could not delete group invitation.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $user, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a group invite is deleted via the REST API.
+		 *
+		 * @since 0.1.0
+
+		 * @param WP_REST_Response   $response The response data.
+		 * @param WP_REST_Request    $request  The request sent to the API.
+		 */
+		do_action( 'bp_rest_group_invites_delete_item', $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to delete a group invitation.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function delete_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to delete this group invite.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+
+		if ( ! $group ) {
+			return new WP_Error( 'bp_rest_group_invalid_id',
+				__( 'Invalid group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		if ( ! $this->can_see( $group->id ) ) {
+			return new WP_Error( 'bp_rest_user_cannot_delete_group_invite',
+				__( 'Sorry, you are not allowed to delete this group invite.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -220,6 +319,51 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		);
 
 		return $links;
+	}
+
+	/**
+	 * Get the user, if the ID is valid.
+	 *
+	 * Method is public to be used in unit tests as well.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $id Supplied ID.
+	 * @return WP_User|boolean
+	 */
+	public function get_user( $id ) {
+
+		if ( (int) $id <= 0 ) {
+			return false;
+		}
+
+		$user = get_userdata( (int) $id );
+		if ( empty( $user ) || ! $user->exists() ) {
+			return false;
+		}
+
+		return $user;
+	}
+
+	/**
+	 * Check access.
+	 *
+	 * @param int $group_id Group ID.
+	 * @return boolean
+	 */
+	protected function can_see( $group_id ) {
+
+		// Site administrators can do anything.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			return true;
+		}
+
+		$loggedin_user_id = bp_loggedin_user_id();
+		if ( ! groups_is_user_admin( $loggedin_user_id, $group_id ) && ! groups_is_user_mod( $loggedin_user_id, $group_id ) ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
