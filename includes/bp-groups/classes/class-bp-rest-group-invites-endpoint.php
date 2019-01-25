@@ -189,17 +189,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error
 	 */
 	public function create_item( $request ) {
-		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-
-		if ( ! $group ) {
-			return new WP_Error( 'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
+		$group   = $this->groups_endpoint->get_group_object( $request['group_id'] );
 		$user    = $this->get_user( $request['user_id'] );
 		$inviter = $this->get_user( $request['inviter_id'] );
 
