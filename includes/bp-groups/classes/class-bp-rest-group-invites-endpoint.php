@@ -91,8 +91,6 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 
 		// Get invites.
 		$invite_query = new BP_Group_Member_Query( $args );
-		$invites_data = $invite_query->results;
-		$invite_count = count( wp_list_pluck( $invites_data, 'ID' ) );
 
 		$retval = array();
 		foreach ( $invites_data as $invited_user ) {
@@ -102,7 +100,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		}
 
 		$response = rest_ensure_response( $retval );
-		$response = bp_rest_response_add_total_headers( $response, (int) $invite_count, $args['per_page'] );
+		$response = bp_rest_response_add_total_headers( $response, $invite_query->total_users, $args['per_page'] );
 
 		/**
 		 * Fires after a list of group invites are fetched via the REST API.
