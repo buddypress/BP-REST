@@ -35,7 +35,11 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		// Main.
 		$this->assertArrayHasKey( $this->endpoint_url, $routes );
-		$this->assertCount( 1, $routes[ $this->endpoint_url ] );
+		$this->assertCount( 2, $routes[ $this->endpoint_url ] );
+
+		// Single.
+		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
+		$this->assertCount( 1, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
 	}
 
 	/**
@@ -116,7 +120,166 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		return true;
+		$u1 = $this->factory->user->create();
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_create_data( [ 'user_id' => $u1 ] );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->assertEquals( $u1, $all_data[0]['user_id'] );
+		$this->assertEquals( $this->user, $all_data[0]['inviter_id'] );
+		$this->assertFalse( (bool) $all_data[0]['is_confirmed'] );
+		$this->assertTrue( (bool) $all_data[0]['invite_sent'] );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_mods_can_create_item() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u1,
+		) );
+
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_create_data( [
+			'user_id'  => $u2,
+			'group_id' => $g1,
+		] );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->assertEquals( $u2, $all_data[0]['user_id'] );
+		$this->assertEquals( $this->user, $all_data[0]['inviter_id'] );
+		$this->assertFalse( (bool) $all_data[0]['is_confirmed'] );
+		$this->assertTrue( (bool) $all_data[0]['invite_sent'] );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_inviter_can_not_invite_himself_to_group() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_create_data( [
+			'user_id' => $this->user,
+		] );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_user_not_logged_in() {
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_create_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_invalid_member_id() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_create_data( [ 'user_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ] );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_invalid_inviter_id() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_create_data( [ 'inviter_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ] );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_invalid_group_id() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_create_data( [ 'group_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ] );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_without_permission() {
+		$u1 = $this->factory->user->create();
+
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_create_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_user_cannot_view_group_invite', $response, 403 );
 	}
 
 	/**
@@ -217,7 +380,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_delete_group_invite', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_user_cannot_view_group_invite', $response, 403 );
 	}
 
 	/**
@@ -256,6 +419,16 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 */
 	public function test_prepare_item() {
 		return true;
+	}
+
+	protected function set_create_data( $args = array() ) {
+		$u1 = $this->factory->user->create();
+
+		return wp_parse_args( $args, array(
+			'group_id'   => $this->group_id,
+			'user_id'    => $u1,
+			'inviter_id' => $this->user,
+		) );
 	}
 
 	protected function check_invited_user_data( $user, $data ) {
@@ -298,5 +471,13 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
 		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+
+		/* // Single.
+		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
+		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] ); */
 	}
 }

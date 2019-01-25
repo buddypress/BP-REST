@@ -48,6 +48,12 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				'args'                => $this->get_collection_params(),
 			),
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'create_item' ),
+				'permission_callback' => array( $this, 'create_item_permissions_check' ),
+				'args'                => $this->get_endpoint_args_for_item_schema( true ),
+			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
 
@@ -160,6 +166,96 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Invite a member to a group.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Request|WP_Error
+	 */
+	public function create_item( $request ) {
+		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+
+		if ( ! $group ) {
+			return new WP_Error( 'bp_rest_group_invalid_id',
+				__( 'Invalid group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$user    = $this->get_user( $request['user_id'] );
+		$inviter = $this->get_user( $request['inviter_id'] );
+
+		if ( ( empty( $user->ID ) || empty( $inviter->ID ) || $user->ID === $inviter->ID ) ) {
+			return new WP_Error( 'bp_rest_member_invalid_id',
+				__( 'Invalid member id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$request->set_param( 'context', 'edit' );
+
+		$invite = groups_invite_user( array(
+			'user_id'    => $user->ID,
+			'group_id'   => $group->id,
+			'inviter_id' => $inviter->ID,
+		) );
+
+		if ( ! $invite ) {
+			return new WP_Error( 'bp_rest_group_invite_cannot_invite',
+				__( 'Could not invite member to the group.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Send invites.
+		groups_send_invites( $inviter->ID, $group->id );
+
+		$invited_member = new BP_Groups_Member( $user->ID, $group->id );
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $invited_member, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a member is invited to a group via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_Groups_Member $invited_member The group member object.
+		 * @param WP_User          $inviter        The inviter user.
+		 * @param BP_Groups_Group  $group          The group object.
+		 * @param WP_REST_Response $response       The response data.
+		 * @param WP_REST_Request  $request        The request sent to the API.
+		 */
+		do_action( 'bp_rest_group_invites_create_item', $invited_member, $inviter, $group, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Checks if a given request has access to invite a member to a group.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return true|WP_Error
+	 */
+	public function create_item_permissions_check( $request ) {
+		return $this->get_items_permissions_check( $request );
+	}
+
+	/**
 	 * Delete a group invitation.
 	 *
 	 * @since 0.1.0
@@ -182,9 +278,9 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 
 		$request->set_param( 'context', 'edit' );
 
-		$retval = groups_delete_invite( $user->ID, $group->id );
+		$deleted = groups_delete_invite( $user->ID, $group->id );
 
-		if ( ! $retval ) {
+		if ( ! $deleted ) {
 			return new WP_Error( 'bp_rest_group_invite_cannot_delete',
 				__( 'Could not delete group invitation.', 'buddypress' ),
 				array(
@@ -193,9 +289,11 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		$deleted_member = new BP_Groups_Member( $user->ID, $group->id );
+
 		$retval = array(
 			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $user, $request )
+				$this->prepare_item_for_response( $deleted_member, $request )
 			),
 		);
 
@@ -205,11 +303,13 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 * Fires after a group invite is deleted via the REST API.
 		 *
 		 * @since 0.1.0
-
-		 * @param WP_REST_Response   $response The response data.
-		 * @param WP_REST_Request    $request  The request sent to the API.
+		 *
+		 * @param BP_Groups_Member $deleted_member  Deleted group member.
+		 * @param BP_Groups_Group  $group           The group object.
+		 * @param WP_REST_Response $response        The response data.
+		 * @param WP_REST_Request  $request         The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_invites_delete_item', $response, $request );
+		do_action( 'bp_rest_group_invites_delete_item', $deleted_member, $group, $response, $request );
 
 		return $response;
 	}
@@ -223,36 +323,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
-		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to delete this group invite.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-
-		if ( ! $group ) {
-			return new WP_Error( 'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		if ( ! $this->can_see( $group->id ) ) {
-			return new WP_Error( 'bp_rest_user_cannot_delete_group_invite',
-				__( 'Sorry, you are not allowed to delete this group invite.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		return true;
+		return $this->get_items_permissions_check( $request );
 	}
 
 	/**
@@ -266,7 +337,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $user, $request ) {
 		$data = array(
-			'user_id'       => $user->ID,
+			'user_id'       => $user->user_id,
 			'invite_sent'   => $user->invite_sent,
 			'inviter_id'    => $user->inviter_id,
 			'is_confirmed'  => $user->is_confirmed,
