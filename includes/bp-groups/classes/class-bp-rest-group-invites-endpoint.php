@@ -417,16 +417,16 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass        $user    Invited user object.
+	 * @param stdClass        $invite  Invited user object.
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response
 	 */
-	public function prepare_item_for_response( $user, $request ) {
+	public function prepare_item_for_response( $invite, $request ) {
 		$data = array(
-			'user_id'      => $user->user_id,
-			'invite_sent'  => $user->invite_sent,
-			'inviter_id'   => $user->inviter_id,
-			'is_confirmed' => $user->is_confirmed,
+			'user_id'      => $invite->user_id,
+			'invite_sent'  => $invite->invite_sent,
+			'inviter_id'   => $invite->inviter_id,
+			'is_confirmed' => $invite->is_confirmed,
 		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -435,7 +435,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		$data = $this->filter_response_by_context( $data, $context );
 
 		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $user ) );
+		$response->add_links( $this->prepare_links( $invite ) );
 
 		/**
 		 * Filter a group invite value returned from the API.
@@ -444,8 +444,9 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  Request used to generate the response.
+		 * @param stdClass         $invite   The group invite.
 		 */
-		return apply_filters( 'bp_rest_group_invite_prepare_value', $response, $request );
+		return apply_filters( 'bp_rest_group_invite_prepare_value', $response, $request, $invite );
 	}
 
 	/**
@@ -458,7 +459,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	protected function prepare_links( $user ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $user->ID;
+		$url  = $base . $user->user_id;
 
 		// Entity meta.
 		$links = array(
@@ -469,7 +470,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'user'       => array(
-				'href'       => rest_url( bp_rest_get_user_url( $user->ID ) ),
+				'href'       => rest_url( bp_rest_get_user_url( $user->user_id ) ),
 				'embeddable' => true,
 			),
 		);
