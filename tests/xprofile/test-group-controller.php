@@ -70,23 +70,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
-	}
-
-	/**
-	 * @group get_items
-	 */
-	public function test_get_items_user_cannot_see_xprofile_field_groups() {
-		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		wp_set_current_user( $u );
-
-		$this->bp_factory->xprofile_group->create_many( 5 );
-
-		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
-		$request->set_param( 'context', 'view' );
-		$response = $this->server->dispatch( $request );
-
-		$this->assertErrorResponse( 'rest_user_cannot_view_field_groups', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -117,21 +101,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
-	}
-
-	/**
-	 * @group get_item
-	 */
-	public function test_get_item_user_cannot_see_xprofile_field_group() {
-		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		wp_set_current_user( $u );
-
-		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
-		$request->set_param( 'context', 'view' );
-		$response = $this->server->dispatch( $request );
-
-		$this->assertErrorResponse( 'rest_user_cannot_view_field_group', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -144,7 +114,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_invalid_field_group_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_invalid_field_group_id', $response, 404 );
 	}
 
 	/**
@@ -193,7 +163,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -211,7 +181,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_user_cannot_create_field_group', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_user_cannot_create_field_group', $response, 403 );
 	}
 
 	/**
@@ -250,7 +220,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_invalid_field_group_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_invalid_field_group_id', $response, 404 );
 	}
 
 	/**
@@ -260,7 +230,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -273,7 +243,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_user_cannot_delete_field_group', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_user_cannot_delete_field_group', $response, 403 );
 	}
 
 	/**

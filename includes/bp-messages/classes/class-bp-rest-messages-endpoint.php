@@ -60,6 +60,17 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'search_terms' => $request['search'],
 		);
 
+		/**
+		 * Filter the query arguments for the request.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $args    Key value array of query var to query value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$args = apply_filters( 'bp_rest_messages_get_items_query_args', $args, $request );
+
+		// Actually, query it.
 		$messages_box = new BP_Messages_Box_Template( $args );
 
 		$retval = array();
@@ -80,7 +91,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $retval       The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
-		do_action( 'rest_messages_get_items', $messages_box, $retval, $request );
+		do_action( 'bp_rest_messages_get_items', $messages_box, $retval, $request );
 
 		return $retval;
 	}
@@ -96,7 +107,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	public function get_items_permissions_check( $request ) {
 
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the messages.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -105,10 +116,10 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! $this->can_see() ) {
-			return new WP_Error( 'rest_user_cannot_view_messages',
+			return new WP_Error( 'bp_rest_user_cannot_view_messages',
 				__( 'Sorry, you cannot view the messages.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -127,15 +138,15 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $thread, $request ) {
 		$data = array(
-			'id'                    => $thread->thread_id,
-			'prime_association'     => $thread->last_message_id,
-			'secondary_association' => $thread->last_sender_id,
-			'subject'               => $thread->last_message_subject,
-			'message'               => $thread->last_message_content,
-			'date'                  => $thread->last_message_date,
-			'unread'                => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
-			'sender_ids'            => $thread->sender_ids,
-			'messages'              => $thread->messages,
+			'id'                => $thread->thread_id,
+			'primary_item_id'   => $thread->last_message_id,
+			'secondary_item_id' => $thread->last_sender_id,
+			'subject'           => $thread->last_message_subject,
+			'message'           => $thread->last_message_content,
+			'date'              => $thread->last_message_date,
+			'unread'            => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
+			'sender_ids'        => $thread->sender_ids,
+			'messages'          => $thread->messages,
 		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -154,7 +165,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param array           $response
 		 * @param WP_REST_Request $request Request used to generate the response.
 		 */
-		return apply_filters( 'rest_prepare_buddypress_message_value', $response, $request );
+		return apply_filters( 'bp_rest_prepare_buddypress_message_value', $response, $request );
 	}
 
 	/**
@@ -178,7 +189,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'user'       => array(
-				'href' => rest_url( '/wp/v2/users/' . $thread->last_sender_id ),
+				'href'       => rest_url( bp_rest_get_user_url( $thread->last_sender_id ) ),
+				'embeddable' => true,
 			),
 		);
 
@@ -215,7 +227,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param bool   $retval Return value.
 		 * @param int    $user_id User ID.
 		 */
-		return apply_filters( 'rest_message_endpoint_can_see', $retval, $user_id );
+		return apply_filters( 'bp_rest_message_endpoint_can_see', $retval, $user_id );
 	}
 
 	/**
@@ -239,9 +251,15 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					'type'        => 'integer',
 				),
 
-				'prime_association'     => array(
+				'primary_item_id'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
+					'type'        => 'integer',
+				),
+
+				'secondary_item_id' => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 
@@ -262,12 +280,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					'type'        => 'string',
 					'format'      => 'date-time',
 					'context'     => array( 'view', 'edit' ),
-				),
-
-				'secondary_association' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
-					'type'        => 'integer',
 				),
 
 				'unread'                => array(
@@ -300,16 +312,16 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		$params['box'] = array(
 			'description'       => __( 'Filter the result by box.', 'buddypress' ),
-			'type'              => 'string',
 			'default'           => 'sentbox',
+			'type'              => 'string',
 			'enum'              => array( 'notices', 'sentbox', 'inbox' ),
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['type'] = array(
 			'description'       => __( 'Filter the result by thread status.', 'buddypress' ),
-			'type'              => 'string',
 			'default'           => 'all',
+			'type'              => 'string',
 			'enum'              => array( 'all', 'read', 'unread' ),
 			'validate_callback' => 'rest_validate_request_arg',
 		);

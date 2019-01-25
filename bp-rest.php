@@ -43,13 +43,22 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 0.1.0
  */
-add_action( 'bp_rest_api_init', function() {
+add_action( 'rest_api_init', function() {
 	// Bail early if no core rest support.
 	if ( ! class_exists( 'WP_REST_Controller' ) ) {
 		return;
 	}
 
 	require_once dirname( __FILE__ ) . '/includes/functions.php';
+
+	if ( bp_is_active( 'members' ) ) {
+		// Member response filters.
+		require_once( dirname( __FILE__ ) . '/includes/bp-members/bp-members-filters.php' );
+
+		require_once( dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-members-endpoint.php' );
+		$controller = new BP_REST_Members_Endpoint();
+		$controller->register_routes();
+	}
 
 	if ( bp_is_active( 'activity' ) ) {
 		require_once( dirname( __FILE__ ) . '/includes/bp-activity/classes/class-bp-rest-activity-endpoint.php' );
@@ -75,20 +84,15 @@ add_action( 'bp_rest_api_init', function() {
 		require_once( dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-groups-endpoint.php' );
 		$controller = new BP_REST_Groups_Endpoint();
 		$controller->register_routes();
+
+		require_once( dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-group-members-endpoint.php' );
+		$controller = new BP_REST_Group_Members_Endpoint();
+		$controller->register_routes();
 	}
 
 	if ( bp_is_active( 'messages' ) ) {
 		require_once( dirname( __FILE__ ) . '/includes/bp-messages/classes/class-bp-rest-messages-endpoint.php' );
 		$controller = new BP_REST_Messages_Endpoint();
-		$controller->register_routes();
-	}
-
-	if ( bp_is_active( 'members' ) ) {
-		// Member response filters.
-		require_once( dirname( __FILE__ ) . '/includes/bp-members/bp-members-filters.php' );
-
-		require_once( dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-members-endpoint.php' );
-		$controller = new BP_REST_Members_Endpoint();
 		$controller->register_routes();
 	}
 

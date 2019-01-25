@@ -26,16 +26,47 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
+	 * Checks if a given request has access to read a user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return boolean|WP_Error
+	 */
+	public function get_item_permissions_check( $request ) {
+		$user = $this->get_user( $request['id'] );
+
+		if ( is_wp_error( $user ) ) {
+			return $user;
+		}
+
+		if ( get_current_user_id() === $user->ID ) {
+			return true;
+		}
+
+		if ( 'edit' === $request['context'] && ! current_user_can( 'list_users' ) ) {
+			return new WP_Error( 'bp_rest_member_cannot_view',
+				__( 'Sorry, you are not allowed to list users.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Checks if a given request has access create members.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return true|WP_Error True if the request has access to create items, WP_Error object otherwise.
+	 * @return boolean|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
 		if ( ! current_user_can( 'bp_moderate' ) ) {
-			return new WP_Error( 'rest_member_cannot_create',
+			return new WP_Error( 'bp_rest_member_cannot_create',
 				__( 'Sorry, you are not allowed to create new members.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -52,13 +83,13 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return boolean|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
 		$user = $this->get_user( $request['id'] );
 
 		if ( is_wp_error( $user ) ) {
-			return new WP_Error( 'rest_member_invalid_id',
+			return new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -67,7 +98,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		if ( ! $this->can_manage_member( $user ) ) {
-			return new WP_Error( 'rest_member_cannot_update',
+			return new WP_Error( 'bp_rest_member_cannot_update',
 				__( 'Sorry, you are not allowed to update this member.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -90,7 +121,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$user = $this->get_user( $request['id'] );
 
 		if ( is_wp_error( $user ) ) {
-			return new WP_Error( 'rest_member_invalid_id',
+			return new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -99,7 +130,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		if ( ! $this->can_manage_member( $user ) ) {
-			return new WP_Error( 'rest_member_cannot_delete',
+			return new WP_Error( 'bp_rest_member_cannot_delete',
 				__( 'Sorry, you are not allowed to delete this member.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -108,108 +139,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		return true;
-	}
-
-	/**
-	 * Get XProfile info from the user.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param  int $user_id User ID.
-	 * @return array XProfile info.
-	 */
-	protected function xprofile_data( $user_id ) {
-
-		// Get XProfile group info.
-		$groups = bp_xprofile_get_groups( array(
-			'user_id'          => $user_id,
-			'fetch_fields'     => true,
-			'fetch_field_data' => true,
-		) );
-
-		$data = array();
-		foreach ( $groups as $group ) {
-			$data['groups'][ $group->id ] = array(
-				'name' => $group->name,
-			);
-
-			foreach ( $group->fields as $item ) {
-				$data['groups'][ $group->id ]['fields'][ $item->id ] = array(
-					'name'  => $item->name,
-					'value' => maybe_unserialize( $item->data->value ),
-				);
-			}
-		}
-
-		return $data;
-	}
-
-	/**
-	 * Can we see a member?
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param  WP_REST_Request $request Full details about the request.
-	 * @param  boolean         $edit Edit fallback.
-	 * @return boolean
-	 */
-	protected function can_see( $request, $edit = false ) {
-		$user_id = bp_loggedin_user_id();
-		$retval  = false;
-
-		$user = $this->get_user( $request['id'] );
-		if ( is_wp_error( $user ) ) {
-			return false;
-		}
-
-		// Me, myself and I are always allowed access.
-		if ( $user_id === $user->ID ) {
-			$retval = true;
-		}
-
-		// Moderators as well.
-		if ( current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
-		}
-
-		if ( current_user_can( 'list_users' ) ) {
-			$retval = true;
-		}
-
-		// Fix for edit content.
-		if ( $edit && 'edit' === $request['context'] && $retval ) {
-			$retval = true;
-		}
-
-		/**
-		 * Filter the retval.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool     $retval   Return value.
-		 * @param int      $user_id  User ID.
-		 * @param bool     $edit     Edit content.
-		 */
-		return (bool) apply_filters( 'rest_member_can_see', $retval, $user_id, $edit );
-	}
-
-	/**
-	 * Can user manage (delete/update) a member?
-	 *
-	 * @param  WP_User $user User object.
-	 * @return bool
-	 */
-	protected function can_manage_member( $user ) {
-
-		if ( current_user_can( 'bp_moderate' ) ) {
-			return true;
-		}
-
-		if ( current_user_can( 'delete_user', $user->ID ) ) {
-			return true;
-		}
-
-		return false;
 	}
 
 	/**
@@ -222,6 +151,46 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $user, $request ) {
+
+		$data = $this->user_data( $user );
+
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+
+		if ( 'edit' === $context ) {
+			$data['roles']              = array_values( $user->roles );
+			$data['capabilities']       = (object) $user->allcaps;
+			$data['extra_capabilities'] = (object) $user->caps;
+		}
+
+		$data = $this->add_additional_fields_to_object( $data, $request );
+		$data = $this->filter_response_by_context( $data, $context );
+
+		$response = rest_ensure_response( $data );
+		$response->add_links( $this->prepare_links( $user ) );
+
+		/**
+		 * Filters user data returned from the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param WP_REST_Response $response The response object.
+		 * @param WP_User          $user     WP_User object.
+		 * @param WP_REST_Request  $request  The request object.
+		 */
+		return apply_filters( 'bp_rest_member_prepare_user', $response, $user, $request );
+	}
+
+	/**
+	 * Method to facilitate fetching of user data.
+	 *
+	 * This was abstracted to be used in other BuddyPress endpoints.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_User $user User object.
+	 * @return array
+	 */
+	public function user_data( $user ) {
 		$data = array(
 			'id'                 => $user->ID,
 			'name'               => $user->display_name,
@@ -233,7 +202,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'roles'              => array(),
 			'capabilities'       => array(),
 			'extra_capabilities' => array(),
-			'xprofile'           => null,
+			'xprofile'            => $this->xprofile_data( $user->ID ),
 		);
 
 		// Avatars.
@@ -254,30 +223,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$data['member_types'] = array();
 		}
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-
-		if ( 'edit' === $context ) {
-			$data['roles']              = array_values( $user->roles );
-			$data['capabilities']       = (object) $user->allcaps;
-			$data['extra_capabilities'] = (object) $user->caps;
-			$data['xprofile']           = $this->xprofile_data( $user->ID );
-		}
-
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
-
-		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $user ) );
-
-		/**
-		 * Filters user data returned from the REST API.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param WP_REST_Response $response The response object.
-		 * @param WP_REST_Request  $request  The request object.
-		 */
-		return apply_filters( 'rest_member_prepare_user', $response, $request );
+		return $data;
 	}
 
 	/**
@@ -304,7 +250,60 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @param stdClass        $prepared_user An object prepared for inserting or updating the database.
 		 * @param WP_REST_Request $request Request object.
 		 */
-		return apply_filters( 'rest_member_pre_insert_value', $prepared_user, $request );
+		return apply_filters( 'bp_rest_member_pre_insert_value', $prepared_user, $request );
+	}
+
+	/**
+	 * Get XProfile info from the user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  int $user_id User ID.
+	 * @return array XProfile info.
+	 */
+	protected function xprofile_data( $user_id ) {
+
+		// Get XProfile groups.
+		$groups = bp_xprofile_get_groups( array(
+			'user_id'          => $user_id,
+			'fetch_fields'     => true,
+			'fetch_field_data' => true,
+		) );
+
+		$data = array();
+		foreach ( $groups as $group ) {
+			$data['groups'][ $group->id ] = array(
+				'name' => $group->name,
+			);
+
+			foreach ( $group->fields as $item ) {
+				$data['groups'][ $group->id ]['fields'][ $item->id ] = array(
+					'name'  => $item->name,
+					'value' => maybe_unserialize( $item->data->value ),
+				);
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Can user manage (delete/update) a member?
+	 *
+	 * @param  WP_User $user User object.
+	 * @return bool
+	 */
+	protected function can_manage_member( $user ) {
+
+		if ( current_user_can( 'bp_moderate' ) ) {
+			return true;
+		}
+
+		if ( current_user_can( 'delete_user', $user->ID ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -413,7 +412,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				'xprofile' => array(
 					'description' => __( 'Member XProfile groups and its fields.', 'buddypress' ),
 					'type'        => 'array',
-					'context'     => array( 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 					'readonly'    => true,
 				),
 			),

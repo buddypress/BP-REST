@@ -18,6 +18,7 @@ Please use and provide feedback!
 
 - [x] Activity `http://site.com/wp-json/buddypress/v1/activity`
 - [x] Groups `http://site.com/wp-json/buddypress/v1/groups`
+- [x] Group Members `http://site.com/wp-json/buddypress/v1/group/members`
 - [x] Notifications `http://site.com/wp-json/buddypress/v1/notifications`
 - [x] XProfile Fields `http://site.com/wp-json/buddypress/v1/xprofile/fields`
 - [x] XProfile Groups `http://site.com/wp-json/buddypress/v1/xprofile/groups`
@@ -32,7 +33,6 @@ Please use and provide feedback!
 - Signups
 - Components
 - Group Invites
-- Group Members
 - Settings
 
 ## Installation

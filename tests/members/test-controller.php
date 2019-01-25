@@ -116,8 +116,8 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		bp_set_member_type( $u, 'foo' );
 		bp_set_member_type( $u, 'bar', true );
 
-		// Set the current user.
-		wp_set_current_user( self::$user );
+		$u_2 = $this->factory->user->create();
+		wp_set_current_user( $u_2 );
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $u ) );
 		$response = $this->server->dispatch( $request );
@@ -182,7 +182,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_body_params( $params );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_cannot_create', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_member_cannot_create', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -227,7 +227,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'username', 'test_json_user' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_cannot_update', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_member_cannot_update', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -249,7 +249,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_body_params( $params );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -267,7 +267,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_cannot_update', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_member_cannot_update', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -285,7 +285,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		// Not implemented in multisite.
 		if ( is_multisite() ) {
-			$this->assertErrorResponse( 'rest_authorization_required_code', $response, 501 );
+			$this->assertErrorResponse( 'bp_rest_authorization_required_code', $response, 501 );
 			return;
 		}
 
@@ -308,7 +308,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'reassign', false );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -322,7 +322,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'reassign', false );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_cannot_delete', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_member_cannot_delete', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -339,7 +339,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'reassign', false );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_member_cannot_delete', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_member_cannot_delete', $response, rest_authorization_required_code() );
 	}
 
 	public function test_prepare_item() {
@@ -395,7 +395,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$this->assertArrayNotHasKey( 'roles', $data );
 			$this->assertArrayNotHasKey( 'capabilities', $data );
 			$this->assertArrayNotHasKey( 'extra_capabilities', $data );
-			$this->assertArrayNotHasKey( 'xprofile', $data );
+			$this->assertArrayHasKey( 'xprofile', $data );
 			$this->assertArrayNotHasKey( 'registered_date', $data );
 		}
 	}
