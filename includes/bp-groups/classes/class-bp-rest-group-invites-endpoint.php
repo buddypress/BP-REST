@@ -59,9 +59,24 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 
 		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
 			array(
+				'methods'             => WP_REST_Server::EDITABLE,
+				'callback'            => array( $this, 'update_item' ),
+				'permission_callback' => array( $this, 'update_item_permissions_check' ),
+				'args'                => array(
+					'context' => $this->get_context_param( array(
+						'default' => 'edit',
+					) ),
+				),
+			),
+			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array( $this, 'delete_item' ),
 				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+				'args'                => array(
+					'context' => $this->get_context_param( array(
+						'default' => 'edit',
+					) ),
+				),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -256,7 +271,78 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Delete a group invitation.
+	 * Accept a group invitation.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function update_item( $request ) {
+		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+		$user  = $this->get_user( $request['id'] );
+
+		if ( empty( $user->ID ) ) {
+			return new WP_Error( 'bp_rest_member_invalid_id',
+				__( 'Invalid member id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$request->set_param( 'context', 'edit' );
+
+		$accept = groups_accept_invite( $user->ID, $group->id );
+
+		if ( ! $accept ) {
+			return new WP_Error( 'bp_rest_group_invite_cannot_accept',
+				__( 'Could not accept group invitation.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$accepted_member = new BP_Groups_Member( $user->ID, $group->id );
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $accepted_member, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a group invite is deleted via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_Groups_Member $accepted_member Deleted group member.
+		 * @param BP_Groups_Group  $group           The group object.
+		 * @param WP_REST_Response $response        The response data.
+		 * @param WP_REST_Request  $request         The request sent to the API.
+		 */
+		do_action( 'bp_rest_group_invites_accept_item', $accepted_member, $group, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to update a group invitation.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function update_item_permissions_check( $request ) {
+		return $this->get_items_permissions_check( $request );
+	}
+
+	/**
+	 * Remove (reject/delete) a group invitation.
 	 *
 	 * @since 0.1.0
 	 *
@@ -337,11 +423,10 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $user, $request ) {
 		$data = array(
-			'user_id'       => $user->user_id,
-			'invite_sent'   => $user->invite_sent,
-			'inviter_id'    => $user->inviter_id,
-			'is_confirmed'  => $user->is_confirmed,
-			'membership_id' => $user->membership_id,
+			'user_id'      => $user->user_id,
+			'invite_sent'  => $user->invite_sent,
+			'inviter_id'   => $user->inviter_id,
+			'is_confirmed' => $user->is_confirmed,
 		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -465,11 +550,6 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				'inviter_id'  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID of the user who made the invite.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'membership_id'  => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'ID of the membership.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'is_confirmed'  => array(
