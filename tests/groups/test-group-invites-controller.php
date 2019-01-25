@@ -129,7 +129,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$params = $this->set_create_data( [ 'user_id' => $u1 ] );
 		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertNotInstanceOf( 'WP_Error', $response );
@@ -164,7 +163,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'group_id' => $g1,
 		] );
 		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertNotInstanceOf( 'WP_Error', $response );
@@ -191,7 +189,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'user_id' => $this->user,
 		] );
 		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
@@ -206,7 +203,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$params = $this->set_create_data();
 		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
@@ -223,7 +219,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$params = $this->set_create_data( [ 'user_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ] );
 		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
@@ -240,7 +235,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$params = $this->set_create_data( [ 'inviter_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ] );
 		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
@@ -257,7 +251,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$params = $this->set_create_data( [ 'group_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ] );
 		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
@@ -276,7 +269,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$params = $this->set_create_data();
 		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_user_cannot_view_group_invite', $response, 403 );
@@ -296,7 +288,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_query_params( array(
 			'group_id' => $this->group_id,
 		) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertNotInstanceOf( 'WP_Error', $response );
@@ -327,7 +318,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_query_params( array(
 			'group_id' => $g1,
 		) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertNotInstanceOf( 'WP_Error', $response );
@@ -349,7 +339,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_query_params( array(
 			'group_id' => $this->group_id,
 		) );
-		$request->set_param( 'context', 'edit' );
+
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
@@ -367,7 +357,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_query_params( array(
 			'group_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER,
 		) );
-		$request->set_param( 'context', 'edit' );
+
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
@@ -380,7 +370,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$u1 = $this->factory->user->create();
 
 		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u1 ) );
-		$request->set_param( 'context', 'edit' );
+
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
@@ -399,7 +389,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_query_params( array(
 			'group_id' => $this->group_id,
 		) );
-		$request->set_param( 'context', 'edit' );
+
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_user_cannot_view_group_invite', $response, rest_authorization_required_code() );
@@ -419,7 +409,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_query_params( array(
 			'group_id' => $this->group_id,
 		) );
-		$request->set_param( 'context', 'edit' );
+
 		$response = $this->server->dispatch( $request );
 		$this->assertNotInstanceOf( 'WP_Error', $response );
 
@@ -450,7 +440,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_query_params( array(
 			'group_id' => $g1,
 		) );
-		$request->set_param( 'context', 'edit' );
+
 		$response = $this->server->dispatch( $request );
 		$this->assertNotInstanceOf( 'WP_Error', $response );
 
@@ -472,7 +462,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_query_params( array(
 			'group_id' => $this->group_id,
 		) );
-		$request->set_param( 'context', 'edit' );
+
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
@@ -490,7 +480,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_query_params( array(
 			'group_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER,
 		) );
-		$request->set_param( 'context', 'edit' );
+
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
@@ -503,7 +493,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$u1 = $this->factory->user->create();
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $u1 ) );
-		$request->set_param( 'context', 'edit' );
+
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
@@ -524,7 +514,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_query_params( array(
 			'group_id' => $this->group_id,
 		) );
-		$request->set_param( 'context', 'edit' );
+
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_user_cannot_view_group_invite', $response, 403 );

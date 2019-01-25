@@ -202,8 +202,6 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$request->set_param( 'context', 'edit' );
-
 		$invite = groups_invite_user( array(
 			'user_id'    => $user->ID,
 			'group_id'   => $group->id,
@@ -281,8 +279,6 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$request->set_param( 'context', 'edit' );
-
 		$accept = groups_accept_invite( $user->ID, $group->id );
 
 		if ( ! $accept ) {
@@ -351,8 +347,6 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
-
-		$request->set_param( 'context', 'edit' );
 
 		$deleted = groups_delete_invite( $user->ID, $group->id );
 
