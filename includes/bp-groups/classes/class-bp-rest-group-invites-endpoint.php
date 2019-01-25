@@ -91,6 +91,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 
 		// Get invites.
 		$invite_query = new BP_Group_Member_Query( $args );
+		$invites_data = $invite_query->results;
 
 		$retval = array();
 		foreach ( $invites_data as $invited_user ) {
