@@ -202,7 +202,18 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_item_permissions_check( $request ) {
-		if ( ! $this->can_see( $request ) ) {
+		$group = $this->get_group_object( $request );
+
+		if ( empty( $group->id ) ) {
+			return new WP_Error( 'bp_rest_group_invalid_id',
+				__( 'Invalid group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		if ( ! $this->can_see( $group ) ) {
 			return new WP_Error( 'bp_rest_user_cannot_view_group',
 				__( 'Sorry, you cannot view the group.', 'buddypress' ),
 				array(
@@ -659,13 +670,12 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  WP_REST_Request $request Full details about the request.
+	 * @param  BP_Groups_Group $group Group object.
 	 * @return boolean
 	 */
-	protected function can_see( $request ) {
+	protected function can_see( $group ) {
 		$retval  = false;
 		$user_id = bp_loggedin_user_id();
-		$group   = $this->get_group_object( $request );
 
 		// If it is not a hidden/private group, user can see it.
 		if ( 'public' === $group->status ) {
@@ -691,9 +701,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param bool            $retval  Return value.
 		 * @param int             $user_id User id.
 		 * @param BP_Groups_Group $group   BP_Groups_Group object.
-		 * @param WP_REST_Request $request Full details about the request.
 		 */
-		return (bool) apply_filters( 'bp_rest_group_can_see', $retval, $user_id, $group, $request );
+		return (bool) apply_filters( 'bp_rest_group_can_see', $retval, $user_id, $group );
 	}
 
 	/**

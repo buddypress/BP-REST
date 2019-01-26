@@ -125,6 +125,18 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_item
 	 */
+	public function test_get_item_invalid_group_id() {
+		wp_set_current_user( $this->user );
+
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group get_item
+	 */
 	public function test_get_hidden_group() {
 		$u = $this->factory->user->create();
 		$g = $this->bp_factory->group->create( array(
