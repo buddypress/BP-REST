@@ -234,6 +234,17 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
 	 */
 	public function create_item( $request ) {
+
+		// If no group name.
+		if ( empty( $request['name'] ) ) {
+			return new WP_Error( 'bp_rest_create_group_empty_name',
+				__( 'Please, enter the name of group.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		$group_id = groups_create_group( $this->prepare_item_for_database( $request ) );
 
 		if ( ! is_numeric( $group_id ) ) {
@@ -292,16 +303,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				__( 'Sorry, you cannot create groups.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		// If no group name.
-		if ( empty( $request['name'] ) ) {
-			return new WP_Error( 'bp_rest_create_group_empty_name',
-				__( 'Please, enter the name of group.', 'buddypress' ),
-				array(
-					'status' => 500,
 				)
 			);
 		}
