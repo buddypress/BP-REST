@@ -156,7 +156,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$user         = $this->get_user( $request['user_id'] );
+		$user         = bp_rest_get_user( $request['user_id'] );
 		$group        = $this->groups_endpoint->get_group_object( $request['group_id'] );
 		$action       = $request['action'];
 		$role         = $request['role'];
@@ -247,7 +247,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$user = $this->get_user( $request['user_id'] );
+		$user = bp_rest_get_user( $request['user_id'] );
 
 		if ( empty( $user->ID ) ) {
 			return new WP_Error( 'bp_rest_group_member_invalid_id',
@@ -345,7 +345,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $group_member, $request ) {
-		$user        = $this->get_user( $group_member->user_id );
+		$user        = bp_rest_get_user( $group_member->user_id );
 		$member_data = $this->members_endpoint->user_data( $user );
 
 		// Merge both info.
@@ -399,30 +399,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		);
 
 		return $links;
-	}
-
-	/**
-	 * Get the user, if the ID is valid.
-	 *
-	 * Method is public to be used in unit tests as well.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param int $id Supplied ID.
-	 * @return WP_User|boolean
-	 */
-	public function get_user( $id ) {
-
-		if ( (int) $id <= 0 ) {
-			return false;
-		}
-
-		$user = get_userdata( (int) $id );
-		if ( empty( $user ) || ! $user->exists() ) {
-			return false;
-		}
-
-		return $user;
 	}
 
 	/**

@@ -137,3 +137,25 @@ function bp_rest_sanitize_string_list( $list ) {
 
 	return array_unique( array_map( 'sanitize_text_field', $list ) );
 }
+
+/**
+ * Get the user object, if the ID is valid.
+ *
+ * @since 0.1.0
+ *
+ * @param int $id Supplied ID.
+ * @return WP_User|boolean
+ */
+function bp_rest_get_user( $id ) {
+
+	if ( (int) $id <= 0 ) {
+		return false;
+	}
+
+	$user = get_userdata( (int) $id );
+	if ( empty( $user ) || ! $user->exists() ) {
+		return false;
+	}
+
+	return $user;
+}

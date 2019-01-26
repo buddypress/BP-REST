@@ -75,7 +75,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		// Verify user information.
 		foreach ( $all_data as $data ) {
-			$user = $this->endpoint->get_user( $data['id'] );
+			$user = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $g1 );
 
 			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
@@ -122,7 +122,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		// Verify user information.
 		foreach ( $all_data as $data ) {
-			$user = $this->endpoint->get_user( $data['id'] );
+			$user = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $g1 );
 
 			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
@@ -170,7 +170,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
-			$user          = $this->endpoint->get_user( $data['id'] );
+			$user          = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
 
 			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
@@ -201,7 +201,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
-			$user          = $this->endpoint->get_user( $data['id'] );
+			$user          = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
 
 			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
@@ -232,7 +232,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
-			$user          = $this->endpoint->get_user( $data['id'] );
+			$user          = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
 
 			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
@@ -343,7 +343,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
-			$user = $this->endpoint->get_user( $data['id'] );
+			$user = bp_rest_get_user( $data['id'] );
 			$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
 		}
 	}
@@ -409,7 +409,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
-			$user = $this->endpoint->get_user( $data['id'] );
+			$user = bp_rest_get_user( $data['id'] );
 			$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
 		}
 	}
@@ -446,7 +446,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
-			$user = $this->endpoint->get_user( $data['id'] );
+			$user = bp_rest_get_user( $data['id'] );
 			$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
 		}
 	}
@@ -506,7 +506,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
-			$user          = $this->endpoint->get_user( $data['id'] );
+			$user          = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
 
 			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
@@ -545,7 +545,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
-			$user          = $this->endpoint->get_user( $data['id'] );
+			$user          = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $g1 );
 
 			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
@@ -615,7 +615,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
-			$user          = $this->endpoint->get_user( $data['id'] );
+			$user          = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $g1 );
 
 			$this->check_user_data( $user, $data, $member_object, 'view', $response->get_links() );
