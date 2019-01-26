@@ -138,9 +138,8 @@ function bp_rest_sanitize_string_list( $list ) {
 	return array_unique( array_map( 'sanitize_text_field', $list ) );
 }
 
-
 /**
- * Get the user, if the ID is valid.
+ * Get the user object, if the ID is valid.
  *
  * @since 0.1.0
  *

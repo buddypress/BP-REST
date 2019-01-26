@@ -12,6 +12,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 
 		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_XProfile_Fields_Endpoint();
+		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/buddypress/v1/' . buddypress()->profile->id . '/fields';
 		$this->group_id     = $this->bp_factory->xprofile_group->create();
 		$this->field_id     = $this->bp_factory->xprofile_field->create( [ 'field_group_id' => $this->group_id ] );
@@ -42,7 +43,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$this->bp_factory->xprofile_field->create_many( 5, [ 'field_group_id' => $this->group_id ] );
 
@@ -78,7 +79,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$field = $this->endpoint->get_xprofile_field_object( $this->field_id );
 		$this->assertEquals( $this->field_id, $field->id );
@@ -109,7 +110,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group get_item
 	 */
 	public function test_get_item_invalid_id() {
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$request->set_param( 'context', 'view' );
@@ -122,7 +123,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
@@ -139,7 +140,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group create_item
 	 */
 	public function test_rest_create_item() {
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
@@ -156,7 +157,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group create_item
 	 */
 	public function test_create_item_with_no_required_field() {
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
@@ -173,7 +174,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group create_item
 	 */
 	public function test_create_item_with_invalid_type() {
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
@@ -206,7 +207,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 */
 	public function test_create_item_user_without_permission() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		wp_set_current_user( $u );
+		$this->bp->set_current_user( $u );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
@@ -230,7 +231,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$field = $this->endpoint->get_xprofile_field_object( $this->field_id );
 
@@ -250,7 +251,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group delete_item
 	 */
 	public function test_delete_item_invalid_id() {
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -273,7 +274,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 */
 	public function test_delete_item_without_permission() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		wp_set_current_user( $u );
+		$this->bp->set_current_user( $u );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
 		$response = $this->server->dispatch( $request );
@@ -285,7 +286,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group prepare_item
 	 */
 	public function test_prepare_item() {
-		wp_set_current_user( $this->user );
+		$this->bp->set_current_user( $this->user );
 
 		$field = $this->endpoint->get_xprofile_field_object( $this->field_id );
 

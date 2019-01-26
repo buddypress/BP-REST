@@ -34,10 +34,15 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return boolean|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		$user = $this->get_user( $request['id'] );
+		$user = bp_rest_get_user( $request['id'] );
 
-		if ( is_wp_error( $user ) ) {
-			return $user;
+		if ( ! $user ) {
+			return new WP_Error( 'bp_rest_member_invalid_id',
+				__( 'Invalid member id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
 		}
 
 		if ( get_current_user_id() === $user->ID ) {
@@ -86,9 +91,9 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return boolean|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
-		$user = $this->get_user( $request['id'] );
+		$user = bp_rest_get_user( $request['id'] );
 
-		if ( is_wp_error( $user ) ) {
+		if ( ! $user ) {
 			return new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
@@ -118,9 +123,9 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
-		$user = $this->get_user( $request['id'] );
+		$user = bp_rest_get_user( $request['id'] );
 
-		if ( is_wp_error( $user ) ) {
+		if ( ! $user ) {
 			return new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
@@ -202,7 +207,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'roles'              => array(),
 			'capabilities'       => array(),
 			'extra_capabilities' => array(),
-			'xprofile'            => $this->xprofile_data( $user->ID ),
+			'xprofile'           => $this->xprofile_data( $user->ID ),
 		);
 
 		// Avatars.

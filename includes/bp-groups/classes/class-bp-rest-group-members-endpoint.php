@@ -20,7 +20,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param object BP_REST_Groups_Endpoint
+	 * @param $groups_endpoint BP_REST_Groups_Endpoint
 	 */
 	protected $groups_endpoint;
 
@@ -29,7 +29,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param object BP_REST_Members_Endpoint
+	 * @param $members_endpoint BP_REST_Members_Endpoint
 	 */
 	protected $members_endpoint;
 
@@ -78,15 +78,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-
-		if ( ! $group ) {
-			return new WP_Error( 'bp_rest_invalid_group_id',
-				__( 'Invalid group id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
 
 		$args = array(
 			'group_id'            => $group->id,
@@ -165,7 +156,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$user         = $this->get_user( $request['user_id'] );
+		$user         = bp_rest_get_user( $request['user_id'] );
 		$group        = $this->groups_endpoint->get_group_object( $request['group_id'] );
 		$action       = $request['action'];
 		$role         = $request['role'];
@@ -247,8 +238,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function update_item_permissions_check( $request ) {
-
-		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to make an update.', 'buddypress' ),
@@ -258,7 +247,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$user = $this->get_user( $request['user_id'] );
+		$user = bp_rest_get_user( $request['user_id'] );
 
 		if ( empty( $user->ID ) ) {
 			return new WP_Error( 'bp_rest_group_member_invalid_id',
@@ -356,11 +345,11 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $group_member, $request ) {
-		$user = $this->get_user( $group_member->user_id );
-		$data = $this->members_endpoint->user_data( $user );
+		$user        = bp_rest_get_user( $group_member->user_id );
+		$member_data = $this->members_endpoint->user_data( $user );
 
 		// Merge both info.
-		$data = array_merge( $data, array(
+		$data = array_merge( $member_data, array(
 			'is_mod'       => (bool) $group_member->is_mod,
 			'is_admin'     => (bool) $group_member->is_admin,
 			'is_banned'    => (bool) $group_member->is_banned,
@@ -410,30 +399,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		);
 
 		return $links;
-	}
-
-	/**
-	 * Get the user, if the ID is valid.
-	 *
-	 * Method is public to be used in unit tests as well.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param int $id Supplied ID.
-	 * @return WP_User|boolean
-	 */
-	public function get_user( $id ) {
-
-		if ( (int) $id <= 0 ) {
-			return false;
-		}
-
-		$user = get_userdata( (int) $id );
-		if ( empty( $user ) || ! $user->exists() ) {
-			return false;
-		}
-
-		return $user;
 	}
 
 	/**
