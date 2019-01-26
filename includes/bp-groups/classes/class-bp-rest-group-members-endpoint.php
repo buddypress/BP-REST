@@ -238,8 +238,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function update_item_permissions_check( $request ) {
-
-		// Bail early.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to make an update.', 'buddypress' ),
@@ -347,11 +345,11 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $group_member, $request ) {
-		$user = $this->get_user( $group_member->user_id );
-		$data = $this->members_endpoint->user_data( $user );
+		$user        = $this->get_user( $group_member->user_id );
+		$member_data = $this->members_endpoint->user_data( $user );
 
 		// Merge both info.
-		$data = array_merge( $data, array(
+		$data = array_merge( $member_data, array(
 			'is_mod'       => (bool) $group_member->is_mod,
 			'is_admin'     => (bool) $group_member->is_admin,
 			'is_banned'    => (bool) $group_member->is_banned,
