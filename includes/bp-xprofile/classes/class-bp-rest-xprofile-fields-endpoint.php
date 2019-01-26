@@ -315,7 +315,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request
+	 * @param WP_REST_Request $request Full data about the request.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
@@ -476,7 +476,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param BP_XProfile_Field $field XProfile field object.
-	 *
 	 * @return array Links for the given plugin.
 	 */
 	protected function prepare_links( $field ) {
@@ -501,7 +500,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param BP_XProfile_Field $field XProfile field object.
-	 *
 	 * @return boolean
 	 */
 	protected function can_see( $field = null ) {

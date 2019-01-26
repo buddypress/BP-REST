@@ -23,9 +23,9 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param $field_class BP_REST_XProfile_Fields_Endpoint
+	 * @param $field_endpoint BP_REST_XProfile_Fields_Endpoint
 	 */
-	protected $field_class;
+	protected $field_endpoint;
 
 	/**
 	 * Constructor.
@@ -33,9 +33,9 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace   = 'buddypress/v1';
-		$this->rest_base   = buddypress()->profile->id . '/data';
-		$this->field_class = new BP_REST_XProfile_Fields_Endpoint();
+		$this->namespace      = 'buddypress/v1';
+		$this->rest_base      = buddypress()->profile->id . '/data';
+		$this->field_endpoint = new BP_REST_XProfile_Fields_Endpoint();
 	}
 
 	/**
@@ -51,14 +51,11 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'create_item_permissions_check' ),
 				'args'                => $this->get_item_params(),
 			),
-			'schema' => array( $this, 'get_item_schema' ),
-		) );
-
-		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array( $this, 'delete_item' ),
 				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+				'args'                => $this->get_endpoint_args_for_item_schema( true ),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -84,8 +81,13 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$user    = bp_rest_get_user( $request['user_id'] );
-		$value   = $request['value'];
+		$user  = bp_rest_get_user( $request['user_id'] );
+		$value = $request['value'];
+
+		if ( 'checkbox' === $field->type ) {
+			$value = explode( ',', $value );
+		}
+
 		$updated = xprofile_set_field_data( $field->id, $user->ID, $value );
 
 		if ( ! $updated ) {
@@ -131,7 +133,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 */
 	public function create_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'rest_authorization_required',
+			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to save XProfile data.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -150,7 +152,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see( $user ->ID ) ) {
+		if ( ! $this->can_see( $user->ID ) ) {
 			return new WP_Error( 'rest_user_cannot_view_field_data',
 				__( 'Sorry, you cannot save XProfile field data.', 'buddypress' ),
 				array(
@@ -174,7 +176,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		$field = $this->get_xprofile_field_object( $request['field_id'] );
 
 		if ( empty( $field->id ) ) {
-			return new WP_Error( 'rest_invalid_field_id',
+			return new WP_Error( 'bp_rest_invalid_field_id',
 				__( 'Invalid field id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -184,8 +186,10 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 
 		$user = bp_rest_get_user( $request['user_id'] );
 
-		if ( ! xprofile_delete_field_data( $field->id, $user->ID ) ) {
-			return new WP_Error( 'rest_xprofile_data_cannot_delete',
+		$field_data = new BP_XProfile_ProfileData( $field->id, $user->ID );
+
+		if ( ! $field_data->delete() ) {
+			return new WP_Error( 'bp_rest_xprofile_data_cannot_delete',
 				__( 'Could not delete XProfile data.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -233,16 +237,16 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  BP_XProfile_Field  $field    XProfile field object.
+	 * @param  BP_XProfile_Field $field    XProfile field object.
 	 * @param  WP_REST_Request   $request Full data about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $field, $request ) {
-
 		$data = array(
-			'field_id' => $field->data->field_id,
-			'user_id'  => $field->data->user_id,
-			'value'    => xprofile_get_field_data( $field->data->field_id, $field->data->user_id ),
+			'field_id'     => $field->data->field_id,
+			'user_id'      => $field->data->user_id,
+			'value'        => xprofile_get_field_data( $field->data->field_id, $field->data->user_id ),
+			'last_updated' => bp_rest_prepare_date_response( $field->data->last_updated ),
 		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -253,7 +257,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		$response->add_links( $this->prepare_links( $field->data->field_id ) );
 
 		/**
-		 * Filter the XProfile data returned from the API.
+		 * Filter the XProfile data response returned from the API.
 		 *
 		 * @since 0.1.0
 		 *
@@ -269,7 +273,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param BP_XProfile_Field $field XProfile field object.
+	 * @param BP_XProfile_Field $field_id XProfile field id.
 	 * @return array Links for the given plugin.
 	 */
 	protected function prepare_links( $field_id ) {
@@ -298,7 +302,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @return BP_XProfile_Field
 	 */
 	public function get_xprofile_field_object( $field_id ) {
-		return $this->field_class->get_xprofile_field_object( $field_id );
+		return $this->field_endpoint->get_xprofile_field_object( $field_id );
 	}
 
 	/**
@@ -306,6 +310,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
+	 * @param int $field_user_id User ID of the field.
 	 * @return boolean
 	 */
 	protected function can_see( $field_user_id ) {
@@ -319,7 +324,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 
 		// Field owners also can.
 		if ( $user_id === $field_user_id ) {
-			return true;
+			$retval = true;
 		}
 
 		/**
