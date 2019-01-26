@@ -190,8 +190,8 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function create_item( $request ) {
 		$group   = $this->groups_endpoint->get_group_object( $request['group_id'] );
-		$user    = $this->get_user( $request['user_id'] );
-		$inviter = $this->get_user( $request['inviter_id'] );
+		$user    = bp_rest_get_user( $request['user_id'] );
+		$inviter = bp_rest_get_user( $request['inviter_id'] );
 
 		if ( ( empty( $user->ID ) || empty( $inviter->ID ) || $user->ID === $inviter->ID ) ) {
 			return new WP_Error( 'bp_rest_member_invalid_id',
@@ -268,7 +268,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function update_item( $request ) {
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-		$user  = $this->get_user( $request['id'] );
+		$user  = bp_rest_get_user( $request['id'] );
 
 		if ( empty( $user->ID ) ) {
 			return new WP_Error( 'bp_rest_member_invalid_id',
@@ -337,7 +337,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function delete_item( $request ) {
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-		$user  = $this->get_user( $request['id'] );
+		$user  = bp_rest_get_user( $request['id'] );
 
 		if ( empty( $user->ID ) ) {
 			return new WP_Error( 'bp_rest_member_invalid_id',
@@ -460,30 +460,6 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		);
 
 		return $links;
-	}
-
-	/**
-	 * Get the user, if the ID is valid.
-	 *
-	 * Method is public to be used in unit tests as well.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param int $id Supplied ID.
-	 * @return WP_User|boolean
-	 */
-	public function get_user( $id ) {
-
-		if ( (int) $id <= 0 ) {
-			return false;
-		}
-
-		$user = get_userdata( (int) $id );
-		if ( empty( $user ) || ! $user->exists() ) {
-			return false;
-		}
-
-		return $user;
 	}
 
 	/**
