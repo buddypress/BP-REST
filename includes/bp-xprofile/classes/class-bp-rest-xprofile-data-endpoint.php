@@ -12,7 +12,6 @@ defined( 'ABSPATH' ) || exit;
  * XProfile Data endpoints.
  *
  * Use /xprofile/data
- * Use /xprofile/data/{id}
  *
  * @since 0.1.0
  */
