@@ -305,14 +305,6 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['per_page'] = array(
-			'description'       => __( 'Maximum number of results returned per result set.', 'buddypress' ),
-			'default'           => 20,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
 		return $params;
 	}
 }
