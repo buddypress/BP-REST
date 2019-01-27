@@ -13,7 +13,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_XProfile_Fields_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
-		$this->endpoint_url = '/buddypress/v1/' . buddypress()->profile->id . '/fields';
+		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->profile->id . '/fields';
 		$this->group_id     = $this->bp_factory->xprofile_group->create();
 		$this->field_id     = $this->bp_factory->xprofile_field->create( [ 'field_group_id' => $this->group_id ] );
 

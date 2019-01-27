@@ -39,7 +39,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace        = 'buddypress/v1';
+		$this->namespace        = bp_rest_namespace() . '/' . bp_rest_version();
 		$this->rest_base        = 'group/members';
 		$this->groups_endpoint  = new BP_REST_Groups_Endpoint();
 		$this->members_endpoint = new BP_REST_Members_Endpoint();
