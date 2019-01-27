@@ -54,7 +54,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-		$data     = $all_data;
+		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
 			$field = $this->endpoint->get_xprofile_field_object( $data['id'] );
@@ -65,14 +65,22 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	/**
 	 * @group get_items
 	 */
-	public function test_get_items_user_not_logged_in() {
+	public function test_get_items_publicly() {
 		$this->bp_factory->xprofile_field->create_many( 5, [ 'field_group_id' => $this->group_id ] );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$field = $this->endpoint->get_xprofile_field_object( $data['id'] );
+			$this->check_field_data( $field, $data, 'view', $response->get_links() );
+		}
 	}
 
 	/**
@@ -98,12 +106,19 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_user_not_logged_in() {
-		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
+	public function test_get_item_publickly() {
+		$field = $this->endpoint->get_xprofile_field_object( $this->field_id );
+		$this->assertEquals( $this->field_id, $field->id );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $field->id ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->check_field_data( $field, $all_data[0], 'view', $response->get_links() );
 	}
 
 	/**

@@ -134,19 +134,9 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 *
-	 * @return WP_Error|bool
+	 * @return bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to see the XProfile fields.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
 		return true;
 	}
 
@@ -155,13 +145,22 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request
+	 * @param WP_REST_Request $request Full data about the request.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
 		$profile_field_id = (int) $request['id'];
 
 		$field = $this->get_xprofile_field_object( $profile_field_id );
+
+		if ( empty( $profile_field_id ) || empty( $field->id ) ) {
+			return new WP_Error( 'bp_rest_xprofile_field_invalid_id',
+				__( 'Invalid field id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
 
 		if ( ! empty( $request['user_id'] ) ) {
 			$field->data = new stdClass();
@@ -175,15 +174,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 			// Set 'fetch_field_data' to true so that the data is included in the response.
 			$request['fetch_field_data'] = true;
-		}
-
-		if ( empty( $profile_field_id ) || empty( $field->id ) ) {
-			return new WP_Error( 'bp_rest_xprofile_field_invalid_id',
-				__( 'Invalid field id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
 		}
 
 		$retval = array(
@@ -213,19 +203,10 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request
-	 * @return WP_Error|bool
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return bool
 	 */
 	public function get_item_permissions_check( $request ) {
-		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to view a XProfile field.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
 		return true;
 	}
 
@@ -300,7 +281,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		if ( ! $this->can_see() ) {
 			return new WP_Error( 'bp_rest_user_cannot_create_field',
-				__( 'Sorry, you cannot create a XProfile field.', 'buddypress' ),
+				__( 'Sorry, you are not allowed to create a XProfile field.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -315,7 +296,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request
+	 * @param WP_REST_Request $request Full data about the request.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
@@ -387,7 +368,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		if ( ! $this->can_see( $field ) ) {
 			return new WP_Error( 'bp_rest_user_cannot_delete_field',
-				__( 'Sorry, you cannot delete this field.', 'buddypress' ),
+				__( 'Sorry, you are not allowed to delete this field.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -404,7 +385,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @param BP_XProfile_Field $field   XProfile field object.
 	 * @param WP_REST_Request   $request Full data about the request.
-	 *
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $field, $request ) {
@@ -420,7 +400,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  Request used to generate the response.
-		 * @param BP_XProfile_Field $field    XProfile field object.
+		 * @param BP_XProfile_Field  $field     XProfile field object.
 		 */
 		return apply_filters( 'bp_rest_xprofile_field_prepare_value', $response, $request, $field );
 	}
@@ -432,7 +412,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @param BP_XProfile_Field $field   XProfile field object.
 	 * @param WP_REST_Request   $request Full data about the request.
-	 *
 	 * @return array
 	 */
 	public function assemble_response_data( $field, $request ) {
@@ -476,7 +455,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param BP_XProfile_Field $field XProfile field object.
-	 *
 	 * @return array Links for the given plugin.
 	 */
 	protected function prepare_links( $field ) {
@@ -531,7 +509,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 *
 	 * @return BP_XProfile_Field|string XProfile field object.
 	 */
 	public function get_xprofile_field_object( $request ) {
