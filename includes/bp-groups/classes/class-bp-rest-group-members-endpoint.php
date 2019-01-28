@@ -606,22 +606,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['per_page'] = array(
-			'description'       => __( 'Maximum number of results returned per result set.', 'buddypress' ),
-			'default'           => 20,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['page'] = array(
-			'description'       => __( 'Offset the result set by a specific number of pages of results.', 'buddypress' ),
-			'default'           => 1,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
 		$params['exclude'] = array(
 			'description'       => __( 'Ensure result set excludes specific member IDs.', 'buddypress' ),
 			'default'           => array(),
