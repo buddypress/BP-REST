@@ -388,7 +388,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	public function delete_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to make an update.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to delete a group membership.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
