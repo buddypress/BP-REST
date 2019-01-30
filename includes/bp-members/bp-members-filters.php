@@ -18,11 +18,12 @@ defined( 'ABSPATH' ) || exit;
  *
  * @param array           $prepared_args Array of arguments for WP_User_Query.
  * @param WP_REST_Request $request       The current request.
- *
  * @return array
  */
 function bp_remove_has_published_posts_from_wp_api_user_query( $prepared_args, $request ) {
-	if ( 0 !== strpos( $request->get_route(), '/buddypress/v1/members' ) ) {
+	$namespace = bp_rest_namespace() . '/' . bp_rest_version() . '/members';
+
+	if ( 0 !== strpos( $request->get_route(), $namespace ) ) {
 		return $prepared_args;
 	}
 

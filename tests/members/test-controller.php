@@ -42,7 +42,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		buddypress()->members->types = array();
 
 		$this->endpoint     = new BP_REST_Members_Endpoint();
-		$this->endpoint_url = '/buddypress/v1/members';
+		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/members';
 
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();

@@ -20,7 +20,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param $groups_endpoint BP_REST_Groups_Endpoint
+	 * @var object
 	 */
 	protected $groups_endpoint;
 
@@ -29,7 +29,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param $members_endpoint BP_REST_Members_Endpoint
+	 * @var object
 	 */
 	protected $members_endpoint;
 
@@ -39,8 +39,8 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace        = 'buddypress/v1';
-		$this->rest_base        = 'groups';
+		$this->namespace        = bp_rest_namespace() . '/' . bp_rest_version();
+		$this->rest_base        = buddypress()->groups->id;
 		$this->groups_endpoint  = new BP_REST_Groups_Endpoint();
 		$this->members_endpoint = new BP_REST_Members_Endpoint();
 	}
@@ -603,22 +603,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			'default'           => '',
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_text_field',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['per_page'] = array(
-			'description'       => __( 'Maximum number of results returned per result set.', 'buddypress' ),
-			'default'           => 20,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['page'] = array(
-			'description'       => __( 'Offset the result set by a specific number of pages of results.', 'buddypress' ),
-			'default'           => 1,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

@@ -13,7 +13,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->bp_factory      = new BP_UnitTest_Factory();
 		$this->endpoint        = new BP_REST_Notifications_Endpoint();
 		$this->bp              = new BP_UnitTestCase();
-		$this->endpoint_url    = '/buddypress/v1/' . buddypress()->notifications->id;
+		$this->endpoint_url    = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->notifications->id;
 		$this->notification_id = $this->bp_factory->notification->create();
 
 		$this->user = $this->factory->user->create( array(
