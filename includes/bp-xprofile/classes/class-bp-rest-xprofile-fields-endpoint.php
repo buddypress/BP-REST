@@ -479,7 +479,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param BP_XProfile_Field $field XProfile field object.
-	 *
 	 * @return boolean
 	 */
 	protected function can_see( $field = null ) {
