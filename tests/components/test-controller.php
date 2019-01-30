@@ -13,7 +13,7 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Components_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
-		$this->endpoint_url = '/buddypress/v1/components';
+		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/components';
 		$this->user         = $this->factory->user->create( array(
 			'role'       => 'administrator',
 			'user_email' => 'admin@example.com',
@@ -29,7 +29,7 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 
 		// Main.
 		$this->assertArrayHasKey( $this->endpoint_url, $routes );
-		$this->assertCount( 1, $routes[ $this->endpoint_url ] );
+		$this->assertCount( 2, $routes[ $this->endpoint_url ] );
 	}
 
 	/**
@@ -135,7 +135,74 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 	 * @group update_item
 	 */
 	public function test_update_item() {
-		return true;
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'name'   => 'blogs',
+			'action' => 'deactivate',
+		) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$this->assertTrue( 'inactive' === $all_data[0]['status'] );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_activate_component() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'name'   => 'blogs',
+			'action' => 'activate',
+		) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$this->assertTrue( 'active' === $all_data[0]['status'] );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_user_is_not_logged_in() {
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'name'   => 'core',
+			'action' => 'activate',
+		) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_without_permission() {
+		$u = $this->factory->user->create();
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'name'   => 'core',
+			'action' => 'activate',
+		) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 403 );
 	}
 
 	/**

@@ -21,7 +21,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace = 'buddypress/v1';
+		$this->namespace = bp_rest_namespace() . '/' . bp_rest_version();
 		$this->rest_base = 'components';
 	}
 
@@ -37,6 +37,12 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 				'callback'            => array( $this, 'get_items' ),
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				'args'                => $this->get_collection_params(),
+			),
+			array(
+				'methods'             => WP_REST_Server::EDITABLE,
+				'callback'            => array( $this, 'update_item' ),
+				'permission_callback' => array( $this, 'update_item_permissions_check' ),
+				'args'                => $this->get_endpoint_args_for_item_schema( true ),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -87,36 +93,19 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 		switch ( $args['status'] ) {
 			case 'all':
 				foreach ( $components as $name => $labels ) {
-					$current_components[] = array(
-						'name'        => $name,
-						'status'      => $this->verify_component_status( $name ),
-						'title'       => $labels['title'],
-						'description' => $labels['description'],
-					);
+					$current_components[] = $this->get_component_info( $name );
 				}
 				break;
 
 			case 'active':
 				foreach ( array_keys( $active_components ) as $component ) {
-					$info = $components[ $component ];
-					$current_components[] = array(
-						'name'        => $component,
-						'status'      => __( 'active', 'buddypress' ),
-						'title'       => $info['title'],
-						'description' => $info['description'],
-					);
+					$current_components[] = $this->get_component_info( $component );
 				}
 				break;
 
 			case 'inactive':
 				foreach ( $inactive_components as $component ) {
-					$info = $components[ $component ];
-					$current_components[] = array(
-						'name'        => $component,
-						'status'      => __( 'inactive', 'buddypress' ),
-						'title'       => $info['title'],
-						'description' => $info['description'],
-					);
+					$current_components[] = $this->get_component_info( $component );
 				}
 				break;
 		}
@@ -176,6 +165,93 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Activate/Deactivate a component.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function update_item( $request ) {
+		$component = $request['name'];
+
+		if ( ! $this->component_exists( $component ) ) {
+			return new WP_Error( 'bp_rest_component_does_not_exist',
+				__( 'Sorry, this component does not exist.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		if ( 'activate' === $request['action'] ) {
+			if ( bp_is_active( $component ) ) {
+				return new WP_Error( 'bp_rest_component_already_active',
+					__( 'Sorry, this component is already active.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
+
+			$component_info = $this->activate_helper( $component );
+		} else {
+			if ( ! bp_is_active( $component ) ) {
+				return new WP_Error( 'bp_rest_component_inactive',
+					__( 'Sorry, this component is not active.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
+
+			if ( array_key_exists( $component, bp_core_get_components( 'required' ) ) ) {
+				return new WP_Error( 'bp_rest_required_component',
+					__( 'Sorry, you cannot deactivate a required component.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
+
+			$component_info = $this->deactivate_helper( $component );
+		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $component_info, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a component is updated via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array             $component_info Component info.
+		 * @param WP_REST_Response  $response       The response data.
+		 * @param WP_REST_Request   $request        The request sent to the API.
+		 */
+		do_action( 'bp_rest_components_update_item', $component_info, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to update a component.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function update_item_permissions_check( $request ) {
+		return $this->get_items_permissions_check( $request );
+	}
+
+	/**
 	 * Prepares component data for return as an object.
 	 *
 	 * @since 0.1.0
@@ -214,11 +290,107 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	protected function verify_component_status( $id ) {
 		$active = __( 'active', 'buddypress' );
 
-		if ( 'core' === $id ) {
+		if ( 'core' === $id || bp_is_active( $id ) ) {
 			return $active;
 		}
 
-		return ( bp_is_active( $id ) ) ? $active : __( 'inactive', 'buddypress' );
+		return __( 'inactive', 'buddypress' );
+	}
+
+	/**
+	 * Deactivate component helper.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $component Component id.
+	 * @return array
+	 */
+	protected function deactivate_helper( $component ) {
+
+		$active_components =& buddypress()->active_components;
+
+		// Set for the rest of the page load.
+		unset( $active_components[ $component ] );
+
+		// Save in the db.
+		bp_update_option( 'bp-active-components', $active_components );
+
+		return $this->get_component_info( $component );
+	}
+
+	/**
+	 * Activate component helper.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $component Component id.
+	 * @return array
+	 */
+	protected function activate_helper( $component ) {
+
+		$active_components =& buddypress()->active_components;
+
+		// Set for the rest of the page load.
+		$active_components[ $component ] = 1;
+
+		// Save in the db.
+		bp_update_option( 'bp-active-components', $active_components );
+
+		// Ensure that dbDelta() is defined.
+		if ( ! function_exists( 'dbDelta' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
+
+		// Run the setup, in case tables have to be created.
+		require_once buddypress()->plugin_dir . 'bp-core/admin/bp-core-admin-schema.php';
+
+		bp_core_install( $active_components );
+		bp_core_add_page_mappings( $active_components );
+
+		return $this->get_component_info( $component );
+	}
+
+	/**
+	 * Get component info helper.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $component Component id.
+	 * @return array
+	 */
+	public function get_component_info( $component ) {
+
+		// Get all components.
+		$components = bp_core_get_components();
+
+		// Get specific component info.
+		$info = $components[ $component ];
+
+		// Return empty early.
+		if ( empty( $info ) ) {
+			return array();
+		}
+
+		return array(
+			'name'        => $component,
+			'status'      => $this->verify_component_status( $component ),
+			'title'       => $info['title'],
+			'description' => $info['description'],
+		);
+	}
+
+	/**
+	 * Does the component exist?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $component Component.
+	 * @return bool
+	 */
+	protected function component_exists( $component ) {
+		$keys = array_keys( bp_core_get_components() );
+
+		return in_array( $component, $keys, true );
 	}
 
 	/**
