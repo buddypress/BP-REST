@@ -11,7 +11,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * XProfile Data endpoints.
  *
- * Use /xprofile/data
+ * Use /xprofile/{field_id}/data/{user_id}
  *
  * @since 0.1.0
  */
@@ -22,7 +22,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param $field_endpoint BP_REST_XProfile_Fields_Endpoint
+	 * @var object
 	 */
 	protected $field_endpoint;
 
@@ -32,8 +32,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace      = 'buddypress/v1';
-		$this->rest_base      = buddypress()->profile->id . '/data';
+		$this->namespace      = bp_rest_namespace() . '/' . bp_rest_version();
+		$this->rest_base      = buddypress()->profile->id;
 		$this->field_endpoint = new BP_REST_XProfile_Fields_Endpoint();
 	}
 
@@ -43,18 +43,16 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
+		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<field_id>[\d]+)/data/(?P<user_id>[\d]+)', array(
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'create_item' ),
 				'permission_callback' => array( $this, 'create_item_permissions_check' ),
-				'args'                => $this->get_item_params(),
 			),
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array( $this, 'delete_item' ),
 				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
-				'args'                => $this->get_endpoint_args_for_item_schema( true ),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -117,7 +115,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response  The response data.
 		 * @param WP_REST_Request   $request   The request sent to the API.
 		 */
-		do_action( 'bp_rest_xprofile_data_create_item', $field, $value, $response, $request );
+		do_action( 'bp_rest_xprofile_data_create_item', $field, $user, $value, $response, $request );
 
 		return $response;
 	}
@@ -237,7 +235,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  BP_XProfile_Field $field    XProfile field object.
-	 * @param  WP_REST_Request   $request Full data about the request.
+	 * @param  WP_REST_Request  $request Full data about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $field, $request ) {
@@ -273,7 +271,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param BP_XProfile_Field $field_id XProfile field id.
-	 * @return array Links for the given plugin.
+	 * @return array
 	 */
 	protected function prepare_links( $field_id ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
@@ -378,35 +376,5 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		);
 
 		return $schema;
-	}
-
-	/**
-	 * Get the query params for a XProfile data.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return array
-	 */
-	public function get_item_params() {
-		$params                       = parent::get_collection_params();
-		$params['context']['default'] = 'view';
-
-		$params['user_id'] = array(
-			'description'       => __( 'Required if you want to load a specific user\'s data.', 'buddypress' ),
-			'type'              => 'integer',
-			'default'           => bp_loggedin_user_id(),
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['field_id'] = array(
-			'description'       => __( 'The ID of the field that data is from.', 'buddypress' ),
-			'default'           => 0,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		return $params;
 	}
 }

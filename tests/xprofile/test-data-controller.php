@@ -14,7 +14,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->endpoint     = new BP_REST_XProfile_Data_Endpoint();
 		$this->field        = new BP_REST_XProfile_Fields_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
-		$this->endpoint_url = '/buddypress/v1/' . buddypress()->profile->id . '/data';
+		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->profile->id . '/';
 		$this->group_id     = $this->bp_factory->xprofile_group->create();
 		$this->field_id     = $this->bp_factory->xprofile_field->create( [ 'field_group_id' => $this->group_id ] );
 
@@ -31,9 +31,10 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	public function test_register_routes() {
 		$routes = $this->server->get_routes();
 
-		// Main.
-		$this->assertArrayHasKey( $this->endpoint_url, $routes );
-		$this->assertCount( 2, $routes[ $this->endpoint_url ] );
+		$endpoint = $this->endpoint_url . '(?P<field_id>[\d]+)/data/(?P<user_id>[\d]+)';
+
+		$this->assertArrayHasKey( $endpoint, $routes );
+		$this->assertCount( 2, $routes[ $endpoint ] );
 	}
 
 	/**
@@ -56,7 +57,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	public function test_create_item() {
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
 
 		$params = $this->set_field_data();
@@ -70,7 +71,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group create_item
 	 */
 	public function test_create_item_user_not_logged_in() {
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
 		$request->add_header( 'content-type', 'application/json' );
 
 		$params = $this->set_field_data();
@@ -87,7 +88,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$this->bp->set_current_user( $u );
 
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
 		$request->add_header( 'content-type', 'application/json' );
 
 		$params = $this->set_field_data();
@@ -103,10 +104,10 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	public function test_create_item_invalid_field_id() {
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER, $this->user ) );
 		$request->add_header( 'content-type', 'application/json' );
 
-		$params = $this->set_field_data( [ 'field_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ] );
+		$params = $this->set_field_data();
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
@@ -119,10 +120,10 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	public function test_create_item_invalid_member_id() {
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$request->add_header( 'content-type', 'application/json' );
 
-		$params = $this->set_field_data( [ 'user_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ] );
+		$params = $this->set_field_data();
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
@@ -149,17 +150,14 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url );
-		$request->set_query_params( array(
-			'field_id' => $f,
-			'user_id'  => $this->user,
-		) );
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', $f, $this->user ) );
 		$response = $this->server->dispatch( $request );
 		$response = rest_ensure_response( $response );
 
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->assertEmpty( $all_data[0]['value'] );
 	}
@@ -178,17 +176,14 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u );
 
-		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url );
-		$request->set_query_params( array(
-			'field_id' => $f,
-			'user_id'  => $u,
-		) );
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', $f, $u ) );
 		$response = $this->server->dispatch( $request );
 		$response = rest_ensure_response( $response );
 
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->assertEmpty( $all_data[0]['value'] );
 	}
@@ -199,11 +194,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	public function test_delete_item_invalid_field_id() {
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url );
-		$request->set_query_params( array(
-			'field_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER,
-			'user_id'  => $this->user,
-		) );
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER, $this->user ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_invalid_field_id', $response, 404 );
@@ -215,11 +206,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	public function test_delete_item_invalid_user_id() {
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url );
-		$request->set_query_params( array(
-			'field_id' => $this->field_id,
-			'user_id'  => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER,
-		) );
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
@@ -229,11 +216,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group delete_item
 	 */
 	public function test_delete_item_user_not_logged_in() {
-		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url );
-		$request->set_query_params( array(
-			'field_id' => $this->field_id,
-			'user_id'  => $this->user,
-		) );
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
@@ -246,11 +229,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$this->bp->set_current_user( $u );
 
-		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url );
-		$request->set_query_params( array(
-			'field_id' => $this->field_id,
-			'user_id'  => $this->user,
-		) );
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'rest_user_cannot_view_field_data', $response, 403 );
@@ -277,9 +256,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 
 	protected function set_field_data( $args = array() ) {
 		return wp_parse_args( $args, array(
-			'field_id' => $this->field_id,
-			'user_id'  => $this->user,
-			'value'    => 'Field Value',
+			'value' => 'Field Value',
 		) );
 	}
 
@@ -290,7 +267,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	public function test_get_item_schema() {
-		$request    = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
+		$request    = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
 		$response   = $this->server->dispatch( $request );
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
@@ -303,12 +280,6 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	public function test_context_param() {
-		// Collection.
-		$request  = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
-		$response = $this->server->dispatch( $request );
-		$data     = $response->get_data();
-
-		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+		return true;
 	}
 }
