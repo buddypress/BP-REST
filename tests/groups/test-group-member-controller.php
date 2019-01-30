@@ -13,7 +13,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Group_Members_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
-		$this->endpoint_url = '/buddypress/v1/group/members';
+		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->groups->id . '/';
 		$this->user         = $this->factory->user->create( array(
 			'role'       => 'administrator',
 			'user_email' => 'admin@example.com',
@@ -31,11 +31,18 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	public function test_register_routes() {
-		$routes = $this->server->get_routes();
+		$routes   = $this->server->get_routes();
+		$endpoint = $this->endpoint_url . '(?P<group_id>[\d]+)/members';
 
 		// Main.
-		$this->assertArrayHasKey( $this->endpoint_url, $routes );
-		$this->assertCount( 2, $routes[ $this->endpoint_url ] );
+		$this->assertArrayHasKey( $endpoint, $routes );
+		$this->assertCount( 1, $routes[ $endpoint ] );
+
+		// Single.
+		$single_endpoint = $endpoint . '/(?P<user_id>[\d]+)';
+
+		$this->assertArrayHasKey( $single_endpoint, $routes );
+		$this->assertCount( 2, $routes[ $single_endpoint ] );
 	}
 
 	/**
@@ -54,10 +61,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u1 );
 
-		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
-		$request->set_query_params( array(
-			'group_id' => $g1,
-		) );
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . $g1 . '/members' );
 
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -101,9 +105,8 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u1 );
 
-		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . $g1 . '/members' );
 		$request->set_query_params( array(
-			'group_id' => $g1,
 			'page'     => 2,
 			'per_page' => 3,
 		) );
@@ -154,11 +157,9 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $this->group_id . '/members/' . $u  );
 		$request->set_query_params( array(
-			'group_id' => $this->group_id,
-			'user_id'  => $u,
-			'action'   => 'ban',
+			'action' => 'ban',
 		) );
 
 		$request->set_param( 'context', 'view' );
@@ -185,11 +186,9 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $this->group_id . '/members/' . $u );
 		$request->set_query_params( array(
-			'group_id' => $this->group_id,
-			'user_id'  => $u,
-			'action'   => 'join',
+			'action' => 'join',
 		) );
 
 		$request->set_param( 'context', 'view' );
@@ -216,11 +215,9 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $this->group_id . '/members/' . $u );
 		$request->set_query_params( array(
-			'group_id' => $this->group_id,
-			'user_id'  => $u,
-			'action'   => 'join',
+			'action' => 'join',
 		) );
 
 		$request->set_param( 'context', 'view' );
@@ -251,11 +248,9 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u );
 		$request->set_query_params( array(
-			'group_id' => $g1,
-			'user_id'  => $u,
-			'action'   => 'join',
+			'action' => 'join',
 		) );
 
 		$request->set_param( 'context', 'view' );
@@ -276,11 +271,9 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u );
 		$request->set_query_params( array(
-			'group_id' => $g1,
-			'user_id'  => $u,
-			'action'   => 'join',
+			'action' => 'join',
 		) );
 
 		$request->set_param( 'context', 'view' );
@@ -298,11 +291,9 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u1 );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $this->group_id . '/members/' . $u2 );
 		$request->set_query_params( array(
-			'group_id' => $this->group_id,
-			'user_id'  => $u2,
-			'action'   => 'join',
+			'action' => 'join',
 		) );
 
 		$request->set_param( 'context', 'view' );
@@ -312,7 +303,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	/**
-	 * @group update_item
+	 * @group delete_item
 	 */
 	public function test_member_can_remove_himself_from_group() {
 		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -327,12 +318,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u1 );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
-		$request->set_query_params( array(
-			'group_id' => $g1,
-			'user_id'  => $u1,
-			'action'   => 'remove',
-		) );
+		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $u1 );
 
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -349,7 +335,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	/**
-	 * @group update_item
+	 * @group delete_item
 	 */
 	public function test_member_can_not_remove_others_from_group() {
 		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -364,12 +350,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u1 );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
-		$request->set_query_params( array(
-			'group_id' => $g1,
-			'user_id'  => $u2,
-			'action'   => 'remove',
-		) );
+		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $u2 );
 
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -378,7 +359,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	/**
-	 * @group update_item
+	 * @group delete_item
 	 */
 	public function test_admin_can_remove_member_from_group() {
 		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -393,12 +374,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
-		$request->set_query_params( array(
-			'group_id' => $g1,
-			'user_id'  => $u1,
-			'action'   => 'remove',
-		) );
+		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $u1 );
 
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -415,7 +391,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	/**
-	 * @group update_item
+	 * @group delete_item
 	 */
 	public function test_group_admin_can_remove_member_from_group() {
 		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -430,12 +406,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u3 );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
-		$request->set_query_params( array(
-			'group_id' => $g1,
-			'user_id'  => $u1,
-			'action'   => 'remove',
-		) );
+		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $u1 );
 
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -452,7 +423,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	/**
-	 * @group update_item
+	 * @group delete_item
 	 */
 	public function test_group_admin_can_not_remove_himself_from_group() {
 		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -466,12 +437,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u2 );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
-		$request->set_query_params( array(
-			'group_id' => $g1,
-			'user_id'  => $u2,
-			'action'   => 'remove',
-		) );
+		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $u2 );
 
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -489,10 +455,8 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $this->group_id . '/members/' . $u );
 		$request->set_query_params( array(
-			'group_id' => $this->group_id,
-			'user_id'  => $u,
 			'action'   => 'promote',
 			'role'     => 'mod',
 		) );
@@ -528,10 +492,8 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u2 );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u1 );
 		$request->set_query_params( array(
-			'group_id' => $g1,
-			'user_id'  => $u1,
 			'action'   => 'promote',
 			'role'     => 'mod',
 		) );
@@ -568,10 +530,8 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u3 );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u1 );
 		$request->set_query_params( array(
-			'group_id' => $g1,
-			'user_id'  => $u1,
 			'action'   => 'promote',
 			'role'     => 'mod',
 		) );
@@ -598,10 +558,8 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u2 );
 		$request->set_query_params( array(
-			'group_id' => $g1,
-			'user_id'  => $u2,
 			'action'   => 'demote',
 			'role'     => 'member',
 		) );
@@ -638,10 +596,8 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $u3 );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u2 );
 		$request->set_query_params( array(
-			'group_id' => $g1,
-			'user_id'  => $u2,
 			'action'   => 'demote',
 			'role'     => 'member',
 		) );
@@ -661,10 +617,10 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$group_id = REST_TESTS_IMPOSSIBLY_HIGH_NUMBER;
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $group_id . '/members/' . $u );
 		$request->set_query_params( array(
-			'group_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER,
-			'user_id'  => $u,
 			'action'   => 'promote',
 			'role'     => 'mod',
 		) );
@@ -679,7 +635,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group update_item
 	 */
 	public function test_update_item_user_not_logged_in() {
-		$request  = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request  = new WP_REST_Request( 'PUT', $this->endpoint_url . $this->group_id . '/members/0' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
@@ -734,7 +690,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	public function test_get_item_schema() {
-		$request    = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
+		$request    = new WP_REST_Request( 'OPTIONS', $this->endpoint_url . $this->group_id . '/members' );
 		$response   = $this->server->dispatch( $request );
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
@@ -762,7 +718,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 
 	public function test_context_param() {
 		// Collection.
-		$request  = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
+		$request  = new WP_REST_Request( 'OPTIONS', $this->endpoint_url . $this->group_id . '/members' );
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 

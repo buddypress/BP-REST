@@ -11,6 +11,9 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Group members endpoints.
  *
+ * Use /groups/{group_id}/members
+ * Use /groups/{group_id}/members/{user_id}
+ *
  * @since 0.1.0
  */
 class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
@@ -20,7 +23,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param $groups_endpoint BP_REST_Groups_Endpoint
+	 * @var object
 	 */
 	protected $groups_endpoint;
 
@@ -29,7 +32,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param $members_endpoint BP_REST_Members_Endpoint
+	 * @var object
 	 */
 	protected $members_endpoint;
 
@@ -39,8 +42,8 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace        = 'buddypress/v1';
-		$this->rest_base        = 'group/members';
+		$this->namespace        = bp_rest_namespace() . '/' . bp_rest_version();
+		$this->rest_base        = buddypress()->groups->id;
 		$this->groups_endpoint  = new BP_REST_Groups_Endpoint();
 		$this->members_endpoint = new BP_REST_Members_Endpoint();
 	}
@@ -51,17 +54,26 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
+		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<group_id>[\d]+)/members', array(
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_items' ),
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				'args'                => $this->get_collection_params(),
 			),
+			'schema' => array( $this, 'get_item_schema' ),
+		) );
+		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<group_id>[\d]+)/members/(?P<user_id>[\d]+)', array(
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array( $this, 'update_item' ),
 				'permission_callback' => array( $this, 'update_item_permissions_check' ),
+				'args'                => $this->get_update_collection_params(),
+			),
+			array(
+				'methods'             => WP_REST_Server::DELETABLE,
+				'callback'            => array( $this, 'delete_item' ),
+				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
 				'args'                => $this->get_update_collection_params(),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
@@ -292,20 +304,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 						return true;
 					}
 
-				case 'remove' :
-					// Users may not leave group if it'll leave the group without an admin.
-					$group_admins = groups_get_group_admins( $group->id );
-					if ( 1 === count( $group_admins ) && $loggedin_user_id === $group_admins[0]->user_id && $user->ID === $loggedin_user_id ) {
-						return new WP_Error( 'bp_rest_group_member_cannot_remove',
-							__( 'Sorry, you are not allowed to leave this group.', 'buddypress' ),
-							array(
-								'status' => rest_authorization_required_code(),
-							)
-						);
-					} else {
-						return true;
-					}
-
 				default :
 					return false;
 			}
@@ -313,7 +311,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 		} else {
 			// Case 2: User is making a request about another user.
 			switch ( $request['action'] ) {
-				case 'remove' :
 				case 'ban' :
 				case 'unban' :
 				case 'promote' :
@@ -333,6 +330,130 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 					return false;
 			}
 		}
+	}
+
+	/**
+	 * Delete a group membership.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function delete_item( $request ) {
+		$member  = new BP_Groups_Member( $request['user_id'], $request['group_id'] );
+		$removed = $member->remove();
+
+		if ( ! $removed ) {
+			return new WP_Error( 'bp_rest_group_member_failed_to_remove',
+				__( 'Could not remove member from this group.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $member, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		$user  = bp_rest_get_user( $request['user_id'] );
+		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+
+		/**
+		 * Fires after a group member is deleted via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param WP_User          $user     The updated member.
+		 * @param BP_Groups_Member $member   The group member object.
+		 * @param BP_Groups_Group  $group    The group object.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'bp_rest_group_member_delete_item', $user, $member, $group, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to delete a group member.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return WP_Error|bool
+	 */
+	public function delete_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to delete a group membership.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		$user = bp_rest_get_user( $request['user_id'] );
+
+		if ( empty( $user->ID ) ) {
+			return new WP_Error( 'bp_rest_group_member_invalid_id',
+				__( 'Invalid group member id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+
+		if ( ! $group ) {
+			return new WP_Error( 'bp_rest_group_invalid_id',
+				__( 'Invalid group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		// Site administrators can do anything.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			return true;
+		}
+
+		$loggedin_user_id = bp_loggedin_user_id();
+
+		if ( $user->ID !== $loggedin_user_id ) {
+			if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
+				return new WP_Error( 'bp_rest_group_member_cannot_remove',
+					__( 'Sorry, you are not allowed to remove this group member.', 'buddypress' ),
+					array(
+						'status' => rest_authorization_required_code(),
+					)
+				);
+			}
+		} else {
+			// Special case for self-removal: don't allow if it'd leave a group with no admins.
+			$user             = bp_rest_get_user( $request['user_id'] );
+			$group            = $this->groups_endpoint->get_group_object( $request['group_id'] );
+			$loggedin_user_id = bp_loggedin_user_id();
+
+			$group_admins = groups_get_group_admins( $group->id );
+			if ( 1 === count( $group_admins ) && $loggedin_user_id === $group_admins[0]->user_id && $user->ID === $loggedin_user_id ) {
+				return new WP_Error( 'bp_rest_group_member_cannot_remove',
+					__( 'Sorry, you are not allowed to leave this group.', 'buddypress' ),
+					array(
+						'status' => rest_authorization_required_code(),
+					)
+				);
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -485,22 +606,6 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 			'default'           => '',
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_text_field',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['per_page'] = array(
-			'description'       => __( 'Maximum number of results returned per result set.', 'buddypress' ),
-			'default'           => 20,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['page'] = array(
-			'description'       => __( 'Offset the result set by a specific number of pages of results.', 'buddypress' ),
-			'default'           => 1,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

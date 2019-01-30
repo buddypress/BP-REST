@@ -9,6 +9,40 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
+ * BuddyPress REST API namespace.
+ *
+ * @since 0.1.0
+ *
+ * @return string
+ */
+function bp_rest_namespace() {
+
+	/**
+	 * Filter API namespace.
+	 *
+	 * @since 0.1.0
+	 */
+	return apply_filters( 'bp_rest_namespace', 'buddypress' );
+}
+
+/**
+ * BuddyPress REST API version.
+ *
+ * @since 0.1.0
+ *
+ * @return string
+ */
+function bp_rest_version() {
+
+	/**
+	 * Filter API version.
+	 *
+	 * @since 0.1.0
+	 */
+	return apply_filters( 'bp_rest_version', 'v1' );
+}
+
+/**
  * Get user url with new.
  *
  * @todo Update members path to the filterable one.
@@ -19,7 +53,11 @@ defined( 'ABSPATH' ) || exit;
  * @return string
  */
 function bp_rest_get_user_url( $user_id ) {
-	return sprintf( '/buddypress/v1/members/%d', $user_id );
+	return sprintf( '/%s/%s/members/%d',
+		bp_rest_namespace(),
+		bp_rest_version(),
+		$user_id
+	);
 }
 
 /**
