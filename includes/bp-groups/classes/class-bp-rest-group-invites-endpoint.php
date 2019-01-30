@@ -11,6 +11,9 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Group Invites endpoints.
  *
+ * Use /groups/{group_id}/invites
+ * Use /groups/{group_id}/invites/{user_id}
+ *
  * @since 0.1.0
  */
 class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
@@ -30,7 +33,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace       = 'buddypress/v1';
+		$this->namespace       = bp_rest_namespace() . '/' . bp_rest_version();
 		$this->rest_base       = buddypress()->groups->id;
 		$this->groups_endpoint = new BP_REST_Groups_Endpoint();
 	}

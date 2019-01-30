@@ -11,6 +11,9 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Group members endpoints.
  *
+ * Use /groups/{group_id}/members
+ * Use /groups/{group_id}/members/{user_id}
+ *
  * @since 0.1.0
  */
 class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {

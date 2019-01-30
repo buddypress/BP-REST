@@ -31,9 +31,8 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	public function test_register_routes() {
-		$routes = $this->server->get_routes();
-
-		$endpoint = $this->endpoint_url .  '(?P<group_id>[\d]+)/members';
+		$routes   = $this->server->get_routes();
+		$endpoint = $this->endpoint_url . '(?P<group_id>[\d]+)/members';
 
 		// Main.
 		$this->assertArrayHasKey( $endpoint, $routes );
