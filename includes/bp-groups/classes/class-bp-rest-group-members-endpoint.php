@@ -20,7 +20,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param $groups_endpoint BP_REST_Groups_Endpoint
+	 * @var object
 	 */
 	protected $groups_endpoint;
 
@@ -29,7 +29,7 @@ class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param $members_endpoint BP_REST_Members_Endpoint
+	 * @var object
 	 */
 	protected $members_endpoint;
 
