@@ -53,7 +53,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-		$data     = $all_data;
+		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
 			$field_group = $this->endpoint->get_xprofile_field_group_object( $data['id'] );
@@ -64,14 +64,22 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	/**
 	 * @group get_items
 	 */
-	public function test_get_items_user_not_logged_in() {
-		$this->bp_factory->xprofile_group->create_many( 3 );
+	public function test_get_items_publicly() {
+		$this->bp_factory->xprofile_group->create_many( 5 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$field_group = $this->endpoint->get_xprofile_field_group_object( $data['id'] );
+			$this->check_group_data( $field_group, $data, 'view', $response->get_links() );
+		}
 	}
 
 	/**
@@ -97,12 +105,19 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_user_not_logged_in() {
-		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
+	public function test_get_item_publicly() {
+		$field_group = $this->endpoint->get_xprofile_field_group_object( $this->group_id );
+		$this->assertEquals( $this->group_id, $field_group->id );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $field_group->id ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->check_group_data( $field_group, $all_data[0], 'view', $response->get_links() );
 	}
 
 	/**

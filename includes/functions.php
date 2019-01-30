@@ -53,7 +53,11 @@ function bp_rest_version() {
  * @return string
  */
 function bp_rest_get_user_url( $user_id ) {
-	return sprintf( '/buddypress/v1/members/%d', $user_id );
+	return sprintf( '/%s/%s/members/%d',
+		bp_rest_namespace(),
+		bp_rest_version(),
+		$user_id
+	);
 }
 
 /**
