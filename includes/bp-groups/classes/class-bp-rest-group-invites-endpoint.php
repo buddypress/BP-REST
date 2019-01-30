@@ -20,7 +20,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param object BP_REST_Groups_Endpoint
+	 * @var object
 	 */
 	protected $groups_endpoint;
 
@@ -31,7 +31,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function __construct() {
 		$this->namespace       = 'buddypress/v1';
-		$this->rest_base       = 'group/invites';
+		$this->rest_base       = buddypress()->groups->id;
 		$this->groups_endpoint = new BP_REST_Groups_Endpoint();
 	}
 
@@ -41,42 +41,31 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
+		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<group_id>[\d]+)/invites', array(
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_items' ),
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
 				'args'                => $this->get_collection_params(),
 			),
+			'schema' => array( $this, 'get_item_schema' ),
+		) );
+
+		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<group_id>[\d]+)/invites/(?P<user_id>[\d]+)', array(
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'create_item' ),
 				'permission_callback' => array( $this, 'create_item_permissions_check' ),
-				'args'                => $this->get_endpoint_args_for_item_schema( true ),
 			),
-			'schema' => array( $this, 'get_item_schema' ),
-		) );
-
-		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array( $this, 'update_item' ),
 				'permission_callback' => array( $this, 'update_item_permissions_check' ),
-				'args'                => array(
-					'context' => $this->get_context_param( array(
-						'default' => 'edit',
-					) ),
-				),
 			),
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array( $this, 'delete_item' ),
 				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
-				'args'                => array(
-					'context' => $this->get_context_param( array(
-						'default' => 'edit',
-					) ),
-				),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -268,7 +257,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function update_item( $request ) {
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-		$user  = bp_rest_get_user( $request['id'] );
+		$user  = bp_rest_get_user( $request['user_id'] );
 
 		if ( empty( $user->ID ) ) {
 			return new WP_Error( 'bp_rest_member_invalid_id',
@@ -337,7 +326,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function delete_item( $request ) {
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-		$user  = bp_rest_get_user( $request['id'] );
+		$user  = bp_rest_get_user( $request['user_id'] );
 
 		if ( empty( $user->ID ) ) {
 			return new WP_Error( 'bp_rest_member_invalid_id',
