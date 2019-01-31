@@ -48,6 +48,11 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 		$this->assertNotEmpty( $all_data );
 
 		$this->assertTrue( 10 === count( $all_data ) );
+
+		foreach ( $all_data as $component ) {
+			$component = $this->endpoint->get_component_info( $component['name'] );
+			$this->check_component_data( $component, $component );
+		}
 	}
 
 	/**
@@ -73,6 +78,11 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 		$this->assertNotEmpty( $all_data );
 
 		$this->assertTrue( 10 === count( $all_data ) );
+
+		foreach ( $all_data as $component ) {
+			$component = $this->endpoint->get_component_info( $component['name'] );
+			$this->check_component_data( $component, $component );
+		}
 	}
 
 	/**
@@ -150,27 +160,9 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 		$this->assertNotEmpty( $all_data );
 
 		$this->assertTrue( 'inactive' === $all_data[0]['status'] );
-	}
 
-	/**
-	 * @group update_item
-	 */
-	public function test_activate_component() {
-		$this->bp->set_current_user( $this->user );
-
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
-		$request->set_query_params( array(
-			'name'   => 'blogs',
-			'action' => 'activate',
-		) );
-		$response = $this->server->dispatch( $request );
-
-		$this->assertEquals( 200, $response->get_status() );
-
-		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
-
-		$this->assertTrue( 'active' === $all_data[0]['status'] );
+		$component = $this->endpoint->get_component_info( 'blogs' );
+		$this->check_component_data( $component, $all_data[0] );
 	}
 
 	/**
@@ -214,6 +206,13 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 
 	public function test_prepare_item() {
 		return true;
+	}
+
+	protected function check_component_data( $component, $data ) {
+		$this->assertEquals( $component['name'], $data['name'] );
+		$this->assertEquals( $component['status'], $data['status'] );
+		$this->assertEquals( $component['title'], $data['title'] );
+		$this->assertEquals( $component['description'], $data['description'] );
 	}
 
 	public function test_get_item_schema() {
