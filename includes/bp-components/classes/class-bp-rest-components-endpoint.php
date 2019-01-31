@@ -176,7 +176,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 		$component = $request['name'];
 
 		if ( ! $this->component_exists( $component ) ) {
-			return new WP_Error( 'bp_rest_component_does_not_exist',
+			return new WP_Error( 'bp_rest_component_nonexistent',
 				__( 'Sorry, this component does not exist.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -184,7 +184,17 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( 'activate' === $request['action'] ) {
+		$action = $request['action'];
+		if ( empty( $action ) || ! in_array( $action, [ 'activate', 'deactivate' ], true ) ) {
+			return new WP_Error( 'bp_rest_component_invalid_action',
+				__( 'Sorry, this is not a valid action.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		if ( 'activate' === $action ) {
 			if ( bp_is_active( $component ) ) {
 				return new WP_Error( 'bp_rest_component_already_active',
 					__( 'Sorry, this component is already active.', 'buddypress' ),

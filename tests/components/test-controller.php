@@ -168,6 +168,54 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 	/**
 	 * @group update_item
 	 */
+	public function test_update_item_nonexistent_component() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'name'   => 'blogssss',
+			'action' => 'deactivate',
+		) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_component_nonexistent', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_empty_action() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'name'   => 'blogs',
+			'action' => '',
+		) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_component_invalid_action', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_invalid_action() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
+		$request->set_query_params( array(
+			'name'   => 'blogs',
+			'action' => 'update',
+		) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_component_invalid_action', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
 	public function test_update_item_user_is_not_logged_in() {
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url );
 		$request->set_query_params( array(
