@@ -25,6 +25,7 @@ Please use and provide feedback!
 - [x] XProfile Groups `http://site.com/wp-json/buddypress/v1/xprofile/groups`
 - [x] XProfile Data `http://site.com/wp-json/buddypress/v1/xprofile/<field_id>/data/<user_id>`
 - [x] Members `http://site.com/wp-json/buddypress/v1/members`
+- [x] Components `http://site.com/wp-json/buddypress/v1/components`
 
 ## Endpoints (Components) Pending
 
@@ -32,7 +33,6 @@ Please use and provide feedback!
 - Emails
 - Friends
 - Signups
-- Component
 - Settings
 
 ## Installation

@@ -51,6 +51,10 @@ add_action( 'rest_api_init', function() {
 
 	require_once dirname( __FILE__ ) . '/includes/functions.php';
 
+	require_once( dirname( __FILE__ ) . '/includes/bp-components/classes/class-bp-rest-components-endpoint.php' );
+	$controller = new BP_REST_Components_Endpoint();
+	$controller->register_routes();
+
 	if ( bp_is_active( 'members' ) ) {
 		// Member response filters.
 		require_once( dirname( __FILE__ ) . '/includes/bp-members/bp-members-filters.php' );
