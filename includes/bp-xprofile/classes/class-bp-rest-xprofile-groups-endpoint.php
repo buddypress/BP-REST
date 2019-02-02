@@ -19,13 +19,23 @@ defined( 'ABSPATH' ) || exit;
 class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 	/**
+	 * XProfile Fields Class.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var object
+	 */
+	protected $fields_endpoint;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace = bp_rest_namespace() . '/' . bp_rest_version();
-		$this->rest_base = buddypress()->profile->id . '/groups';
+		$this->namespace      = bp_rest_namespace() . '/' . bp_rest_version();
+		$this->rest_base      = buddypress()->profile->id . '/groups';
+		$this->fields_endpoint = new BP_REST_XProfile_Fields_Endpoint();
 	}
 
 	/**
@@ -45,7 +55,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'create_item' ),
 				'permission_callback' => array( $this, 'create_item_permissions_check' ),
-				'args'                => $this->get_endpoint_args_for_item_schema( true ),
+				'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -72,7 +82,6 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 *
 	 * @return WP_REST_Response List of XProfile field groups.
 	 */
 	public function get_items( $request ) {
@@ -132,7 +141,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return bool
+	 * @return boolean
 	 */
 	public function get_items_permissions_check( $request ) {
 		return true;
@@ -186,10 +195,10 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return bool
+	 * @return boolean
 	 */
 	public function get_item_permissions_check( $request ) {
-		return true;
+		return $this->get_items_permissions_check( $request );
 	}
 
 	/**
@@ -362,7 +371,6 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @param BP_XProfile_Group $group   XProfile field group data.
 	 * @param WP_REST_Request   $request Full data about the request.
-	 *
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $group, $request ) {
@@ -376,11 +384,10 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 		// If the fields have been requested, we populate them.
 		if ( $request['fetch_fields'] ) {
-			$data['fields']    = array();
-			$fields_controller = new BP_REST_XProfile_Fields_Endpoint();
+			$data['fields'] = array();
 
 			foreach ( $group->fields as $field ) {
-				$data['fields'][] = $fields_controller->assemble_response_data( $field, $request );
+				$data['fields'][] = $this->fields_endpoint->assemble_response_data( $field, $request );
 			}
 		}
 
@@ -521,6 +528,9 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The description of the XProfile field group.', 'buddypress' ),
 					'type'        => 'string',
+					'arg_options' => array(
+						'sanitize_callback' => 'sanitize_text_field',
+					),
 				),
 
 				'group_order' => array(
@@ -561,6 +571,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'ID of the field group that have fields.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -573,16 +584,16 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 		$params['user_id'] = array(
 			'description'       => __( 'Required if you want to load a specific user\'s data.', 'buddypress' ),
-			'type'              => 'integer',
 			'default'           => bp_loggedin_user_id(),
+			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['member_type'] = array(
 			'description'       => __( 'Limit fields by those restricted to a given member type, or array of member types. If `$user_id` is provided, the value of `$member_type` will be overridden by the member types of the provided user. The special value of \'any\' will return only those fields that are unrestricted by member type - i.e., those applicable to any type.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => null,
+			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_member_types',
 			'validate_callback' => 'bp_rest_validate_member_types',
 		);
@@ -624,15 +635,15 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 		$params['exclude_groups'] = array(
 			'description'       => __( 'Ensure result set excludes specific profile field groups.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => false,
+			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 		);
 
 		$params['exclude_fields'] = array(
 			'description'       => __( 'Ensure result set excludes specific profile fields.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => false,
+			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 		);
 
@@ -659,16 +670,16 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 
 		$params['user_id'] = array(
 			'description'       => __( 'Required if you want to load a specific user\'s data.', 'buddypress' ),
-			'type'              => 'integer',
 			'default'           => bp_loggedin_user_id(),
+			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['member_type'] = array(
 			'description'       => __( 'Limit fields by those restricted to a given member type, or array of member types. If `$user_id` is provided, the value of `$member_type` will be overridden by the member types of the provided user. The special value of \'any\' will return only those fields that are unrestricted by member type - i.e., those applicable to any type.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => null,
+			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_member_types',
 			'validate_callback' => 'bp_rest_validate_member_types',
 		);

@@ -708,6 +708,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'default'           => false,
 			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['exclude_fields'] = array(
@@ -715,6 +716,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'default'           => false,
 			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['update_meta_cache'] = array(
