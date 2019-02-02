@@ -42,7 +42,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array( $this, 'update_item' ),
 				'permission_callback' => array( $this, 'update_item_permissions_check' ),
-				'args'                => $this->get_endpoint_args_for_item_schema( true ),
+				'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -416,7 +416,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 			'title'      => 'component',
 			'type'       => 'object',
 			'properties' => array(
-				'name'                => array(
+				'name'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Name of the object.', 'buddypress' ),
 					'type'        => 'string',
@@ -425,7 +425,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 					),
 				),
 
-				'status'                => array(
+				'status'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the object is active or inactive.', 'buddypress' ),
 					'type'        => 'string',
@@ -435,7 +435,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 					),
 				),
 
-				'title'                 => array(
+				'title'           => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML title of the object.', 'buddypress' ),
 					'type'        => 'string',
@@ -444,7 +444,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 					),
 				),
 
-				'description'                 => array(
+				'description'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML description of the object.', 'buddypress' ),
 					'type'        => 'string',
