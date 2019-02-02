@@ -1004,7 +1004,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => 'active',
 			'type'              => 'string',
 			'enum'              => array( 'active', 'newest', 'alphabetical', 'random', 'popular', 'most-forum-topics', 'most-forum-posts' ),
-			'sanitize_callback' => 'rest_validate_request_arg',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['order'] = array(
