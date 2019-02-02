@@ -65,6 +65,12 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		) );
 		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<group_id>[\d]+)/members/(?P<user_id>[\d]+)', array(
 			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'create_item' ),
+				'permission_callback' => array( $this, 'create_item_permissions_check' ),
+				'args'                => $this->get_update_collection_params(),
+			),
+			array(
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array( $this, 'update_item' ),
 				'permission_callback' => array( $this, 'update_item_permissions_check' ),
@@ -157,6 +163,131 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 		return $this->groups_endpoint->get_item_permissions_check( $request );
+	}
+
+	/**
+	 * Add member to a group.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Request|WP_Error
+	 */
+	public function create_item( $request ) {
+		$user         = bp_rest_get_user( $request['user_id'] );
+		$group        = $this->groups_endpoint->get_group_object( $request['group_id'] );
+		$role         = $request['role'];
+		$group_id     = $group->id;
+		$group_member = new BP_Groups_Member( $user->ID, $group_id );
+
+		// Add member to the group.
+		$group_member->group_id     = $group_id;
+		$group_member->user_id      = $user->ID;
+		$group_member->is_admin     = 0;
+		$group_member->date_modified = bp_core_current_time();
+		$group_member->is_confirmed  = 1;
+		$saved                      = $group_member->save();
+
+		if ( ! $saved ) {
+			return new WP_Error( 'bp_rest_group_member_failed_to_join',
+				__( 'Could not add member to the group.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// If new role set, promote it too.
+		if ( $saved && 'member' !== $role ) {
+			groups_promote_member( $user->ID, $group_id, $role );
+		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $group_member, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a member us added to a group via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param WP_User          $user         The user.
+		 * @param BP_Groups_Member $group_member The group member object.
+		 * @param BP_Groups_Group  $group        The group object.
+		 * @param WP_REST_Response $response     The response data.
+		 * @param WP_REST_Request  $request      The request sent to the API.
+		 */
+		do_action( 'bp_rest_group_member_create_item', $user, $group_member, $group, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Checks if a given request has access to join a group.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return true|WP_Error
+	 */
+	public function create_item_permissions_check( $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to make an update.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		$user = bp_rest_get_user( $request['user_id'] );
+
+		if ( empty( $user->ID ) ) {
+			return new WP_Error( 'bp_rest_group_member_invalid_id',
+				__( 'Invalid group member id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+
+		if ( ! $group ) {
+			return new WP_Error( 'bp_rest_group_invalid_id',
+				__( 'Invalid group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		// Site administrators can do anything.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			return true;
+		}
+
+		$loggedin_user_id = bp_loggedin_user_id();
+		if ( $loggedin_user_id === $user->ID ) {
+
+			// Users may only freely join public groups. @todo Private requests.
+			if ( 'public' !== $group->status && ! groups_is_user_member( $loggedin_user_id, $group->id ) ) {
+				return new WP_Error( 'bp_rest_group_member_cannot_join',
+					__( 'Sorry, you are not allowed to join this group.', 'buddypress' ),
+					array(
+						'status' => rest_authorization_required_code(),
+					)
+				);
+			}
+
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	/**
@@ -288,47 +419,25 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		$loggedin_user_id = bp_loggedin_user_id();
 
-		if ( $loggedin_user_id === $user->ID ) {
-			// Case 1: User is making a self-request.
-			switch ( $request['action'] ) {
-				case 'join' :
-					// Users may only freely join public groups. @todo Private requests.
-					if ( 'public' !== $group->status && ! groups_is_user_member( $loggedin_user_id, $group->id ) ) {
-						return new WP_Error( 'bp_rest_group_member_cannot_join',
-							__( 'Sorry, you are not allowed to join this group.', 'buddypress' ),
-							array(
-								'status' => rest_authorization_required_code(),
-							)
-						);
-					} else {
-						return true;
-					}
+		// Case 2: User is making a request about another user.
+		switch ( $request['action'] ) {
+			case 'ban' :
+			case 'unban' :
+			case 'promote' :
+			case 'demote' :
+				if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
+					return new WP_Error( 'bp_rest_group_member_cannot_' . $request['action'],
+						sprintf( __( 'Sorry, you are not allowed to %s this group member.', 'buddypress' ), esc_attr( $request['action'] ) ),
+						array(
+							'status' => rest_authorization_required_code(),
+						)
+					);
+				} else {
+					return true;
+				}
 
-				default :
-					return false;
-			}
-
-		} else {
-			// Case 2: User is making a request about another user.
-			switch ( $request['action'] ) {
-				case 'ban' :
-				case 'unban' :
-				case 'promote' :
-				case 'demote' :
-					if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
-						return new WP_Error( 'bp_rest_group_member_cannot_' . $request['action'],
-							sprintf( __( 'Sorry, you are not allowed to %s this group member.', 'buddypress' ), esc_attr( $request['action'] ) ),
-							array(
-								'status' => rest_authorization_required_code(),
-							)
-						);
-					} else {
-						return true;
-					}
-
-				default :
-					return false;
-			}
+			default :
+				return false;
 		}
 	}
 
