@@ -1,6 +1,6 @@
 <?php
 /**
- * BP REST: BP_REST_Group_Members_Endpoint class
+ * BP REST: BP_REST_Group_Membership_Endpoint class
  *
  * @package BuddyPress
  * @since 0.1.0
@@ -9,14 +9,14 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Group members endpoints.
+ * Group membership endpoints.
  *
  * Use /groups/{group_id}/members
  * Use /groups/{group_id}/members/{user_id}
  *
  * @since 0.1.0
  */
-class BP_REST_Group_Members_Endpoint extends WP_REST_Controller {
+class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 	/**
 	 * Reuse some parts of the BP_REST_Groups_Endpoint class.

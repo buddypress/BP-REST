@@ -1,9 +1,9 @@
 <?php
 /**
- * Group Members Endpoint Tests.
+ * Group Membership Endpoint Tests.
  *
  * @package BP_REST
- * @group group-members
+ * @group group-membership
  */
 class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
@@ -11,7 +11,7 @@ class BP_Test_REST_Group_Members_Endpoint extends WP_Test_REST_Controller_Testca
 		parent::setUp();
 
 		$this->bp_factory   = new BP_UnitTest_Factory();
-		$this->endpoint     = new BP_REST_Group_Members_Endpoint();
+		$this->endpoint     = new BP_REST_Group_Membership_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->groups->id . '/';
 		$this->user         = $this->factory->user->create( array(
