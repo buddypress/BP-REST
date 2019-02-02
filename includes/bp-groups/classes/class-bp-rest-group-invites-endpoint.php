@@ -488,24 +488,27 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			'title'      => 'invite',
 			'type'       => 'object',
 			'properties' => array(
-				'user_id'            => array(
+				'user_id'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID for the user object.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-				'invite_sent'  => array(
+
+				'invite_sent'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Date on which the invite was sent.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
-				'inviter_id'  => array(
+
+				'inviter_id'      => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID of the user who made the invite.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'is_confirmed'  => array(
+
+				'is_confirmed'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Status of the invite.', 'buddypress' ),
 					'type'        => 'boolean',
@@ -538,23 +541,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		$params['is_confirmed'] = array(
 			'description'       => __( 'Limit result set to (un)confirmed invites.', 'buddypress' ),
 			'default'           => false,
-			'type'              => 'bollean',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['per_page'] = array(
-			'description'       => __( 'Maximum number of results returned per result set.', 'buddypress' ),
-			'default'           => 20,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['page'] = array(
-			'description'       => __( 'Offset the result set by a specific number of pages of results.', 'buddypress' ),
-			'default'           => 1,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
+			'type'              => 'boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

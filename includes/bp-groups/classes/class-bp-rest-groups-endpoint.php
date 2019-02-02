@@ -965,7 +965,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_full_width() ), number_format_i18n( bp_core_avatar_full_height() ) ),
 				'type'        => 'string',
 				'format'      => 'uri',
-				'context'     => array( 'embed', 'view', 'edit' ),
+				'context'     => array( 'view', 'edit' ),
 			);
 
 			$avatar_properties['thumb'] = array(
@@ -973,13 +973,13 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
 				'type'        => 'string',
 				'format'      => 'uri',
-				'context'     => array( 'embed', 'view', 'edit' ),
+				'context'     => array( 'view', 'edit' ),
 			);
 
 			$schema['properties']['avatar_urls'] = array(
 				'description' => __( 'Avatar URLs for the group.', 'buddypress' ),
 				'type'        => 'object',
-				'context'     => array( 'embed', 'view', 'edit' ),
+				'context'     => array( 'view', 'edit' ),
 				'readonly'    => true,
 				'properties'  => $avatar_properties,
 			);
@@ -1004,6 +1004,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => 'active',
 			'type'              => 'string',
 			'enum'              => array( 'active', 'newest', 'alphabetical', 'random', 'popular', 'most-forum-topics', 'most-forum-posts' ),
+			'sanitize_callback' => 'sanitize_text_field',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -1012,6 +1013,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => 'desc',
 			'type'              => 'string',
 			'enum'              => array( 'asc', 'desc' ),
+			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -1019,6 +1021,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Group statuses to limit results to.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -1027,6 +1030,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => 'date_created',
 			'type'              => 'string',
 			'enum'              => array( 'date_created', 'last_activity', 'total_member_count', 'name', 'random' ),
+			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -1110,22 +1114,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Whether results should include hidden groups.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['per_page'] = array(
-			'description'       => __( 'Maximum number of results returned per result set.', 'buddypress' ),
-			'default'           => 20,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['page'] = array(
-			'description'       => __( 'Offset the result set by a specific number of pages of results.', 'buddypress' ),
-			'default'           => 1,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

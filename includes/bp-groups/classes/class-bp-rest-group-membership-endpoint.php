@@ -761,7 +761,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			'default'           => 'promote',
 			'type'              => 'string',
 			'enum'              => array( 'promote', 'demote', 'ban', 'unban' ),
-			'sanitize_callback' => 'sanitize_text_field',
+			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -770,7 +770,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			'default'           => 'member',
 			'type'              => 'string',
 			'enum'              => array( 'member', 'mod', 'admin' ),
-			'sanitize_callback' => 'sanitize_text_field',
+			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
