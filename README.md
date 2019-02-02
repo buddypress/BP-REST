@@ -18,22 +18,25 @@ Please use and provide feedback!
 
 - [x] Activity `http://site.com/wp-json/buddypress/v1/activity`
 - [x] Groups `http://site.com/wp-json/buddypress/v1/groups`
-- [x] Group Members `http://site.com/wp-json/buddypress/v1/groups/<group_id>/members`
+- [x] Group Membership `http://site.com/wp-json/buddypress/v1/groups/<group_id>/members`
 - [x] Group Invites `http://site.com/wp-json/buddypress/v1/groups/<group_id>/invites`
-- [x] Notifications `http://site.com/wp-json/buddypress/v1/notifications`
 - [x] XProfile Fields `http://site.com/wp-json/buddypress/v1/xprofile/fields`
 - [x] XProfile Groups `http://site.com/wp-json/buddypress/v1/xprofile/groups`
 - [x] XProfile Data `http://site.com/wp-json/buddypress/v1/xprofile/<field_id>/data/<user_id>`
 - [x] Members `http://site.com/wp-json/buddypress/v1/members`
+- [x] Notifications `http://site.com/wp-json/buddypress/v1/notifications`
 - [x] Components `http://site.com/wp-json/buddypress/v1/components`
+
+## Endpoints (Components) Partly Supported
+
+- [x] Messages `http://site.com/wp-json/buddypress/v1/messages`
 
 ## Endpoints (Components) Pending
 
-- Messages
-- Emails
 - Friends
 - Signups
 - Settings
+- Emails
 
 ## Installation
 
