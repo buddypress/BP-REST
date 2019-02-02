@@ -66,8 +66,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		wp_set_current_user( self::$user );
-
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
 		$u3 = $this->factory->user->create();
@@ -87,8 +85,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items_with_edit_context() {
-		wp_set_current_user( self::$user );
-
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
 		$u3 = $this->factory->user->create();

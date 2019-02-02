@@ -26,6 +26,18 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
+	 * Permissions check for getting all users.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return true
+	 */
+	public function get_items_permissions_check( $request ) {
+		return true;
+	}
+
+	/**
 	 * Checks if a given request has access to read a user.
 	 *
 	 * @since 0.1.0
