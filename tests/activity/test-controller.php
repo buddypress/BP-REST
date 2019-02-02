@@ -229,9 +229,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
+			'user_id'  => $u,
 			'page'     => 2,
 			'per_page' => 5,
-			'user'     => $u,
 		) );
 
 		$request->set_param( 'context', 'view' );
@@ -291,7 +291,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
 		$request->set_query_params( array(
-			'user' => $u,
+			'user_id' => $u,
 		) );
 		$response = $this->server->dispatch( $request );
 
@@ -793,7 +793,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	protected function check_activity_data( $activity, $data, $context, $links ) {
-		$this->assertEquals( $activity->user_id, $data['user'] );
+		$this->assertEquals( $activity->user_id, $data['user_id'] );
 		$this->assertEquals( $activity->component, $data['component'] );
 
 		if ( 'view' === $context ) {
@@ -872,7 +872,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'primary_item_id', $properties );
 		$this->assertArrayHasKey( 'secondary_item_id', $properties );
-		$this->assertArrayHasKey( 'user', $properties );
+		$this->assertArrayHasKey( 'user_id', $properties );
 		$this->assertArrayHasKey( 'link', $properties );
 		$this->assertArrayHasKey( 'component', $properties );
 		$this->assertArrayHasKey( 'type', $properties );
@@ -894,7 +894,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data     = $response->get_data();
 
 		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 
 		// Single.
 		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', $this->activity_id ) );
@@ -902,6 +902,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data     = $response->get_data();
 
 		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 	}
 }

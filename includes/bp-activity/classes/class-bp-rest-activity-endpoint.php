@@ -51,7 +51,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'create_item' ),
 				'permission_callback' => array( $this, 'create_item_permissions_check' ),
-				'args'                => $this->get_endpoint_args_for_item_schema( true ),
+				'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -73,7 +73,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array( $this, 'update_item' ),
 				'permission_callback' => array( $this, 'update_item_permissions_check' ),
-				'args'                => $this->get_endpoint_args_for_item_schema( false ),
+				'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
 			),
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
@@ -125,8 +125,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$args['since'] = $request['after'];
 		}
 
-		if ( isset( $request['user'] ) ) {
-			$args['filter']['user_id'] = $request['user'];
+		if ( isset( $request['user_id'] ) ) {
+			$args['filter']['user_id'] = $request['user_id'];
 		}
 
 		$item_id = 0;
@@ -768,7 +768,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $activity, $request ) {
 		$data = array(
-			'user'              => $activity->user_id,
+			'user_id'           => $activity->user_id,
 			'component'         => $activity->component,
 			'content'           => array(
 				'raw'      => $activity->content,
@@ -882,8 +882,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// Activity author ID.
-		if ( ! empty( $schema['properties']['user'] ) && isset( $request['user'] ) ) {
-			$prepared_activity->user_id = (int) $request['user'];
+		if ( ! empty( $schema['properties']['user_id'] ) && isset( $request['user_id'] ) ) {
+			$prepared_activity->user_id = (int) $request['user_id'];
 		} else {
 			$prepared_activity->user_id = get_current_user_id();
 		}
@@ -1109,14 +1109,14 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'title'      => 'activity',
 			'type'       => 'object',
 			'properties' => array(
-				'id'                    => array(
+				'id'              => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 
-				'primary_item_id'     => array(
+				'primary_item_id' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
@@ -1128,21 +1128,21 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'type'        => 'integer',
 				),
 
-				'user'                  => array(
+				'user_id'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID for the creator of the object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 
-				'link'                  => array(
+				'link'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
+					'readonly'    => true,
 					'format'      => 'uri',
 					'type'        => 'string',
-					'readonly'    => true,
 				),
 
-				'component'             => array(
+				'component'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The active BuddyPress component the object relates to.', 'buddypress' ),
 					'type'        => 'string',
@@ -1152,14 +1152,17 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					),
 				),
 
-				'type'                  => array(
+				'type'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The activity type of the object.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array_keys( bp_activity_get_types() ),
+					'arg_options' => array(
+						'sanitize_callback' => 'sanitize_key',
+					),
 				),
 
-				'title'                 => array(
+				'title'           => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML title of the object.', 'buddypress' ),
 					'type'        => 'string',
@@ -1168,7 +1171,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					),
 				),
 
-				'content'               => array(
+				'content'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML content of the object.', 'buddypress' ),
 					'type'        => 'object',
@@ -1191,14 +1194,14 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					),
 				),
 
-				'date'                  => array(
+				'date'            => array(
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
-					'context'     => array( 'view', 'edit' ),
 				),
 
-				'status'                => array(
+				'status'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the object has been marked as spam or not.', 'buddypress' ),
 					'type'        => 'string',
@@ -1208,25 +1211,25 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					),
 				),
 
-				'parent'                => array(
+				'parent'          => array(
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the parent of the object.', 'buddypress' ),
 					'type'        => 'integer',
-					'context'     => array( 'view', 'edit' ),
 				),
 
-				'comments'              => array(
-					'description' => __( 'The ID for the parent of the object.', 'buddypress' ),
+				'comments'        => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'A list of objects children of the activity object.', 'buddypress' ),
 					'type'        => 'array',
-					'context'     => array( 'view', 'edit' ),
 				),
 
-				'hidden'                => array(
+				'hidden'          => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'Whether the activity object should be sitewide hidden or not.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
 
-				'favorited'             => array(
+				'favorited'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the activity object has been favorited by the current user.', 'buddypress' ),
 					'type'        => 'boolean',
@@ -1240,25 +1243,25 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$avatar_properties = array();
 
 			$avatar_properties['full'] = array(
+				'context'     => array( 'view', 'edit' ),
 				/* translators: Full image size for the member Avatar */
 				'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_full_width() ), number_format_i18n( bp_core_avatar_full_height() ) ),
 				'type'        => 'string',
 				'format'      => 'uri',
-				'context'     => array( 'embed', 'view', 'edit' ),
 			);
 
 			$avatar_properties['thumb'] = array(
+				'context'     => array( 'view', 'edit' ),
 				/* translators: Thumb imaze size for the member Avatar */
 				'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
 				'type'        => 'string',
 				'format'      => 'uri',
-				'context'     => array( 'embed', 'view', 'edit' ),
 			);
 
 			$schema['properties']['user_avatar'] = array(
+				'context'     => array( 'view', 'edit' ),
 				'description' => __( 'Avatar URLs for the member.', 'buddypress' ),
 				'type'        => 'object',
-				'context'     => array( 'embed', 'view', 'edit' ),
 				'readonly'    => true,
 				'properties'  => $avatar_properties,
 			);
@@ -1308,26 +1311,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['per_page'] = array(
-			'description'       => __( 'Maximum number of results returned per result set.', 'buddypress' ),
-			'default'           => 20,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['page'] = array(
-			'description'       => __( 'Offset the result set by a specific number of pages of results.', 'buddypress' ),
-			'default'           => 1,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['user'] = array(
-			'description'       => __( 'Limit result set to items created by a specific user.', 'buddypress' ),
-			'type'              => 'integer',
+		$params['user_id'] = array(
+			'description'       => __( 'Limit result set to items created by a specific user (ID).', 'buddypress' ),
 			'default'           => 0,
+			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
