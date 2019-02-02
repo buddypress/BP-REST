@@ -306,29 +306,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		$group_id     = $group->id;
 		$group_member = new BP_Groups_Member( $user->ID, $group_id );
 
-		// Add member to the group.
-		if ( 'join' === $action ) {
-			$group_member->group_id     = $group_id;
-			$group_member->user_id      = $user->ID;
-			$group_member->is_admin     = 0;
-			$group_member->date_modified = bp_core_current_time();
-			$group_member->is_confirmed  = 1;
-			$saved                      = $group_member->save();
-
-			if ( ! $saved ) {
-				return new WP_Error( 'bp_rest_group_member_failed_to_join',
-					__( 'Could not add member to the group.', 'buddypress' ),
-					array(
-						'status' => 500,
-					)
-				);
-			}
-
-			// If new role set, promote it too.
-			if ( $saved && 'member' !== $role ) {
-				groups_promote_member( $user->ID, $group_id, $role );
-			}
-		} elseif ( 'promote' === $action ) {
+		if ( 'promote' === $action ) {
 			if ( ! $group_member->promote( $role ) ) {
 				return new WP_Error( 'bp_rest_group_member_failed_to_promote',
 					__( 'Could not promote member.', 'buddypress' ),
@@ -337,7 +315,16 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 					)
 				);
 			}
-		} elseif ( in_array( $action, [ 'remove', 'demote', 'ban', 'unban' ], true ) ) {
+		} elseif ( 'demote' === $action && 'member' !== $role ) {
+			if ( ! $group_member->promote( $role ) ) {
+				return new WP_Error( 'bp_rest_group_member_failed_to_demote',
+					__( 'Could not demote member.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
+		} elseif ( in_array( $action, [ 'demote', 'ban', 'unban' ], true ) ) {
 			if ( ! $group_member->$action() ) {
 				return new WP_Error( 'bp_rest_group_member_failed_to_' . $action,
 					sprintf( __( 'Could not %s member from the group.', 'buddypress' ), esc_attr( $action ) ),
@@ -770,10 +757,10 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['action'] = array(
-			'description'       => __( 'Action used to update a member.', 'buddypress' ),
-			'default'           => 'join',
+			'description'       => __( 'Action used to update a group member.', 'buddypress' ),
+			'default'           => 'promote',
 			'type'              => 'string',
-			'enum'              => array( 'join', 'remove', 'promote', 'demote', 'ban', 'unban' ),
+			'enum'              => array( 'promote', 'demote', 'ban', 'unban' ),
 			'sanitize_callback' => 'sanitize_text_field',
 			'validate_callback' => 'rest_validate_request_arg',
 		);

@@ -277,7 +277,76 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	/**
 	 * @group update_item
 	 */
-	public function test_admin_can_promote_member() {
+	public function test_administrator_can_ban_member() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$this->populate_group_with_members( [ $u ], $this->group_id );
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $this->group_id . '/members/' . $u );
+		$request->set_query_params( array(
+			'action' => 'ban',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$user          = bp_rest_get_user( $data['id'] );
+			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
+
+			$this->assertTrue( (bool) $member_object->is_banned );
+			$this->check_user_data( $user, $data, $member_object );
+		}
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_group_admin_can_ban_member() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u2,
+		) );
+
+		$this->populate_group_with_members( [ $u1 ], $g1 );
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u1 );
+		$request->set_query_params( array(
+			'action' => 'ban',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$user          = bp_rest_get_user( $data['id'] );
+			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
+
+			$this->assertTrue( $u1 === $user->ID );
+			$this->assertTrue( empty( $member_object->is_banned ) );
+		}
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_administrator_can_promote_member() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
 		$this->populate_group_with_members( [ $u ], $this->group_id );
@@ -374,7 +443,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	/**
 	 * @group update_item
 	 */
-	public function test_admin_can_demote_member() {
+	public function test_admin_can_demote_group_admin_to_member() {
 		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$u3 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -390,7 +459,6 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u2 );
 		$request->set_query_params( array(
 			'action' => 'demote',
-			'role'   => 'member',
 		) );
 
 		$request->set_param( 'context', 'view' );
@@ -405,6 +473,56 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			$user          = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $g1 );
 
+			$this->assertTrue( $u2 === $user->ID );
+			$this->assertFalse( (bool) $member_object->is_mod );
+			$this->assertFalse( (bool) $member_object->is_admin );
+			$this->assertTrue( (bool) $member_object::check_is_member( $u2, $g1 ) );
+			$this->check_user_data( $user, $data, $member_object );
+		}
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_group_admin_can_demote_another_group_admin_to_mod() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u3 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u3,
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
+
+		$group_member_1 = new BP_Groups_Member( $u1, $g1 );
+		$group_member_1->promote( 'admin' );
+
+		$group_member_2 = new BP_Groups_Member( $u2, $g1 );
+		$group_member_2->promote( 'admin' );
+
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u2 );
+		$request->set_query_params( array(
+			'action' => 'demote',
+			'role'   => 'mod',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$user          = bp_rest_get_user( $data['id'] );
+			$member_object = new BP_Groups_Member( $user->ID, $g1 );
+
+			$this->assertTrue( $u2 === $user->ID );
+			$this->assertTrue( (bool) $member_object->is_mod );
 			$this->check_user_data( $user, $data, $member_object );
 		}
 	}
@@ -428,7 +546,6 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u2 );
 		$request->set_query_params( array(
 			'action' => 'demote',
-			'role'   => 'member',
 		) );
 
 		$request->set_param( 'context', 'view' );
