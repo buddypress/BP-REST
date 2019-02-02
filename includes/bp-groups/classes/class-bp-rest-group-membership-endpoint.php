@@ -697,14 +697,6 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 		);
 
-		$params['search'] = array(
-			'description'       => __( 'Limit results set to items that match this search query.', 'buddypress' ),
-			'default'           => '',
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_text_field',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
 		$params['exclude'] = array(
 			'description'       => __( 'Ensure result set excludes specific member IDs.', 'buddypress' ),
 			'default'           => array(),

@@ -1070,14 +1070,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'sanitize_callback' => 'wp_parse_id_list',
 		);
 
-		$params['search'] = array(
-			'description'       => __( 'Limit results set to items that match this search query.', 'buddypress' ),
-			'default'           => '',
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_text_field',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
 		$params['group_type'] = array(
 			'description'       => __( 'Limit results set to a certain type.', 'buddypress' ),
 			'default'           => '',
