@@ -3,7 +3,7 @@
  * Notifications Endpoint Tests.
  *
  * @package BP_REST
- * @group notification
+ * @group notifications
  */
 class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testcase {
 
@@ -445,7 +445,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$data     = $response->get_data();
 
 		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 
 		// Single.
 		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', $this->notification_id ) );
@@ -453,6 +453,6 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$data     = $response->get_data();
 
 		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 	}
 }
