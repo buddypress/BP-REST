@@ -301,6 +301,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					);
 				}
 			}
+		} else {
+			$data = array( __( 'No extended profile data available as the component is inactive', 'buddypress' ) );
 		}
 
 		return $data;
