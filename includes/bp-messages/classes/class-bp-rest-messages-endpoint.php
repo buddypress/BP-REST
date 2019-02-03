@@ -241,16 +241,15 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
 			'title'      => 'thread',
 			'type'       => 'object',
-
 			'properties' => array(
-				'id'                    => array(
+				'id'              => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 
-				'primary_item_id'     => array(
+				'primary_item_id' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
@@ -262,35 +261,41 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					'type'        => 'integer',
 				),
 
-				'subject'               => array(
+				'subject'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML title of the object.', 'buddypress' ),
 					'type'        => 'string',
 				),
 
-				'message'               => array(
+				'message'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML content of the object.', 'buddypress' ),
 					'type'        => 'string',
 				),
 
-				'date'                  => array(
+				'date'            => array(
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
-					'context'     => array( 'view', 'edit' ),
 				),
 
-				'unread'                => array(
+				'unread'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 
-				'messages'              => array(
+				'sender_ids'      => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'IDs of the senders in the thread', 'buddypress' ),
+					'type'        => 'array',
+				),
+
+				'messages'        => array(
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Childrens of the object.', 'buddypress' ),
 					'type'        => 'array',
-					'context'     => array( 'view', 'edit' ),
 				),
 			),
 		);
@@ -306,7 +311,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params = parent::get_collection_params();
+		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
 		$params['box'] = array(
@@ -314,6 +319,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'default'           => 'sentbox',
 			'type'              => 'string',
 			'enum'              => array( 'notices', 'sentbox', 'inbox' ),
+			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -322,37 +328,14 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'default'           => 'all',
 			'type'              => 'string',
 			'enum'              => array( 'all', 'read', 'unread' ),
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['page'] = array(
-			'description'       => __( 'Offset the result set by a specific number of pages of results.', 'buddypress' ),
-			'default'           => 1,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['per_page'] = array(
-			'description'       => __( 'Maximum number of results returned per result set.', 'buddypress' ),
-			'default'           => 20,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['search'] = array(
-			'description'       => __( 'Limit result set to items that match this search query.', 'buddypress' ),
-			'default'           => '',
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_text_field',
+			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['user_id'] = array(
-			'description'       => __( 'Limit result to messages created by specific users.', 'buddypress' ),
-			'type'              => 'integer',
+			'description'       => __( 'Limit result to messages created by a specific user.', 'buddypress' ),
 			'default'           => bp_loggedin_user_id(),
+			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);

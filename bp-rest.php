@@ -19,7 +19,7 @@
  */
 
 /**
- * Copyright (c) 2018 BuddyPress (email: contact@buddypress.org)
+ * Copyright (c) 2019 BuddyPress (email: contact@buddypress.org)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2 or, at
@@ -44,6 +44,7 @@ defined( 'ABSPATH' ) || exit;
  * @since 0.1.0
  */
 add_action( 'rest_api_init', function() {
+
 	// Bail early if no core rest support.
 	if ( ! class_exists( 'WP_REST_Controller' ) ) {
 		return;
@@ -71,12 +72,12 @@ add_action( 'rest_api_init', function() {
 	}
 
 	if ( bp_is_active( 'xprofile' ) ) {
-		require_once( dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-groups-endpoint.php' );
-		$controller = new BP_REST_XProfile_Groups_Endpoint();
-		$controller->register_routes();
-
 		require_once( dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-fields-endpoint.php' );
 		$controller = new BP_REST_XProfile_Fields_Endpoint();
+		$controller->register_routes();
+
+		require_once( dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-groups-endpoint.php' );
+		$controller = new BP_REST_XProfile_Groups_Endpoint();
 		$controller->register_routes();
 
 		require_once( dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-data-endpoint.php' );

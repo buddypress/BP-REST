@@ -333,13 +333,5 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 
 		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
 		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
-
-		// Single.
-		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
-		$response = $this->server->dispatch( $request );
-		$data     = $response->get_data();
-
-		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 	}
 }

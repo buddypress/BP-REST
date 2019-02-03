@@ -24,7 +24,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 *
 	 * @var object
 	 */
-	protected $field_endpoint;
+	protected $fields_endpoint;
 
 	/**
 	 * Constructor.
@@ -34,7 +34,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	public function __construct() {
 		$this->namespace      = bp_rest_namespace() . '/' . bp_rest_version();
 		$this->rest_base      = buddypress()->profile->id;
-		$this->field_endpoint = new BP_REST_XProfile_Fields_Endpoint();
+		$this->fields_endpoint = new BP_REST_XProfile_Fields_Endpoint();
 	}
 
 	/**
@@ -299,7 +299,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @return BP_XProfile_Field
 	 */
 	public function get_xprofile_field_object( $field_id ) {
-		return $this->field_endpoint->get_xprofile_field_object( $field_id );
+		return $this->fields_endpoint->get_xprofile_field_object( $field_id );
 	}
 
 	/**

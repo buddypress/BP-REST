@@ -26,12 +26,12 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
-	 * Permissions check for getting all users.
+	 * Checks if a given request has access to get all users.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return true
+	 * @return boolean
 	 */
 	public function get_items_permissions_check( $request ) {
 		return true;
@@ -168,9 +168,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $user, $request ) {
-
-		$data = $this->user_data( $user );
-
+		$data    = $this->user_data( $user );
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
 		if ( 'edit' === $context ) {
@@ -224,7 +222,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		// Avatars.
 		$data['avatar_urls'] = array(
-			'full'  => bp_core_fetch_avatar( array(
+			'full' => bp_core_fetch_avatar( array(
 				'item_id' => $user->ID,
 				'html'    => false,
 				'type'    => 'full',
@@ -246,6 +244,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	/**
 	 * Prepares a single user for creation or update.
 	 *
+	 * @todo Improve sanitization and schema verification.
+	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request object.
@@ -265,7 +265,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param stdClass        $prepared_user An object prepared for inserting or updating the database.
-		 * @param WP_REST_Request $request Request object.
+		 * @param WP_REST_Request $request       Request object.
 		 */
 		return apply_filters( 'bp_rest_member_pre_insert_value', $prepared_user, $request );
 	}
@@ -306,6 +306,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 	/**
 	 * Can user manage (delete/update) a member?
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param  WP_User $user User object.
 	 * @return bool
@@ -406,10 +408,10 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				'roles'           => array(
 					'description' => __( 'Roles assigned to the member.', 'buddypress' ),
 					'type'        => 'array',
+					'context'     => array( 'edit' ),
 					'items'       => array(
 						'type'    => 'string',
 					),
-					'context'     => array( 'edit' ),
 				),
 
 				'capabilities'    => array(

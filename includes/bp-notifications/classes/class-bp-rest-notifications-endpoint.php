@@ -42,7 +42,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'create_item' ),
 				'permission_callback' => array( $this, 'create_item_permissions_check' ),
-				'args'                => $this->get_endpoint_args_for_item_schema( true ),
+				'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -62,7 +62,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::EDITABLE,
 				'callback'            => array( $this, 'update_item' ),
 				'permission_callback' => array( $this, 'update_item_permissions_check' ),
-				'args'                => $this->get_endpoint_args_for_item_schema( false ),
+				'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
 			),
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
@@ -519,7 +519,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return stdClass|WP_Error Object or WP_Error.
+	 * @return stdClass Object.
 	 */
 	protected function prepare_item_for_database( $request ) {
 		$prepared_notification = new stdClass();
@@ -667,35 +667,35 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'title'      => 'notification',
 			'type'       => 'object',
 			'properties' => array(
-				'id'                    => array(
-					'context'     => array( 'view', 'embed', 'edit' ),
+				'id'              => array(
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The notification ID.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'item_id'     => array(
-					'context'     => array( 'view', 'embed', 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the item associated with the notification.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'secondary_item_id'     => array(
-					'context'     => array( 'view', 'embed', 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the secondary item associated with the notification.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'user_id'                    => array(
-					'context'     => array( 'view', 'embed', 'edit' ),
+				'user_id'         => array(
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the user the notification is associated with.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-				'component'               => array(
-					'context'     => array( 'view', 'embed', 'edit' ),
+				'component'       => array(
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The name of the component that the notification is for.', 'buddypress' ),
 					'type'        => 'string',
 				),
-				'action'               => array(
-					'context'     => array( 'view', 'embed', 'edit' ),
+				'action'          => array(
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The component action which the notification is related to.', 'buddypress' ),
 					'type'        => 'string',
 				),
@@ -703,10 +703,10 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 					'description' => __( "The date the notification was created, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
-					'context'     => array( 'view', 'embed', 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 				),
-				'unread'                => array(
-					'context'     => array( 'view', 'embed', 'edit' ),
+				'unread'          => array(
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The status of the notification.', 'buddypress' ),
 					'type'        => 'integer',
 				),
@@ -728,7 +728,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$params['context']['default'] = 'view';
 
 		$params['component_action'] = array(
-			'description'       => __( 'Limit result set to items from a specific actions.', 'buddypress' ),
+			'description'       => __( 'Limit result set to items from a specific action.', 'buddypress' ),
 			'default'           => '',
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_text_field',
@@ -753,30 +753,25 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 
 		$params['item_id'] = array(
 			'description'       => __( 'Limit result set to items with a specific item id.', 'buddypress' ),
-			'default'           => '',
+			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['secondary_item_id'] = array(
 			'description'       => __( 'Limit result set to items with a secondary item id.', 'buddypress' ),
-			'default'           => '',
+			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['is_new'] = array(
 			'description'       => __( 'Limit result set to items from specific states.', 'buddypress' ),
 			'default'           => true,
 			'type'              => 'boolean',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['search'] = array(
-			'description'       => __( 'Limit result set to items that match this search query.', 'buddypress' ),
-			'default'           => '',
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_text_field',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

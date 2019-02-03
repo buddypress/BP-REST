@@ -102,6 +102,18 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'page'               => $request['page'],
 		);
 
+		if ( empty( $request['parent_id'] ) ) {
+			$args['parent_id'] = null;
+		}
+
+		if ( empty( $request['group_type__in'] ) ) {
+			$args['group_type__in'] = '';
+		}
+
+		if ( empty( $request['group_type__not_in'] ) ) {
+			$args['group_type__not_in'] = '';
+		}
+
 		/**
 		 * Filter the query arguments for the request.
 		 *
@@ -776,55 +788,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Clean up group_type__in input.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $value Comma-separated list of group types.
-	 * @return array|null
-	 */
-	public function sanitize_group_types( $value ) {
-
-		// Bail early.
-		if ( empty( $value ) ) {
-			return null;
-		}
-
-		$types       = explode( ',', $value );
-		$valid_types = array_intersect( $types, bp_groups_get_group_types() );
-
-		return empty( $valid_types ) ? null : $valid_types;
-	}
-
-	/**
-	 * Validate group_type__in input.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param  mixed           $value mixed value.
-	 * @param  WP_REST_Request $request Full details about the request.
-	 * @param  string          $param string.
-	 *
-	 * @return WP_Error|bool
-	 */
-	public function validate_group_types( $value, $request, $param ) {
-
-		// Bail early.
-		if ( empty( $value ) ) {
-			return true;
-		}
-
-		$types            = explode( ',', $value );
-		$registered_types = bp_groups_get_group_types();
-		foreach ( $types as $type ) {
-			if ( ! in_array( $type, $registered_types, true ) ) {
-				/* translators: %1$s and %2$s is replaced with the registered types */
-				return new WP_Error( 'bp_rest_invalid_group_type', sprintf( __( 'The group type you provided, %1$s, is not one of %2$s.', 'buddypress' ), $type, implode( ', ', $registered_types ) ) );
-			}
-		}
-	}
-
-	/**
 	 * Get the group schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
@@ -965,7 +928,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_full_width() ), number_format_i18n( bp_core_avatar_full_height() ) ),
 				'type'        => 'string',
 				'format'      => 'uri',
-				'context'     => array( 'embed', 'view', 'edit' ),
+				'context'     => array( 'view', 'edit' ),
 			);
 
 			$avatar_properties['thumb'] = array(
@@ -973,13 +936,13 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
 				'type'        => 'string',
 				'format'      => 'uri',
-				'context'     => array( 'embed', 'view', 'edit' ),
+				'context'     => array( 'view', 'edit' ),
 			);
 
 			$schema['properties']['avatar_urls'] = array(
 				'description' => __( 'Avatar URLs for the group.', 'buddypress' ),
 				'type'        => 'object',
-				'context'     => array( 'embed', 'view', 'edit' ),
+				'context'     => array( 'view', 'edit' ),
 				'readonly'    => true,
 				'properties'  => $avatar_properties,
 			);
@@ -1004,6 +967,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => 'active',
 			'type'              => 'string',
 			'enum'              => array( 'active', 'newest', 'alphabetical', 'random', 'popular', 'most-forum-topics', 'most-forum-posts' ),
+			'sanitize_callback' => 'sanitize_text_field',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -1012,6 +976,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => 'desc',
 			'type'              => 'string',
 			'enum'              => array( 'asc', 'desc' ),
+			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -1019,6 +984,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Group statuses to limit results to.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -1027,6 +993,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => 'date_created',
 			'type'              => 'string',
 			'enum'              => array( 'date_created', 'last_activity', 'total_member_count', 'name', 'random' ),
+			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -1039,12 +1006,16 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['parent_id'] = array(
-			'description'       => __( 'Get groups that are children of the specified group(s) ids.', 'buddypress' ),
-			'default'           => null,
+			'description'       => __( 'Get groups that are children of the specified group(s) IDs.', 'buddypress' ),
+			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		/**
+		 * @todo Confirm what's the proper sanitization here.
+		 */
 		$params['meta'] = array(
 			'description'       => __( 'Get groups based on their meta data information.', 'buddypress' ),
 			'default'           => array(),
@@ -1057,6 +1028,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['exclude'] = array(
@@ -1064,13 +1036,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
-		);
-
-		$params['search'] = array(
-			'description'       => __( 'Limit results set to items that match this search query.', 'buddypress' ),
-			'default'           => '',
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_text_field',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -1079,30 +1044,31 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => '',
 			'type'              => 'string',
 			'enum'              => bp_groups_get_group_types(),
-			'sanitize_callback' => array( $this, 'sanitize_group_types' ),
-			'validate_callback' => array( $this, 'validate_group_types' ),
+			'sanitize_callback' => 'bp_rest_sanitize_group_types',
+			'validate_callback' => 'bp_rest_validate_group_types',
 		);
 
 		$params['group_type__in'] = array(
 			'description'       => __( 'Limit results set to groups of certain types.', 'buddypress' ),
-			'default'           => '',
+			'default'           => array(),
 			'type'              => 'array',
-			'sanitize_callback' => array( $this, 'sanitize_group_types' ),
-			'validate_callback' => array( $this, 'validate_group_types' ),
+			'sanitize_callback' => 'bp_rest_sanitize_group_types',
+			'validate_callback' => 'bp_rest_validate_group_types',
 		);
 
 		$params['group_type__not_in'] = array(
 			'description'       => __( 'Exclude groups of certain types.', 'buddypress' ),
-			'default'           => '',
+			'default'           => array(),
 			'type'              => 'array',
-			'sanitize_callback' => array( $this, 'sanitize_group_types' ),
-			'validate_callback' => array( $this, 'validate_group_types' ),
+			'sanitize_callback' => 'bp_rest_sanitize_group_types',
+			'validate_callback' => 'bp_rest_validate_group_types',
 		);
 
 		$params['enable_forum'] = array(
 			'description'       => __( 'Whether the group should have a forum enabled.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -1110,22 +1076,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Whether results should include hidden groups.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['per_page'] = array(
-			'description'       => __( 'Maximum number of results returned per result set.', 'buddypress' ),
-			'default'           => 20,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['page'] = array(
-			'description'       => __( 'Offset the result set by a specific number of pages of results.', 'buddypress' ),
-			'default'           => 1,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
