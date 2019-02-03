@@ -727,20 +727,14 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
-		/**
-		 * @todo Add those actions as enum.
-		 */
 		$params['component_action'] = array(
-			'description'       => __( 'Limit result set to items from a specific actions.', 'buddypress' ),
+			'description'       => __( 'Limit result set to items from a specific action.', 'buddypress' ),
 			'default'           => '',
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_text_field',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		/**
-		 * @todo Add those components as enum.
-		 */
 		$params['component_name'] = array(
 			'description'       => __( 'Limit result set to items from a specific component.', 'buddypress' ),
 			'default'           => '',
@@ -777,6 +771,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Limit result set to items from specific states.', 'buddypress' ),
 			'default'           => true,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

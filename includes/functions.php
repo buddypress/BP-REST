@@ -111,7 +111,6 @@ function bp_rest_prepare_date_response( $date_gmt, $date = null ) {
  * @since 0.1.0
  *
  * @param string $value Comma-separated list of group types.
- *
  * @return array|null
  */
 function bp_rest_sanitize_member_types( $value ) {
@@ -134,7 +133,6 @@ function bp_rest_sanitize_member_types( $value ) {
  * @param  mixed           $value   Mixed value.
  * @param  WP_REST_Request $request Full details about the request.
  * @param  string          $param   String.
- *
  * @return WP_Error|boolean
  */
 function bp_rest_validate_member_types( $value, $request, $param ) {
@@ -158,6 +156,59 @@ function bp_rest_validate_member_types( $value, $request, $param ) {
 	}
 
 	return true;
+}
+
+/**
+ * Clean up group_type__in input.
+ *
+ * @since 0.1.0
+ *
+ * @param string $value Comma-separated list of group types.
+ * @return array|null
+ */
+function bp_rest_sanitize_group_types( $value ) {
+
+	// Bail early.
+	if ( empty( $value ) ) {
+		return null;
+	}
+
+	$types       = explode( ',', $value );
+	$valid_types = array_intersect( $types, bp_groups_get_group_types() );
+
+	return empty( $valid_types ) ? null : $valid_types;
+}
+
+/**
+ * Validate group_type__in input.
+ *
+ * @since 0.1.0
+ *
+ * @param  mixed           $value mixed value.
+ * @param  WP_REST_Request $request Full details about the request.
+ * @param  string          $param string.
+ * @return WP_Error|bool
+ */
+function bp_rest_validate_group_types( $value, $request, $param ) {
+
+	// Bail early.
+	if ( empty( $value ) ) {
+		return true;
+	}
+
+	$types            = explode( ',', $value );
+	$registered_types = bp_groups_get_group_types();
+	foreach ( $types as $type ) {
+		if ( ! in_array( $type, $registered_types, true ) ) {
+			/* translators: %1$s and %2$s is replaced with the registered types */
+			return new WP_Error( 'bp_rest_invalid_group_type',
+				sprintf( __( 'The group type you provided, %1$s, is not one of %2$s.', 'buddypress' ),
+					$type,
+					implode( ', ', $registered_types )
+				)
+			);
+		}
+	}
 }
 
 /**

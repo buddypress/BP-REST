@@ -1286,6 +1286,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'type'              => 'array',
 			'default'           => array(),
 			'sanitize_callback' => 'wp_parse_id_list',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['include'] = array(
@@ -1293,6 +1294,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'type'              => 'array',
 			'default'           => array(),
 			'sanitize_callback' => 'wp_parse_id_list',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['order'] = array(
@@ -1344,18 +1346,26 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		/**
+		 * @todo Investigate why uncommeting the validate causes an error. :/
+		 */
 		$params['primary_id'] = array(
 			'description'       => __( 'Limit result set to items with a specific prime association.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
+			// 'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		/**
+		 * @todo Investigate why uncommeting the validate causes an error. :/
+		 */
 		$params['secondary_id'] = array(
 			'description'       => __( 'Limit result set to items with a specific secondary association.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
+			// 'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['component'] = array(
@@ -1375,9 +1385,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['display_comments'] = array(
-			'description'       => __( 'False for no comments. stream for within stream display, threaded for below each activity item.', 'buddypress' ),
+			'description'       => __( 'No comments by default, stream for within stream display, threaded for below each activity item.', 'buddypress' ),
 			'default'           => '',
 			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

@@ -579,6 +579,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'True to hide groups that do not have any fields.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -602,6 +603,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'True to hide field groups where the user has not provided data.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -609,6 +611,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'True to hide fields where the user has not provided data.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -616,6 +619,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Whether to fetch the fields for each group.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -623,6 +627,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Whether to fetch data for each field. Requires a $user_id.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -630,6 +635,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Whether to fetch the visibility level for each field.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -638,6 +644,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => false,
 			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['exclude_fields'] = array(
@@ -645,12 +652,14 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => false,
 			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['update_meta_cache'] = array(
 			'description'       => __( 'Whether to pre-fetch xprofilemeta for all retrieved groups, fields, and data.', 'buddypress' ),
 			'default'           => true,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -688,6 +697,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'True to hide fields where the user has not provided data.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -695,6 +705,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Whether to fetch the fields for each group.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -702,6 +713,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Whether to fetch data for each field. Requires a $user_id.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -709,6 +721,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Whether to fetch the visibility level for each field. Requires a $user_id.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -717,12 +730,14 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => false,
 			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['update_meta_cache'] = array(
 			'description'       => __( 'Whether to pre-fetch XProfile meta for all retrieved groups, fields, and data.', 'buddypress' ),
 			'default'           => true,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

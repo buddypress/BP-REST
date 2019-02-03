@@ -333,9 +333,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['user_id'] = array(
-			'description'       => __( 'Limit result to messages created by specific users.', 'buddypress' ),
-			'type'              => 'integer',
+			'description'       => __( 'Limit result to messages created by a specific user.', 'buddypress' ),
 			'default'           => bp_loggedin_user_id(),
+			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);

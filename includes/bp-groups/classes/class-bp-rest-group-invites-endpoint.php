@@ -542,6 +542,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Limit result set to (un)confirmed invites.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

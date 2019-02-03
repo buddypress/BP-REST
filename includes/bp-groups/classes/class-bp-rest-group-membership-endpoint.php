@@ -695,6 +695,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['exclude'] = array(
@@ -702,12 +703,14 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['exclude_admins'] = array(
 			'description'       => __( 'Whether results should exclude group admins and mods.', 'buddypress' ),
 			'default'           => true,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -715,6 +718,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Whether results should exclude banned group members.', 'buddypress' ),
 			'default'           => true,
 			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

@@ -39,7 +39,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
-	 * @group get_items
+	 * @group test
 	 */
 	public function test_get_items() {
 		$this->bp->set_current_user( $this->user );
