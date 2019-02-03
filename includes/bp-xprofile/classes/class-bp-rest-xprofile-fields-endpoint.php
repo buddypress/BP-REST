@@ -705,7 +705,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		$params['exclude_groups'] = array(
 			'description'       => __( 'Ensure result set excludes specific profile field groups.', 'buddypress' ),
-			'default'           => false,
+			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
@@ -713,7 +713,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		$params['exclude_fields'] = array(
 			'description'       => __( 'Ensure result set excludes specific profile fields.', 'buddypress' ),
-			'default'           => false,
+			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
