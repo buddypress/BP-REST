@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
 function bp_remove_has_published_posts_from_wp_api_user_query( $prepared_args, $request ) {
 	$namespace = bp_rest_namespace() . '/' . bp_rest_version() . '/members';
 
-	if ( 0 !== strpos( $request->get_route(), $namespace ) ) {
+	if ( 0 !== strpos( trim( $request->get_route(), '/' ), $namespace ) ) {
 		return $prepared_args;
 	}
 
