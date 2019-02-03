@@ -980,9 +980,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		/**
-		 * @todo Add group status enum.
-		 */
 		$params['status'] = array(
 			'description'       => __( 'Group statuses to limit results to.', 'buddypress' ),
 			'default'           => array(),
