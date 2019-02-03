@@ -279,26 +279,30 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return array XProfile info.
 	 */
 	protected function xprofile_data( $user_id ) {
-
-		// Get XProfile groups.
-		$groups = bp_xprofile_get_groups( array(
-			'user_id'          => $user_id,
-			'fetch_fields'     => true,
-			'fetch_field_data' => true,
-		) );
-
 		$data = array();
-		foreach ( $groups as $group ) {
-			$data['groups'][ $group->id ] = array(
-				'name' => $group->name,
-			);
 
-			foreach ( $group->fields as $item ) {
-				$data['groups'][ $group->id ]['fields'][ $item->id ] = array(
-					'name'  => $item->name,
-					'value' => maybe_unserialize( $item->data->value ),
+		// Get XProfile groups, only if the component is active.
+		if ( bp_is_active( 'xprofile' ) ) {
+			$groups = bp_xprofile_get_groups( array(
+				'user_id'          => $user_id,
+				'fetch_fields'     => true,
+				'fetch_field_data' => true,
+			) );
+
+			foreach ( $groups as $group ) {
+				$data['groups'][ $group->id ] = array(
+					'name' => $group->name,
 				);
+
+				foreach ( $group->fields as $item ) {
+					$data['groups'][ $group->id ]['fields'][ $item->id ] = array(
+						'name'  => $item->name,
+						'value' => maybe_unserialize( $item->data->value ),
+					);
+				}
 			}
+		} else {
+			$data = array( __( 'No extended profile data available as the component is inactive', 'buddypress' ) );
 		}
 
 		return $data;
