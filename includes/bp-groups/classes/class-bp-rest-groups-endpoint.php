@@ -102,6 +102,10 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'page'               => $request['page'],
 		);
 
+		if ( empty( $request['parent_id'] ) ) {
+			$args['parent_id'] = null;
+		}
+
 		/**
 		 * Filter the query arguments for the request.
 		 *
@@ -995,7 +999,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		$params['parent_id'] = array(
 			'description'       => __( 'Get groups that are children of the specified group(s) IDs.', 'buddypress' ),
-			'default'           => null,
+			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
