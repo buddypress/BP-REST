@@ -9,7 +9,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * XProfile fields endpoints.
+ * XProfile Fields endpoints.
  *
  * Use /xprofile/fields
  * Use /xprofile/fields/{id}
@@ -89,6 +89,10 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'update_meta_cache'      => $request['update_meta_cache'],
 			'fetch_fields'           => true,
 		);
+
+		if ( empty( $request['member_type'] ) ) {
+			$args['member_type'] = null;
+		}
 
 		/**
 		 * Filter the query arguments for the request.
@@ -266,7 +270,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 *
 	 * @return WP_Error|bool
 	 */
 	public function create_item_permissions_check( $request ) {
@@ -342,7 +345,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 *
 	 * @return WP_Error|bool
 	 */
 	public function delete_item_permissions_check( $request ) {
@@ -671,7 +673,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		$params['member_type'] = array(
 			'description'       => __( 'Limit fields by those restricted to a given member type, or array of member types. If `$user_id` is provided, the value of `$member_type` will be overridden by the member types of the provided user. The special value of \'any\' will return only those fields that are unrestricted by member type - i.e., those applicable to any type.', 'buddypress' ),
-			'default'           => null,
+			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_member_types',
 			'validate_callback' => 'bp_rest_validate_member_types',

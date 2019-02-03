@@ -115,11 +115,19 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'site_id'           => $request['site_id'],
 			'group_id'          => $request['group_id'],
 			'count_total'       => true,
-			'fields'             => 'all',
+			'fields'            => 'all',
 			'show_hidden'       => false,
 			'update_meta_cache' => true,
-			'filter'             => false,
+			'filter'            => false,
 		);
+
+		if ( empty( $request['exclude'] ) ) {
+			$args['exclude'] = false;
+		}
+
+		if ( empty( $request['include'] ) ) {
+			$args['in'] = false;
+		}
 
 		if ( isset( $request['after'] ) ) {
 			$args['since'] = $request['after'];
@@ -150,11 +158,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			}
 
 			if ( ! empty( $request['primary_id'] ) ) {
-				$primary_id                  = $request['primary_id'];
-				$args['filter']['primary_id'] = $primary_id;
-
-				// Only the first item of the array.
-				$item_id = $primary_id[0];
+				$item_id                      = $request['primary_id'];
+				$args['filter']['primary_id'] = $item_id;
 			}
 		}
 
@@ -1283,24 +1288,24 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$params['exclude'] = array(
 			'description'       => __( 'Ensure result set excludes specific IDs.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => array(),
+			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['include'] = array(
 			'description'       => __( 'Ensure result set includes specific IDs.', 'buddypress' ),
-			'type'              => 'array',
 			'default'           => array(),
+			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['order'] = array(
 			'description'       => __( 'Order sort attribute ascending or descending.', 'buddypress' ),
-			'type'              => 'string',
 			'default'           => 'desc',
+			'type'              => 'string',
 			'enum'              => array( 'asc', 'desc' ),
 			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
@@ -1346,26 +1351,20 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		/**
-		 * @todo Investigate why uncommeting the validate causes an error. :/
-		 */
 		$params['primary_id'] = array(
-			'description'       => __( 'Limit result set to items with a specific prime association.', 'buddypress' ),
-			'default'           => array(),
-			'type'              => 'array',
-			'sanitize_callback' => 'wp_parse_id_list',
-			// 'validate_callback' => 'rest_validate_request_arg',
+			'description'       => __( 'Limit result set to items with a specific prime association ID.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		/**
-		 * @todo Investigate why uncommeting the validate causes an error. :/
-		 */
 		$params['secondary_id'] = array(
-			'description'       => __( 'Limit result set to items with a specific secondary association.', 'buddypress' ),
-			'default'           => array(),
-			'type'              => 'array',
-			'sanitize_callback' => 'wp_parse_id_list',
-			// 'validate_callback' => 'rest_validate_request_arg',
+			'description'       => __( 'Limit result set to items with a specific secondary association ID.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['component'] = array(

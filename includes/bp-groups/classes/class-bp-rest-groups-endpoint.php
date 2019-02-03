@@ -106,6 +106,14 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			$args['parent_id'] = null;
 		}
 
+		if ( empty( $request['group_type__in'] ) ) {
+			$args['group_type__in'] = '';
+		}
+
+		if ( empty( $request['group_type__not_in'] ) ) {
+			$args['group_type__not_in'] = '';
+		}
+
 		/**
 		 * Filter the query arguments for the request.
 		 *
@@ -972,6 +980,9 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		/**
+		 * @todo Add group status enum.
+		 */
 		$params['status'] = array(
 			'description'       => __( 'Group statuses to limit results to.', 'buddypress' ),
 			'default'           => array(),
@@ -1042,7 +1053,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		$params['group_type__in'] = array(
 			'description'       => __( 'Limit results set to groups of certain types.', 'buddypress' ),
-			'default'           => '',
+			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_group_types',
 			'validate_callback' => 'bp_rest_validate_group_types',
@@ -1050,7 +1061,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		$params['group_type__not_in'] = array(
 			'description'       => __( 'Exclude groups of certain types.', 'buddypress' ),
-			'default'           => '',
+			'default'           => array(),
 			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_group_types',
 			'validate_callback' => 'bp_rest_validate_group_types',

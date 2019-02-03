@@ -204,7 +204,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
 			'component'  => $component,
-			'primary_id' => [ $g1 ],
+			'primary_id' => $g1,
 		) );
 
 		$request->set_param( 'context', 'view' );
