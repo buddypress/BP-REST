@@ -31,7 +31,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Response|WP_Error
+	 * @return WP_REST_Response
 	 */
 	public function get_items( $request ) {
 		$args = array(
@@ -39,6 +39,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'user_id'        => $request['user_id'],
 			'user_ids'       => $request['user_ids'],
 			'xprofile_query' => $request['xprofile'],
+			'include'        => $request['include'],
 			'exclude'        => $request['exclude'],
 			'member_type'    => $request['member_type'],
 			'search_terms'   => $request['search'],
@@ -52,6 +53,10 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		if ( empty( $request['exclude'] ) ) {
 			$args['exclude'] = false;
+		}
+
+		if ( empty( $request['include'] ) ) {
+			$args['include'] = false;
 		}
 
 		if ( empty( $request['xprofile'] ) ) {
@@ -581,6 +586,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'description'       => __( 'Pass IDs of users to limit result set.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array()',
+			'sanitize_callback' => 'wp_parse_id_list',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['include'] = array(
+			'description'       => __( 'Ensure result set include specific IDs.', 'buddypress' ),
+			'default'           => array(),
+			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
