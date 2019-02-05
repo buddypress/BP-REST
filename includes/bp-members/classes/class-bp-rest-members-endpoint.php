@@ -73,17 +73,18 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$args = apply_filters( 'bp_rest_members_get_items_query_args', $args, $request );
 
 		// Actually, query it.
-		$members = new BP_User_Query( $args );
+		$member_query = new BP_User_Query( $args );
+		$members      = array_values( $member_query->results );
 
 		$retval = array();
-		foreach ( array_values( $members->results ) as $member ) {
+		foreach ( $members as $member ) {
 			$retval[] = $this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $member, $request )
 			);
 		}
 
 		$response = rest_ensure_response( $retval );
-		$response = bp_rest_response_add_total_headers( $response, $members->total_users, $args['per_page'] );
+		$response = bp_rest_response_add_total_headers( $response, $member_query->total_users, $args['per_page'] );
 
 		/**
 		 * Fires after a list of members is fetched via the REST API.
