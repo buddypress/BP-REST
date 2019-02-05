@@ -40,7 +40,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'user_ids'       => $request['user_ids'],
 			'xprofile_query' => $request['xprofile'],
 			'exclude'        => $request['exclude'],
-			'include'        => $request['include'],
 			'member_type'    => $request['member_type'],
 			'search_terms'   => $request['search'],
 			'per_page'       => $request['per_page'],
@@ -53,10 +52,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		if ( empty( $request['exclude'] ) ) {
 			$args['exclude'] = false;
-		}
-
-		if ( empty( $request['include'] ) ) {
-			$args['include'] = false;
 		}
 
 		if ( empty( $request['xprofile'] ) ) {
@@ -585,14 +580,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'description'       => __( 'Pass IDs of users to limit result set.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array()',
-			'sanitize_callback' => 'wp_parse_id_list',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['include'] = array(
-			'description'       => __( 'Ensure result set includes specific IDs.', 'buddypress' ),
-			'default'           => array(),
-			'type'              => 'array',
 			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
