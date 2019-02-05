@@ -36,6 +36,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	public function get_items( $request ) {
 		$args = array(
 			'type'           => $request['type'],
+			'user_id'        => $request['user_id'],
 			'user_ids'       => $request['user_ids'],
 			'xprofile_query' => $request['xprofile'],
 			'exclude'        => $request['exclude'],
@@ -572,6 +573,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		$params['user_id'] = array(
+			'description'       => __( 'Limit results to friends of a user.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		$params['user_ids'] = array(
 			'description'       => __( 'Pass IDs of users to limit result set.', 'buddypress' ),
 			'default'           => array(),
@@ -597,9 +606,18 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		);
 
 		$params['member_type'] = array(
-			'description'       => __( 'Limit results set to a certain type.', 'buddypress' ),
+			'description'       => __( 'Limit results set to certain type(s).', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['xprofile'] = array(
+			'description'       => __( 'Limit results set to a certain XProfile field.', 'buddypress' ),
+			'default'           => '',
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
