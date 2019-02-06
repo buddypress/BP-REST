@@ -2,7 +2,8 @@
 /**
  * Notifications Endpoint Tests.
  *
- * @package BP_REST
+ * @package BuddyPress
+ * @subpackage BP_REST
  * @group notifications
  */
 class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testcase {

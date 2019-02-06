@@ -2,7 +2,8 @@
 /**
  * BuddyPress Members Endpoints Tests.
  *
- * @package BP_REST
+ * @package BuddyPress
+ * @subpackage BP_REST
  * @group members
  */
 class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {

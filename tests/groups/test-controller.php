@@ -2,7 +2,8 @@
 /**
  * Group Endpoint Tests.
  *
- * @package BP_REST
+ * @package BuddyPress
+ * @subpackage BP_REST
  * @group group
  */
 class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {

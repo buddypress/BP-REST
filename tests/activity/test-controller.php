@@ -2,7 +2,8 @@
 /**
  * Activity Endpoint Tests.
  *
- * @package BP_REST
+ * @package BuddyPress
+ * @subpackage BP_REST
  * @group activity
  */
 class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
@@ -55,7 +56,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-		$data     = $all_data;
+		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
 			$activity = $this->endpoint->get_activity_object( $data['id'] );
@@ -243,7 +244,8 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 2, $headers['X-WP-TotalPages'] );
 
 		$all_data = $response->get_data();
-		$data     = $all_data;
+		$this->assertNotEmpty( $all_data );
+
 		foreach ( $all_data as $data ) {
 			$activity = $this->endpoint->get_activity_object( $data['id'] );
 			$this->check_activity_data( $activity, $data, 'view', $response->get_links() );
@@ -275,7 +277,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$f_ids = wp_filter_object_list( $response->get_data(), array( 'favorited' => true ), 'AND', 'id' );
-		$f_id = reset( $f_ids );
+		$f_id  = reset( $f_ids );
 		$this->assertEquals( $a2, $f_id );
 	}
 
@@ -317,6 +319,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->check_activity_data( $activity, $all_data[0], 'view', $response->get_links() );
 	}
@@ -350,15 +353,18 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		// Not a member of the group.
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$this->bp->set_current_user( $u );
+
 		$response = $this->server->dispatch( $request );
+
 		$this->assertEquals( 403, $response->get_status() );
 
 		// Member of the group.
-		$new_member               = new BP_Groups_Member;
+		$new_member               = new BP_Groups_Member();
 		$new_member->group_id     = $g1;
 		$new_member->user_id      = $u;
 		$new_member->is_confirmed = true;
 		$new_member->save();
+
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -380,7 +386,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$all_data = $response->get_data();
-		$a_data   = reset( $all_data );
+		$this->assertNotEmpty( $all_data );
+
+		$a_data = reset( $all_data );
 
 		$this->assertTrue( false !== strpos( $a_data['content']['rendered'], '</a>' ) );
 	}
@@ -402,7 +410,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$all_data = $response->get_data();
-		$a_data   = reset( $all_data );
+		$this->assertNotEmpty( $all_data );
+
+		$a_data = reset( $all_data );
 
 		$this->assertTrue( false !== strpos( $a_data['content']['rendered'], 'wp-embedded-content' ) );
 	}
@@ -597,7 +607,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_update_item_invalid_id() {
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_activity_invalid_id', $response, 404 );
@@ -611,7 +621,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( $this->activity_id, $activity->id );
 
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
+		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
