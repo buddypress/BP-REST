@@ -50,8 +50,6 @@ add_action( 'rest_api_init', function() {
 		return;
 	}
 
-	require_once dirname( __FILE__ ) . '/includes/functions.php';
-
 	require_once( dirname( __FILE__ ) . '/includes/bp-components/classes/class-bp-rest-components-endpoint.php' );
 	$controller = new BP_REST_Components_Endpoint();
 	$controller->register_routes();
@@ -107,4 +105,13 @@ add_action( 'rest_api_init', function() {
 		$controller = new BP_REST_Notifications_Endpoint();
 		$controller->register_routes();
 	}
+} );
+
+/**
+ * Load functions so that they can also be used out of a REST request.
+ *
+ * @since 0.1.0
+ */
+add_action( 'bp_include', function() {
+	require_once dirname( __FILE__ ) . '/includes/functions.php';
 } );
