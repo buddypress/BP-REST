@@ -1120,25 +1120,21 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-
 				'primary_item_id' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'secondary_item_id' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'user_id'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID for the creator of the object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'link'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
@@ -1146,7 +1142,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'format'      => 'uri',
 					'type'        => 'string',
 				),
-
 				'component'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The active BuddyPress component the object relates to.', 'buddypress' ),
@@ -1156,7 +1151,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-
 				'type'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The activity type of the object.', 'buddypress' ),
@@ -1166,7 +1160,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-
 				'title'           => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML title of the object.', 'buddypress' ),
@@ -1175,7 +1168,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-
 				'content'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML content of the object.', 'buddypress' ),
@@ -1198,14 +1190,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						),
 					),
 				),
-
 				'date'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
-
 				'status'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the object has been marked as spam or not.', 'buddypress' ),
@@ -1215,25 +1205,21 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-
 				'parent'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the parent of the object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'comments'        => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A list of objects children of the activity object.', 'buddypress' ),
 					'type'        => 'array',
 				),
-
 				'hidden'          => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'Whether the activity object should be sitewide hidden or not.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
-
 				'favorited'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the activity object has been favorited by the current user.', 'buddypress' ),

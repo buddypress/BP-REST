@@ -88,10 +88,21 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'secondary_item_id' => $request['secondary_item_id'],
 			'component_name'    => $request['component_name'],
 			'component_action'  => $request['component_action'],
+			'date_query'        => $request['date'],
+			'sort_order'        => $request['sortby'],
 			'is_new'            => $request['is_new'],
 			'search_terms'      => $request['search'],
-			'date_query'        => $request['date'],
+			'page'              => $request['page'],
+			'per_page'          => $request['per_page'],
 		);
+
+		if ( empty( $request['component_action'] ) ) {
+			$args['component_action'] = false;
+		}
+
+		if ( empty( $request['component_name'] ) ) {
+			$args['component_name'] = false;
+		}
 
 		/**
 		 * Filter the query arguments for the request.
@@ -726,6 +737,15 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	public function get_collection_params() {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
+
+		$params['sortby'] = array(
+			'description'       => __( 'Order sort attribute ascending or descending.', 'buddypress' ),
+			'default'           => 'ASC',
+			'type'              => 'string',
+			'enum'              => array( 'ASC', 'DESC' ),
+			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
 
 		$params['component_action'] = array(
 			'description'       => __( 'Limit result set to items from a specific action.', 'buddypress' ),

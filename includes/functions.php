@@ -43,7 +43,7 @@ function bp_rest_version() {
 }
 
 /**
- * Get user url with new.
+ * Get user URL.
  *
  * @todo Update members path to the filterable one.
  *
@@ -221,7 +221,7 @@ function bp_rest_validate_group_types( $value, $request, $param ) {
  */
 function bp_rest_sanitize_string_list( $list ) {
 	if ( ! is_array( $list ) ) {
-		$list = preg_split('/[\s,]+/', $list);
+		$list = preg_split( '/[\s,]+/', $list );
 	}
 
 	return array_unique( array_map( 'sanitize_text_field', $list ) );

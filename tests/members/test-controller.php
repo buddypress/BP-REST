@@ -229,8 +229,8 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 		$this->check_add_edit_user_response( $response, true );
 
-		// Check that it has been updated correctly.
 		$new_data = $response->get_data();
+		$this->assertNotEmpty( $new_data );
 
 		$this->assertEquals( $pw_before, $userdata->user_pass );
 		$this->assertEquals( 'new@example.com', $new_data['email'] );
@@ -309,6 +309,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
 
 		$this->assertTrue( $data['deleted'] );
 		$this->assertEquals( 'Deleted User', $data['previous']['name'] );
