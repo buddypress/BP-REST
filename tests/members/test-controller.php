@@ -1,9 +1,9 @@
 <?php
 /**
- * Members Endpoint Tests.
+ * BuddyPress Members Endpoints Tests.
  *
  * @package BP_REST
- * @group member
+ * @group members
  */
 class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
@@ -42,6 +42,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		buddypress()->members->types = array();
 
 		$this->endpoint     = new BP_REST_Members_Endpoint();
+		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/members';
 
 		if ( ! $this->server ) {
@@ -71,12 +72,20 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$u3 = $this->factory->user->create();
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'user_ids' => [ $u1, $u2, $u3 ],
+		) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		foreach ( $response->get_data() as $data ) {
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$this->assertTrue( 3 === count( $all_data ) );
+
+		foreach ( $all_data as $data ) {
 			$this->check_user_data( get_userdata( $data['id'] ), $data, 'view', $data['_links'] );
 		}
 	}
@@ -84,19 +93,33 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_items
 	 */
-	public function test_get_items_with_edit_context() {
+	public function test_get_paginated_items() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
 		$u3 = $this->factory->user->create();
+		$u4 = $this->factory->user->create();
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
-		$request->set_param( 'context', 'edit' );
+		$request->set_query_params( array(
+			'user_ids' => [ $u1, $u2, $u3, $u4 ],
+			'page'     => 2,
+			'per_page' => 2,
+		) );
+
+		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		foreach ( $response->get_data() as $data ) {
-			$this->check_user_data( get_userdata( $data['id'] ), $data, 'edit', $data['_links'] );
+		$headers = $response->get_headers();
+		$this->assertEquals( 4, $headers['X-WP-Total'] );
+		$this->assertEquals( 2, $headers['X-WP-TotalPages'] );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$this->check_user_data( get_userdata( $data['id'] ), $data, 'view', $data['_links'] );
 		}
 	}
 
@@ -113,7 +136,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		bp_set_member_type( $u, 'bar', true );
 
 		$u_2 = $this->factory->user->create();
-		wp_set_current_user( $u_2 );
+		$this->bp->set_current_user( $u_2 );
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $u ) );
 		$response = $this->server->dispatch( $request );
@@ -127,7 +150,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item_invalid_id() {
-		wp_set_current_user( self::$user );
+		$this->bp->set_current_user( self::$user );
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -164,7 +187,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 */
 	public function test_create_item_without_permission() {
 		$u = $this->factory->user->create();
-		wp_set_current_user( $u );
+		$this->bp->set_current_user( $u );
 
 		$params = array(
 			'password'   => 'testpassword',
@@ -230,19 +253,16 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group update_item
 	 */
 	public function test_update_item_invalid_id() {
-		wp_set_current_user( self::$user );
+		$this->bp->set_current_user( self::$user );
 
-		$params = array(
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$request->set_body_params( array(
 			'id'       => '156',
 			'username' => 'test_user',
 			'password' => 'reallysimplepassword',
 			'email'    => 'reallydumbguy@example.com',
-		);
-
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
-
-		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
-		$request->set_body_params( $params );
+		) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
@@ -255,7 +275,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
 
-		wp_set_current_user( $u1 );
+		$this->bp->set_current_user( $u1 );
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u2 ) );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
@@ -297,7 +317,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item_invalid_id() {
-		wp_set_current_user( self::$user );
+		$this->bp->set_current_user( self::$user );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$request->set_param( 'force', true );
@@ -328,7 +348,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
 
-		wp_set_current_user( $u1 );
+		$this->bp->set_current_user( $u1 );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $u2 ) );
 		$request->set_param( 'force', true );
@@ -339,7 +359,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function test_prepare_item() {
-		wp_set_current_user( self::$user );
+		$this->bp->set_current_user( self::$user );
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'context', 'view' );
@@ -376,6 +396,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'thumb', $data['avatar_urls'] );
 		$this->assertArrayHasKey( 'full', $data['avatar_urls'] );
 		$this->assertArrayHasKey( 'member_types', $data );
+		$this->assertArrayHasKey( 'xprofile', $data );
 		$this->assertEquals(
 			bp_core_get_user_domain( $data['id'], $user->user_nicename, $user->user_login ),
 			$data['link']
@@ -385,19 +406,17 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$this->assertEquals( (object) $user->allcaps, $data['capabilities'] );
 			$this->assertEquals( (object) $user->caps, $data['extra_capabilities'] );
 			$this->assertEquals( $user->roles, $data['roles'] );
-			$this->assertArrayHasKey( 'xprofile', $data );
 			$this->assertEquals( bp_rest_prepare_date_response( $user->user_registered ), $data['registered_date'] );
 		} else {
 			$this->assertArrayNotHasKey( 'roles', $data );
 			$this->assertArrayNotHasKey( 'capabilities', $data );
 			$this->assertArrayNotHasKey( 'extra_capabilities', $data );
-			$this->assertArrayHasKey( 'xprofile', $data );
 			$this->assertArrayNotHasKey( 'registered_date', $data );
 		}
 	}
 
 	protected function allow_user_to_manage_multisite() {
-		wp_set_current_user( self::$user );
+		$this->bp->set_current_user( self::$user );
 
 		if ( is_multisite() ) {
 			update_site_option( 'site_admins', array( wp_get_current_user()->user_login ) );

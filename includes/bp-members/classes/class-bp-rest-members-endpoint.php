@@ -9,7 +9,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Members endpoints.
+ * BuddyPress Members endpoints.
  *
  * @since 0.1.0
  */
@@ -23,6 +23,86 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	public function __construct() {
 		$this->namespace = bp_rest_namespace() . '/' . bp_rest_version();
 		$this->rest_base = 'members';
+	}
+
+	/**
+	 * Retrieve users.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response
+	 */
+	public function get_items( $request ) {
+		$args = array(
+			'type'           => $request['type'],
+			'user_id'        => $request['user_id'],
+			'user_ids'       => $request['user_ids'],
+			'xprofile_query' => $request['xprofile'],
+			'include'        => $request['include'],
+			'exclude'        => $request['exclude'],
+			'member_type'    => $request['member_type'],
+			'search_terms'   => $request['search'],
+			'per_page'       => $request['per_page'],
+			'page'           => $request['page'],
+		);
+
+		if ( empty( $request['user_ids'] ) ) {
+			$args['user_ids'] = false;
+		}
+
+		if ( empty( $request['exclude'] ) ) {
+			$args['exclude'] = false;
+		}
+
+		if ( empty( $request['include'] ) ) {
+			$args['include'] = false;
+		}
+
+		if ( empty( $request['xprofile'] ) ) {
+			$args['xprofile_query'] = false;
+		}
+
+		if ( empty( $request['member_type'] ) ) {
+			$args['member_type'] = '';
+		}
+
+		/**
+		 * Filter the query arguments for the request.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $args    Key value array of query var to query value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$args = apply_filters( 'bp_rest_members_get_items_query_args', $args, $request );
+
+		// Actually, query it.
+		$member_query = new BP_User_Query( $args );
+		$members      = array_values( $member_query->results );
+
+		$retval = array();
+		foreach ( $members as $member ) {
+			$retval[] = $this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $member, $request )
+			);
+		}
+
+		$response = rest_ensure_response( $retval );
+		$response = bp_rest_response_add_total_headers( $response, $member_query->total_users, $args['per_page'] );
+
+		/**
+		 * Fires after a list of members is fetched via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array            $members  Fetched members.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'bp_rest_members_get_items', $members, $response, $request );
+
+		return $response;
 	}
 
 	/**
@@ -168,6 +248,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $user, $request ) {
+
 		$data    = $this->user_data( $user );
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
@@ -471,5 +552,76 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		return $this->add_additional_fields_schema( $schema );
+	}
+
+	/**
+	 * Get the query params for collections.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array
+	 */
+	public function get_collection_params() {
+		$params                       = parent::get_collection_params();
+		$params['context']['default'] = 'view';
+
+		$params['type'] = array(
+			'description'       => __( 'Shorthand for certain orderby/order combinations.', 'buddypress' ),
+			'default'           => 'newest',
+			'type'              => 'string',
+			'enum'              => array( 'active', 'newest', 'alphabetical', 'random', 'online', 'popular' ),
+			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['user_id'] = array(
+			'description'       => __( 'Limit results to friends of a user.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['user_ids'] = array(
+			'description'       => __( 'Pass IDs of users to limit result set.', 'buddypress' ),
+			'default'           => array(),
+			'type'              => 'array()',
+			'sanitize_callback' => 'wp_parse_id_list',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['include'] = array(
+			'description'       => __( 'Ensure result set include specific IDs.', 'buddypress' ),
+			'default'           => array(),
+			'type'              => 'array',
+			'sanitize_callback' => 'wp_parse_id_list',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['exclude'] = array(
+			'description'       => __( 'Ensure result set excludes specific IDs.', 'buddypress' ),
+			'default'           => array(),
+			'type'              => 'array',
+			'sanitize_callback' => 'wp_parse_id_list',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['member_type'] = array(
+			'description'       => __( 'Limit results set to certain type(s).', 'buddypress' ),
+			'default'           => array(),
+			'type'              => 'array',
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['xprofile'] = array(
+			'description'       => __( 'Limit results set to a certain XProfile field.', 'buddypress' ),
+			'default'           => '',
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		return $params;
 	}
 }
