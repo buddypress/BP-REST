@@ -223,10 +223,11 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool   $retval Return value.
-		 * @param int    $user_id User ID.
+		 * @param bool  $retval     Return value.
+		 * @param int   $user_id    User ID.
+		 * @param int   $thread_id  Thread ID.
 		 */
-		return apply_filters( 'bp_rest_message_endpoint_can_see', $retval, $user_id );
+		return (bool) apply_filters( 'bp_rest_messages_can_see', $retval, $user_id, $thread_id );
 	}
 
 	/**
@@ -248,50 +249,42 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-
 				'primary_item_id' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'secondary_item_id' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'subject'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML title of the object.', 'buddypress' ),
 					'type'        => 'string',
 				),
-
 				'message'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML content of the object.', 'buddypress' ),
 					'type'        => 'string',
 				),
-
 				'date'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
-
 				'unread'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'sender_ids'      => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'IDs of the senders in the thread', 'buddypress' ),
 					'type'        => 'array',
 				),
-
 				'messages'        => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Childrens of the object.', 'buddypress' ),

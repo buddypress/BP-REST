@@ -2,7 +2,8 @@
 /**
  * XProfile Field Groups Endpoint Tests.
  *
- * @package BP_REST
+ * @package BuddyPress
+ * @subpackage BP_REST
  * @group xprofile-group
  */
 class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Testcase {
@@ -49,6 +50,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
+		$this->assertNotInstanceOf( 'WP_Error', $response );
 
 		$this->assertEquals( 200, $response->get_status() );
 
@@ -70,6 +72,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
+		$this->assertNotInstanceOf( 'WP_Error', $response );
 
 		$this->assertEquals( 200, $response->get_status() );
 
@@ -98,6 +101,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->check_group_data( $field_group, $all_data[0], 'view', $response->get_links() );
 	}
@@ -116,6 +120,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->check_group_data( $field_group, $all_data[0], 'view', $response->get_links() );
 	}
@@ -223,6 +228,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->check_group_data( $field_group, $all_data[0], 'view', $response->get_links() );
 	}
@@ -233,7 +239,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	public function test_delete_item_invalid_id() {
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_invalid_field_group_id', $response, 404 );
@@ -278,6 +284,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->check_group_data( $group, $all_data[0], 'edit', $response->get_links() );
 	}
@@ -289,6 +296,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
 
 		$field_group = $this->endpoint->get_xprofile_field_group_object( $data[0]['id'] );
 		$this->check_group_data( $field_group, $data[0], 'edit', $response->get_links() );

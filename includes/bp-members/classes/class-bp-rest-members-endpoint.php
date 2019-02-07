@@ -248,8 +248,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $user, $request ) {
+		$data = $this->user_data( $user );
 
-		$data    = $this->user_data( $user );
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
 		if ( 'edit' === $context ) {
@@ -398,16 +398,25 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return bool
 	 */
 	protected function can_manage_member( $user ) {
+		$retval = false;
 
 		if ( current_user_can( 'bp_moderate' ) ) {
-			return true;
+			$retval = true;
 		}
 
 		if ( current_user_can( 'delete_user', $user->ID ) ) {
-			return true;
+			$retval = true;
 		}
 
-		return false;
+		/**
+		 * Filter the retval.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param boolean $retval Returned value.
+		 * @param WP_User $user   User object.
+		 */
+		return (bool) apply_filters( 'bp_rest_members_can_manage_member', $retval, $user );
 	}
 
 	/**
@@ -429,7 +438,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'context'     => array( 'embed', 'view', 'edit' ),
 					'readonly'    => true,
 				),
-
 				'name'        => array(
 					'description' => __( 'Display name for the member.', 'buddypress' ),
 					'type'        => 'string',
@@ -438,7 +446,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-
 				'email'       => array(
 					'description' => __( 'The email address for the member.', 'buddypress' ),
 					'type'        => 'string',
@@ -446,7 +453,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'context'     => array( 'embed', 'view', 'edit' ),
 					'required'    => true,
 				),
-
 				'link'        => array(
 					'description' => __( 'Profile URL of the member.', 'buddypress' ),
 					'type'        => 'string',
@@ -454,7 +460,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'context'     => array( 'embed', 'view', 'edit' ),
 					'readonly'    => true,
 				),
-
 				'user_login'        => array(
 					'description' => __( 'An alphanumeric identifier for the member.', 'buddypress' ),
 					'type'        => 'string',
@@ -464,14 +469,12 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'sanitize_callback' => array( $this, 'check_username' ),
 					),
 				),
-
 				'member_types' => array(
 					'description' => __( 'Member types associated with the member.', 'buddypress' ),
 					'type'        => 'object',
 					'context'     => array( 'embed', 'view', 'edit' ),
 					'readonly'    => true,
 				),
-
 				'registered_date' => array(
 					'description' => __( 'Registration date for the member.', 'buddypress' ),
 					'type'        => 'string',
@@ -479,7 +482,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'context'     => array( 'edit' ),
 					'readonly'    => true,
 				),
-
 				'password'        => array(
 					'description' => __( 'Password for the member (never included).', 'buddypress' ),
 					'type'        => 'string',
@@ -489,7 +491,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'sanitize_callback' => array( $this, 'check_user_password' ),
 					),
 				),
-
 				'roles'           => array(
 					'description' => __( 'Roles assigned to the member.', 'buddypress' ),
 					'type'        => 'array',
@@ -498,21 +499,18 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'type'    => 'string',
 					),
 				),
-
 				'capabilities'    => array(
 					'description' => __( 'All capabilities assigned to the user.', 'buddypress' ),
 					'type'        => 'object',
 					'context'     => array( 'edit' ),
 					'readonly'    => true,
 				),
-
 				'extra_capabilities' => array(
 					'description' => __( 'Any extra capabilities assigned to the user.', 'buddypress' ),
 					'type'        => 'object',
 					'context'     => array( 'edit' ),
 					'readonly'    => true,
 				),
-
 				'xprofile' => array(
 					'description' => __( 'Member XProfile groups and its fields.', 'buddypress' ),
 					'type'        => 'array',

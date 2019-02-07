@@ -83,35 +83,25 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'type'               => $request['type'],
-			'order'              => $request['order'],
-			'fields'             => $request['fields'],
-			'orderby'            => $request['orderby'],
-			'user_id'            => $request['user_id'],
-			'include'            => $request['include'],
-			'parent_id'          => $request['parent_id'],
-			'exclude'            => $request['exclude'],
-			'search_terms'       => $request['search'],
-			'meta_query'         => $request['meta'], // WPCS: slow query ok.
-			'group_type'         => $request['group_type'],
-			'group_type__in'     => $request['group_type__in'],
-			'group_type__not_in' => $request['group_type__not_in'],
-			'show_hidden'        => $request['show_hidden'],
-			'per_page'           => $request['per_page'],
-			'status'             => $request['status'],
-			'page'               => $request['page'],
+			'type'         => $request['type'],
+			'order'        => $request['order'],
+			'fields'       => $request['fields'],
+			'orderby'      => $request['orderby'],
+			'user_id'      => $request['user_id'],
+			'include'      => $request['include'],
+			'parent_id'    => $request['parent_id'],
+			'exclude'      => $request['exclude'],
+			'search_terms' => $request['search'],
+			'meta_query'   => $request['meta'], // WPCS: slow query ok.
+			'group_type'   => $request['group_type'],
+			'show_hidden'  => $request['show_hidden'],
+			'per_page'     => $request['per_page'],
+			'status'       => $request['status'],
+			'page'         => $request['page'],
 		);
 
 		if ( empty( $request['parent_id'] ) ) {
 			$args['parent_id'] = null;
-		}
-
-		if ( empty( $request['group_type__in'] ) ) {
-			$args['group_type__in'] = '';
-		}
-
-		if ( empty( $request['group_type__not_in'] ) ) {
-			$args['group_type__not_in'] = '';
 		}
 
 		/**
@@ -178,7 +168,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
+	 * @return WP_REST_Request
 	 */
 	public function get_item( $request ) {
 		$group = $this->get_group_object( $request );
@@ -243,7 +233,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
+	 * @return WP_REST_Request|WP_Error
 	 */
 	public function create_item( $request ) {
 
@@ -298,7 +288,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return true|WP_Error True if the request has access to create, WP_Error object otherwise.
+	 * @return bool|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
 		if ( ! is_user_logged_in() ) {
@@ -333,8 +323,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	public function update_item( $request ) {
 		$group_id = groups_create_group( $this->prepare_item_for_database( $request ) );
 
-		// If the update was fired but returned an error,
-		// send a custom error to the api.
 		if ( ! is_numeric( $group_id ) ) {
 			return new WP_Error( 'bp_rest_user_cannot_update_group',
 				__( 'Cannot update existing group.', 'buddypress' ),
@@ -713,7 +701,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param bool            $retval  Return value.
 		 * @param int             $user_id User id.
-		 * @param BP_Groups_Group $group   BP_Groups_Group object.
+		 * @param BP_Groups_Group $group   Group object.
 		 */
 		return (bool) apply_filters( 'bp_rest_group_can_see', $retval, $user_id, $group );
 	}
@@ -727,38 +715,63 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	protected function can_user_delete_or_update( $group ) {
+		$retval  = false;
+		$user_id = bp_loggedin_user_id();
 
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
+			$retval = true;
 		}
 
-		if ( get_current_user_id() === $group->creator_id ) {
-			return true;
+		if ( $user_id === $group->creator_id ) {
+			$retval = true;
 		}
 
-		return false;
+		/**
+		 * Filter the retval.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Return value.
+		 * @param int             $user_id User id.
+		 * @param BP_Groups_Group $group   BP_Groups_Group object.
+		 */
+		return (bool) apply_filters( 'bp_rest_group_can_delete_or_update', $retval, $user_id, $group );
 	}
 
 	/**
 	 * Can this user see hidden groups?
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return bool
 	 */
 	protected function can_see_hidden_groups( $request ) {
+		$retval  = true;
+		$user_id = bp_loggedin_user_id();
+
 		if ( $request['show_hidden'] ) {
 			if ( bp_current_user_can( 'bp_moderate' ) ) {
-				return true;
+				$retval = true;
 			}
 
-			if ( is_user_logged_in() && isset( $request['user_id'] ) && absint( $request['user_id'] ) === bp_loggedin_user_id() ) {
-				return true;
+			if ( is_user_logged_in() && isset( $request['user_id'] ) && absint( $request['user_id'] ) === $user_id ) {
+				$retval = true;
 			}
 
-			return false;
+			$retval = false;
 		}
 
-		return true;
+		/**
+		 * Filter the retval.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Return value.
+		 * @param int             $user_id User id.
+		 * @param WP_REST_Request $request Request object.
+		 */
+		return (bool) apply_filters( 'bp_rest_group_can_see_hidden_groups', $retval, $user_id, $request );
 	}
 
 	/**
@@ -1044,22 +1057,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => '',
 			'type'              => 'string',
 			'enum'              => bp_groups_get_group_types(),
-			'sanitize_callback' => 'bp_rest_sanitize_group_types',
-			'validate_callback' => 'bp_rest_validate_group_types',
-		);
-
-		$params['group_type__in'] = array(
-			'description'       => __( 'Limit results set to groups of certain types.', 'buddypress' ),
-			'default'           => array(),
-			'type'              => 'array',
-			'sanitize_callback' => 'bp_rest_sanitize_group_types',
-			'validate_callback' => 'bp_rest_validate_group_types',
-		);
-
-		$params['group_type__not_in'] = array(
-			'description'       => __( 'Exclude groups of certain types.', 'buddypress' ),
-			'default'           => array(),
-			'type'              => 'array',
 			'sanitize_callback' => 'bp_rest_sanitize_group_types',
 			'validate_callback' => 'bp_rest_validate_group_types',
 		);

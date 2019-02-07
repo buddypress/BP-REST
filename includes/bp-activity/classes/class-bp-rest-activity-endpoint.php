@@ -279,15 +279,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see( $request, true ) ) {
-			return new WP_Error( 'bp_rest_forbidden_context',
-				__( 'Sorry, you cannot view this resource with edit context.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
 		return true;
 	}
 
@@ -300,6 +291,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
+		if ( empty( $request['content'] ) ) {
+			return new WP_Error( 'bp_rest_create_activity_empty_content',
+				__( 'Please, enter some content.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		$prepared_activity = $this->prepare_item_for_database( $request );
 		$type              = $request['type'];
 		$prime             = $request['primary_item_id'];
@@ -388,16 +388,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Bail early, if no content.
-		if ( empty( $request['content'] ) ) {
-			return new WP_Error( 'bp_rest_create_activity_empty_content',
-				__( 'Please, enter some content.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
 		$item_id   = $request['primary_item_id'];
 		$component = $request['component'];
 
@@ -424,6 +414,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
+		if ( empty( $request['content'] ) ) {
+			return new WP_Error( 'bp_rest_update_activity_empty_content',
+				__( 'Please, enter some content.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		$activity_id = bp_activity_add( $this->prepare_item_for_database( $request ) );
 
 		if ( ! is_numeric( $activity_id ) ) {
@@ -493,15 +492,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		if ( empty( $request['content'] ) ) {
-			return new WP_Error( 'bp_rest_update_activity_empty_content',
-				__( 'Please, enter some content.', 'buddypress' ),
-				array(
-					'status' => 500,
 				)
 			);
 		}
@@ -1005,21 +995,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @param  boolean         $edit Edit fallback.
 	 * @return boolean
 	 */
-	protected function can_see( $request, $edit = false ) {
-		$user_id  = get_current_user_id();
-		$activity = $this->get_activity_object( $request );
+	protected function can_see( $request ) {
 		$retval   = false;
+		$user_id  = bp_loggedin_user_id();
+		$activity = $this->get_activity_object( $request );
 
-		// Fix for edit context.
-		if ( $edit && 'edit' === $request['context'] && bp_current_user_can( 'bp_moderate' ) ) {
+		if ( bp_activity_user_can_read( $activity, $user_id ) ) {
 			$retval = true;
-		} else {
-			if ( bp_activity_user_can_read( $activity, $user_id ) ) {
-				$retval = true;
-			}
 		}
 
 		/**
@@ -1120,25 +1104,21 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-
 				'primary_item_id' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'secondary_item_id' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'user_id'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID for the creator of the object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'link'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
@@ -1146,7 +1126,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'format'      => 'uri',
 					'type'        => 'string',
 				),
-
 				'component'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The active BuddyPress component the object relates to.', 'buddypress' ),
@@ -1156,7 +1135,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-
 				'type'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The activity type of the object.', 'buddypress' ),
@@ -1166,7 +1144,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-
 				'title'           => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML title of the object.', 'buddypress' ),
@@ -1175,7 +1152,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-
 				'content'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML content of the object.', 'buddypress' ),
@@ -1198,14 +1174,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						),
 					),
 				),
-
 				'date'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
-
 				'status'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the object has been marked as spam or not.', 'buddypress' ),
@@ -1215,25 +1189,21 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-
 				'parent'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the parent of the object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'comments'        => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A list of objects children of the activity object.', 'buddypress' ),
 					'type'        => 'array',
 				),
-
 				'hidden'          => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'Whether the activity object should be sitewide hidden or not.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
-
 				'favorited'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the activity object has been favorited by the current user.', 'buddypress' ),

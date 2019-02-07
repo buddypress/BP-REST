@@ -329,10 +329,11 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool $retval  Return value.
-		 * @param int  $user_id User ID.
+		 * @param bool $retval        Return value.
+		 * @param int  $user_id       User ID.
+		 * @param int  $field_user_id  Field user id.
 		 */
-		return apply_filters( 'bp_rest_xprofile_data_can_see', $retval, $user_id );
+		return (bool) apply_filters( 'bp_rest_xprofile_data_can_see', $retval, $user_id, $field_user_id );
 	}
 
 	/**
@@ -353,19 +354,16 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 					'description' => __( 'The ID of the field the data is from.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'user_id'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of user the field data is from.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'value'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The value of the field data.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'last_updated'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The date the field data was clast updated, in the site\'s timezone.', 'buddypress' ),

@@ -87,9 +87,9 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 
 		$args = array(
 			'group_id'     => $group->id,
+			'is_confirmed' => $request['is_confirmed'],
 			'per_page'     => $request['per_page'],
 			'page'         => $request['page'],
-			'is_confirmed' => $request['is_confirmed'],
 		);
 
 		/**
@@ -293,11 +293,11 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		$response = rest_ensure_response( $retval );
 
 		/**
-		 * Fires after a group invite is deleted via the REST API.
+		 * Fires after a group invite is accepted via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param BP_Groups_Member $accepted_member Deleted group member.
+		 * @param BP_Groups_Member $accepted_member Accepted group member.
 		 * @param BP_Groups_Group  $group           The group object.
 		 * @param WP_REST_Response $response        The response data.
 		 * @param WP_REST_Request  $request         The request sent to the API.
@@ -308,7 +308,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check if a given request has access to update a group invitation.
+	 * Check if a given request has access to accept a group invitation.
 	 *
 	 * @since 0.1.0
 	 *
@@ -461,18 +461,23 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function can_see( $group_id ) {
+		$retval  = true;
+		$user_id = bp_loggedin_user_id();
 
-		// Site administrators can do anything.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
+		if ( ! groups_is_user_admin( $user_id, $group_id ) && ! groups_is_user_mod( $user_id, $group_id ) ) {
+			$retval = false;
 		}
 
-		$loggedin_user_id = bp_loggedin_user_id();
-		if ( ! groups_is_user_admin( $loggedin_user_id, $group_id ) && ! groups_is_user_mod( $loggedin_user_id, $group_id ) ) {
-			return false;
-		}
-
-		return true;
+		/**
+		 * Filter the retval.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool $retval    Return value.
+		 * @param int  $user_id   User ID.
+		 * @param int  $group_id  Group ID.
+		 */
+		return (bool) apply_filters( 'bp_rest_group_invite_can_see', $retval, $user_id, $group_id );
 	}
 
 	/**
@@ -494,20 +499,17 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-
 				'invite_sent'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Date on which the invite was sent.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
-
 				'inviter_id'      => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID of the user who made the invite.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'is_confirmed'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Status of the invite.', 'buddypress' ),

@@ -2,7 +2,8 @@
 /**
  * Group Membership Endpoint Tests.
  *
- * @package BP_REST
+ * @package BuddyPress
+ * @subpackage BP_REST
  * @group group-membership
  */
 class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Testcase {

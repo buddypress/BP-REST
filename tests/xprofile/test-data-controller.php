@@ -2,7 +2,8 @@
 /**
  * XProfile Data Endpoint Tests.
  *
- * @package BP_REST
+ * @package BuddyPress
+ * @subpackage BP_REST
  * @group xprofile-data
  */
 class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testcase {

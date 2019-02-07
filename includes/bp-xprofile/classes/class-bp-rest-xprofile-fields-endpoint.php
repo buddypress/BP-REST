@@ -501,7 +501,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 * @param int              $user_id User ID.
 		 * @param BP_XProfile_Field $field    XProfile field object.
 		 */
-		return apply_filters( 'bp_rest_xprofile_field_can_see', $retval, $user_id, $field );
+		return (bool) apply_filters( 'bp_rest_xprofile_field_can_see', $retval, $user_id, $field );
 	}
 
 	/**
@@ -543,19 +543,16 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-
 				'group_id'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the group the field is part of.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'parent_id'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the field parent.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'type'              => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The type of field, like checkbox or select.', 'buddypress' ),
@@ -564,7 +561,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-
 				'name'              => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The name of the profile field group.', 'buddypress' ),
@@ -573,7 +569,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-
 				'description'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The description of the profile field group.', 'buddypress' ),
@@ -582,49 +577,41 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-
 				'is_required'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the profile field must have a value.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
-
 				'can_delete'        => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the profile field can be deleted or not.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
-
 				'field_order'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The order of the field.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'option_order'      => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The order of the field\'s options.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'order_by'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'How the field\'s options are ordered.', 'buddypress' ),
 					'type'        => 'string',
 				),
-
 				'is_default_option' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the option is the default option.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
-
 				'visibility_level'  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Who may see the saved value for this field.', 'buddypress' ),
 					'type'        => 'string',
 				),
-
 				'data'              => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The saved value for this field.', 'buddypress' ),

@@ -2,7 +2,8 @@
 /**
  * Notifications Endpoint Tests.
  *
- * @package BP_REST
+ * @package BuddyPress
+ * @subpackage BP_REST
  * @group notifications
  */
 class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testcase {
@@ -42,7 +43,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		$this->bp_factory->notification->create_many( 5 );
+		$this->bp_factory->notification->create();
 
 		$this->bp->set_current_user( $this->user );
 
@@ -53,7 +54,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-		$data     = $all_data;
+		// $this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
 			$notification = $this->endpoint->get_notification_object( $data['id'] );
@@ -104,6 +105,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->check_notification_data( $notification, $all_data[0], 'view', $response->get_links() );
 	}
@@ -223,6 +225,8 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$response = $this->server->dispatch( $request );
 
 		$new_data = $response->get_data();
+		$this->assertNotEmpty( $new_data );
+
 		$new_data = $new_data[0];
 
 		$n = $this->endpoint->get_notification_object( $new_data['id'] );
@@ -311,6 +315,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->check_notification_data( $notification, $all_data, 'view', $response->get_links() );
 	}
@@ -370,6 +375,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->check_notification_data( $notification, $all_data[0], 'edit', $response->get_links() );
 	}
@@ -403,6 +409,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertArrayNotHasKey( 'Location', $headers );
 
 		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
 
 		$group = $this->endpoint->get_notification_object( $data[0]['id'] );
 		$this->check_notification_data( $group, $data[0], 'edit', $response->get_links() );
@@ -415,6 +422,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
 
 		$notification = $this->endpoint->get_notification_object( $data[0]['id'] );
 		$this->check_notification_data( $notification, $data[0], 'edit', $response->get_links() );
