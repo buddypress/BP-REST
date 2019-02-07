@@ -92,7 +92,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request List of group members.
+	 * @return WP_REST_Request
 	 */
 	public function get_items( $request ) {
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
@@ -408,10 +408,10 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		// Case 2: User is making a request about another user.
 		switch ( $request['action'] ) {
-			case 'ban' :
-			case 'unban' :
-			case 'promote' :
-			case 'demote' :
+			case 'ban':
+			case 'unban':
+			case 'promote':
+			case 'demote':
 				if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
 					return new WP_Error( 'bp_rest_group_member_cannot_' . $request['action'],
 						sprintf( __( 'Sorry, you are not allowed to %s this group member.', 'buddypress' ), esc_attr( $request['action'] ) ),
@@ -423,7 +423,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 					return true;
 				}
 
-			default :
+			default:
 				return false;
 		}
 	}

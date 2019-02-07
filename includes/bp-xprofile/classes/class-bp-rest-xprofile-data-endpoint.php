@@ -354,19 +354,16 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 					'description' => __( 'The ID of the field the data is from.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'user_id'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of user the field data is from.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'value'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The value of the field data.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'last_updated'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The date the field data was clast updated, in the site\'s timezone.', 'buddypress' ),

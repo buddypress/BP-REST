@@ -499,20 +499,17 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-
 				'invite_sent'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Date on which the invite was sent.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
-
 				'inviter_id'      => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID of the user who made the invite.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'is_confirmed'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Status of the invite.', 'buddypress' ),

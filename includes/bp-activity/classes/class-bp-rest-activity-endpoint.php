@@ -291,6 +291,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
+		if ( empty( $request['content'] ) ) {
+			return new WP_Error( 'bp_rest_create_activity_empty_content',
+				__( 'Please, enter some content.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		$prepared_activity = $this->prepare_item_for_database( $request );
 		$type              = $request['type'];
 		$prime             = $request['primary_item_id'];
@@ -379,16 +388,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Bail early, if no content.
-		if ( empty( $request['content'] ) ) {
-			return new WP_Error( 'bp_rest_create_activity_empty_content',
-				__( 'Please, enter some content.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
 		$item_id   = $request['primary_item_id'];
 		$component = $request['component'];
 
@@ -415,6 +414,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
+		if ( empty( $request['content'] ) ) {
+			return new WP_Error( 'bp_rest_update_activity_empty_content',
+				__( 'Please, enter some content.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		$activity_id = bp_activity_add( $this->prepare_item_for_database( $request ) );
 
 		if ( ! is_numeric( $activity_id ) ) {
@@ -484,15 +492,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		if ( empty( $request['content'] ) ) {
-			return new WP_Error( 'bp_rest_update_activity_empty_content',
-				__( 'Please, enter some content.', 'buddypress' ),
-				array(
-					'status' => 500,
 				)
 			);
 		}

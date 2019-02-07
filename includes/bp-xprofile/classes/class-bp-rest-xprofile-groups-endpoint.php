@@ -533,7 +533,6 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-
 				'name'        => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The name of the XProfile field group.', 'buddypress' ),
@@ -542,7 +541,6 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-
 				'description' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The description of the XProfile field group.', 'buddypress' ),
@@ -551,19 +549,16 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-
 				'group_order' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The order of the group.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'can_delete'  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the XProfile field group can be deleted or not.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
-
 				'fields'      => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The fields associated with this field group.', 'buddypress' ),
