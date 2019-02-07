@@ -406,7 +406,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $a ) );
-		$request->set_param( 'context', 'view' );
+		// $request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$all_data = $response->get_data();
