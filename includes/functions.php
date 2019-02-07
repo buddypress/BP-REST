@@ -90,7 +90,7 @@ function bp_rest_response_add_total_headers( WP_REST_Response $response, $total 
  * @since 0.1.0
  *
  * @param string      $date_gmt Date GMT format.
- * @param string|null $date Optional. Date object.
+ * @param string|null $date     Optional. Date object.
  * @return string|null ISO8601/RFC3339 formatted datetime.
  */
 function bp_rest_prepare_date_response( $date_gmt, $date = null ) {
@@ -159,7 +159,7 @@ function bp_rest_validate_member_types( $value, $request, $param ) {
 }
 
 /**
- * Clean up group_type__in input.
+ * Clean up group_type input.
  *
  * @since 0.1.0
  *
@@ -167,8 +167,6 @@ function bp_rest_validate_member_types( $value, $request, $param ) {
  * @return array|null
  */
 function bp_rest_sanitize_group_types( $value ) {
-
-	// Bail early.
 	if ( empty( $value ) ) {
 		return null;
 	}
@@ -180,18 +178,16 @@ function bp_rest_sanitize_group_types( $value ) {
 }
 
 /**
- * Validate group_type__in input.
+ * Validate group_type input.
  *
  * @since 0.1.0
  *
- * @param  mixed           $value mixed value.
+ * @param  mixed           $value   Mixed value.
  * @param  WP_REST_Request $request Full details about the request.
- * @param  string          $param string.
+ * @param  string          $param   String.
  * @return WP_Error|bool
  */
 function bp_rest_validate_group_types( $value, $request, $param ) {
-
-	// Bail early.
 	if ( empty( $value ) ) {
 		return true;
 	}
