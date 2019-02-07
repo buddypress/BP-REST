@@ -329,10 +329,11 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool $retval  Return value.
-		 * @param int  $user_id User ID.
+		 * @param bool $retval        Return value.
+		 * @param int  $user_id       User ID.
+		 * @param int  $field_user_id  Field user id.
 		 */
-		return apply_filters( 'bp_rest_xprofile_data_can_see', $retval, $user_id );
+		return (bool) apply_filters( 'bp_rest_xprofile_data_can_see', $retval, $user_id, $field_user_id );
 	}
 
 	/**

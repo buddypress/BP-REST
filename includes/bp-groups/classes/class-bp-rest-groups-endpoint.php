@@ -713,7 +713,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param bool            $retval  Return value.
 		 * @param int             $user_id User id.
-		 * @param BP_Groups_Group $group   BP_Groups_Group object.
+		 * @param BP_Groups_Group $group   Group object.
 		 */
 		return (bool) apply_filters( 'bp_rest_group_can_see', $retval, $user_id, $group );
 	}
@@ -727,38 +727,63 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	protected function can_user_delete_or_update( $group ) {
+		$retval  = false;
+		$user_id = bp_loggedin_user_id();
 
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
+			$retval = true;
 		}
 
-		if ( get_current_user_id() === $group->creator_id ) {
-			return true;
+		if ( $user_id === $group->creator_id ) {
+			$retval = true;
 		}
 
-		return false;
+		/**
+		 * Filter the retval.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Return value.
+		 * @param int             $user_id User id.
+		 * @param BP_Groups_Group $group   BP_Groups_Group object.
+		 */
+		return (bool) apply_filters( 'bp_rest_group_can_delete_or_update', $retval, $user_id, $group );
 	}
 
 	/**
 	 * Can this user see hidden groups?
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return bool
 	 */
 	protected function can_see_hidden_groups( $request ) {
+		$retval  = true;
+		$user_id = bp_loggedin_user_id();
+
 		if ( $request['show_hidden'] ) {
 			if ( bp_current_user_can( 'bp_moderate' ) ) {
-				return true;
+				$retval = true;
 			}
 
-			if ( is_user_logged_in() && isset( $request['user_id'] ) && absint( $request['user_id'] ) === bp_loggedin_user_id() ) {
-				return true;
+			if ( is_user_logged_in() && isset( $request['user_id'] ) && absint( $request['user_id'] ) === $user_id ) {
+				$retval = true;
 			}
 
-			return false;
+			$retval = false;
 		}
 
-		return true;
+		/**
+		 * Filter the retval.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Return value.
+		 * @param int             $user_id User id.
+		 * @param WP_REST_Request $request Request object.
+		 */
+		return (bool) apply_filters( 'bp_rest_group_can_see_hidden_groups', $retval, $user_id, $request );
 	}
 
 	/**

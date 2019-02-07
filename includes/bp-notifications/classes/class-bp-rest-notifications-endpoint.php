@@ -642,7 +642,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param int  $user_id         User ID.
 		 * @param int  $notification_id Notification ID.
 		 */
-		return apply_filters( 'bp_rest_notification_can_see', $retval, $user_id, $notification_id );
+		return (bool) apply_filters( 'bp_rest_notification_can_see', $retval, $user_id, $notification_id );
 	}
 
 	/**

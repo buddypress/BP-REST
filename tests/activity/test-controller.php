@@ -592,6 +592,8 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->check_update_activity_response( $response );
 
 		$new_data = $response->get_data();
+		$this->assertNotEmpty( $new_data );
+
 		$new_data = $new_data[0];
 
 		$this->assertEquals( $this->activity_id, $new_data['id'] );
@@ -671,6 +673,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
 
 		$this->assertEquals( 'Deleted activity', $data['content']['raw'] );
 	}
@@ -681,7 +684,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_delete_item_invalid_id() {
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_activity_invalid_id', $response, 404 );
@@ -694,7 +697,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$activity = $this->endpoint->get_activity_object( $this->activity_id );
 		$this->assertEquals( $this->activity_id, $activity->id );
 
-		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $activity->id ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
@@ -735,8 +738,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
+
 		$f_ids = wp_filter_object_list( $response->get_data(), array( 'favorited' => true ), 'AND', 'id' );
-		$f_id = reset( $f_ids );
+		$f_id  = reset( $f_ids );
 		$this->assertEquals( $a, $f_id );
 	}
 
@@ -798,6 +802,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->check_activity_data( $activity, $all_data[0], 'edit', $response->get_links() );
 	}

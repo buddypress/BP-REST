@@ -501,7 +501,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 * @param int              $user_id User ID.
 		 * @param BP_XProfile_Field $field    XProfile field object.
 		 */
-		return apply_filters( 'bp_rest_xprofile_field_can_see', $retval, $user_id, $field );
+		return (bool) apply_filters( 'bp_rest_xprofile_field_can_see', $retval, $user_id, $field );
 	}
 
 	/**

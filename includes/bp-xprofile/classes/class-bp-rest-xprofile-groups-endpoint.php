@@ -471,7 +471,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param bool $retval  Return value.
 		 * @param int  $user_id User ID.
 		 */
-		return apply_filters( 'bp_rest_xprofile_field_group_can_see', $retval, $user_id );
+		return (bool) apply_filters( 'bp_rest_xprofile_field_group_can_see', $retval, $user_id );
 	}
 
 	/**

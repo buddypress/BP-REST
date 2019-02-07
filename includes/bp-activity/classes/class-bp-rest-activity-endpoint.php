@@ -279,15 +279,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see( $request, true ) ) {
-			return new WP_Error( 'bp_rest_forbidden_context',
-				__( 'Sorry, you cannot view this resource with edit context.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
 		return true;
 	}
 
@@ -1005,21 +996,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @param  boolean         $edit Edit fallback.
 	 * @return boolean
 	 */
-	protected function can_see( $request, $edit = false ) {
-		$user_id  = get_current_user_id();
-		$activity = $this->get_activity_object( $request );
+	protected function can_see( $request ) {
 		$retval   = false;
+		$user_id  = bp_loggedin_user_id();
+		$activity = $this->get_activity_object( $request );
 
-		// Fix for edit context.
-		if ( $edit && 'edit' === $request['context'] && bp_current_user_can( 'bp_moderate' ) ) {
+		if ( bp_activity_user_can_read( $activity, $user_id ) ) {
 			$retval = true;
-		} else {
-			if ( bp_activity_user_can_read( $activity, $user_id ) ) {
-				$retval = true;
-			}
 		}
 
 		/**

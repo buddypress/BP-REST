@@ -223,10 +223,11 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool   $retval Return value.
-		 * @param int    $user_id User ID.
+		 * @param bool  $retval     Return value.
+		 * @param int   $user_id    User ID.
+		 * @param int   $thread_id  Thread ID.
 		 */
-		return apply_filters( 'bp_rest_message_endpoint_can_see', $retval, $user_id );
+		return (bool) apply_filters( 'bp_rest_messages_can_see', $retval, $user_id, $thread_id );
 	}
 
 	/**
