@@ -143,6 +143,21 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the components `get_items` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_components_get_items_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to list components.', 'buddypress' ),
@@ -161,7 +176,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -258,6 +273,21 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the components `update_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_components_update_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		return $this->get_items_permissions_check( $request );
 	}
 
@@ -286,7 +316,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request  $request   Request used to generate the response.
 		 * @param array            $component The component and its values.
 		 */
-		return apply_filters( 'bp_rest_component_prepare_value', $response, $request, $component );
+		return apply_filters( 'bp_rest_components_prepare_value', $response, $request, $component );
 	}
 
 	/**
