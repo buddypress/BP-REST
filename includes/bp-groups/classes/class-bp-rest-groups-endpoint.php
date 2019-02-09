@@ -136,7 +136,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_get_items', $groups, $response, $request );
+		do_action( 'bp_rest_groups_get_items', $groups, $response, $request );
 
 		return $response;
 	}
@@ -150,6 +150,21 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	public function get_items_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the groups `get_items` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_groups_get_items_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! $this->can_see_hidden_groups( $request ) ) {
 			return new WP_Error( 'bp_rest_user_cannot_view_hidden_groups',
 				__( 'Sorry, you cannot view hidden groups.', 'buddypress' ),
@@ -159,7 +174,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -190,7 +205,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_get_item', $group, $response, $request );
+		do_action( 'bp_rest_groups_get_item', $group, $response, $request );
 
 		return $response;
 	}
@@ -204,6 +219,21 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the groups `get_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_groups_get_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		$group = $this->get_group_object( $request );
 
 		if ( empty( $group->id ) ) {
@@ -224,7 +254,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -277,7 +307,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_create_item', $group, $response, $request );
+		do_action( 'bp_rest_groups_create_item', $group, $response, $request );
 
 		return $response;
 	}
@@ -291,6 +321,21 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the groups `create_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_groups_create_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to create groups.', 'buddypress' ),
@@ -309,7 +354,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -351,7 +396,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_update_item', $group, $response, $request );
+		do_action( 'bp_rest_groups_update_item', $group, $response, $request );
 
 		return $response;
 	}
@@ -365,6 +410,20 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the groups `update_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_groups_update_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
 
 		// Bail early.
 		if ( ! is_user_logged_in() ) {
@@ -397,7 +456,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -433,7 +492,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_delete_item', $group, $response, $request );
+		do_action( 'bp_rest_groups_delete_item', $group, $response, $request );
 
 		return $response;
 	}
@@ -447,6 +506,21 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the groups `delete_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_groups_delete_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to delete this group.', 'buddypress' ),
@@ -476,7 +550,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -564,7 +638,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  Request used to generate the response.
 		 */
-		return apply_filters( 'bp_rest_group_prepare_value', $response, $request );
+		return apply_filters( 'bp_rest_groups_prepare_value', $response, $request );
 	}
 
 	/**
@@ -634,7 +708,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param stdClass        $prepared_group An object prepared for inserting or updating the database.
 		 * @param WP_REST_Request $request        Request object.
 		 */
-		return apply_filters( 'bp_rest_group_pre_insert_value', $prepared_group, $request );
+		return apply_filters( 'bp_rest_groups_pre_insert_value', $prepared_group, $request );
 	}
 
 	/**
@@ -703,7 +777,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param int             $user_id User id.
 		 * @param BP_Groups_Group $group   Group object.
 		 */
-		return (bool) apply_filters( 'bp_rest_group_can_see', $retval, $user_id, $group );
+		return (bool) apply_filters( 'bp_rest_groups_can_see', $retval, $user_id, $group );
 	}
 
 	/**
@@ -735,7 +809,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param int             $user_id User id.
 		 * @param BP_Groups_Group $group   BP_Groups_Group object.
 		 */
-		return (bool) apply_filters( 'bp_rest_group_can_delete_or_update', $retval, $user_id, $group );
+		return (bool) apply_filters( 'bp_rest_groups_can_delete_or_update', $retval, $user_id, $group );
 	}
 
 	/**
@@ -771,7 +845,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param int             $user_id User id.
 		 * @param WP_REST_Request $request Request object.
 		 */
-		return (bool) apply_filters( 'bp_rest_group_can_see_hidden_groups', $retval, $user_id, $request );
+		return (bool) apply_filters( 'bp_rest_groups_can_see_hidden_groups', $retval, $user_id, $request );
 	}
 
 	/**

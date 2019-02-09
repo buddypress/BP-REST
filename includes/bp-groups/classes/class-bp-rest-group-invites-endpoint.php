@@ -140,6 +140,21 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the group invites `get_items` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_group_invites_get_items_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to see the group invitations.', 'buddypress' ),
@@ -169,7 +184,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -247,6 +262,21 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the group invites `create_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_group_invites_create_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		return $this->get_items_permissions_check( $request );
 	}
 
@@ -302,7 +332,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response        The response data.
 		 * @param WP_REST_Request  $request         The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_invites_accept_item', $accepted_member, $group, $response, $request );
+		do_action( 'bp_rest_group_invites_update_item', $accepted_member, $group, $response, $request );
 
 		return $response;
 	}
@@ -316,6 +346,21 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the group invites `update_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_group_invites_update_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		return $this->get_items_permissions_check( $request );
 	}
 
@@ -385,6 +430,21 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the group invites `delete_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_group_invites_delete_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		return $this->get_items_permissions_check( $request );
 	}
 
@@ -422,7 +482,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request  $request  Request used to generate the response.
 		 * @param stdClass         $invite   The group invite.
 		 */
-		return apply_filters( 'bp_rest_group_invite_prepare_value', $response, $request, $invite );
+		return apply_filters( 'bp_rest_group_invites_prepare_value', $response, $request, $invite );
 	}
 
 	/**
@@ -477,7 +537,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 * @param int  $user_id   User ID.
 		 * @param int  $group_id  Group ID.
 		 */
-		return (bool) apply_filters( 'bp_rest_group_invite_can_see', $retval, $user_id, $group_id );
+		return (bool) apply_filters( 'bp_rest_group_invites_can_see', $retval, $user_id, $group_id );
 	}
 
 	/**

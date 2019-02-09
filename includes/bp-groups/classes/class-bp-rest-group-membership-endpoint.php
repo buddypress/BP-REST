@@ -162,6 +162,21 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the group members `get_items` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_group_members_get_items_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		return $this->groups_endpoint->get_item_permissions_check( $request );
 	}
 
@@ -221,7 +236,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response     The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_member_create_item', $user, $group_member, $group, $response, $request );
+		do_action( 'bp_rest_group_members_create_item', $user, $group_member, $group, $response, $request );
 
 		return $response;
 	}
@@ -232,9 +247,24 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return true|WP_Error
+	 * @return bool|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the group members `create_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_group_members_create_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to make an update.', 'buddypress' ),
@@ -354,7 +384,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response     The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_member_update_item', $user, $group_member, $group, $response, $request );
+		do_action( 'bp_rest_group_members_update_item', $user, $group_member, $group, $response, $request );
 
 		return $response;
 	}
@@ -368,6 +398,21 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function update_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the group members `update_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_group_members_update_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to make an update.', 'buddypress' ),
@@ -471,7 +516,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_member_delete_item', $user, $member, $group, $response, $request );
+		do_action( 'bp_rest_group_members_delete_item', $user, $member, $group, $response, $request );
 
 		return $response;
 	}
@@ -485,6 +530,21 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function delete_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the group members `delete_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_group_members_delete_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to delete a group membership.', 'buddypress' ),
@@ -518,7 +578,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		// Site administrators can do anything.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
+			return (bool) $retval;
 		}
 
 		$loggedin_user_id = bp_loggedin_user_id();
@@ -549,7 +609,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			}
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -590,7 +650,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  Request used to generate the response.
 		 */
-		return apply_filters( 'bp_rest_group_member_prepare_value', $response, $request );
+		return apply_filters( 'bp_rest_group_members_prepare_value', $response, $request );
 	}
 
 	/**
