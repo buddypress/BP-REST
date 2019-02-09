@@ -135,7 +135,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response      The response data.
 		 * @param WP_REST_Request  $request       The request sent to the API.
 		 */
-		do_action( 'bp_rest_notification_get_items', $notifications, $response, $request );
+		do_action( 'bp_rest_notifications_get_items', $notifications, $response, $request );
 
 		return $response;
 	}
@@ -213,7 +213,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response              $response     The response data.
 		 * @param WP_REST_Request               $request      The request sent to the API.
 		 */
-		do_action( 'bp_rest_notification_get_item', $notification, $response, $request );
+		do_action( 'bp_rest_notifications_get_item', $notification, $response, $request );
 
 		return $response;
 	}
@@ -313,7 +313,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response               $response     The response data.
 		 * @param WP_REST_Request                $request      The request sent to the API.
 		 */
-		do_action( 'bp_rest_notification_create_item', $notification, $response, $request );
+		do_action( 'bp_rest_notifications_create_item', $notification, $response, $request );
 
 		return $response;
 	}
@@ -414,7 +414,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response              $response     The response data.
 		 * @param WP_REST_Request               $request      The request sent to the API.
 		 */
-		do_action( 'bp_rest_notification_update_item', $notification, $response, $request );
+		do_action( 'bp_rest_notifications_update_item', $notification, $response, $request );
 
 		return $response;
 	}
@@ -508,7 +508,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response              $response     The response data.
 		 * @param WP_REST_Request               $request      The request sent to the API.
 		 */
-		do_action( 'bp_rest_notification_delete_item', $notification, $response, $request );
+		do_action( 'bp_rest_notifications_delete_item', $notification, $response, $request );
 
 		return $response;
 	}
@@ -595,7 +595,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request             $request     Request used to generate the response.
 		 * @param BP_Notifications_Notification $notification Notification object.
 		 */
-		return apply_filters( 'bp_rest_notification_prepare_value', $response, $request, $notification );
+		return apply_filters( 'bp_rest_notifications_prepare_value', $response, $request, $notification );
 	}
 
 	/**
@@ -653,7 +653,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param stdClass        $prepared_notification An object prepared for inserting or updating the database.
 		 * @param WP_REST_Request $request Request object.
 		 */
-		return apply_filters( 'bp_rest_notification_pre_insert_value', $prepared_notification, $request );
+		return apply_filters( 'bp_rest_notifications_pre_insert_value', $prepared_notification, $request );
 	}
 
 	/**
@@ -716,7 +716,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @param int  $user_id         User ID.
 		 * @param int  $notification_id Notification ID.
 		 */
-		return (bool) apply_filters( 'bp_rest_notification_can_see', $retval, $user_id, $notification_id );
+		return (bool) apply_filters( 'bp_rest_notifications_can_see', $retval, $user_id, $notification_id );
 	}
 
 	/**

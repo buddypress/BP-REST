@@ -105,6 +105,21 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the messages `get_items` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_messages_get_items_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the messages.', 'buddypress' ),
@@ -123,7 +138,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -164,7 +179,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param array           $response
 		 * @param WP_REST_Request $request Request used to generate the response.
 		 */
-		return apply_filters( 'bp_rest_prepare_buddypress_message_value', $response, $request );
+		return apply_filters( 'bp_rest_messages_prepare_value', $response, $request );
 	}
 
 	/**
