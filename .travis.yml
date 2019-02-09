@@ -40,7 +40,7 @@ matrix:
     - php: 5.6
       env: WP_VERSION=4.9
     - php: 5.6
-      env: WP_VERSION=master
+      env: WP_VERSION=master BP_VERSION=4.0.0
 
 before_install:
   - |
@@ -71,7 +71,7 @@ install:
   - plugin_dir=$WP_DEVELOP_DIR/src/wp-content/plugins/$plugin_slug
   - cd ..
   - mv $plugin_slug $plugin_dir
-  - svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk $WP_DEVELOP_DIR/src/wp-content/plugins/buddypress
+  - svn co --ignore-externals https://buddypress.svn.wordpress.org/$BP_VERSION $WP_DEVELOP_DIR/src/wp-content/plugins/buddypress
 
   # set up tests config
   - cd $WP_DEVELOP_DIR
