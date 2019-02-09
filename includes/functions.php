@@ -21,6 +21,8 @@ function bp_rest_namespace() {
 	 * Filter API namespace.
 	 *
 	 * @since 0.1.0
+	 *
+	 * @param string $namespace BuddyPress core namespace.
 	 */
 	return apply_filters( 'bp_rest_namespace', 'buddypress' );
 }
@@ -38,6 +40,8 @@ function bp_rest_version() {
 	 * Filter API version.
 	 *
 	 * @since 0.1.0
+	 *
+	 * @param string $version BuddyPress core version.
 	 */
 	return apply_filters( 'bp_rest_version', 'v1' );
 }
@@ -53,7 +57,8 @@ function bp_rest_version() {
  * @return string
  */
 function bp_rest_get_user_url( $user_id ) {
-	return sprintf( '/%s/%s/members/%d',
+	return sprintf(
+		'/%s/%s/members/%d',
 		bp_rest_namespace(),
 		bp_rest_version(),
 		$user_id
@@ -114,15 +119,16 @@ function bp_rest_prepare_date_response( $date_gmt, $date = null ) {
  * @return array|null
  */
 function bp_rest_sanitize_member_types( $value ) {
-	if ( ! empty( $value ) ) {
-		$types              = explode( ',', $value );
-		$registered_types   = bp_get_member_types();
-		$registered_types[] = 'any';
-		$valid_types        = array_intersect( $types, $registered_types );
-
-		return ( ! empty( $valid_types ) ) ? $valid_types : null;
+	if ( empty( $value ) ) {
+		return $value;
 	}
-	return $value;
+
+	$types              = explode( ',', $value );
+	$registered_types   = bp_get_member_types();
+	$registered_types[] = 'any';
+	$valid_types        = array_intersect( $types, $registered_types );
+
+	return ( ! empty( $valid_types ) ) ? $valid_types : null;
 }
 
 /**
@@ -136,26 +142,26 @@ function bp_rest_sanitize_member_types( $value ) {
  * @return WP_Error|boolean
  */
 function bp_rest_validate_member_types( $value, $request, $param ) {
-	if ( ! empty( $value ) ) {
-		$types            = explode( ',', $value );
-		$registered_types = bp_get_member_types();
-
-		// Add the special value.
-		$registered_types[] = 'any';
-		foreach ( $types as $type ) {
-			if ( ! in_array( $type, $registered_types, true ) ) {
-				/* translators: %1$s and %2$s is replaced with the registered type(s) */
-				return new WP_Error( 'bp_rest_invalid_group_type',
-					sprintf( __( 'The member type you provided, %$1s, is not one of %$2s.' ),
-						$type,
-						implode( ', ', $registered_types )
-					)
-				);
-			}
-		}
+	if ( empty( $value ) ) {
+		return true;
 	}
 
-	return true;
+	$types            = explode( ',', $value );
+	$registered_types = bp_get_member_types();
+
+	// Add the special value.
+	$registered_types[] = 'any';
+	foreach ( $types as $type ) {
+		if ( ! in_array( $type, $registered_types, true ) ) {
+			/* translators: %1$s and %2$s is replaced with the registered type(s) */
+			return new WP_Error( 'bp_rest_invalid_group_type',
+				sprintf( __( 'The member type you provided, %$1s, is not one of %$2s.' ),
+					$type,
+					implode( ', ', $registered_types )
+				)
+			);
+		}
+	}
 }
 
 /**
@@ -228,16 +234,15 @@ function bp_rest_sanitize_string_list( $list ) {
  *
  * @since 0.1.0
  *
- * @param int $id Supplied ID.
+ * @param int $user_id Supplied user ID.
  * @return WP_User|boolean
  */
-function bp_rest_get_user( $id ) {
-
-	if ( (int) $id <= 0 ) {
+function bp_rest_get_user( $user_id ) {
+	if ( (int) $user_id <= 0 ) {
 		return false;
 	}
 
-	$user = get_userdata( (int) $id );
+	$user = get_userdata( (int) $user_id );
 	if ( empty( $user ) || ! $user->exists() ) {
 		return false;
 	}
