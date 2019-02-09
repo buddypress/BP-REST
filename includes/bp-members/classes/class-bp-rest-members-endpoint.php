@@ -111,10 +111,25 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return boolean
+	 * @return bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		return true;
+
+		/**
+		 * Filter or override the members `get_items` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_members_get_items_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
+		return (bool) $retval;
 	}
 
 	/**
@@ -123,9 +138,24 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return boolean|WP_Error
+	 * @return bool|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the members `get_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_members_get_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		$user = bp_rest_get_user( $request['id'] );
 
 		if ( ! $user ) {
@@ -150,7 +180,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -162,6 +192,21 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return boolean|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the members `create_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_members_create_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! current_user_can( 'bp_moderate' ) ) {
 			return new WP_Error( 'bp_rest_member_cannot_create',
 				__( 'Sorry, you are not allowed to create new members.', 'buddypress' ),
@@ -171,7 +216,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -183,6 +228,21 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return boolean|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the members `update_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_members_update_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		$user = bp_rest_get_user( $request['id'] );
 
 		if ( ! $user ) {
@@ -203,7 +263,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -215,6 +275,21 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the members `delete_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_members_delete_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		$user = bp_rest_get_user( $request['id'] );
 
 		if ( ! $user ) {
@@ -235,7 +310,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -265,7 +340,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$response->add_links( $this->prepare_links( $user ) );
 
 		/**
-		 * Filters user data returned from the REST API.
+		 * Filters user data returned from the API.
 		 *
 		 * @since 0.1.0
 		 *
@@ -273,7 +348,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @param WP_User          $user     WP_User object.
 		 * @param WP_REST_Request  $request  The request object.
 		 */
-		return apply_filters( 'bp_rest_member_prepare_user', $response, $user, $request );
+		return apply_filters( 'bp_rest_members_prepare_value', $response, $user, $request );
 	}
 
 	/**
@@ -348,7 +423,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @param stdClass        $prepared_user An object prepared for inserting or updating the database.
 		 * @param WP_REST_Request $request       Request object.
 		 */
-		return apply_filters( 'bp_rest_member_pre_insert_value', $prepared_user, $request );
+		return apply_filters( 'bp_rest_members_pre_insert_value', $prepared_user, $request );
 	}
 
 	/**
