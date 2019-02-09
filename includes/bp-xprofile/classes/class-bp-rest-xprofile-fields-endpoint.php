@@ -102,7 +102,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 * @param array           $args    Key value array of query var to query value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		$args = apply_filters( 'bp_rest_xprofile_field_get_items_query_args', $args, $request );
+		$args = apply_filters( 'bp_rest_xprofile_fields_get_items_query_args', $args, $request );
 
 		// Actually, query it.
 		$field_groups = bp_xprofile_get_groups( $args );
@@ -127,21 +127,36 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response     The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
-		do_action( 'bp_rest_xprofile_field_get_items', $field_groups, $response, $request );
+		do_action( 'bp_rest_xprofile_fields_get_items', $field_groups, $response, $request );
 
 		return $response;
 	}
 
 	/**
-	 * Check if a given request has access to xprofile fields.
+	 * Check if a given request has access to XProfile fields.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return bool
+	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
-		return true;
+
+		/**
+		 * Filter or override the XProfile fields `get_items` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_xprofile_fields_get_items_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
+		return (bool) $retval;
 	}
 
 	/**
@@ -197,7 +212,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_xprofile_field_get_item', $field, $response, $request );
+		do_action( 'bp_rest_xprofile_fields_get_item', $field, $response, $request );
 
 		return $response;
 	}
@@ -211,7 +226,22 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	public function get_item_permissions_check( $request ) {
-		return true;
+
+		/**
+		 * Filter or override the XProfile fields `get_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_xprofile_fields_get_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
+		return (bool) $retval;
 	}
 
 	/**
@@ -259,7 +289,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response  The response data.
 		 * @param WP_REST_Request   $request   The request sent to the API.
 		 */
-		do_action( 'bp_rest_xprofile_field_create_item', $field, $response, $request );
+		do_action( 'bp_rest_xprofile_fields_create_item', $field, $response, $request );
 
 		return $response;
 	}
@@ -273,6 +303,21 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function create_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the XProfile fields `create_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_xprofile_fields_create_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to create a XProfile field.', 'buddypress' ),
@@ -291,7 +336,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -334,7 +379,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response  The response data.
 		 * @param WP_REST_Request   $request   The request sent to the API.
 		 */
-		do_action( 'bp_rest_xprofile_field_delete_item', $field, $response, $request );
+		do_action( 'bp_rest_xprofile_fields_delete_item', $field, $response, $request );
 
 		return $response;
 	}
@@ -348,6 +393,21 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function delete_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the XProfile fields `delete_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_xprofile_fields_delete_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to delete this field.', 'buddypress' ),
@@ -377,7 +437,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -404,7 +464,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request   $request  Request used to generate the response.
 		 * @param BP_XProfile_Field  $field     XProfile field object.
 		 */
-		return apply_filters( 'bp_rest_xprofile_field_prepare_value', $response, $request, $field );
+		return apply_filters( 'bp_rest_xprofile_fields_prepare_value', $response, $request, $field );
 	}
 
 	/**
@@ -501,7 +561,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 * @param int              $user_id User ID.
 		 * @param BP_XProfile_Field $field    XProfile field object.
 		 */
-		return (bool) apply_filters( 'bp_rest_xprofile_field_can_see', $retval, $user_id, $field );
+		return (bool) apply_filters( 'bp_rest_xprofile_fields_can_see', $retval, $user_id, $field );
 	}
 
 	/**

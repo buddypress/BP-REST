@@ -71,8 +71,8 @@ add_action( 'rest_api_init', function() {
 		$controller = new BP_REST_XProfile_Fields_Endpoint();
 		$controller->register_routes();
 
-		require_once( dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-groups-endpoint.php' );
-		$controller = new BP_REST_XProfile_Groups_Endpoint();
+		require_once( dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-field-groups-endpoint.php' );
+		$controller = new BP_REST_XProfile_Field_Groups_Endpoint();
 		$controller->register_routes();
 
 		require_once( dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-data-endpoint.php' );

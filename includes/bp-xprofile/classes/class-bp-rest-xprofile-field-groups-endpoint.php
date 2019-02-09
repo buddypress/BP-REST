@@ -1,6 +1,6 @@
 <?php
 /**
- * BP REST: BP_REST_XProfile_Groups_Endpoint class
+ * BP REST: BP_REST_XProfile_Field_Groups_Endpoint class
  *
  * @package BuddyPress
  * @since 0.1.0
@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 0.1.0
  */
-class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
+class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 
 	/**
 	 * XProfile Fields Class.
@@ -76,7 +76,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Retrieve XProfile field groups.
+	 * Retrieve XProfile groups.
 	 *
 	 * @since 0.1.0
 	 *
@@ -118,7 +118,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param array           $args    Key value array of query var to query value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		$args = apply_filters( 'bp_rest_xprofile_field_group_get_items_query_args', $args, $request );
+		$args = apply_filters( 'bp_rest_xprofile_field_groups_get_items_query_args', $args, $request );
 
 		// Actually, query it.
 		$field_groups = bp_xprofile_get_groups( $args );
@@ -141,13 +141,13 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response $response     The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
-		do_action( 'bp_rest_xprofile_field_group_get_items', $field_groups, $response, $request );
+		do_action( 'bp_rest_xprofile_field_groups_get_items', $field_groups, $response, $request );
 
 		return $response;
 	}
 
 	/**
-	 * Check if a given request has access to xprofile group items.
+	 * Check if a given request has access to XProfile field groups items.
 	 *
 	 * @since 0.1.0
 	 *
@@ -155,7 +155,22 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	public function get_items_permissions_check( $request ) {
-		return true;
+
+		/**
+		 * Filter or override the XProfile fields groups `get_items` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_xprofile_field_groups_get_items_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
+		return (bool) $retval;
 	}
 
 	/**
@@ -195,7 +210,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response    The response data.
 		 * @param WP_REST_Request   $request     The request sent to the API.
 		 */
-		do_action( 'bp_rest_xprofile_field_group_get_item', $field_group, $response, $request );
+		do_action( 'bp_rest_xprofile_field_groups_get_item', $field_group, $response, $request );
 
 		return $response;
 	}
@@ -206,9 +221,24 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return boolean
+	 * @return bool
 	 */
 	public function get_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the XProfile fields groups `get_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_xprofile_field_groups_get_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		return $this->get_items_permissions_check( $request );
 	}
 
@@ -257,7 +287,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response    The response data.
 		 * @param WP_REST_Request   $request     The request sent to the API.
 		 */
-		do_action( 'bp_rest_xprofile_field_group_create_item', $field_group, $response, $request );
+		do_action( 'bp_rest_xprofile_field_groups_create_item', $field_group, $response, $request );
 
 		return $response;
 	}
@@ -271,6 +301,21 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function create_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the XProfile fields groups `create_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_xprofile_field_groups_create_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to create a XProfile field group.', 'buddypress' ),
@@ -289,7 +334,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -340,7 +385,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response    The response data.
 		 * @param WP_REST_Request   $request     The request sent to the API.
 		 */
-		do_action( 'bp_rest_xprofile_field_group_delete_item', $field_group, $response, $request );
+		do_action( 'bp_rest_xprofile_field_groups_delete_item', $field_group, $response, $request );
 
 		return $response;
 	}
@@ -354,6 +399,21 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function delete_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the XProfile fields groups `delete_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_xprofile_field_groups_delete_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to delete this field group.', 'buddypress' ),
@@ -372,7 +432,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -419,7 +479,7 @@ class BP_REST_XProfile_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request   $request  Request used to generate the response.
 		 * @param BP_XProfile_Group  $group    XProfile field group.
 		 */
-		return apply_filters( 'bp_rest_xprofile_field_group_prepare_value', $response, $request, $group );
+		return apply_filters( 'bp_rest_xprofile_field_groups_prepare_value', $response, $request, $group );
 	}
 
 	/**

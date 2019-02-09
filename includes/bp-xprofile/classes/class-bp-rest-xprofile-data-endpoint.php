@@ -32,8 +32,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace      = bp_rest_namespace() . '/' . bp_rest_version();
-		$this->rest_base      = buddypress()->profile->id;
+		$this->namespace       = bp_rest_namespace() . '/' . bp_rest_version();
+		$this->rest_base       = buddypress()->profile->id;
 		$this->fields_endpoint = new BP_REST_XProfile_Fields_Endpoint();
 	}
 
@@ -129,6 +129,21 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function create_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the XProfile data `create_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_xprofile_data_create_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to save XProfile data.', 'buddypress' ),
@@ -158,7 +173,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		return (bool) $retval;
 	}
 
 	/**
@@ -226,6 +241,21 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function delete_item_permissions_check( $request ) {
+
+		/**
+		 * Filter or override the xprofile data `delete_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$retval = apply_filters( 'bp_rest_xprofile_data_delete_item_permissions_check', true, $request );
+
+		if ( is_wp_error( $retval ) || ! $retval ) {
+			return $retval;
+		}
+
 		return $this->create_item_permissions_check( $request );
 	}
 
@@ -235,7 +265,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  BP_XProfile_Field $field    XProfile field object.
-	 * @param  WP_REST_Request  $request Full data about the request.
+	 * @param  WP_REST_Request   $request Full data about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $field, $request ) {
