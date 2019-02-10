@@ -48,7 +48,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request Thread object data.
+	 * @return WP_REST_Request
 	 */
 	public function get_items( $request ) {
 		$args = array(
@@ -105,23 +105,10 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-
-		/**
-		 * Filter or override the messages `get_items` permissions check.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool            $retval  Returned valued. Default: Always `true`.
-		 * @param WP_REST_Request $request The request sent to the API.
-		 */
-		$retval = apply_filters( 'bp_rest_messages_get_items_permissions_check', true, $request );
-
-		if ( is_wp_error( $retval ) || ! $retval ) {
-			return $retval;
-		}
+		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the messages.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -129,8 +116,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see() ) {
-			return new WP_Error( 'bp_rest_user_cannot_view_messages',
+		if ( true === $retval && ! $this->can_see() ) {
+			$retval = new WP_Error( 'bp_rest_user_cannot_view_messages',
 				__( 'Sorry, you cannot view the messages.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -138,7 +125,15 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return (bool) $retval;
+		/**
+		 * Filter the messages `get_items` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_messages_get_items_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -217,32 +212,21 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param int $thread_id Thread ID.
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function can_see( $thread_id = 0 ) {
-		$user_id = bp_loggedin_user_id();
-		$retval  = false;
 
 		// Check thread access.
-		if ( ! empty( $thread_id ) && messages_check_thread_access( $thread_id, $user_id ) ) {
-			$retval = true;
+		if ( ! empty( $thread_id ) && messages_check_thread_access( $thread_id, bp_loggedin_user_id() ) ) {
+			return true;
 		}
 
 		// Moderators as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
+			return true;
 		}
 
-		/**
-		 * Filter the retval.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool  $retval     Return value.
-		 * @param int   $user_id    User ID.
-		 * @param int   $thread_id  Thread ID.
-		 */
-		return (bool) apply_filters( 'bp_rest_messages_can_see', $retval, $user_id, $thread_id );
+		return false;
 	}
 
 	/**
