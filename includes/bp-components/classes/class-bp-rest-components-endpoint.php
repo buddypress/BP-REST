@@ -143,23 +143,10 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
-
-		/**
-		 * Filter or override the components `get_items` permissions check.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool            $retval  Returned valued. Default: Always `true`.
-		 * @param WP_REST_Request $request The request sent to the API.
-		 */
-		$retval = apply_filters( 'bp_rest_components_get_items_permissions_check', true, $request );
-
-		if ( is_wp_error( $retval ) || ! $retval ) {
-			return $retval;
-		}
+		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to list components.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -167,8 +154,8 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! bp_current_user_can( 'bp_moderate' ) ) {
-			return new WP_Error( 'bp_rest_authorization_required',
+		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you do not have access to list components.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -176,7 +163,15 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return (bool) $retval;
+		/**
+		 * Filter the components `get_items` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_components_get_items_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -273,22 +268,17 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
+		$retval = $this->get_items_permissions_check( $request );
 
 		/**
-		 * Filter or override the components `update_item` permissions check.
+		 * Filter the components `update_item` permissions check.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		$retval = apply_filters( 'bp_rest_components_update_item_permissions_check', true, $request );
-
-		if ( is_wp_error( $retval ) || ! $retval ) {
-			return $retval;
-		}
-
-		return $this->get_items_permissions_check( $request );
+		return apply_filters( 'bp_rest_components_update_item_permissions_check', $retval, $request );
 	}
 
 	/**
