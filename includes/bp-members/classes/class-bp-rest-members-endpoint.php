@@ -116,20 +116,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	public function get_items_permissions_check( $request ) {
 
 		/**
-		 * Filter or override the members `get_items` permissions check.
+		 * Filter the members `get_items` permissions check.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param bool            $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		$retval = apply_filters( 'bp_rest_members_get_items_permissions_check', true, $request );
-
-		if ( is_wp_error( $retval ) || ! $retval ) {
-			return $retval;
-		}
-
-		return (bool) $retval;
+		return apply_filters( 'bp_rest_members_get_items_permissions_check', true, $request );
 	}
 
 	/**
@@ -141,25 +135,11 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-
-		/**
-		 * Filter or override the members `get_item` permissions check.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool            $retval  Returned valued. Default: Always `true`.
-		 * @param WP_REST_Request $request The request sent to the API.
-		 */
-		$retval = apply_filters( 'bp_rest_members_get_item_permissions_check', true, $request );
-
-		if ( is_wp_error( $retval ) || ! $retval ) {
-			return $retval;
-		}
-
-		$user = bp_rest_get_user( $request['id'] );
+		$retval = true;
+		$user   = bp_rest_get_user( $request['id'] );
 
 		if ( ! $user ) {
-			return new WP_Error( 'bp_rest_member_invalid_id',
+			$retval = new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -167,12 +147,10 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		if ( get_current_user_id() === $user->ID ) {
-			return true;
-		}
-
-		if ( 'edit' === $request['context'] && ! current_user_can( 'list_users' ) ) {
-			return new WP_Error( 'bp_rest_member_cannot_view',
+		if ( true === $retval && get_current_user_id() === $user->ID ) {
+			$retval = true;
+		} elseif ( true === $retval && 'edit' === $request['context'] && ! current_user_can( 'list_users' ) ) {
+			$retval = new WP_Error( 'bp_rest_member_cannot_view',
 				__( 'Sorry, you are not allowed to list users.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -180,7 +158,15 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		return (bool) $retval;
+		/**
+		 * Filter the members `get_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_members_get_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -192,23 +178,10 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return boolean|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
-
-		/**
-		 * Filter or override the members `create_item` permissions check.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool            $retval  Returned valued. Default: Always `true`.
-		 * @param WP_REST_Request $request The request sent to the API.
-		 */
-		$retval = apply_filters( 'bp_rest_members_create_item_permissions_check', true, $request );
-
-		if ( is_wp_error( $retval ) || ! $retval ) {
-			return $retval;
-		}
+		$retval = true;
 
 		if ( ! current_user_can( 'bp_moderate' ) ) {
-			return new WP_Error( 'bp_rest_member_cannot_create',
+			$retval = new WP_Error( 'bp_rest_member_cannot_create',
 				__( 'Sorry, you are not allowed to create new members.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -216,7 +189,15 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		return (bool) $retval;
+		/**
+		 * Filter or override the members `create_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_members_create_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -225,28 +206,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return boolean|WP_Error
+	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
-
-		/**
-		 * Filter or override the members `update_item` permissions check.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool            $retval  Returned valued. Default: Always `true`.
-		 * @param WP_REST_Request $request The request sent to the API.
-		 */
-		$retval = apply_filters( 'bp_rest_members_update_item_permissions_check', true, $request );
-
-		if ( is_wp_error( $retval ) || ! $retval ) {
-			return $retval;
-		}
-
-		$user = bp_rest_get_user( $request['id'] );
+		$retval = true;
+		$user   = bp_rest_get_user( $request['id'] );
 
 		if ( ! $user ) {
-			return new WP_Error( 'bp_rest_member_invalid_id',
+			$retval = new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -254,8 +221,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		if ( ! $this->can_manage_member( $user ) ) {
-			return new WP_Error( 'bp_rest_member_cannot_update',
+		if ( true === $retval && ! $this->can_manage_member( $user ) ) {
+			$retval = new WP_Error( 'bp_rest_member_cannot_update',
 				__( 'Sorry, you are not allowed to update this member.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -263,7 +230,15 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		return (bool) $retval;
+		/**
+		 * Filter the members `update_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_members_update_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -275,25 +250,11 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
-
-		/**
-		 * Filter or override the members `delete_item` permissions check.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool            $retval  Returned valued. Default: Always `true`.
-		 * @param WP_REST_Request $request The request sent to the API.
-		 */
-		$retval = apply_filters( 'bp_rest_members_delete_item_permissions_check', true, $request );
-
-		if ( is_wp_error( $retval ) || ! $retval ) {
-			return $retval;
-		}
-
-		$user = bp_rest_get_user( $request['id'] );
+		$retval = true;
+		$user   = bp_rest_get_user( $request['id'] );
 
 		if ( ! $user ) {
-			return new WP_Error( 'bp_rest_member_invalid_id',
+			$retval = new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -301,8 +262,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		if ( ! $this->can_manage_member( $user ) ) {
-			return new WP_Error( 'bp_rest_member_cannot_delete',
+		if ( true === $retval && ! $this->can_manage_member( $user ) ) {
+			$retval = new WP_Error( 'bp_rest_member_cannot_delete',
 				__( 'Sorry, you are not allowed to delete this member.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -310,7 +271,15 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		return (bool) $retval;
+		/**
+		 * Filter the members `delete_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_members_delete_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -473,25 +442,16 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return bool
 	 */
 	protected function can_manage_member( $user ) {
-		$retval = false;
 
 		if ( current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
+			return true;
 		}
 
 		if ( current_user_can( 'delete_user', $user->ID ) ) {
-			$retval = true;
+			return true;
 		}
 
-		/**
-		 * Filter the retval.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param boolean $retval Returned value.
-		 * @param WP_User $user   User object.
-		 */
-		return (bool) apply_filters( 'bp_rest_members_can_manage_member', $retval, $user );
+		return false;
 	}
 
 	/**
