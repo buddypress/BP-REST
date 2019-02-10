@@ -405,7 +405,6 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		}
 
 		$user = bp_rest_get_user( $request['user_id'] );
-
 		if ( true === $retval && empty( $user->ID ) ) {
 			$retval = new WP_Error( 'bp_rest_group_member_invalid_id',
 				__( 'Invalid group member id.', 'buddypress' ),
@@ -416,7 +415,6 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		}
 
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-
 		if ( true === $retval && ! $group ) {
 			$retval = new WP_Error( 'bp_rest_group_invalid_id',
 				__( 'Invalid group id.', 'buddypress' ),
@@ -432,26 +430,17 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		} else {
 
 			$loggedin_user_id = bp_loggedin_user_id();
-
-			// Case 2: User is making a request about another user.
-			switch ( $request['action'] ) {
-				case 'ban':
-				case 'unban':
-				case 'promote':
-				case 'demote':
-					if ( true === $retval && ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
-						$retval = new WP_Error( 'bp_rest_group_member_cannot_' . $request['action'],
-							sprintf( __( 'Sorry, you are not allowed to %s this group member.', 'buddypress' ), esc_attr( $request['action'] ) ),
-							array(
-								'status' => rest_authorization_required_code(),
-							)
-						);
-					} else {
-						$retval = true;
-					}
-
-				default:
-					$retval = false;
+			if ( true === $retval && in_array( $request['action'], [ 'ban', 'unban', 'promote', 'demote' ], true ) ) {
+				if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
+					$retval = new WP_Error( 'bp_rest_group_member_cannot_' . $request['action'],
+						sprintf( __( 'Sorry, you are not allowed to %s this group member.', 'buddypress' ), esc_attr( $request['action'] ) ),
+						array(
+							'status' => rest_authorization_required_code(),
+						)
+					);
+				} else {
+					$retval = true;
+				}
 			}
 		}
 
