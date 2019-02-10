@@ -162,22 +162,17 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
+		$retval = $this->groups_endpoint->get_item_permissions_check( $request );
 
 		/**
-		 * Filter or override the group members `get_items` permissions check.
+		 * Filter the group members `get_items` permissions check.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool            $retval  Returned valued. Default: Always `true`.
+		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		$retval = apply_filters( 'bp_rest_group_members_get_items_permissions_check', true, $request );
-
-		if ( is_wp_error( $retval ) || ! $retval ) {
-			return $retval;
-		}
-
-		return $this->groups_endpoint->get_item_permissions_check( $request );
+		return apply_filters( 'bp_rest_group_members_get_items_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -250,23 +245,10 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
-
-		/**
-		 * Filter or override the group members `create_item` permissions check.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool            $retval  Returned valued. Default: Always `true`.
-		 * @param WP_REST_Request $request The request sent to the API.
-		 */
-		$retval = apply_filters( 'bp_rest_group_members_create_item_permissions_check', true, $request );
-
-		if ( is_wp_error( $retval ) || ! $retval ) {
-			return $retval;
-		}
+		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to make an update.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -276,8 +258,8 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		$user = bp_rest_get_user( $request['user_id'] );
 
-		if ( empty( $user->ID ) ) {
-			return new WP_Error( 'bp_rest_group_member_invalid_id',
+		if ( true === $retval && empty( $user->ID ) ) {
+			$retval = new WP_Error( 'bp_rest_group_member_invalid_id',
 				__( 'Invalid group member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -287,8 +269,8 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
 
-		if ( ! $group ) {
-			return new WP_Error( 'bp_rest_group_invalid_id',
+		if ( true === $retval && ! $group ) {
+			$retval = new WP_Error( 'bp_rest_group_invalid_id',
 				__( 'Invalid group id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -297,27 +279,40 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		}
 
 		// Site administrators can do anything.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
-		}
-
-		$loggedin_user_id = bp_loggedin_user_id();
-		if ( $loggedin_user_id === $user->ID ) {
-
-			// Users may only freely join public groups. @todo Private requests.
-			if ( 'public' !== $group->status && ! groups_is_user_member( $loggedin_user_id, $group->id ) ) {
-				return new WP_Error( 'bp_rest_group_member_cannot_join',
-					__( 'Sorry, you are not allowed to join this group.', 'buddypress' ),
-					array(
-						'status' => rest_authorization_required_code(),
-					)
-				);
-			}
-
-			return true;
+		if ( true === $retval && bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
 		} else {
-			return false;
+
+			$loggedin_user_id = bp_loggedin_user_id();
+			if ( $loggedin_user_id === $user->ID ) {
+
+				// Users may only freely join public groups. @todo Private requests.
+				if ( true === $retval && 'public' !== $group->status && ! groups_is_user_member( $loggedin_user_id, $group->id ) ) {
+					$retval = new WP_Error( 'bp_rest_group_member_cannot_join',
+						__( 'Sorry, you are not allowed to join this group.', 'buddypress' ),
+						array(
+							'status' => rest_authorization_required_code(),
+						)
+					);
+				}
+
+				if ( true === $retval ) {
+					$retval = true;
+				}
+			} else {
+				$retval = false;
+			}
 		}
+
+		/**
+		 * Filter the group members `create_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_group_members_create_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -398,23 +393,10 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function update_item_permissions_check( $request ) {
-
-		/**
-		 * Filter or override the group members `update_item` permissions check.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool            $retval  Returned valued. Default: Always `true`.
-		 * @param WP_REST_Request $request The request sent to the API.
-		 */
-		$retval = apply_filters( 'bp_rest_group_members_update_item_permissions_check', true, $request );
-
-		if ( is_wp_error( $retval ) || ! $retval ) {
-			return $retval;
-		}
+		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to make an update.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -424,8 +406,8 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		$user = bp_rest_get_user( $request['user_id'] );
 
-		if ( empty( $user->ID ) ) {
-			return new WP_Error( 'bp_rest_group_member_invalid_id',
+		if ( true === $retval && empty( $user->ID ) ) {
+			$retval = new WP_Error( 'bp_rest_group_member_invalid_id',
 				__( 'Invalid group member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -435,8 +417,8 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
 
-		if ( ! $group ) {
-			return new WP_Error( 'bp_rest_group_invalid_id',
+		if ( true === $retval && ! $group ) {
+			$retval = new WP_Error( 'bp_rest_group_invalid_id',
 				__( 'Invalid group id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -445,32 +427,43 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		}
 
 		// Site administrators can do anything.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
+		if ( true === $retval && bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
+		} else {
+
+			$loggedin_user_id = bp_loggedin_user_id();
+
+			// Case 2: User is making a request about another user.
+			switch ( $request['action'] ) {
+				case 'ban':
+				case 'unban':
+				case 'promote':
+				case 'demote':
+					if ( true === $retval && ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
+						$retval = new WP_Error( 'bp_rest_group_member_cannot_' . $request['action'],
+							sprintf( __( 'Sorry, you are not allowed to %s this group member.', 'buddypress' ), esc_attr( $request['action'] ) ),
+							array(
+								'status' => rest_authorization_required_code(),
+							)
+						);
+					} else {
+						$retval = true;
+					}
+
+				default:
+					$retval = false;
+			}
 		}
 
-		$loggedin_user_id = bp_loggedin_user_id();
-
-		// Case 2: User is making a request about another user.
-		switch ( $request['action'] ) {
-			case 'ban':
-			case 'unban':
-			case 'promote':
-			case 'demote':
-				if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
-					return new WP_Error( 'bp_rest_group_member_cannot_' . $request['action'],
-						sprintf( __( 'Sorry, you are not allowed to %s this group member.', 'buddypress' ), esc_attr( $request['action'] ) ),
-						array(
-							'status' => rest_authorization_required_code(),
-						)
-					);
-				} else {
-					return true;
-				}
-
-			default:
-				return false;
-		}
+		/**
+		 * Filter the group members `update_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_group_members_update_item_permissions_check', $retval, $request );
 	}
 
 	/**
