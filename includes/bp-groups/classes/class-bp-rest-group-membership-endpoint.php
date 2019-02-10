@@ -530,23 +530,10 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function delete_item_permissions_check( $request ) {
-
-		/**
-		 * Filter or override the group members `delete_item` permissions check.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool            $retval  Returned valued. Default: Always `true`.
-		 * @param WP_REST_Request $request The request sent to the API.
-		 */
-		$retval = apply_filters( 'bp_rest_group_members_delete_item_permissions_check', true, $request );
-
-		if ( is_wp_error( $retval ) || ! $retval ) {
-			return $retval;
-		}
+		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to delete a group membership.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -556,7 +543,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		$user = bp_rest_get_user( $request['user_id'] );
 
-		if ( empty( $user->ID ) ) {
+		if ( true === $retval && empty( $user->ID ) ) {
 			return new WP_Error( 'bp_rest_group_member_invalid_id',
 				__( 'Invalid group member id.', 'buddypress' ),
 				array(
@@ -567,8 +554,8 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
 
-		if ( ! $group ) {
-			return new WP_Error( 'bp_rest_group_invalid_id',
+		if ( true === $retval && ! $group ) {
+			$retval = new WP_Error( 'bp_rest_group_invalid_id',
 				__( 'Invalid group id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -577,39 +564,48 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		}
 
 		// Site administrators can do anything.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return (bool) $retval;
-		}
+		if ( true === $retval && bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
+		} elseif ( true === $retval ) {
 
-		$loggedin_user_id = bp_loggedin_user_id();
-
-		if ( $user->ID !== $loggedin_user_id ) {
-			if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
-				return new WP_Error( 'bp_rest_group_member_cannot_remove',
-					__( 'Sorry, you are not allowed to remove this group member.', 'buddypress' ),
-					array(
-						'status' => rest_authorization_required_code(),
-					)
-				);
-			}
-		} else {
-			// Special case for self-removal: don't allow if it'd leave a group with no admins.
-			$user             = bp_rest_get_user( $request['user_id'] );
-			$group            = $this->groups_endpoint->get_group_object( $request['group_id'] );
 			$loggedin_user_id = bp_loggedin_user_id();
 
-			$group_admins = groups_get_group_admins( $group->id );
-			if ( 1 === count( $group_admins ) && $loggedin_user_id === $group_admins[0]->user_id && $user->ID === $loggedin_user_id ) {
-				return new WP_Error( 'bp_rest_group_member_cannot_remove',
-					__( 'Sorry, you are not allowed to leave this group.', 'buddypress' ),
-					array(
-						'status' => rest_authorization_required_code(),
-					)
-				);
+			if ( $user->ID !== $loggedin_user_id ) {
+				if ( true === $retval && ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
+					$retval = new WP_Error( 'bp_rest_group_member_cannot_remove',
+						__( 'Sorry, you are not allowed to remove this group member.', 'buddypress' ),
+						array(
+							'status' => rest_authorization_required_code(),
+						)
+					);
+				}
+			} else {
+				// Special case for self-removal: don't allow if it'd leave a group with no admins.
+				$user             = bp_rest_get_user( $request['user_id'] );
+				$group            = $this->groups_endpoint->get_group_object( $request['group_id'] );
+				$loggedin_user_id = bp_loggedin_user_id();
+
+				$group_admins = groups_get_group_admins( $group->id );
+				if ( true === $retval && 1 === count( $group_admins ) && $loggedin_user_id === $group_admins[0]->user_id && $user->ID === $loggedin_user_id ) {
+					$retval = new WP_Error( 'bp_rest_group_member_cannot_remove',
+						__( 'Sorry, you are not allowed to leave this group.', 'buddypress' ),
+						array(
+							'status' => rest_authorization_required_code(),
+						)
+					);
+				}
 			}
 		}
 
-		return (bool) $retval;
+		/**
+		 * Filter the group members `delete_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_group_members_delete_item_permissions_check', $retval, $request );
 	}
 
 	/**
