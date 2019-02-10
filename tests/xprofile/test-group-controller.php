@@ -12,7 +12,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		parent::setUp();
 
 		$this->bp_factory   = new BP_UnitTest_Factory();
-		$this->endpoint     = new BP_REST_XProfile_Groups_Endpoint();
+		$this->endpoint     = new BP_REST_XProfile_Field_Groups_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->profile->id . '/groups';
 		$this->group_id     = $this->bp_factory->xprofile_group->create();

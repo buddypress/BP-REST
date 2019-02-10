@@ -32,8 +32,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace      = bp_rest_namespace() . '/' . bp_rest_version();
-		$this->rest_base      = buddypress()->profile->id;
+		$this->namespace       = bp_rest_namespace() . '/' . bp_rest_version();
+		$this->rest_base       = buddypress()->profile->id;
 		$this->fields_endpoint = new BP_REST_XProfile_Fields_Endpoint();
 	}
 
@@ -129,8 +129,10 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function create_item_permissions_check( $request ) {
+		$retval = true;
+
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to save XProfile data.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -140,8 +142,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 
 		$user = bp_rest_get_user( $request['user_id'] );
 
-		if ( empty( $user->ID ) ) {
-			return new WP_Error( 'bp_rest_member_invalid_id',
+		if ( true === $retval && empty( $user->ID ) ) {
+			$retval = new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -149,8 +151,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! $this->can_see( $user->ID ) ) {
-			return new WP_Error( 'rest_user_cannot_view_field_data',
+		if ( true === $retval && ! $this->can_see( $user->ID ) ) {
+			$retval = new WP_Error( 'rest_user_cannot_view_field_data',
 				__( 'Sorry, you cannot save XProfile field data.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -158,7 +160,15 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		/**
+		 * Filter the XProfile data `create_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_xprofile_data_create_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -226,7 +236,17 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function delete_item_permissions_check( $request ) {
-		return $this->create_item_permissions_check( $request );
+		$retval = $this->create_item_permissions_check( $request );
+
+		/**
+		 * Filter the XProfile data `delete_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_xprofile_data_delete_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -235,7 +255,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  BP_XProfile_Field $field    XProfile field object.
-	 * @param  WP_REST_Request  $request Full data about the request.
+	 * @param  WP_REST_Request   $request Full data about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $field, $request ) {
@@ -308,32 +328,21 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param int $field_user_id User ID of the field.
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function can_see( $field_user_id ) {
-		$user_id = bp_loggedin_user_id();
-		$retval  = false;
 
 		// Moderators can as well.
 		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
+			return true;
 		}
 
 		// Field owners also can.
-		if ( $user_id === $field_user_id ) {
-			$retval = true;
+		if ( bp_loggedin_user_id() === $field_user_id ) {
+			return true;
 		}
 
-		/**
-		 * Filter the retval.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool $retval        Return value.
-		 * @param int  $user_id       User ID.
-		 * @param int  $field_user_id  Field user id.
-		 */
-		return (bool) apply_filters( 'bp_rest_xprofile_data_can_see', $retval, $user_id, $field_user_id );
+		return false;
 	}
 
 	/**

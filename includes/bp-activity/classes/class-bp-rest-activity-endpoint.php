@@ -222,10 +222,19 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return bool
+	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
-		return true;
+
+		/**
+		 * Filter the activity `get_items` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_activity_get_items_permissions_check', true, $request );
 	}
 
 	/**
@@ -234,7 +243,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request|WP_Error Plugin object data on success, WP_Error otherwise.
+	 * @return WP_REST_Request|WP_Error
 	 */
 	public function get_item( $request ) {
 		$activity = $this->get_activity_object( $request );
@@ -270,8 +279,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
+		$retval = true;
+
 		if ( ! $this->can_see( $request ) ) {
-			return new WP_Error( 'bp_rest_user_cannot_view_activity',
+			$retval = new WP_Error( 'bp_rest_user_cannot_view_activity',
 				__( 'Sorry, you cannot view the activities.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -279,7 +290,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		/**
+		 * Filter the activity `get_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_activity_get_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -379,8 +398,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
+		$retval = true;
+
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to create activities.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -391,9 +412,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$item_id   = $request['primary_item_id'];
 		$component = $request['component'];
 
-		if ( bp_is_active( 'groups' ) && buddypress()->groups->id === $component && ! is_null( $item_id ) ) {
+		if ( true === $retval && bp_is_active( 'groups' ) && buddypress()->groups->id === $component && ! is_null( $item_id ) ) {
 			if ( ! $this->show_hidden( $component, $item_id ) ) {
-				return new WP_Error( 'bp_rest_user_cannot_create_activity',
+				$retval = new WP_Error( 'bp_rest_user_cannot_create_activity',
 					__( 'Sorry, you are not allowed to create activity to this group.', 'buddypress' ),
 					array(
 						'status' => rest_authorization_required_code(),
@@ -402,7 +423,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			}
 		}
 
-		return true;
+		/**
+		 * Filter the activity `create_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_activity_create_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -467,8 +496,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
+		$retval = true;
+
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -478,8 +509,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$activity = $this->get_activity_object( $request );
 
-		if ( empty( $activity->id ) ) {
-			return new WP_Error( 'bp_rest_activity_invalid_id',
+		if ( true === $retval && empty( $activity->id ) ) {
+			$retval = new WP_Error( 'bp_rest_activity_invalid_id',
 				__( 'Invalid activity id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -487,8 +518,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! bp_activity_user_can_delete( $activity ) ) {
-			return new WP_Error( 'bp_rest_activity_cannot_update',
+		if ( true === $retval && ! bp_activity_user_can_delete( $activity ) ) {
+			$retval = new WP_Error( 'bp_rest_activity_cannot_update',
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -496,7 +527,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		/**
+		 * Filter the activity `update_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_activity_update_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -554,8 +593,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
+		$retval = true;
+
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to delete this activity.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -565,8 +606,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$activity = $this->get_activity_object( $request );
 
-		if ( empty( $activity->id ) ) {
-			return new WP_Error( 'bp_rest_activity_invalid_id',
+		if ( true === $retval && empty( $activity->id ) ) {
+			$retval = new WP_Error( 'bp_rest_activity_invalid_id',
 				__( 'Invalid activity id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -574,8 +615,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! bp_activity_user_can_delete( $activity ) ) {
-			return new WP_Error( 'bp_rest_user_cannot_delete_activity',
+		if ( true === $retval && ! bp_activity_user_can_delete( $activity ) ) {
+			$retval = new WP_Error( 'bp_rest_user_cannot_delete_activity',
 				__( 'Sorry, you cannot delete the activity.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -583,7 +624,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		/**
+		 * Filter the activity `delete_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_activity_delete_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -685,8 +734,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_favorite_permissions_check( $request ) {
+		$retval = true;
+
 		if ( ! is_user_logged_in() ) {
-			return new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to update your favorites.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -694,8 +745,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( ! bp_activity_can_favorite() ) {
-			return new WP_Error( 'bp_rest_activity_cannot_favorite',
+		if ( true === $retval && ! bp_activity_can_favorite() ) {
+			$retval = new WP_Error( 'bp_rest_activity_cannot_favorite',
 				__( 'Sorry, Activity cannot be favorited.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -703,7 +754,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return true;
+		/**
+		 * Filter the activity `update_favorite` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_activity_update_favorite_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -998,25 +1057,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function can_see( $request ) {
-		$retval   = false;
 		$user_id  = bp_loggedin_user_id();
 		$activity = $this->get_activity_object( $request );
 
-		if ( bp_activity_user_can_read( $activity, $user_id ) ) {
-			$retval = true;
-		}
-
-		/**
-		 * Filter the retval.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param bool                 $retval   Return value.
-		 * @param int                  $user_id  User ID.
-		 * @param BP_Activity_Activity $activity Activity object.
-		 * @param WP_REST_Request      $request  Request.
-		 */
-		return (bool) apply_filters( 'bp_rest_activity_can_see', $retval, $user_id, $activity, $request );
+		return bp_activity_user_can_read( $activity, $user_id );
 	}
 
 	/**
@@ -1049,17 +1093,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$retval = true;
 		}
 
-		/**
-		 * Filter here to edit the `show_hidden` activity param for the given component/item_id.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param boolean $retval    True to include hidden activities. False otherwise.
-		 * @param integer $user_id   The current user ID.
-		 * @param string  $component The activity component.
-		 * @param integer $item_id   The activity item ID.
-		 */
-		return (bool) apply_filters( 'bp_rest_activity_show_hidden', $retval, $user_id, $component, $item_id );
+		return (bool) $retval;
 	}
 
 	/**
