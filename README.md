@@ -12,7 +12,7 @@ Please use and provide feedback!
 
 * PHP >= 5.6
 * WP >= 4.9
-* BuddyPress trunk (development version).
+* BuddyPress >= 4.0.0
 
 ## Endpoints (Components) Supported
 
