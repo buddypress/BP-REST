@@ -55,8 +55,8 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 		$files = $request->get_file_params();
 
 		if ( empty( $files ) ) {
-			return new WP_Error( 'bp_rest_member_avatar_no_data',
-				__( 'Sorry, you need a image to upload.', 'buddypress' ),
+			return new WP_Error( 'bp_rest_member_avatar_no_image_file',
+				__( 'Sorry, you need an image file to upload.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
@@ -66,9 +66,13 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 		// Get the file via raw data.
 		$headers = $request->get_headers();
 
+		// Set user ID for the upload path.
+		$bp                     = buddypress();
+		$bp->displayed_user     = new stdClass();
+		$bp->displayed_user->id = (int) $request['user_id'];
+
 		// Upload the avatar.
 		$avatar = $this->update_avatar_from_file( $files, 'xprofile_avatar_upload_dir' );
-
 		// $avatar = $this->update_avatar_from_data( $request->get_body(), $headers );
 
 		if ( is_wp_error( $avatar ) ) {
@@ -127,10 +131,10 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( true === $retval && bp_current_user_can( 'bp_moderate' ) ) {
+		if ( true === $retval && current_user_can( 'bp_moderate' ) ) {
 			$retval = true;
 		} else {
-			if ( true === $retval && bp_loggedin_user_id() === $user->ID ) {
+			if ( true === $retval && bp_loggedin_user_id() !== $user->ID ) {
 				$retval = new WP_Error( 'bp_rest_authorization_required',
 					__( 'Sorry, you cannot upload an avatar.', 'buddypress' ),
 					array(
@@ -163,7 +167,9 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	public function prepare_item_for_response( $avatar_object, $request ) {
 		$data = array(
 			'name'   => $avatar_object->name,
+			'file'   => $avatar_object->file,
 			'url'    => $avatar_object->url,
+			'dir'    => $avatar_object->dir,
 			'width'  => $avatar_object->width,
 			'height' => $avatar_object->height,
 		);
@@ -205,6 +211,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 
 		// Upload the file.
 		$avatar_attachment = new BP_Attachment_Avatar();
+		$_POST['action']   = $avatar_attachment->action;
 		$avatar_original   = $avatar_attachment->upload( $files, $upload_dir_filter );
 
 		// In case of an error.
@@ -249,20 +256,6 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// If the uploaded image is smaller than the "full" dimensions, throw a warning.
-		if ( $avatar_attachment->is_too_small( $avatar_object->file ) ) {
-			return new WP_Error( 'bp_rest_member_avatar_error',
-				sprintf(
-					__( 'You have selected an image that is smaller than recommended. For best results, upload a picture larger than %d x %d pixels.', 'buddypress' ),
-					bp_core_avatar_full_width(),
-					bp_core_avatar_full_height()
-				),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
 		// Set the url value for the image.
 		$avatar_object->url = bp_core_avatar_url() . $avatar_object->dir;
 
@@ -294,23 +287,34 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 			'properties' => array(
 				'name'            => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The name of the object.', 'buddypress' ),
+					'description' => __( 'The name of the image file.', 'buddypress' ),
+					'type'        => 'string',
+				),
+				'file'             => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'Full path of the image file.', 'buddypress' ),
 					'type'        => 'string',
 				),
 				'url'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The url of the image file.', 'buddypress' ),
+					'type'        => 'string',
 					'format'      => 'uri',
 					'readonly'    => true,
 				),
+				'dir'             => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'The dir of the image file.', 'buddypress' ),
+					'type'        => 'string',
+				),
 				'width'           => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The width of the object.', 'buddypress' ),
+					'description' => __( 'The width of the image file.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'height'          => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The height of the object.', 'buddypress' ),
+					'description' => __( 'The height of the image file.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 			),

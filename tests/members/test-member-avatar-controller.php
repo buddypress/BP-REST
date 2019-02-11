@@ -20,7 +20,12 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 			'role' => 'administrator',
 		) );
 
-		$this->avatar = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-man.jpg';
+		add_filter( 'bp_attachment_upload_overrides', array( $this, 'filter_overrides' ), 10, 1 );
+		add_filter( 'upload_dir', array( $this, 'filter_upload_dir' ), 20, 1 );
+
+		$this->upload_results      = array();
+		$this->image_file          = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-man.jpg';
+		$this->original_upload_dir = array();
 
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
@@ -51,25 +56,71 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	/**
-	 * @group test
+	 * @group create_item
 	 */
 	public function test_create_item() {
-		$u = $this->bp_factory->user->create();
+		$bp = buddypress();
+		$u1 = $this->bp_factory->user->create();
 
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp->set_current_user( $u1 );
 
-		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $u ) );
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $u1 ) );
 		$request->set_file_params(
 			array(
 				'file' => array(
-					'file'     => file_get_contents( $this->avatar ),
+					'type'     => 'image/jpeg',
 					'name'     => 'mystery-man.jpg',
-					'size'     => filesize( $this->avatar ),
-					'tmp_name' => $this->avatar,
+					'size'     => filesize( $this->image_file ),
+					'tmp_name' => $this->image_file,
 				),
 			)
 		);
+		$request->set_param( 'context', 'view' );
 		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$this->assertEquals( $data['name'], 'mystery-man' );
+			$this->assertEquals( $data['file'], $bp->avatar->upload_path . '/avatars/' . $u1 . '/mystery-man.jpg' );
+		}
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_admin_upload_another_user_avatar() {
+		$bp = buddypress();
+		$u1 = $this->bp_factory->user->create();
+
+		$this->bp->set_current_user( $this->user_id );
+
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $u1 ) );
+		$request->set_file_params(
+			array(
+				'file' => array(
+					'type'     => 'image/jpeg',
+					'name'     => 'mystery-man.jpg',
+					'size'     => filesize( $this->image_file ),
+					'tmp_name' => $this->image_file,
+				),
+			)
+		);
+		$request->set_param( 'context', 'view' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$this->assertEquals( $data['name'], 'mystery-man' );
+			$this->assertEquals( $data['file'], $bp->avatar->upload_path . '/avatars/' . $u1 . '/mystery-man.jpg' );
+		}
 	}
 
 	/**
@@ -80,7 +131,7 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_member_avatar_no_data', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_member_avatar_no_image_file', $response, 500 );
 	}
 
 	/**
@@ -126,8 +177,10 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 		return true;
 	}
 
-	protected function check_avatar( $avatar, $data ) {
+	protected function check_avatar_data( $avatar, $data ) {
 		$this->assertEquals( $avatar->name, $data['name'] );
+		$this->assertEquals( $avatar->file, $data['file'] );
+		$this->assertEquals( $avatar->dir, $data['dir'] );
 		$this->assertEquals( $avatar->url, $data['url'] );
 		$this->assertEquals( $avatar->weight, $data['weight'] );
 		$this->assertEquals( $avatar->height, $data['height'] );
@@ -139,8 +192,10 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 4, count( $properties ) );
+		$this->assertEquals( 6, count( $properties ) );
 		$this->assertArrayHasKey( 'name', $properties );
+		$this->assertArrayHasKey( 'file', $properties );
+		$this->assertArrayHasKey( 'dir', $properties );
 		$this->assertArrayHasKey( 'url', $properties );
 		$this->assertArrayHasKey( 'width', $properties );
 		$this->assertArrayHasKey( 'height', $properties );
@@ -152,5 +207,50 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
+	}
+
+	public function tearDown() {
+		parent::tearDown();
+		remove_filter( 'bp_attachment_upload_overrides', array( $this, 'filter_overrides' ), 10 );
+		remove_filter( 'upload_dir', array( $this, 'filter_upload_dir' ), 20 );
+
+		$this->upload_results      = array();
+		$this->image_file          = '';
+		$this->original_upload_dir = array();
+	}
+
+	public function filter_overrides( $overrides ) {
+		$overrides['upload_error_handler'] = array( $this, 'upload_error_handler' );
+
+		// Don't test upload for WordPress < 4.0.
+		$overrides['test_upload'] = false;
+		return $overrides;
+	}
+
+	public function filter_upload_dir( $upload_dir ) {
+		$upload_dir['error'] = 'fake_upload_success';
+
+		$this->upload_results = array(
+			'new_file' => $upload_dir['path'] . '/mystery-man.jpg',
+			'url'      => $upload_dir['url'] . '/mystery-man.jpg',
+		);
+
+		return $upload_dir;
+	}
+
+	/**
+	 * To avoid copying files in tests, we're faking a succesfull uploads
+	 * as soon as all the test_form have been executed in _wp_handle_upload
+	 */
+	public function upload_error_handler( $file, $message ) {
+		if ( 'fake_upload_success' !== $message ) {
+			return array( 'error' => $message );
+		} else {
+			return array(
+				'file' => $this->upload_results['new_file'],
+				'url'  => $this->upload_results['url'],
+				'type' => 'image/jpeg',
+			);
+		}
 	}
 }
