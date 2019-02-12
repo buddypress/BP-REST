@@ -33,6 +33,11 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	public function register_routes() {
 		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<user_id>[\d]+)/avatar', array(
 			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_item' ),
+				'permission_callback' => array( $this, 'get_item_permissions_check' ),
+			),
+			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'create_item' ),
 				'permission_callback' => array( $this, 'create_item_permissions_check' ),
@@ -44,6 +49,98 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
+	}
+
+	/**
+	 * Fetch an existing avatar of a member.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Request
+	 */
+	public function get_item( $request ) {
+		$avatar = bp_core_fetch_avatar( array(
+			'object'  => 'user',
+			'item_id' => (int) $request['user_id'],
+			'html'    => (bool) $request['html'],
+			'type'    => $request['type'],
+		) );
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $avatar, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a member avatar is fetched via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param string            $avatar   Deleted avatar url.
+		 * @param WP_REST_Response  $response The response data.
+		 * @param WP_REST_Request   $request  The request sent to the API.
+		 */
+		do_action( 'bp_rest_member_avatar_get_item', $avatar, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Checks if a given request has access to get a member avatar.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function get_item_permissions_check( $request ) {
+		$retval = true;
+
+		if ( ! is_user_logged_in() ) {
+			$retval = new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to access the member avatar.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		$user = bp_rest_get_user( $request['user_id'] );
+		if ( true === $retval && ! $user ) {
+			$retval = new WP_Error( 'bp_rest_member_invalid_id',
+				__( 'Invalid member id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		if ( true === $retval && current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
+		} else {
+			if ( true === $retval && bp_loggedin_user_id() !== $user->ID ) {
+				$retval = new WP_Error( 'bp_rest_authorization_required',
+					__( 'Sorry, you cannot get this member avatar.', 'buddypress' ),
+					array(
+						'status' => rest_authorization_required_code(),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Filter the member avatar `get_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_member_avatar_get_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -114,39 +211,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
-		$retval = true;
-
-		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to upload an avatar.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		$user = bp_rest_get_user( $request['user_id'] );
-		if ( true === $retval && ! $user ) {
-			$retval = new WP_Error( 'bp_rest_member_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		if ( true === $retval && current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
-		} else {
-			if ( true === $retval && bp_loggedin_user_id() !== $user->ID ) {
-				$retval = new WP_Error( 'bp_rest_authorization_required',
-					__( 'Sorry, you cannot upload an avatar.', 'buddypress' ),
-					array(
-						'status' => rest_authorization_required_code(),
-					)
-				);
-			}
-		}
+		$retval = $this->get_item_permissions_check( $request );
 
 		/**
 		 * Filter the member avatar `create_item` permissions check.
@@ -224,7 +289,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
-		$retval = $this->create_item_permissions_check( $request );
+		$retval = $this->get_item_permissions_check( $request );
 
 		/**
 		 * Filter the member avatar `delete_item` permissions check.

@@ -38,7 +38,7 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 
 		// Single.
 		$this->assertArrayHasKey( $endpoint, $routes );
-		$this->assertCount( 2, $routes[ $endpoint ] );
+		$this->assertCount( 3, $routes[ $endpoint ] );
 	}
 
 	/**
