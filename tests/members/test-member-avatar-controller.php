@@ -38,7 +38,7 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 
 		// Single.
 		$this->assertArrayHasKey( $endpoint, $routes );
-		$this->assertCount( 1, $routes[ $endpoint ] );
+		$this->assertCount( 2, $routes[ $endpoint ] );
 	}
 
 	/**
@@ -168,6 +168,40 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 	 */
 	public function test_delete_item() {
 		return true;
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_failed() {
+		$this->bp->set_current_user( $this->user_id );
+
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_member_avatar_delete_failed', $response, 500 );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_user_not_logged_in() {
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_invalid_member() {
+		$u1 = $this->bp_factory->user->create();
+
+		$this->bp->set_current_user( $u1 );
+
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
 	}
 
 	/**
