@@ -154,7 +154,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 */
 	public function create_item( $request ) {
 
-		// Get the file via $_FILES or raw data.
+		// Get the file via $_FILES.
 		$files = $request->get_file_params();
 
 		if ( empty( $files ) ) {
@@ -166,16 +166,8 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Get the file via raw data.
-		$headers = $request->get_headers();
-
-		// Set user ID for the upload path.
-		$bp                     = buddypress();
-		$bp->displayed_user     = new stdClass();
-		$bp->displayed_user->id = (int) $request['user_id'];
-
 		// Upload the avatar.
-		$avatar = $this->upload_avatar_from_file( $files );
+		$avatar = $this->upload_avatar_from_file( $files, $request );
 
 		if ( is_wp_error( $avatar ) ) {
 			return $avatar;
@@ -354,10 +346,13 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @param array $files Image file information.
 	 * @return stdClass
 	 */
-	protected function upload_avatar_from_file( $files ) {
+	protected function upload_avatar_from_file( $files, $request ) {
 
 		// Setup some variables.
-		$bp                = buddypress();
+		$bp                     = buddypress();
+		$bp->displayed_user     = new stdClass();
+		$bp->displayed_user->id = (int) $request['user_id'];
+
 		$upload_path       = bp_core_avatar_upload_path();
 		$upload_dir_filter = 'xprofile_avatar_upload_dir';
 
