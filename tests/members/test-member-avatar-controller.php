@@ -56,6 +56,28 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	/**
+	 * @group get_item
+	 */
+	public function test_get_item_user_not_logged_in() {
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_invalid_member() {
+		$u1 = $this->bp_factory->user->create();
+
+		$this->bp->set_current_user( $u1 );
+
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
+	}
+
+	/**
 	 * @group create_item
 	 */
 	public function test_create_item() {

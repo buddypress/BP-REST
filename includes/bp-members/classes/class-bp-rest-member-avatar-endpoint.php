@@ -36,6 +36,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_item' ),
 				'permission_callback' => array( $this, 'get_item_permissions_check' ),
+				'args'                => $this->get_item_collection_params(),
 			),
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -476,5 +477,36 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 		);
 
 		return $schema;
+	}
+
+	/**
+	 * Get the query params for the `get_item`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array
+	 */
+	public function get_item_collection_params() {
+		$params                       = parent::get_collection_params();
+		$params['context']['default'] = 'view';
+
+		$params['type'] = array(
+			'description'       => __( 'Whether you would like the `full` or the smaller `thumb`.', 'buddypress' ),
+			'default'           => 'thumb',
+			'type'              => 'string',
+			'enum'              => array( 'thumb', 'full' ),
+			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['html'] = array(
+			'description'       => __( 'Whether to return an <img> HTML element, vs a raw URL to an avatar.', 'buddypress' ),
+			'default'           => true,
+			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		return $params;
 	}
 }
