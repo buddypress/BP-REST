@@ -77,7 +77,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 		$bp->displayed_user->id = (int) $request['user_id'];
 
 		// Upload the avatar.
-		$avatar = $this->update_avatar_from_file( $files, 'xprofile_avatar_upload_dir' );
+		$avatar = $this->upload_avatar_from_file( $files );
 
 		if ( is_wp_error( $avatar ) ) {
 			return $avatar;
@@ -242,8 +242,8 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass|string  $avatar   Avatar object | Avatar url.
-	 * @param WP_REST_Request  $request  Full details about the request.
+	 * @param stdClass|string $avatar   Avatar object | Avatar url.
+	 * @param WP_REST_Request $request  Full details about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $avatar, $request ) {
@@ -285,16 +285,15 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	/**
 	 * Avatar Upload from File.
 	 *
-	 * @param array  $files             Image file information.
-	 * @param string $upload_dir_filter Upload filter.
-	 *
+	 * @param array $files Image file information.
 	 * @return stdClass
 	 */
-	protected function update_avatar_from_file( $files, $upload_dir_filter ) {
+	protected function upload_avatar_from_file( $files ) {
 
 		// Setup some variables.
-		$bp          = buddypress();
-		$upload_path = bp_core_avatar_upload_path();
+		$bp                = buddypress();
+		$upload_path       = bp_core_avatar_upload_path();
+		$upload_dir_filter = 'xprofile_avatar_upload_dir';
 
 		if ( ! isset( $bp->avatar_admin ) ) {
 			$bp->avatar_admin = new stdClass();
