@@ -226,20 +226,9 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error
 	 */
 	public function delete_item( $request ) {
-		$user_id = (int) $request['user_id'];
-		$object  = 'user';
-
-		$avatar = bp_core_fetch_avatar( array(
-			'object'  => $object,
-			'item_id' => $user_id,
-			'html'    => false,
-			'type'    => 'full',
-		) );
-
-		// Try to delete the avatar.
 		$deleted = bp_core_delete_existing_avatar( array(
-			'object'  => $object,
-			'item_id' => $user_id,
+			'object'  => 'user',
+			'item_id' => (int) $request['user_id'],
 		) );
 
 		if ( ! $deleted ) {
@@ -250,6 +239,10 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
+
+		$avatar        = new stdClass();
+		$avatar->full  = '';
+		$avatar->thumb = '';
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -264,7 +257,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param string            $avatar   Deleted avatar url.
+		 * @param stdClass          $avatar   Avatar object.
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
@@ -305,23 +298,10 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $avatar, $request ) {
-
-		// For the deleted endpoint.
-		if ( is_string( $avatar ) ) {
-			$data = array(
-				'url' => $avatar,
-			);
-		} else {
-			// For the create_item endpoint.
-			$data = array(
-				'name'   => $avatar->name,
-				'file'   => $avatar->file,
-				'url'    => $avatar->url,
-				'dir'    => $avatar->dir,
-				'width'  => $avatar->width,
-				'height' => $avatar->height,
-			);
-		}
+		$data = array(
+			'full'  => $avatar->full,
+			'thumb' => $avatar->thumb,
+		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 		$data    = $this->add_additional_fields_to_object( $data, $request );
@@ -352,6 +332,8 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 		$bp                     = buddypress();
 		$bp->displayed_user     = new stdClass();
 		$bp->displayed_user->id = (int) $request['user_id'];
+		$user_id                = $bp->displayed_user->id;
+		$object                 = 'user';
 
 		$upload_path       = bp_core_avatar_upload_path();
 		$upload_dir_filter = 'xprofile_avatar_upload_dir';
@@ -375,6 +357,28 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Delete the existing avatar files for the object.
+		$existing_avatar = bp_core_fetch_avatar(
+			array(
+				'object'  => $object,
+				'item_id' => $user_id,
+				'html'    => false,
+			)
+		);
+
+		/**
+		 * Check that the new avatar doesn't have the same name as the
+		 * old one before deleting
+		 */
+		if ( ! empty( $existing_avatar ) ) {
+			bp_core_delete_existing_avatar(
+				array(
+					'object'      => $object,
+					'item_id'     => $user_id,
+				)
+			);
+		}
+
 		// The Avatar UI available width.
 		$ui_available_width = 0;
 
@@ -383,42 +387,44 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 			$ui_available_width = $bp->avatar_admin->ui_available_width;
 		}
 
-		// Maybe resize.
-		$bp->avatar_admin->resized = $avatar_attachment->shrink( $avatar_original['file'], $ui_available_width );
-		$avatar_object             = new stdClass();
+		// Set avatar types.
+		$avatar_object = $this->upload_avatar_types( $upload_path, $avatar_original['file'], $user_id );
 
-		// We only want to handle one image after resize.
-		if ( empty( $bp->avatar_admin->resized ) ) {
-			$avatar_object->file = $avatar_original['file'];
-			$avatar_object->dir  = str_replace( $upload_path, '', $avatar_original['file'] );
-		} else {
-			$avatar_object->file = $bp->avatar_admin->resized['path'];
-			$avatar_object->dir  = str_replace( $upload_path, '', $bp->avatar_admin->resized['path'] );
-			@unlink( $avatar_original['file'] );
+		@unlink( $avatar_original['file'] );
+
+		return $avatar_object;
+	}
+
+	/**
+	 * Upload avatar types.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $upload_path Upload path.
+	 * @param string $image       Image file.
+	 * @param int    $user_id     User ID.
+	 * @return stdClass
+	 */
+	protected function upload_avatar_types( $upload_path, $image, $user_id ) {
+		$types = array( 'full', 'thumb' );
+		$data  = @getimagesize( $image );
+		$ext   = 'jpg';
+
+		if ( 'image/png' === $data['mime'] ) {
+			$ext = 'png';
 		}
 
-		// Check for WP_Error on what should be an image.
-		if ( is_wp_error( $avatar_object->dir ) ) {
-			return new WP_Error( 'bp_rest_member_avatar_error',
-				sprintf( __( 'Upload failed! Error was: %s.', 'buddypress' ), $avatar_object->dir->get_error_message() ),
-				array(
-					'status' => 500,
-				)
-			);
+		$avatar_object = new stdClass();
+
+		foreach ( $types as $key_type ) {
+			$filename  = wp_unique_filename( $upload_path, uniqid() . "-bp{$key_type}.{$ext}" );
+			$dest_path = $upload_path . '/avatars/' . $user_id . '/' . $filename;
+
+			$url                        = str_replace( $upload_path, '', $dest_path );
+			$avatar_object->{$key_type} = bp_core_avatar_url() . $url;
+
+			copy( $image, $dest_path );
 		}
-
-		// Set the url value for the image.
-		$avatar_object->url = bp_core_avatar_url() . $avatar_object->dir;
-
-		// Set the sizes of the image.
-		$image_size            = @getimagesize( $avatar_object->file );
-		$avatar_object->width  = $image_size[0];
-		$avatar_object->height = $image_size[1];
-
-		// Set the name of the image.
-		$name                = $files['file']['name'];
-		$name_parts          = pathinfo( $name );
-		$avatar_object->name = trim( substr( $name, 0, - ( 1 + strlen( $name_parts['extension'] ) ) ) );
 
 		return $avatar_object;
 	}
@@ -436,37 +442,15 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 			'title'      => 'avatar',
 			'type'       => 'object',
 			'properties' => array(
-				'name'            => array(
+				'full'             => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The name of the image file.', 'buddypress' ),
+					'description' => __( 'Full size of the image file.', 'buddypress' ),
 					'type'        => 'string',
 				),
-				'file'             => array(
+				'thumb'             => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Full path of the image file.', 'buddypress' ),
+					'description' => __( 'Thumb size of the image file.', 'buddypress' ),
 					'type'        => 'string',
-				),
-				'url'             => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The url of the image file.', 'buddypress' ),
-					'type'        => 'string',
-					'format'      => 'uri',
-					'readonly'    => true,
-				),
-				'dir'             => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The dir of the image file.', 'buddypress' ),
-					'type'        => 'string',
-				),
-				'width'           => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The width of the image file.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'height'          => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The height of the image file.', 'buddypress' ),
-					'type'        => 'integer',
 				),
 			),
 		);
