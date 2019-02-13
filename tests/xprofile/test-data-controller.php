@@ -143,24 +143,29 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	 */
 	public function test_delete_item() {
 		$g = $this->bp_factory->xprofile_group->create();
-		$f = $this->bp_factory->xprofile_field->create( array(
-			'field_group_id' => $g,
-		) );
+		$f = $this->bp_factory->xprofile_field->create( [ 'field_group_id' => $g ] );
 
 		xprofile_set_field_data( $f, $this->user, 'foo' );
 
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', $f, $this->user ) );
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', $f, $this->user ) );
 		$response = $this->server->dispatch( $request );
+
+		$this->assertNotInstanceOf( 'WP_Error', $response );
 		$response = rest_ensure_response( $response );
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
 
-		$this->assertEmpty( $all_data[0]['value'] );
+		$this->assertEmpty( $data[0]['value'] );
+
+		$field_data = $this->endpoint->get_xprofile_field_data_object( $data[0]['field_id'], $data[0]['user_id'] );
+
+		$this->assertEmpty( $field_data->value );
+		$this->assertEmpty( $field_data->last_updated );
 	}
 
 	/**
@@ -179,14 +184,21 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', $f, $u ) );
 		$response = $this->server->dispatch( $request );
+
+		$this->assertNotInstanceOf( 'WP_Error', $response );
 		$response = rest_ensure_response( $response );
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
 
-		$this->assertEmpty( $all_data[0]['value'] );
+		$this->assertEmpty( $data[0]['value'] );
+
+		$field_data = $this->endpoint->get_xprofile_field_data_object( $data[0]['field_id'], $data[0]['user_id'] );
+
+		$this->assertEmpty( $field_data->value );
+		$this->assertEmpty( $field_data->last_updated );
 	}
 
 	/**
@@ -250,9 +262,10 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
 
-		$field = $this->endpoint->get_xprofile_field_object( $data[0]['field_id'] );
-		$this->check_field_data( $field, $data[0] );
+		$field_data = $this->endpoint->get_xprofile_field_data_object( $data[0]['field_id'], $data[0]['user_id'] );
+		$this->check_field_data( $field_data, $data[0] );
 	}
 
 	protected function set_field_data( $args = array() ) {
@@ -261,10 +274,11 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		) );
 	}
 
-	protected function check_field_data( $field, $data ) {
-		$this->assertEquals( $field->id, $data['field_id'] );
-		$this->assertEquals( $field->data->user_id, $data['user_id'] );
-		$this->assertEquals( $field->data->value, $data['value'] );
+	protected function check_field_data( $field_data, $data ) {
+		$this->assertEquals( $field_data->field_id, $data['field_id'] );
+		$this->assertEquals( $field_data->user_id, $data['user_id'] );
+		$this->assertEquals( $field_data->value, $data['value'] );
+		$this->assertEquals( bp_rest_prepare_date_response( $field_data->last_updated ), $data['last_updated'] );
 	}
 
 	public function test_get_item_schema() {
