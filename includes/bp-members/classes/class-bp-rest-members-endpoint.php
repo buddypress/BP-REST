@@ -486,6 +486,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
+				'mention_name'        => array(
+					'description' => __( 'The name used for that user in @-mentions.', 'buddypress' ),
+					'type'        => 'string',
+					'context'     => array( 'embed', 'view', 'edit' ),
+					'arg_options' => array(
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
 				'email'       => array(
 					'description' => __( 'The email address for the member.', 'buddypress' ),
 					'type'        => 'string',
