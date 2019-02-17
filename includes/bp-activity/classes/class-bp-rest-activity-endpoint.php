@@ -336,12 +336,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		} elseif ( ( 'activity_comment' === $type ) && ! is_null( $request['id'] ) && ! is_null( $request['parent'] ) ) {
 
 			// ID of the root activity item.
-			if ( ! empty( $schema['properties']['primary_item_id'] ) && isset( $prime ) ) {
+			if ( isset( $prime ) ) {
 				$prepared_activity->activity_id = (int) $prime;
 			}
 
 			// ID of a parent comment.
-			if ( ! empty( $schema['properties']['secondary_item_id'] ) && isset( $request['secondary_item_id'] ) ) {
+			if ( isset( $request['secondary_item_id'] ) ) {
 				$prepared_activity->parent_id = (int) $request['secondary_item_id'];
 			}
 
@@ -376,7 +376,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$response = rest_ensure_response( $retval );
 
 		/**
-		 * Fires after an activity is created via the REST API.
+		 * Fires after an activity item is created via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
