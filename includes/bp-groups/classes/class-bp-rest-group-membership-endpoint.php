@@ -190,26 +190,45 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		$group_id     = $group->id;
 		$group_member = new BP_Groups_Member( $user->ID, $group_id );
 
-		// Add member to the group.
-		$group_member->group_id     = $group_id;
-		$group_member->user_id      = $user->ID;
-		$group_member->is_admin     = 0;
-		$group_member->date_modified = bp_core_current_time();
-		$group_member->is_confirmed  = 1;
-		$saved                      = $group_member->save();
+		// Membership request to private group.
+		if ( 'private' === $group->status ) {
+			$membership_request = groups_send_membership_request( $user->ID, $group_id );
 
-		if ( ! $saved ) {
-			return new WP_Error( 'bp_rest_group_member_failed_to_join',
-				__( 'Could not add member to the group.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
+			if ( ! $membership_request ) {
+				return new WP_Error( 'bp_rest_group_membership_request_failed',
+					__( 'Could not send membership request to this group.', 'buddypress' ),
+					array(
+						'status' => rest_authorization_required_code(),
+					)
+				);
+			}
 
-		// If new role set, promote it too.
-		if ( $saved && 'member' !== $role ) {
-			groups_promote_member( $user->ID, $group_id, $role );
+			// Redifing here to fetch updated values.
+			$group_member = new BP_Groups_Member( $user->ID, $group_id );
+
+		} else {
+
+			// Add member to the group.
+			$group_member->group_id      = $group_id;
+			$group_member->user_id       = $user->ID;
+			$group_member->is_admin      = 0;
+			$group_member->date_modified = bp_core_current_time();
+			$group_member->is_confirmed  = 1;
+			$saved                       = $group_member->save();
+
+			if ( ! $saved ) {
+				return new WP_Error( 'bp_rest_group_member_failed_to_join',
+					__( 'Could not add member to the group.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
+
+			// If new role set, promote it too.
+			if ( $saved && 'member' !== $role ) {
+				groups_promote_member( $user->ID, $group_id, $role );
+			}
 		}
 
 		$retval = array(
@@ -221,7 +240,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		$response = rest_ensure_response( $retval );
 
 		/**
-		 * Fires after a member us added to a group via the REST API.
+		 * Fires after a member is added, or a membership request, to a group via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
@@ -286,7 +305,12 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			$loggedin_user_id = bp_loggedin_user_id();
 			if ( $loggedin_user_id === $user->ID ) {
 
-				// Users may only freely join public groups. @todo Private requests.
+				// create a group membership request.
+				if ( true === $retval && 'private' === $group->status ) {
+					return true;
+				}
+
+				// Users may only freely join public groups.
 				if ( true === $retval && 'public' !== $group->status && ! groups_is_user_member( $loggedin_user_id, $group->id ) ) {
 					$retval = new WP_Error( 'bp_rest_group_member_cannot_join',
 						__( 'Sorry, you are not allowed to join this group.', 'buddypress' ),

@@ -193,7 +193,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	/**
 	 * @group create_item
 	 */
-	public function test_member_can_not_add_himself_to_private_group() {
+	public function test_member_can_send_membership_request_to_private_group() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
 		$g1 = $this->bp_factory->group->create( array(
@@ -206,7 +206,35 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_join', $response, 403 );
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$user          = bp_rest_get_user( $data['id'] );
+			$member_object = new BP_Groups_Member( $user->ID, $g1 );
+
+			$this->check_user_data( $user, $data, $member_object );
+		}
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_member_can_not_send_membership_request_to_private_group_member() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'status'     => 'private',
+			'creator_id' => $u
+		) );
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $g1 . '/members/' . $u );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_membership_request_failed', $response, 403 );
 	}
 
 	/**
