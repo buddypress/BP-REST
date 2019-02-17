@@ -234,12 +234,8 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	protected function check_avatar_data( $avatar, $data ) {
-		$this->assertEquals( $avatar->name, $data['name'] );
-		$this->assertEquals( $avatar->file, $data['file'] );
-		$this->assertEquals( $avatar->dir, $data['dir'] );
-		$this->assertEquals( $avatar->url, $data['url'] );
-		$this->assertEquals( $avatar->weight, $data['weight'] );
-		$this->assertEquals( $avatar->height, $data['height'] );
+		$this->assertEquals( $avatar->full, $data['full'] );
+		$this->assertEquals( $avatar->thumb, $data['thumb'] );
 	}
 
 	public function test_get_item_schema() {
@@ -248,13 +244,9 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 6, count( $properties ) );
-		$this->assertArrayHasKey( 'name', $properties );
-		$this->assertArrayHasKey( 'file', $properties );
-		$this->assertArrayHasKey( 'dir', $properties );
-		$this->assertArrayHasKey( 'url', $properties );
-		$this->assertArrayHasKey( 'width', $properties );
-		$this->assertArrayHasKey( 'height', $properties );
+		$this->assertEquals( 2, count( $properties ) );
+		$this->assertArrayHasKey( 'full', $properties );
+		$this->assertArrayHasKey( 'thumb', $properties );
 	}
 
 	public function test_context_param() {
