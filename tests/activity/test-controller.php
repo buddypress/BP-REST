@@ -883,7 +883,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 16, count( $properties ) );
+		$this->assertEquals( 17, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'primary_item_id', $properties );
 		$this->assertArrayHasKey( 'secondary_item_id', $properties );
@@ -897,6 +897,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'status', $properties );
 		$this->assertArrayHasKey( 'parent', $properties );
 		$this->assertArrayHasKey( 'comments', $properties );
+		$this->assertArrayHasKey( 'comment_count', $properties );
 		$this->assertArrayHasKey( 'user_avatar', $properties );
 		$this->assertArrayHasKey( 'hidden', $properties );
 		$this->assertArrayHasKey( 'favorited', $properties );

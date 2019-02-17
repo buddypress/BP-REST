@@ -840,6 +840,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'favorited'         => in_array( $activity->id, $this->get_user_favorites(), true ),
 		);
 
+		// Get comment count.
+		if ( ! empty( $activity->children ) ) {
+			$comment_count         = wp_filter_object_list( $activity->children, array( 'type' => 'activity_comment' ), 'AND', 'id' );
+			$data['comment_count'] = ! empty( $comment_count ) ? count( $comment_count ) : 0;
+		}
+
 		$schema = $this->get_item_schema();
 
 		if ( ! empty( $schema['properties']['comments'] ) && 'threaded' === $request['display_comments'] ) {
@@ -1232,6 +1238,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A list of objects children of the activity object.', 'buddypress' ),
 					'type'        => 'array',
+				),
+				'comment_count'   => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'Total number of comments of the activity object.', 'buddypress' ),
+					'type'        => 'integer',
 				),
 				'hidden'          => array(
 					'context'     => array( 'edit' ),
