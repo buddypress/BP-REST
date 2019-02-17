@@ -322,9 +322,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$prepared_activity = $this->prepare_item_for_database( $request );
 
 		// Fallback for the activity_update type.
-		$type = $request['type'];
-		if ( empty( $type ) ) {
-			$type = 'activity_update';
+		$type = 'activity_update';
+		if ( ! empty( $request['type'] ) ) {
+			$type = $request['type'];
 		}
 
 		$prime       = $request['primary_item_id'];
