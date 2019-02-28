@@ -63,7 +63,19 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<group_id>[\d]+)/' . $this->membership_slug . '/(?P<user_id>[\d]+)', array(
+		$base = $this->rest_base . '/(?P<group_id>[\d]+)/' . $this->membership_slug;
+
+		register_rest_route( $this->namespace, '/' . $base, array(
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_items' ),
+				'permission_callback' => array( $this, 'get_items_permissions_check' ),
+				'args'                => $this->get_collection_params(),
+			),
+			'schema' => array( $this, 'get_item_schema' ),
+		) );
+
+		register_rest_route( $this->namespace, '/' . $base . '/(?P<user_id>[\d]+)', array(
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'create_item' ),
@@ -81,6 +93,121 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
+	}
+
+	/**
+	 * Fetch pending group membership requests.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Request|WP_Error
+	 */
+	public function get_items( $request ) {
+
+		$args = array(
+			'per_page' => $request['per_page'],
+		);
+
+		/**
+		 * Filter the query arguments for the request.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $args    Key value array of query var to query value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$args = apply_filters( 'bp_rest_group_membership_request_get_items_query_args', $args, $request );
+
+		$group    = $this->groups_endpoint->get_group_object( $request['group_id'] );
+		$user_ids = BP_Groups_Member::get_all_membership_request_user_ids( $group->id );
+
+		$retval = array();
+		foreach ( $user_ids as $user_id ) {
+			$group_member = new BP_Groups_Member( $user_id, $group->id );
+
+			$retval[] = $this->prepare_response_for_collection(
+				$this->membership_endpoint->prepare_item_for_response( $group_member, $request )
+			);
+		}
+
+		$response = rest_ensure_response( $retval );
+		$response = bp_rest_response_add_total_headers( $response, count( $user_ids ), $args['per_page'] );
+
+		/**
+		 * Fires after a list of group membership request is fetched via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array            $user_ids     List of membership requests.
+		 * @param BP_Groups_Group  $group        The group object.
+		 * @param WP_REST_Response $response     The response data.
+		 * @param WP_REST_Request  $request      The request sent to the API.
+		 */
+		do_action( 'bp_rest_group_membership_request_get_items', $user_ids, $group, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to fetch group membership requests.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function get_items_permissions_check( $request ) {
+		$retval = true;
+
+		if ( ! is_user_logged_in() ) {
+			$retval = new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to make an action.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+
+		if ( true === $retval && ! $group ) {
+			$retval = new WP_Error( 'bp_rest_group_invalid_id',
+				__( 'Invalid group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		// Site administrators can do anything.
+		if ( true === $retval && bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
+		} else {
+			$user_id = get_current_user_id();
+			if ( true === $retval && ( ! groups_is_user_admin( $user_id, $group->id ) || ! groups_is_user_mod( $user_id, $group->id ) ) ) {
+				$retval = new WP_Error( 'bp_rest_group_membership_request_get_items_failed',
+					__( 'User cannot get this group membership requests.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
+
+			if ( true === $retval ) {
+				$retval = true;
+			}
+		}
+
+		/**
+		 * Filter the groups `get_items` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_group_membership_request_get_items_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -430,5 +557,16 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item_schema() {
 		return $this->membership_endpoint->get_item_schema();
+	}
+
+	/**
+	 * Get the query params for collections.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array
+	 */
+	public function get_collection_params() {
+		return parent::get_collection_params();
 	}
 }
