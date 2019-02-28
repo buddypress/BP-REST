@@ -284,7 +284,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			$retval = new WP_Error( 'bp_rest_group_membership_request_invalid_membership',
 				__( 'Invalid membership request.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => 404,
 				)
 			);
 		}
