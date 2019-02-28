@@ -200,7 +200,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			$retval = true;
 		} else {
 			$user_id = get_current_user_id();
-			if ( true === $retval && ( ! groups_is_user_admin( $user_id, $group->id ) || ! groups_is_user_mod( $user_id, $group->id ) ) ) {
+			if ( true === $retval && ! groups_is_user_admin( $user_id, $group->id ) ) {
 				$retval = new WP_Error( 'bp_rest_group_membership_request_get_items_failed',
 					__( 'User cannot get this group membership requests.', 'buddypress' ),
 					array(
