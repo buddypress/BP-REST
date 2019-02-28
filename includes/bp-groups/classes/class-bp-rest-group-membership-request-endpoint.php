@@ -12,6 +12,7 @@ defined( 'ABSPATH' ) || exit;
  * Group Membership Request Endpoint.
  *
  * Use /groups/{group_id}/membership-request/{user_id}
+ * Use /groups/{id}/membership-request/
  *
  * @since 0.1.0
  */
@@ -64,6 +65,20 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 */
 	public function register_routes() {
 		$base = $this->rest_base . '/(?P<group_id>[\d]+)/' . $this->membership_slug;
+
+		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)/' . $this->membership_slug, array(
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_item' ),
+				'permission_callback' => array( $this, 'get_item_permissions_check' ),
+				'args'                => array(
+					'context' => $this->get_context_param( array(
+						'default' => 'view',
+					) ),
+				),
+			),
+			'schema' => array( $this, 'get_item_schema' ),
+		) );
 
 		register_rest_route( $this->namespace, '/' . $base, array(
 			array(
@@ -200,7 +215,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		}
 
 		/**
-		 * Filter the groups `get_items` permissions check.
+		 * Filter the `get_items` permissions check.
 		 *
 		 * @since 0.1.0
 		 *
@@ -208,6 +223,79 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_group_membership_request_get_items_permissions_check', $retval, $request );
+	}
+
+	/**
+	 * Fetch pending group membership request.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Request|WP_Error
+	 */
+	public function get_item( $request ) {
+
+		$group_member = new BP_Groups_Member( false, false, absint( $request['id'] ) );
+
+		$retval = $this->prepare_response_for_collection(
+			$this->membership_endpoint->prepare_item_for_response( $group_member, $request )
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a membership request is fetched via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_Groups_Member  $group_member Membership.
+		 * @param WP_REST_Response  $response     The response data.
+		 * @param WP_REST_Request   $request      The request sent to the API.
+		 */
+		do_action( 'bp_rest_group_membership_request_get_items', $group_member, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to fetch group membership request.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function get_item_permissions_check( $request ) {
+		$retval = true;
+
+		if ( ! is_user_logged_in() ) {
+			$retval = new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to make an action.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		// Site administrators can do anything.
+		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you do not have access to see membership.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		/**
+		 * Filter the `get_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_group_membership_request_get_item_permissions_check', $retval, $request );
 	}
 
 	/**
