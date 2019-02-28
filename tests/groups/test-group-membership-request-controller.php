@@ -34,7 +34,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 	public function test_register_routes() {
 		$routes   = $this->server->get_routes();
 		$base     = $this->endpoint_url . '(?P<group_id>[\d]+)/membership-request';
-		$single   = $this->endpoint_url . '(?P<id>[\d]+)/membership-request';
+		$single   = $this->endpoint_url . 'membership-request/(?P<membership_id>[\d]+)';
 		$endpoint = $base . '/(?P<user_id>[\d]+)';
 
 		$this->assertArrayHasKey( $endpoint, $routes );
@@ -121,24 +121,71 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'GET', $this->endpoint_url . $group_member->id . '/membership-request' );
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . 'membership-request/' . $group_member->id );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
 
-		foreach ( $all_data as $data ) {
-			$user          = bp_rest_get_user( $data['id'] );
-			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
+		$user          = bp_rest_get_user( $data['id'] );
+		$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
 
-			$accepted = groups_is_user_member( $user->ID, $this->group_id );
-			$this->assertFalse( $accepted );
+		$accepted = groups_is_user_member( $user->ID, $this->group_id );
+		$this->assertFalse( $accepted );
 
-			$this->check_user_data( $user, $data, $member_object );
-		}
+		$this->check_user_data( $user, $data, $member_object );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_user_is_not_logged_in() {
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . 'membership-request/' . 0 );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_invalid_membership_request() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . 'membership-request/' . REST_TESTS_IMPOSSIBLY_HIGH_NUMBER );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_membership_request_invalid_membership', $response, 500 );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_no_access() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$group_member                = new BP_Groups_Member();
+		$group_member->group_id      = $this->group_id;
+		$group_member->user_id       = $u;
+		$group_member->inviter_id    = 0;
+		$group_member->is_admin      = 0;
+		$group_member->user_title    = '';
+		$group_member->date_modified = bp_core_current_time();
+		$group_member->is_confirmed  = 0;
+		$group_member->save();
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . 'membership-request/' . $group_member->id );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**

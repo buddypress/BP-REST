@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
  * Group Membership Request Endpoint.
  *
  * Use /groups/{group_id}/membership-request/{user_id}
- * Use /groups/{id}/membership-request/
+ * Use /groups/membership-request/{membership_id}
  *
  * @since 0.1.0
  */
@@ -66,7 +66,17 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	public function register_routes() {
 		$base = $this->rest_base . '/(?P<group_id>[\d]+)/' . $this->membership_slug;
 
-		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)/' . $this->membership_slug, array(
+		register_rest_route( $this->namespace, '/' . $base, array(
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_items' ),
+				'permission_callback' => array( $this, 'get_items_permissions_check' ),
+				'args'                => parent::get_collection_params(),
+			),
+			'schema' => array( $this, 'get_item_schema' ),
+		) );
+
+		register_rest_route( $this->namespace, '/' . $this->rest_base . '/' . $this->membership_slug . '/(?P<membership_id>[\d]+)', array(
 			array(
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_item' ),
@@ -76,16 +86,6 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 						'default' => 'view',
 					) ),
 				),
-			),
-			'schema' => array( $this, 'get_item_schema' ),
-		) );
-
-		register_rest_route( $this->namespace, '/' . $base, array(
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_items' ),
-				'permission_callback' => array( $this, 'get_items_permissions_check' ),
-				'args'                => $this->get_collection_params(),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -234,11 +234,20 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error
 	 */
 	public function get_item( $request ) {
+		// Get membership.
+		$membership = new BP_Groups_Member( false, false, absint( $request['membership_id'] ) );
 
-		$group_member = new BP_Groups_Member( false, false, absint( $request['id'] ) );
+		if ( is_null( $membership->user_id ) && is_null( $membership->group_id ) ) {
+			return new WP_Error( 'bp_rest_group_membership_request_invalid_membership',
+				__( 'Invalid membership request.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
 
 		$retval = $this->prepare_response_for_collection(
-			$this->membership_endpoint->prepare_item_for_response( $group_member, $request )
+			$this->membership_endpoint->prepare_item_for_response( $membership, $request )
 		);
 
 		$response = rest_ensure_response( $retval );
@@ -248,11 +257,11 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param BP_Groups_Member  $group_member Membership.
-		 * @param WP_REST_Response  $response     The response data.
-		 * @param WP_REST_Request   $request      The request sent to the API.
+		 * @param BP_Groups_Member  $membership  Membership object.
+		 * @param WP_REST_Response  $response    The response data.
+		 * @param WP_REST_Request   $request     The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_membership_request_get_items', $group_member, $response, $request );
+		do_action( 'bp_rest_group_membership_request_get_item', $membership, $response, $request );
 
 		return $response;
 	}
@@ -270,7 +279,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to make an action.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to get a membership.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -280,7 +289,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		// Site administrators can do anything.
 		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you do not have access to see membership.', 'buddypress' ),
+				__( 'Sorry, you do not have access to see a membership.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -645,16 +654,5 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item_schema() {
 		return $this->membership_endpoint->get_item_schema();
-	}
-
-	/**
-	 * Get the query params for collections.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return array
-	 */
-	public function get_collection_params() {
-		return parent::get_collection_params();
 	}
 }
