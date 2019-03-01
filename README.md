@@ -11,8 +11,8 @@ Please use and provide feedback!
 ## System Requirements
 
 * PHP >= 5.6
-* WP >= 4.9
-* BuddyPress >= 4.0.0
+* WP >= 4.7
+* BuddyPress = trunk
 
 ## Endpoints (Components) Supported
 
