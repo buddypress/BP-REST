@@ -8,8 +8,8 @@
  * Version: 0.1.0
  * Text Domain: bp-rest
  * Domain Path: languages/
- * Requires at least: 4.9.0
- * Tested up to: 4.9.1
+ * Requires at least: 4.7
+ * Tested up to: 5.1
  * Requires PHP: 5.6
  * License: GPLv2
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html

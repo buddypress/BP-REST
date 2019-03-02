@@ -24,25 +24,37 @@ env:
 matrix:
   include:
     - php: 7.3
-      env: WP_VERSION=master BP_VERSION=master
+      env: WP_VERSION=master
     - php: 7.3
-      env: WP_VERSION=master BP_VERSION=4.0.0
+      env: WP_VERSION=5.0
     - php: 7.2
-      env: WP_VERSION=master BP_VERSION=master
+      env: WP_VERSION=master
     - php: 7.2
-      env: WP_VERSION=4.9 BP_VERSION=4.0.0
+      env: WP_VERSION=5.1
+    - php: 7.2
+      env: WP_VERSION=5.0
+    - php: 7.2
+      env: WP_VERSION=4.9
+    - php: 7.2
+      env: WP_VERSION=4.8
+    - php: 7.2
+      env: WP_VERSION=4.7
     - php: 7.1
-      env: WP_VERSION=master BP_VERSION=master
-    - php: 7.1
-      env: WP_VERSION=4.9 BP_VERSION=4.0.0
+      env: WP_VERSION=master
     - php: 7.0
-      env: WP_VERSION=master BP_VERSION=master
-    - php: 7.0
-      env: WP_VERSION=4.9 BP_VERSION=4.0.0
+      env: WP_VERSION=master
     - php: 5.6
-      env: WP_VERSION=master BP_VERSION=master
+      env: WP_VERSION=master
     - php: 5.6
-      env: WP_VERSION=4.9 BP_VERSION=4.0.0
+      env: WP_VERSION=5.1
+    - php: 5.6
+      env: WP_VERSION=5.0
+    - php: 5.6
+      env: WP_VERSION=4.9
+    - php: 5.6
+      env: WP_VERSION=4.8
+    - php: 5.6
+      env: WP_VERSION=4.7
 
 before_install:
   - |
@@ -73,15 +85,7 @@ install:
   - plugin_dir=$WP_DEVELOP_DIR/src/wp-content/plugins/$plugin_slug
   - cd ..
   - mv $plugin_slug $plugin_dir
-
-  - |
-    if [[ ${BP_VERSION} == "master" ]]; then
-      export BP_PATH=/trunk
-    else
-      export BP_PATH=/tags/$BP_VERSION
-    fi
-
-  - svn co --ignore-externals https://buddypress.svn.wordpress.org/$BP_PATH $WP_DEVELOP_DIR/src/wp-content/plugins/buddypress
+  - svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk $WP_DEVELOP_DIR/src/wp-content/plugins/buddypress
 
   # set up tests config
   - cd $WP_DEVELOP_DIR

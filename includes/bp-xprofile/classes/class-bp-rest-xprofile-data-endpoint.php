@@ -85,9 +85,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			$value = explode( ',', $value );
 		}
 
-		$updated = xprofile_set_field_data( $field->id, $user->ID, $value );
-
-		if ( ! $updated ) {
+		if ( ! xprofile_set_field_data( $field->id, $user->ID, $value ) ) {
 			return new WP_Error( 'rest_user_cannot_save_xprofile_data',
 				__( 'Cannot save XProfile data.', 'buddypress' ),
 				array(
@@ -96,9 +94,12 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Get Field data.
+		$field_data = $this->get_xprofile_field_data_object( $field->id, $user->ID );
+
 		$retval = array(
 			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $field, $request )
+				$this->prepare_item_for_response( $field_data, $request )
 			),
 		);
 
@@ -109,13 +110,13 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param BP_XProfile_Field  $field      The field object.
-		 * @param WP_User           $user      The user object.
-		 * @param mixed             $value     The field data added.
-		 * @param WP_REST_Response  $response  The response data.
-		 * @param WP_REST_Request   $request   The request sent to the API.
+		 * @param BP_XProfile_Field      $field      The field object.
+		 * @param BP_XProfile_ProfileData $field_data The field data object.
+		 * @param WP_User               $user      The user object.
+		 * @param WP_REST_Response      $response  The response data.
+		 * @param WP_REST_Request       $request   The request sent to the API.
 		 */
-		do_action( 'bp_rest_xprofile_data_create_item', $field, $user, $value, $response, $request );
+		do_action( 'bp_rest_xprofile_data_create_item', $field, $field_data, $user, $response, $request );
 
 		return $response;
 	}
@@ -133,7 +134,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to save XProfile data.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to save XProfile data.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -193,7 +194,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 
 		$user = bp_rest_get_user( $request['user_id'] );
 
-		$field_data = new BP_XProfile_ProfileData( $field->id, $user->ID );
+		$field_data = $this->get_xprofile_field_data_object( $field->id, $user->ID );
 
 		if ( ! $field_data->delete() ) {
 			return new WP_Error( 'bp_rest_xprofile_data_cannot_delete',
@@ -204,9 +205,12 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Set empty for the response.
+		$field_data->value = '';
+
 		$retval = array(
 			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $field, $request )
+				$this->prepare_item_for_response( $field_data, $request )
 			),
 		);
 
@@ -217,12 +221,13 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param BP_XProfile_Field  $field      Deleted field object.
-		 * @param WP_User           $user      User object.
-		 * @param WP_REST_Response  $response  The response data.
-		 * @param WP_REST_Request   $request   The request sent to the API.
+		 * @param BP_XProfile_Field       $field       Deleted field object.
+		 * @param BP_XProfile_ProfileData  $field_data  Deleted field data object.
+		 * @param WP_User                $user       User object.
+		 * @param WP_REST_Response       $response   The response data.
+		 * @param WP_REST_Request        $request    The request sent to the API.
 		 */
-		do_action( 'bp_rest_xprofile_data_delete_item', $field, $user, $response, $request );
+		do_action( 'bp_rest_xprofile_data_delete_item', $field, $field_data, $user, $response, $request );
 
 		return $response;
 	}
@@ -254,16 +259,16 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  BP_XProfile_Field $field    XProfile field object.
-	 * @param  WP_REST_Request   $request Full data about the request.
+	 * @param  BP_XProfile_ProfileData $field_data XProfile field data object.
+	 * @param  WP_REST_Request         $request   Full data about the request.
 	 * @return WP_REST_Response
 	 */
-	public function prepare_item_for_response( $field, $request ) {
+	public function prepare_item_for_response( $field_data, $request ) {
 		$data = array(
-			'field_id'     => $field->data->field_id,
-			'user_id'      => $field->data->user_id,
-			'value'        => xprofile_get_field_data( $field->data->field_id, $field->data->user_id ),
-			'last_updated' => bp_rest_prepare_date_response( $field->data->last_updated ),
+			'field_id'     => $field_data->field_id,
+			'user_id'      => $field_data->user_id,
+			'value'        => $field_data->value,
+			'last_updated' => bp_rest_prepare_date_response( $field_data->last_updated ),
 		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -271,18 +276,18 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		$data    = $this->filter_response_by_context( $data, $context );
 
 		$response = rest_ensure_response( $data );
-		$response->add_links( $this->prepare_links( $field->data->field_id ) );
+		$response->add_links( $this->prepare_links( $field_data ) );
 
 		/**
 		 * Filter the XProfile data response returned from the API.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param WP_REST_Response  $response The response data.
-		 * @param WP_REST_Request   $request  Request used to generate the response.
-		 * @param BP_XProfile_Field  $field     XProfile field object.
+		 * @param WP_REST_Response      $response  The response data.
+		 * @param WP_REST_Request       $request   Request used to generate the response.
+		 * @param BP_XProfile_ProfileData $field_data XProfile field data object.
 		 */
-		return apply_filters( 'bp_rest_xprofile_data_prepare_value', $response, $request, $field );
+		return apply_filters( 'bp_rest_xprofile_data_prepare_value', $response, $request, $field_data );
 	}
 
 	/**
@@ -290,12 +295,12 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param BP_XProfile_Field $field_id XProfile field id.
+	 * @param BP_XProfile_ProfileData $field_data XProfile field data object.
 	 * @return array
 	 */
-	protected function prepare_links( $field_id ) {
+	protected function prepare_links( $field_data ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $field_id;
+		$url  = $base . $field_data->field_id;
 
 		// Entity meta.
 		$links = array(
@@ -304,6 +309,10 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),
+			),
+			'user'       => array(
+				'href'       => rest_url( bp_rest_get_user_url( $field_data->user_id ) ),
+				'embeddable' => true,
 			),
 		);
 
@@ -320,6 +329,18 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_xprofile_field_object( $field_id ) {
 		return $this->fields_endpoint->get_xprofile_field_object( $field_id );
+	}
+
+	/**
+	 * Get XProfile field data object.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $field_id Field id.
+	 * @return BP_XProfile_ProfileData
+	 */
+	public function get_xprofile_field_data_object( $field_id, $user_id ) {
+		return new BP_XProfile_ProfileData( $field_id, $user_id );
 	}
 
 	/**

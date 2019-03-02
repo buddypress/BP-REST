@@ -345,6 +345,11 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'xprofile'           => $this->xprofile_data( $user->ID ),
 		);
 
+		// The name used for that user in @-mentions.
+		if ( bp_is_active( 'activity' ) ) {
+			$data['mention_name'] = bp_activity_get_user_mentionname( $user->ID );
+		}
+
 		// Avatars.
 		$data['avatar_urls'] = array(
 			'full' => bp_core_fetch_avatar( array(
@@ -475,6 +480,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				),
 				'name'        => array(
 					'description' => __( 'Display name for the member.', 'buddypress' ),
+					'type'        => 'string',
+					'context'     => array( 'embed', 'view', 'edit' ),
+					'arg_options' => array(
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+				'mention_name'        => array(
+					'description' => __( 'The name used for that user in @-mentions.', 'buddypress' ),
 					'type'        => 'string',
 					'context'     => array( 'embed', 'view', 'edit' ),
 					'arg_options' => array(

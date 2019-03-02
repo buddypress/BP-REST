@@ -320,9 +320,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		$prepared_activity = $this->prepare_item_for_database( $request );
-		$type              = $request['type'];
-		$prime             = $request['primary_item_id'];
-		$activity_id       = 0;
+
+		// Fallback for the activity_update type.
+		$type = 'activity_update';
+		if ( ! empty( $request['type'] ) ) {
+			$type = $request['type'];
+		}
+
+		$prime       = $request['primary_item_id'];
+		$activity_id = 0;
 
 		// Post a regular activity update.
 		if ( 'activity_update' === $type ) {
@@ -336,12 +342,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		} elseif ( ( 'activity_comment' === $type ) && ! is_null( $request['id'] ) && ! is_null( $request['parent'] ) ) {
 
 			// ID of the root activity item.
-			if ( ! empty( $schema['properties']['primary_item_id'] ) && isset( $prime ) ) {
+			if ( isset( $prime ) ) {
 				$prepared_activity->activity_id = (int) $prime;
 			}
 
 			// ID of a parent comment.
-			if ( ! empty( $schema['properties']['secondary_item_id'] ) && isset( $request['secondary_item_id'] ) ) {
+			if ( isset( $request['secondary_item_id'] ) ) {
 				$prepared_activity->parent_id = (int) $request['secondary_item_id'];
 			}
 
@@ -376,7 +382,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$response = rest_ensure_response( $retval );
 
 		/**
-		 * Fires after an activity is created via the REST API.
+		 * Fires after an activity item is created via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
@@ -840,6 +846,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'favorited'         => in_array( $activity->id, $this->get_user_favorites(), true ),
 		);
 
+		// Get comment count.
+		if ( ! empty( $activity->children ) ) {
+			$comment_count         = wp_filter_object_list( $activity->children, array( 'type' => 'activity_comment' ), 'AND', 'id' );
+			$data['comment_count'] = ! empty( $comment_count ) ? count( $comment_count ) : 0;
+		}
+
 		$schema = $this->get_item_schema();
 
 		if ( ! empty( $schema['properties']['comments'] ) && 'threaded' === $request['display_comments'] ) {
@@ -1232,6 +1244,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A list of objects children of the activity object.', 'buddypress' ),
 					'type'        => 'array',
+				),
+				'comment_count'   => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'Total number of comments of the activity object.', 'buddypress' ),
+					'type'        => 'integer',
 				),
 				'hidden'          => array(
 					'context'     => array( 'edit' ),
