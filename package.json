@@ -4,7 +4,7 @@
     "version": "0.1.0",
     "description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
     "keywords": [ "API", "BuddyPress", "REST API", "bp", "WordPress" ],
-    "homepage": "https://github.com/buddypress/BP-REST#readme",
+    "homepage": "https://github.com/buddypress/BP-REST",
     "bugs": "https://github.com/buddypress/BP-REST/issues",
     "license": "GPL-2.0+",
     "authors": {
