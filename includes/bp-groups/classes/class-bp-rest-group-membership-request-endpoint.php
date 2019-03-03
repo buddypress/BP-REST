@@ -46,6 +46,15 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	protected $membership_slug;
 
 	/**
+	 * Membership object.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var $membership
+	 */
+	protected $membership;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 0.1.0
@@ -119,7 +128,6 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Request|WP_Error
 	 */
 	public function get_items( $request ) {
-
 		$args = array(
 			'per_page' => $request['per_page'],
 		);
@@ -235,7 +243,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item( $request ) {
 		// Get membership.
-		$membership = new BP_Groups_Member( false, false, absint( $request['membership_id'] ) );
+		$membership = $this->membership;
 
 		$retval = $this->prepare_response_for_collection(
 			$this->membership_endpoint->prepare_item_for_response( $membership, $request )
@@ -277,8 +285,8 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$user_id    = bp_loggedin_user_id();
-		$membership = new BP_Groups_Member( false, false, absint( $request['membership_id'] ) );
+		$user_id          = bp_loggedin_user_id();
+		$this->membership = new BP_Groups_Member( false, false, absint( $request['membership_id'] ) );
 
 		if ( true === $retval && is_null( $membership->user_id ) && is_null( $membership->group_id ) ) {
 			$retval = new WP_Error( 'bp_rest_group_membership_request_invalid_membership',
