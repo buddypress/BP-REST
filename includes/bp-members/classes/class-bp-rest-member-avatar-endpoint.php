@@ -58,7 +58,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request
+	 * @return WP_REST_Response
 	 */
 	public function get_item( $request ) {
 		$avatar = bp_core_fetch_avatar( array(
@@ -161,7 +161,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request|WP_Error
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
 
@@ -234,7 +234,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request|WP_Error
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
 		$deleted = bp_core_delete_existing_avatar( array(
@@ -458,7 +458,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 
 		// Check for WP_Error on what should be an image.
 		if ( is_wp_error( $img_dir ) ) {
-			$image_file = new WP_Error( 'bp_rest_member_avatar_upload_error',
+			return new WP_Error( 'bp_rest_member_avatar_upload_error',
 				sprintf( __( 'Upload failed! Error was: %s', 'buddypress' ), $img_dir->get_error_message() ),
 				array(
 					'status' => 500,
@@ -541,7 +541,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 
 		// Check for errors.
 		if ( empty( $cropped['full'] ) || empty( $cropped['thumb'] ) || is_wp_error( $cropped['full'] ) || is_wp_error( $cropped['thumb'] ) ) {
-			$cropped = new WP_Error( 'bp_rest_member_avatar_crop_error',
+			return new WP_Error( 'bp_rest_member_avatar_crop_error',
 				sprintf( __( 'There was a problem cropping your profile photo.', 'buddypress' ) ),
 				array(
 					'status' => 500,
@@ -585,6 +585,8 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 
 	/**
 	 * Return an instance of the BP_Attachment_Avatar class.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return BP_Attachment_Avatar
 	 */
