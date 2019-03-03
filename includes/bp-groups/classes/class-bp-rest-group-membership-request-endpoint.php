@@ -288,7 +288,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		$user_id          = bp_loggedin_user_id();
 		$this->membership = new BP_Groups_Member( false, false, absint( $request['membership_id'] ) );
 
-		if ( true === $retval && is_null( $membership->user_id ) && is_null( $membership->group_id ) ) {
+		if ( true === $retval && is_null( $this->membership->user_id ) && is_null( $this->membership->group_id ) ) {
 			$retval = new WP_Error( 'bp_rest_group_membership_request_invalid_membership',
 				__( 'Invalid membership request.', 'buddypress' ),
 				array(
@@ -301,7 +301,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = true;
 		} else {
-			if ( true === $retval && ! groups_is_user_admin( $user_id, $membership->group_id ) ) {
+			if ( true === $retval && ! groups_is_user_admin( $user_id, $this->membership->group_id ) ) {
 				$retval = new WP_Error( 'bp_rest_group_membership_request_get_item_failed',
 					__( 'User cannot get this group membership request.', 'buddypress' ),
 					array(
