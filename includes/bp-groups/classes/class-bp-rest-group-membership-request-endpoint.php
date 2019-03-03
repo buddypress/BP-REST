@@ -11,8 +11,9 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Group Membership Request Endpoint.
  *
- * Use /groups/{group_id}/membership-request/{user_id}
+ * Use /groups/{group_id}/membership-request
  * Use /groups/membership-request/{membership_id}
+ * Use /groups/{group_id}/membership-request/{user_id}
  *
  * @since 0.1.0
  */
