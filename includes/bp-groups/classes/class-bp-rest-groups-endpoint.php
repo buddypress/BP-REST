@@ -1039,9 +1039,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		/**
-		 * @todo Confirm what's the proper sanitization here.
-		 */
+		// @todo Confirm what's the proper sanitization here.
 		$params['meta'] = array(
 			'description'       => __( 'Get groups based on their meta data information.', 'buddypress' ),
 			'default'           => array(),

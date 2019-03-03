@@ -80,7 +80,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_items' ),
 				'permission_callback' => array( $this, 'get_items_permissions_check' ),
-				'args'                => parent::get_collection_params(),
+				'args'                => $this->get_collection_params(),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );

@@ -109,15 +109,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 	public function test_get_item() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
-		$group_member                = new BP_Groups_Member();
-		$group_member->group_id      = $this->group_id;
-		$group_member->user_id       = $u;
-		$group_member->inviter_id    = 0;
-		$group_member->is_admin      = 0;
-		$group_member->user_title    = '';
-		$group_member->date_modified = bp_core_current_time();
-		$group_member->is_confirmed  = 0;
-		$group_member->save();
+		$group_member = $this->create_membership_request( $this->group_id, $u );
 
 		$this->bp->set_current_user( $this->user );
 
@@ -169,15 +161,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 	public function test_get_item_no_access() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
-		$group_member                = new BP_Groups_Member();
-		$group_member->group_id      = $this->group_id;
-		$group_member->user_id       = $u;
-		$group_member->inviter_id    = 0;
-		$group_member->is_admin      = 0;
-		$group_member->user_title    = '';
-		$group_member->date_modified = bp_core_current_time();
-		$group_member->is_confirmed  = 0;
-		$group_member->save();
+		$group_member = $this->create_membership_request( $this->group_id, $u );
 
 		$this->bp->set_current_user( $u );
 
@@ -258,7 +242,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 	/**
 	 * @group create_item
 	 */
-	public function test_create_item_already_group_member() {
+	public function test_create_item_with_an_already_group_member() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$g = $this->bp_factory->group->create( array(
 			'name' => 'Group Test',
@@ -448,6 +432,8 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$group_member->date_modified = bp_core_current_time();
 		$group_member->is_confirmed  = 0;
 		$group_member->save();
+
+		return $group_member;
 	}
 
 	protected function check_user_data( $user, $data, $member_object) {
@@ -506,6 +492,11 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 	}
 
 	public function test_context_param() {
-		return true;
+		// Collection.
+		$request  = new WP_REST_Request( 'OPTIONS', $this->endpoint_url . $this->group_id . '/membership-request' );
+		$response = $this->server->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 	}
 }
