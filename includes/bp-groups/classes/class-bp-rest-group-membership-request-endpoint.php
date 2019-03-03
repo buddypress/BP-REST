@@ -126,7 +126,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_items( $request ) {
 		$args = array(
@@ -208,8 +208,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = true;
 		} else {
-			$user_id = get_current_user_id();
-			if ( true === $retval && ! groups_is_user_admin( $user_id, $group->id ) ) {
+			if ( true === $retval && ! groups_is_user_admin( bp_loggedin_user_id(), $group->id ) ) {
 				$retval = new WP_Error( 'bp_rest_group_membership_request_get_items_failed',
 					__( 'User cannot get this group membership requests.', 'buddypress' ),
 					array(
@@ -240,7 +239,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
 		// Get membership.
@@ -317,7 +316,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		}
 
 		/**
-		 * Filter the `get_item` permissions check.
+		 * Filter the group membership request `get_item` permissions check.
 		 *
 		 * @since 0.1.0
 		 *
@@ -333,7 +332,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
 		$user     = bp_rest_get_user( $request['user_id'] );
@@ -475,7 +474,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
 		$user  = bp_rest_get_user( $request['user_id'] );
@@ -602,7 +601,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
 		$user  = bp_rest_get_user( $request['user_id'] );
