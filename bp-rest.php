@@ -89,6 +89,10 @@ add_action( 'rest_api_init', function() {
 		$controller = new BP_REST_Group_Membership_Endpoint();
 		$controller->register_routes();
 
+		require_once( dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-group-membership-request-endpoint.php' );
+		$controller = new BP_REST_Group_Membership_Request_Endpoint();
+		$controller->register_routes();
+
 		require_once( dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-group-invites-endpoint.php' );
 		$controller = new BP_REST_Group_Invites_Endpoint();
 		$controller->register_routes();
