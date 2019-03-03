@@ -200,8 +200,12 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	protected function check_avatar_data( $avatar, $data ) {
-		$this->assertEquals( $avatar->full, $data['full'] );
-		$this->assertEquals( $avatar->thumb, $data['thumb'] );
+		if ( isset( $data['image'] ) ) {
+			$this->assertEquals( $avatar, $data['image'] );
+		} else {
+			$this->assertEquals( $avatar->full, $data['full'] );
+			$this->assertEquals( $avatar->thumb, $data['thumb'] );
+		}
 	}
 
 	public function test_get_item_schema() {

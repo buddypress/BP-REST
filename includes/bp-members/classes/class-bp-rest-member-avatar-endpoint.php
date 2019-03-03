@@ -345,9 +345,11 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	/**
 	 * Avatar Upload from File.
 	 *
-	 * @param array           $files Image File.
-	 * @param WP_REST_Request $request    Full details about the request.
-	 * @return stdClass
+	 * @since 0.1.0
+	 *
+	 * @param array           $files     $_FILES superglobal.
+	 * @param WP_REST_Request $request  Full details about the request.
+	 * @return stdClass|WP_Error
 	 */
 	protected function upload_avatar_from_file( $files, $request ) {
 
@@ -356,29 +358,210 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 		$bp->displayed_user     = new stdClass();
 		$bp->displayed_user->id = (int) $request['user_id'];
 		$user_id                = $bp->displayed_user->id;
-		$object                 = 'user';
+		$avatar_attachment      = $this->avatar_attachment_instance();
 
-		$upload_path       = bp_core_avatar_upload_path();
-		$upload_dir_filter = 'xprofile_avatar_upload_dir';
+		// Needed to avoid 'Invalid form submission' error.
+		$_POST['action'] = $avatar_attachment->action;
+		$avatar_original = $avatar_attachment->upload( $files, 'xprofile_avatar_upload_dir' );
 
-		if ( ! isset( $bp->avatar_admin ) ) {
-			$bp->avatar_admin = new stdClass();
-		}
-
-		// Upload the file.
-		$avatar_attachment = new BP_Attachment_Avatar();
-		$_POST['action']   = $avatar_attachment->action;
-		$avatar_original   = $avatar_attachment->upload( $files, $upload_dir_filter );
-
-		// In case of an error.
+		// Bail early in case of an error.
 		if ( ! empty( $avatar_original['error'] ) ) {
-			return new WP_Error( 'bp_rest_member_avatar_error',
+			return new WP_Error( 'bp_rest_member_avatar_upload_error',
 				sprintf( __( 'Upload failed! Error was: %s.', 'buddypress' ), $avatar_original['error'] ),
 				array(
 					'status' => 500,
 				)
 			);
 		}
+
+		$image_file = $this->resize( $avatar_original['file'] );
+
+		// Bail early if there is an error.
+		if ( is_wp_error( $image_file ) ) {
+			return $image_file;
+		}
+
+		// If the uploaded image is smaller than the "full" dimensions, throw a warning.
+		if ( $avatar_attachment->is_too_small( $image_file ) ) {
+			return new WP_Error( 'bp_rest_member_avatar_error',
+				sprintf(
+					__( 'You have selected an image that is smaller than recommended. For best results, upload a picture larger than %d x %d pixels.', 'buddypress' ),
+					bp_core_avatar_full_width(),
+					bp_core_avatar_full_height()
+				),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Delete existing image if one exists.
+		$this->delete_existing_image( $user_id );
+
+		// Crop the profile photo accordingly.
+		$cropped = $this->crop_image( $image_file, $user_id );
+
+		// Bail early if there is an error.
+		if ( is_wp_error( $cropped ) ) {
+			return $cropped;
+		}
+
+		// Build response object.
+		$avatar_object = new stdClass();
+		foreach ( [ 'full', 'thumb' ] as $key_type ) {
+
+			// Update path with url.
+			$url = str_replace( bp_core_avatar_upload_path(), '', $cropped[ $key_type ] );
+
+			// Set image url to its size.
+			$avatar_object->{$key_type} = bp_core_avatar_url() . $url;
+		}
+
+		return $avatar_object;
+	}
+
+	/**
+	 * Resize image.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $file Image to resize.
+	 * @return string|WP_Error
+	 */
+	protected function resize( $file ) {
+		$bp          = buddypress();
+		$upload_path = bp_core_avatar_upload_path();
+
+		if ( ! isset( $bp->avatar_admin ) ) {
+			$bp->avatar_admin = new stdClass();
+		}
+
+		// The Avatar UI available width.
+		$ui_available_width = 0;
+
+		// Try to set the ui_available_width using the avatar_admin global.
+		if ( isset( $bp->avatar_admin->ui_available_width ) ) {
+			$ui_available_width = $bp->avatar_admin->ui_available_width;
+		}
+
+		$resized = $this->avatar_attachment_instance()->shrink( $file, $ui_available_width );
+
+		// We only want to handle one image after resize.
+		if ( empty( $resized ) ) {
+			$image_file = $file;
+			$img_dir    = str_replace( $upload_path, '', $file );
+		} else {
+			$image_file = $resized['path'];
+			$img_dir    = str_replace( $upload_path, '', $resized['path'] );
+			@unlink( $file );
+		}
+
+		// Check for WP_Error on what should be an image.
+		if ( is_wp_error( $img_dir ) ) {
+			$image_file = new WP_Error( 'bp_rest_member_avatar_upload_error',
+				sprintf( __( 'Upload failed! Error was: %s', 'buddypress' ), $img_dir->get_error_message() ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return $image_file;
+	}
+
+	/**
+	 * Crop image.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $image_file Image to crop.
+	 * @param int    $user_id   User ID.
+	 * @return array|WP_Error
+	 */
+	protected function crop_image( $image_file, $user_id ) {
+		$image          = getimagesize( $image_file );
+		$avatar_to_crop = str_replace( bp_core_avatar_upload_path(), '', $image_file );
+
+		// Get avatar full width and height.
+		$full_height = bp_core_avatar_full_height();
+		$full_width  = bp_core_avatar_full_width();
+
+		// Default cropper coordinates.
+		// Smaller than full-width: cropper defaults to entire image.
+		if ( $image[0] < $full_width ) {
+			$crop_left  = 0;
+			$crop_right = $image[0];
+
+		// Less than 2x full-width: cropper defaults to full-width.
+		} elseif ( $image[0] < ( $full_width * 2 ) ) {
+			$padding_w  = round( ( $image[0] - $full_width ) / 2 );
+			$crop_left  = $padding_w;
+			$crop_right = $image[0] - $padding_w;
+
+		// Larger than 2x full-width: cropper defaults to 1/2 image width.
+		} else {
+			$crop_left  = round( $image[0] / 4 );
+			$crop_right = $image[0] - $crop_left;
+		}
+
+		// Smaller than full-height: cropper defaults to entire image.
+		if ( $image[1] < $full_height ) {
+			$crop_top    = 0;
+			$crop_bottom = $image[1];
+
+		// Less than double full-height: cropper defaults to full-height.
+		} elseif ( $image[1] < ( $full_height * 2 ) ) {
+			$padding_h   = round( ( $image[1] - $full_height ) / 2 );
+			$crop_top    = $padding_h;
+			$crop_bottom = $image[1] - $padding_h;
+
+		// Larger than 2x full-height: cropper defaults to 1/2 image height.
+		} else {
+			$crop_top    = round( $image[1] / 4 );
+			$crop_bottom = $image[1] - $crop_top;
+		}
+
+		add_filter( 'bp_attachments_current_user_can', '__return_true' );
+
+		// Crop the file args.
+		$cropped = $this->avatar_attachment_instance()->crop(
+			array(
+				'object'        => 'user',
+				'avatar_dir'    => 'avatars',
+				'item_id'       => $user_id,
+				'original_file' => $avatar_to_crop,
+				'crop_w'        => $crop_right,
+				'crop_h'        => $crop_bottom,
+				'crop_x'        => $crop_left,
+				'crop_y'        => $crop_top,
+			)
+		);
+
+		remove_filter( 'bp_attachments_current_user_can', '__return_false' );
+
+		// Check for errors.
+		if ( empty( $cropped['full'] ) || empty( $cropped['thumb'] ) || is_wp_error( $cropped['full'] ) || is_wp_error( $cropped['thumb'] ) ) {
+			$cropped = new WP_Error( 'bp_rest_member_avatar_crop_error',
+				sprintf( __( 'There was a problem cropping your profile photo.', 'buddypress' ) ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return $cropped;
+	}
+
+	/**
+	 * Delete user's existing avatar if one exists.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $user_id  User object.
+	 * @return void
+	 */
+	protected function delete_existing_image( $user_id ) {
+		$object = 'user';
 
 		// Get existing avatar.
 		$existing_avatar = bp_core_fetch_avatar(
@@ -398,53 +581,15 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
-
-		// The Avatar UI available width.
-		$ui_available_width = 0;
-
-		// Try to set the ui_available_width using the avatar_admin global.
-		if ( isset( $bp->avatar_admin->ui_available_width ) ) {
-			$ui_available_width = $bp->avatar_admin->ui_available_width;
-		}
-
-		// Set avatar types.
-		$avatar_object = $this->upload_avatar_types( $upload_path, $avatar_original['file'], $user_id );
-
-		@unlink( $avatar_original['file'] );
-
-		return $avatar_object;
 	}
 
 	/**
-	 * Upload avatar types.
+	 * Return an instance of the BP_Attachment_Avatar class.
 	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $upload_path Upload path.
-	 * @param string $image       Image file.
-	 * @param int    $user_id     User ID.
-	 * @return stdClass
+	 * @return BP_Attachment_Avatar
 	 */
-	protected function upload_avatar_types( $upload_path, $image, $user_id ) {
-		$types = array( 'full', 'thumb' );
-		$data  = @getimagesize( $image );
-		$ext   = 'jpg';
-
-		if ( 'image/png' === $data['mime'] ) {
-			$ext = 'png';
-		}
-
-		$avatar_object = new stdClass();
-		foreach ( $types as $key_type ) {
-			$filename                   = wp_unique_filename( $upload_path, uniqid() . "-bp{$key_type}.{$ext}" );
-			$dest_path                  = $upload_path . '/avatars/' . $user_id . '/' . $filename;
-			$url                        = str_replace( $upload_path, '', $dest_path );
-			$avatar_object->{$key_type} = bp_core_avatar_url() . $url;
-
-			copy( $image, $dest_path );
-		}
-
-		return $avatar_object;
+	protected function avatar_attachment_instance() {
+		return new BP_Attachment_Avatar();
 	}
 
 	/**
