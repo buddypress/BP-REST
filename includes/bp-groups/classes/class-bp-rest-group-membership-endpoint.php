@@ -191,12 +191,12 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		$group_member = new BP_Groups_Member( $user->ID, $group_id );
 
 		// Add member to the group.
-		$group_member->group_id     = $group_id;
-		$group_member->user_id      = $user->ID;
-		$group_member->is_admin     = 0;
+		$group_member->group_id      = $group_id;
+		$group_member->user_id       = $user->ID;
+		$group_member->is_admin      = 0;
 		$group_member->date_modified = bp_core_current_time();
 		$group_member->is_confirmed  = 1;
-		$saved                      = $group_member->save();
+		$saved                       = $group_member->save();
 
 		if ( ! $saved ) {
 			return new WP_Error( 'bp_rest_group_member_failed_to_join',
@@ -221,7 +221,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		$response = rest_ensure_response( $retval );
 
 		/**
-		 * Fires after a member us added to a group via the REST API.
+		 * Fires after a member is added to a group via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
@@ -286,7 +286,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			$loggedin_user_id = bp_loggedin_user_id();
 			if ( $loggedin_user_id === $user->ID ) {
 
-				// Users may only freely join public groups. @todo Private requests.
+				// Users may only freely join public groups.
 				if ( true === $retval && 'public' !== $group->status && ! groups_is_user_member( $loggedin_user_id, $group->id ) ) {
 					$retval = new WP_Error( 'bp_rest_group_member_cannot_join',
 						__( 'Sorry, you are not allowed to join this group.', 'buddypress' ),
