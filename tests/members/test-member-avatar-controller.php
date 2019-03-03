@@ -52,7 +52,20 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		return true;
+		$u1 = $this->bp_factory->user->create();
+
+		$this->bp->set_current_user( $u1 );
+
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $u1 ) );
+		$request->set_param( 'context', 'view' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$this->assertNotEmpty( $all_data[0]['image'] );
 	}
 
 	/**
@@ -78,71 +91,24 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	/**
-	 * @group create_item
+	 * @group get_item
 	 */
-	public function test_create_item() {
-		$bp = buddypress();
+	public function test_get_item_unauthorized_member() {
 		$u1 = $this->bp_factory->user->create();
+		$u2 = $this->bp_factory->user->create();
 
-		$this->bp->set_current_user( $u1 );
+		$this->bp->set_current_user( $u2 );
 
-		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $u1 ) );
-		$request->set_file_params(
-			array(
-				'file' => array(
-					'type'     => 'image/jpeg',
-					'name'     => 'mystery-man.jpg',
-					'size'     => filesize( $this->image_file ),
-					'tmp_name' => $this->image_file,
-				),
-			)
-		);
-		$request->set_param( 'context', 'view' );
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $u1 ) );
 		$response = rest_get_server()->dispatch( $request );
-
-		$this->assertEquals( 200, $response->get_status() );
-
-		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
-
-		foreach ( $all_data as $data ) {
-			$this->assertEquals( $data['name'], 'mystery-man' );
-			$this->assertEquals( $data['file'], $bp->avatar->upload_path . '/avatars/' . $u1 . '/mystery-man.jpg' );
-		}
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 403 );
 	}
 
 	/**
 	 * @group create_item
 	 */
-	public function test_admin_upload_another_user_avatar() {
-		$bp = buddypress();
-		$u1 = $this->bp_factory->user->create();
-
-		$this->bp->set_current_user( $this->user_id );
-
-		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $u1 ) );
-		$request->set_file_params(
-			array(
-				'file' => array(
-					'type'     => 'image/jpeg',
-					'name'     => 'mystery-man.jpg',
-					'size'     => filesize( $this->image_file ),
-					'tmp_name' => $this->image_file,
-				),
-			)
-		);
-		$request->set_param( 'context', 'view' );
-		$response = rest_get_server()->dispatch( $request );
-
-		$this->assertEquals( 200, $response->get_status() );
-
-		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
-
-		foreach ( $all_data as $data ) {
-			$this->assertEquals( $data['name'], 'mystery-man' );
-			$this->assertEquals( $data['file'], $bp->avatar->upload_path . '/avatars/' . $u1 . '/mystery-man.jpg' );
-		}
+	public function test_create_item() {
+		return true;
 	}
 
 	/**

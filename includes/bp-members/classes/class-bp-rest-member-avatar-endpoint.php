@@ -63,10 +63,21 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	public function get_item( $request ) {
 		$avatar = bp_core_fetch_avatar( array(
 			'object'  => 'user',
+			'type'    => $request['type'],
 			'item_id' => (int) $request['user_id'],
 			'html'    => (bool) $request['html'],
-			'type'    => $request['type'],
+			'alt'     => $request['alt'],
+			'no_grav' => (bool) $request['no_gravatar'],
 		) );
+
+		if ( ! $avatar ) {
+			$retval = new WP_Error( 'bp_rest_member_avatar_no_image',
+				__( 'Sorry, there was a problem fetching the avatar.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -81,7 +92,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param string            $avatar   Deleted avatar url.
+		 * @param string            $avatar   The avatar.
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
@@ -103,7 +114,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to access the member avatar.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to access this member avatar.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -111,7 +122,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 		}
 
 		$user = bp_rest_get_user( $request['user_id'] );
-		if ( true === $retval && ! $user ) {
+		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
@@ -154,7 +165,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 */
 	public function create_item( $request ) {
 
-		// Get the file via $_FILES.
+		// Get the image file via $_FILES.
 		$files = $request->get_file_params();
 
 		if ( empty( $files ) ) {
@@ -182,7 +193,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 		$response = rest_ensure_response( $retval );
 
 		/**
-		 * Fires after a member avatar is added via the REST API.
+		 * Fires after a member avatar is uploaded via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
@@ -240,9 +251,14 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$avatar        = new stdClass();
-		$avatar->full  = '';
-		$avatar->thumb = '';
+		$avatar = bp_core_fetch_avatar(
+			array(
+				'object'  => 'user',
+				'item_id' => $request['user_id'],
+				'html'    => false,
+				'type'    => 'full',
+			)
+		);
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -257,7 +273,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param stdClass          $avatar   Avatar object.
+		 * @param string            $avatar   Gravatar url.
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
@@ -293,15 +309,21 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass|string $avatar   Avatar object | Avatar url.
+	 * @param stdClass|string $avatar   Avatar object or string with url or image with html.
 	 * @param WP_REST_Request $request  Full details about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $avatar, $request ) {
-		$data = array(
-			'full'  => $avatar->full,
-			'thumb' => $avatar->thumb,
-		);
+		if ( is_string( $avatar ) ) {
+			$data = array(
+				'image' => $avatar,
+			);
+		} else {
+			$data = array(
+				'full'  => $avatar->full,
+				'thumb' => $avatar->thumb,
+			);
+		}
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 		$data    = $this->add_additional_fields_to_object( $data, $request );
@@ -323,7 +345,8 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 	/**
 	 * Avatar Upload from File.
 	 *
-	 * @param array $files Image file information.
+	 * @param array           $files Image File.
+	 * @param WP_REST_Request $request    Full details about the request.
 	 * @return stdClass
 	 */
 	protected function upload_avatar_from_file( $files, $request ) {
@@ -357,7 +380,7 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Delete the existing avatar files for the object.
+		// Get existing avatar.
 		$existing_avatar = bp_core_fetch_avatar(
 			array(
 				'object'  => $object,
@@ -366,15 +389,12 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		/**
-		 * Check that the new avatar doesn't have the same name as the
-		 * old one before deleting
-		 */
+		// Check if the avatar exists before deleting.
 		if ( ! empty( $existing_avatar ) ) {
 			bp_core_delete_existing_avatar(
 				array(
-					'object'      => $object,
-					'item_id'     => $user_id,
+					'object'  => $object,
+					'item_id' => $user_id,
 				)
 			);
 		}
@@ -415,11 +435,9 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 		}
 
 		$avatar_object = new stdClass();
-
 		foreach ( $types as $key_type ) {
-			$filename  = wp_unique_filename( $upload_path, uniqid() . "-bp{$key_type}.{$ext}" );
-			$dest_path = $upload_path . '/avatars/' . $user_id . '/' . $filename;
-
+			$filename                   = wp_unique_filename( $upload_path, uniqid() . "-bp{$key_type}.{$ext}" );
+			$dest_path                  = $upload_path . '/avatars/' . $user_id . '/' . $filename;
 			$url                        = str_replace( $upload_path, '', $dest_path );
 			$avatar_object->{$key_type} = bp_core_avatar_url() . $url;
 
@@ -480,7 +498,23 @@ class BP_REST_Member_Avatar_Endpoint extends WP_REST_Controller {
 
 		$params['html'] = array(
 			'description'       => __( 'Whether to return an <img> HTML element, vs a raw URL to an avatar.', 'buddypress' ),
-			'default'           => true,
+			'default'           => false,
+			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['alt'] = array(
+			'description'       => __( 'The alt attribute for the <img> element.', 'buddypress' ),
+			'default'           => '',
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['no_grav'] = array(
+			'description'       => __( 'Whether to disable the default Gravatar fallback.', 'buddypress' ),
+			'default'           => false,
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
