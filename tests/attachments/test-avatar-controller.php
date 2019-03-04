@@ -4,15 +4,15 @@
  *
  * @package BuddyPress
  * @subpackage BP_REST
- * @group member-avatar
+ * @group avatar
  */
-class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testcase {
+class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 	public function setUp() {
 		parent::setUp();
 
 		$this->bp_factory   = new BP_UnitTest_Factory();
-		$this->endpoint     = new BP_REST_Member_Avatar_Endpoint();
+		$this->endpoint     = new BP_REST_Attachments_Avatar_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/members/';
 
@@ -119,7 +119,7 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_member_avatar_no_image_file', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_attachments_avatar_no_image_file', $response, 500 );
 	}
 
 	/**
@@ -167,7 +167,7 @@ class BP_Test_REST_Member_Avatar_Endpoint extends WP_Test_REST_Controller_Testca
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$response = rest_get_server()->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_member_avatar_delete_failed', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_attachments_avatar_delete_failed', $response, 500 );
 	}
 
 	/**
