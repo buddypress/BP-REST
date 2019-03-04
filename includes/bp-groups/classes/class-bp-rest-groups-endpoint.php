@@ -178,7 +178,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request
+	 * @return WP_REST_Response
 	 */
 	public function get_item( $request ) {
 		$group = $this->get_group_object( $request );
