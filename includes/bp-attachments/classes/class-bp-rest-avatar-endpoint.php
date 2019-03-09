@@ -53,12 +53,12 @@ class BP_REST_Attachments_Avatar_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Fetch an existing avatar of a member.
+	 * Fetch an existing member avatar.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
 		$avatar = bp_core_fetch_avatar( array(
@@ -141,6 +141,10 @@ class BP_REST_Attachments_Avatar_Endpoint extends WP_REST_Controller {
 						'status' => rest_authorization_required_code(),
 					)
 				);
+			}
+
+			if ( true === $retval ) {
+				$retval = true;
 			}
 		}
 
@@ -309,8 +313,8 @@ class BP_REST_Attachments_Avatar_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass|string $avatar   Avatar object or string with url or image with html.
-	 * @param WP_REST_Request $request  Full details about the request.
+	 * @param stdClass|string $avatar  Avatar object or string with url or image with html.
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $avatar, $request ) {
@@ -414,6 +418,8 @@ class BP_REST_Attachments_Avatar_Endpoint extends WP_REST_Controller {
 			$avatar_object->{$key_type} = bp_core_avatar_url() . $url;
 		}
 
+		@unlink( $avatar_original['file'] );
+
 		return $avatar_object;
 	}
 
@@ -482,8 +488,6 @@ class BP_REST_Attachments_Avatar_Endpoint extends WP_REST_Controller {
 		// Get avatar full width and height.
 		$full_height = bp_core_avatar_full_height();
 		$full_width  = bp_core_avatar_full_width();
-
-//		$full_width *= 2;
 
 		// Use as much as possible of the image.
 		$avatar_ratio = $full_width / $full_height;

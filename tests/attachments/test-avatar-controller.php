@@ -20,13 +20,6 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 			'role' => 'administrator',
 		) );
 
-		add_filter( 'bp_attachment_upload_overrides', array( $this, 'filter_overrides' ), 10, 1 );
-		add_filter( 'upload_dir', array( $this, 'filter_upload_dir' ), 20, 1 );
-
-		$this->upload_results      = array();
-		$this->image_file          = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-man.jpg';
-		$this->original_upload_dir = array();
-
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
 		}
@@ -56,7 +49,7 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 
 		$this->bp->set_current_user( $u1 );
 
-		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $u1 ) );
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $u1 ) );
 		$request->set_param( 'context', 'view' );
 		$response = rest_get_server()->dispatch( $request );
 
@@ -74,7 +67,7 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 	public function test_get_item_user_not_logged_in() {
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -101,7 +94,7 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $u1 ) );
 		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -128,7 +121,7 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 	public function test_create_item_user_not_logged_in() {
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -176,7 +169,7 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 	public function test_delete_item_user_not_logged_in() {
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -199,15 +192,6 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 		return true;
 	}
 
-	protected function check_avatar_data( $avatar, $data ) {
-		if ( isset( $data['image'] ) ) {
-			$this->assertEquals( $avatar, $data['image'] );
-		} else {
-			$this->assertEquals( $avatar->full, $data['full'] );
-			$this->assertEquals( $avatar->thumb, $data['thumb'] );
-		}
-	}
-
 	public function test_get_item_schema() {
 		$request    = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$response   = $this->server->dispatch( $request );
@@ -225,50 +209,7 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
-	}
 
-	public function tearDown() {
-		parent::tearDown();
-		remove_filter( 'bp_attachment_upload_overrides', array( $this, 'filter_overrides' ), 10 );
-		remove_filter( 'upload_dir', array( $this, 'filter_upload_dir' ), 20 );
-
-		$this->upload_results      = array();
-		$this->image_file          = '';
-		$this->original_upload_dir = array();
-	}
-
-	public function filter_overrides( $overrides ) {
-		$overrides['upload_error_handler'] = array( $this, 'upload_error_handler' );
-
-		// Don't test upload for WordPress < 4.0.
-		$overrides['test_upload'] = false;
-		return $overrides;
-	}
-
-	public function filter_upload_dir( $upload_dir ) {
-		$upload_dir['error'] = 'fake_upload_success';
-
-		$this->upload_results = array(
-			'new_file' => $upload_dir['path'] . '/mystery-man.jpg',
-			'url'      => $upload_dir['url'] . '/mystery-man.jpg',
-		);
-
-		return $upload_dir;
-	}
-
-	/**
-	 * To avoid copying files in tests, we're faking a succesfull uploads
-	 * as soon as all the test_form have been executed in _wp_handle_upload
-	 */
-	public function upload_error_handler( $file, $message ) {
-		if ( 'fake_upload_success' !== $message ) {
-			return array( 'error' => $message );
-		} else {
-			return array(
-				'file' => $this->upload_results['new_file'],
-				'url'  => $this->upload_results['url'],
-				'type' => 'image/jpeg',
-			);
-		}
+		$this->assertNotEmpty( $data );
 	}
 }
