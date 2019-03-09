@@ -53,12 +53,12 @@ class BP_REST_Attachments_Avatar_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Fetch an existing avatar of a member.
+	 * Fetch an existing member avatar.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
 		$avatar = bp_core_fetch_avatar( array(
@@ -141,6 +141,10 @@ class BP_REST_Attachments_Avatar_Endpoint extends WP_REST_Controller {
 						'status' => rest_authorization_required_code(),
 					)
 				);
+			}
+
+			if ( true === $retval ) {
+				$retval = true;
 			}
 		}
 
@@ -309,8 +313,8 @@ class BP_REST_Attachments_Avatar_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass|string $avatar   Avatar object or string with url or image with html.
-	 * @param WP_REST_Request $request  Full details about the request.
+	 * @param stdClass|string $avatar  Avatar object or string with url or image with html.
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $avatar, $request ) {
@@ -414,6 +418,8 @@ class BP_REST_Attachments_Avatar_Endpoint extends WP_REST_Controller {
 			$avatar_object->{$key_type} = bp_core_avatar_url() . $url;
 		}
 
+		@unlink( $avatar_original['file'] );
+
 		return $avatar_object;
 	}
 
@@ -483,39 +489,28 @@ class BP_REST_Attachments_Avatar_Endpoint extends WP_REST_Controller {
 		$full_height = bp_core_avatar_full_height();
 		$full_width  = bp_core_avatar_full_width();
 
-		// Default cropper coordinates.
-		// Smaller than full-width: cropper defaults to entire image.
-		if ( $image[0] < $full_width ) {
-			$crop_left  = 0;
-			$crop_right = $image[0];
+		// Use as much as possible of the image.
+		$avatar_ratio = $full_width / $full_height;
+		$image_ratio  = $image[0] / $image[1];
 
-		// Less than 2x full-width: cropper defaults to full-width.
-		} elseif ( $image[0] < ( $full_width * 2 ) ) {
-			$padding_w  = round( ( $image[0] - $full_width ) / 2 );
-			$crop_left  = $padding_w;
-			$crop_right = $image[0] - $padding_w;
+		if ( $image_ratio >= $avatar_ratio ) {
+			// Uploaded image is wider than BP ratio, so we crop horizontally.
+			$crop_y = 0;
+			$crop_h = $image[1];
 
-		// Larger than 2x full-width: cropper defaults to 1/2 image width.
+			// Get the target width by multiplying unmodified image height by target ratio.
+			$crop_w    = $avatar_ratio * $image[1];
+			$padding_w = round( ( $image[0] - $crop_w ) / 2 );
+			$crop_x    = $padding_w;
 		} else {
-			$crop_left  = round( $image[0] / 4 );
-			$crop_right = $image[0] - $crop_left;
-		}
+			// Uploaded image is narrower than BP ratio, so we crop vertically.
+			$crop_x = 0;
+			$crop_w = $image[0];
 
-		// Smaller than full-height: cropper defaults to entire image.
-		if ( $image[1] < $full_height ) {
-			$crop_top    = 0;
-			$crop_bottom = $image[1];
-
-		// Less than double full-height: cropper defaults to full-height.
-		} elseif ( $image[1] < ( $full_height * 2 ) ) {
-			$padding_h   = round( ( $image[1] - $full_height ) / 2 );
-			$crop_top    = $padding_h;
-			$crop_bottom = $image[1] - $padding_h;
-
-		// Larger than 2x full-height: cropper defaults to 1/2 image height.
-		} else {
-			$crop_top    = round( $image[1] / 4 );
-			$crop_bottom = $image[1] - $crop_top;
+			// Get the target height by multiplying unmodified image width by target ratio.
+			$crop_h    = $avatar_ratio * $image[0];
+			$padding_h = round( ( $image[1] - $crop_h ) / 2 );
+			$crop_y    = $padding_h;
 		}
 
 		add_filter( 'bp_attachments_current_user_can', '__return_true' );
@@ -527,10 +522,10 @@ class BP_REST_Attachments_Avatar_Endpoint extends WP_REST_Controller {
 				'avatar_dir'    => 'avatars',
 				'item_id'       => $user_id,
 				'original_file' => $avatar_to_crop,
-				'crop_w'        => $crop_right,
-				'crop_h'        => $crop_bottom,
-				'crop_x'        => $crop_left,
-				'crop_y'        => $crop_top,
+				'crop_w'        => $crop_w,
+				'crop_h'        => $crop_h,
+				'crop_x'        => $crop_x,
+				'crop_y'        => $crop_y,
 			)
 		);
 
