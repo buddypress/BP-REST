@@ -621,6 +621,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Limit fields by those restricted to a given member type, or array of member types. If `$user_id` is provided, the value of `$member_type` will be overridden by the member types of the provided user. The special value of \'any\' will return only those fields that are unrestricted by member type - i.e., those applicable to any type.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'string' ),
 			'sanitize_callback' => 'bp_rest_sanitize_member_types',
 			'validate_callback' => 'bp_rest_validate_member_types',
 		);
@@ -669,6 +670,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Ensure result set excludes specific profile field groups.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'integer' ),
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
@@ -677,6 +679,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Ensure result set excludes specific profile fields.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'string' ),
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);

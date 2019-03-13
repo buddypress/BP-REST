@@ -1010,6 +1010,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Group statuses to limit results to.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'string' ),
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
@@ -1035,6 +1036,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Get groups that are children of the specified group(s) IDs.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'integer' ),
 			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
@@ -1044,6 +1046,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Get groups based on their meta data information.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'string' ),
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -1051,6 +1054,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Ensure result set includes groups with specific IDs.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'integer' ),
 			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
@@ -1059,6 +1063,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Ensure result set excludes specific IDs.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'integer' ),
 			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
