@@ -1,23 +1,29 @@
 <?php
 /**
- * Member Avatar Endpoints Tests.
+ * Group Avatar Endpoints Tests.
  *
  * @package BuddyPress
  * @subpackage BP_REST
- * @group avatar
+ * @group group-avatar
  */
-class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_Testcase {
+class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 	public function setUp() {
 		parent::setUp();
 
 		$this->bp_factory   = new BP_UnitTest_Factory();
-		$this->endpoint     = new BP_REST_Attachments_Avatar_Endpoint();
+		$this->endpoint     = new BP_REST_Attachments_Group_Avatar_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
-		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/members/';
+		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->groups->id . '/';
 
 		$this->user_id = $this->bp_factory->user->create( array(
 			'role' => 'administrator',
+		) );
+
+		$this->group_id = $this->bp_factory->group->create( array(
+			'name'        => 'Group Test',
+			'description' => 'Group Description',
+			'creator_id'  => $this->user,
 		) );
 
 		if ( ! $this->server ) {
@@ -27,7 +33,7 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 
 	public function test_register_routes() {
 		$routes   = $this->server->get_routes();
-		$endpoint = $this->endpoint_url . '(?P<user_id>[\d]+)/avatar';
+		$endpoint = $this->endpoint_url . '(?P<group_id>[\d]+)/avatar';
 
 		// Single.
 		$this->assertArrayHasKey( $endpoint, $routes );
@@ -45,13 +51,11 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		$u1 = $this->bp_factory->user->create();
+		$this->bp->set_current_user( $this->user_id );
 
-		$this->bp->set_current_user( $u1 );
-
-		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $u1 ) );
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
 		$request->set_param( 'context', 'view' );
-		$response = rest_get_server()->dispatch( $request );
+		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
 
@@ -65,22 +69,20 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 	 * @group get_item
 	 */
 	public function test_get_item_user_not_logged_in() {
-		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
-		$response = rest_get_server()->dispatch( $request );
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_invalid_member() {
-		$u1 = $this->bp_factory->user->create();
-
-		$this->bp->set_current_user( $u1 );
+	public function test_get_item_invalid_group() {
+		$this->bp->set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
-		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
+		$response = $this->server->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -88,12 +90,11 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 	 */
 	public function test_get_item_unauthorized_member() {
 		$u1 = $this->bp_factory->user->create();
-		$u2 = $this->bp_factory->user->create();
 
-		$this->bp->set_current_user( $u2 );
+		$this->bp->set_current_user( $u1 );
 
-		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $u1 ) );
-		$response = rest_get_server()->dispatch( $request );
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
@@ -110,31 +111,31 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 	public function test_create_item_empty_image() {
 		$this->bp->set_current_user( $this->user_id );
 
-		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
-		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_attachments_avatar_no_image_file', $response, 500 );
+		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_attachments_group_avatar_no_image_file', $response, 500 );
 	}
 
 	/**
 	 * @group create_item
 	 */
 	public function test_create_item_user_not_logged_in() {
-		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
-		$response = rest_get_server()->dispatch( $request );
+		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
 	 * @group create_item
 	 */
-	public function test_create_item_invalid_member() {
+	public function test_create_item_invalid_group() {
 		$u1 = $this->bp_factory->user->create();
 
 		$this->bp->set_current_user( $u1 );
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
-		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
+		$response = $this->server->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -157,32 +158,30 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 	public function test_delete_item_failed() {
 		$this->bp->set_current_user( $this->user_id );
 
-		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
-		$response = rest_get_server()->dispatch( $request );
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_attachments_avatar_delete_failed', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_attachments_group_avatar_delete_failed', $response, 500 );
 	}
 
 	/**
 	 * @group delete_item
 	 */
 	public function test_delete_item_user_not_logged_in() {
-		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
-		$response = rest_get_server()->dispatch( $request );
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
 	 * @group delete_item
 	 */
-	public function test_delete_item_invalid_member() {
-		$u1 = $this->bp_factory->user->create();
-
-		$this->bp->set_current_user( $u1 );
+	public function test_delete_item_invalid_group() {
+		$this->bp->set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
-		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
+		$response = $this->server->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -193,7 +192,7 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 	}
 
 	public function test_get_item_schema() {
-		$request    = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
+		$request    = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
 		$response   = $this->server->dispatch( $request );
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
@@ -206,7 +205,7 @@ class BP_Test_REST_Attachments_Avatar_Endpoint extends WP_Test_REST_Controller_T
 	public function test_context_param() {
 
 		// Single.
-		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
+		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 

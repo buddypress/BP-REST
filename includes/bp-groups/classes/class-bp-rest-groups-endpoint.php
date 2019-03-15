@@ -178,7 +178,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request
+	 * @return WP_REST_Response
 	 */
 	public function get_item( $request ) {
 		$group = $this->get_group_object( $request );
@@ -796,10 +796,10 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool|BP_Groups_Group
 	 */
 	public function get_group_object( $request ) {
-		if ( is_numeric( $request ) ) {
-			$group_id = $request;
-		} elseif ( isset( $request['group_id'] ) ) {
+		if ( ! empty( $request['group_id'] ) ) {
 			$group_id = (int) $request['group_id'];
+		} elseif ( is_numeric( $request ) ) {
+			$group_id = $request;
 		} else {
 			$group_id = (int) $request['id'];
 		}
