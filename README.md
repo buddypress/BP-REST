@@ -20,6 +20,7 @@ Please use and provide feedback!
 - [x] Groups `http://site.com/wp-json/buddypress/v1/groups`
 - [x] Group Membership `http://site.com/wp-json/buddypress/v1/groups/<group_id>/members`
 - [x] Group Membership Request(s) `http://site.com/wp-json/buddypress/v1/groups/{group_id}/membership-request/`
+- [x] Group Avatar `http://site.com/wp-json/buddypress/v1/groups/<group_id>/avatar`
 - [x] Group Invites `http://site.com/wp-json/buddypress/v1/groups/<group_id>/invites`
 - [x] XProfile Fields `http://site.com/wp-json/buddypress/v1/xprofile/fields`
 - [x] XProfile Groups `http://site.com/wp-json/buddypress/v1/xprofile/groups`
