@@ -732,6 +732,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Ensure result set includes specific group roles.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'string' ),
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
@@ -740,6 +741,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Ensure result set excludes specific member IDs.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'integer' ),
 			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);

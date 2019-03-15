@@ -90,6 +90,56 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	/**
 	 * @group get_items
 	 */
+	public function test_get_items_by_specific_group_role() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		$this->bp->set_current_user( $u1 );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator' => $u1,
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
+
+		// Promote $u2 to a moderator
+		add_filter( 'bp_is_item_admin', '__return_true' );
+
+		groups_promote_member( $u2, $g1, 'mod' );
+
+		remove_filter( 'bp_is_item_admin', '__return_true' );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . $g1 . '/members' );
+		$request->set_query_params( array(
+			'roles' => array( 'mod' ),
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$u_ids = wp_list_pluck( $all_data, 'id' );
+
+		// Check results.
+		$this->assertEqualSets( [ $u2 ], $u_ids );
+		$this->assertNotContains( $u1, $u_ids );
+
+		// Verify user information.
+		foreach ( $all_data as $data ) {
+			$user = bp_rest_get_user( $data['id'] );
+			$member_object = new BP_Groups_Member( $user->ID, $g1 );
+
+			$this->check_user_data( $user, $data, $member_object );
+		}
+	}
+
+	/**
+	 * @group get_items
+	 */
 	public function test_get_paginated_items() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();

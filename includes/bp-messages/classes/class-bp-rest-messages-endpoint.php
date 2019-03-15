@@ -93,7 +93,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$messages_box = new BP_Messages_Box_Template( $args );
 
 		$retval = array();
-		foreach ( $messages_box->threads as $thread ) {
+		foreach ( (array) $messages_box->threads as $thread ) {
 			$retval[] = $this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $thread, $request )
 			);
@@ -136,9 +136,11 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to see the messages.', 'buddypress' ),
+		$user = bp_rest_get_user( $request['user_id'] );
+
+		if ( true === $retval && (int) $user->ID !== bp_loggedin_user_id() && ! bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = new WP_Error( 'bp_rest_user_cannot_view_messages',
+				__( 'Sorry, you cannot view the messages.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -228,6 +230,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				$retval = true;
 			}
 		}
+
+		$response = rest_ensure_response( $data );
 
 		/**
 		 * Filter the messages `get_item` permissions check.
@@ -409,23 +413,54 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $thread, $request ) {
+		$excerpt = wp_strip_all_tags( bp_create_excerpt( $thread->last_message_content, 75 ) );
+
 		$data = array(
-			'id'             => $thread->thread_id,
-			'message_id'     => $thread->last_message_id,
-			'last_sender_id' => $thread->last_sender_id,
-			'subject'        => wp_staticize_emoji( $thread->last_message_subject ),
-			'content'        => wp_staticize_emoji( $thread->last_message_content ),
-			'date'           => bp_rest_prepare_date_response( $thread->last_message_date ),
-			'unread_count'   => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
-			'sender_ids'     => (array) $thread->sender_ids,
-			'messages'       => $thread->messages,
+			'id'                => $thread->thread_id,
+			'primary_item_id'   => $thread->last_message_id,
+			'secondary_item_id' => $thread->last_sender_id,
+			'subject'           => array(
+				'raw'      => $thread->last_message_subject,
+				'rendered' => apply_filters( 'bp_get_message_thread_subject', wp_staticize_emoji( $thread->last_message_subject ) ),
+			),
+			'excerpt'           => array(
+				'raw'      => $excerpt,
+				'rendered' => apply_filters( 'bp_get_message_thread_excerpt', $excerpt ),
+			),
+			'message'           => array(
+				'raw'      => $thread->last_message_content,
+				'rendered' => apply_filters( 'bp_get_message_thread_content', wp_staticize_emoji( $thread->last_message_content ) ),
+			),
+			'date'              => bp_rest_prepare_date_response( $thread->last_message_date ),
+			'unread'            => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
+			'sender_ids'        => $thread->sender_ids,
+			'recipients'        => $thread->recipients,
+			'messages'          => array(),
 		);
 
-		$context = ! empty( $request['context'] ) ? $request['context']: 'view';
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
+		foreach ( $thread->messages as $message ) {
+			$message->subject = array(
+				'raw'      => $message->subject,
+				'rendered' => apply_filters( 'bp_get_message_thread_subject', wp_staticize_emoji( $message->subject ) ),
+			);
 
-		$response = rest_ensure_response( $data );
+			$message->message = array(
+				'raw'      => $message->message,
+				'rendered' => apply_filters( 'bp_get_the_thread_message_content', wp_staticize_emoji( $message->message ) ),
+			);
+
+			$data['messages'][] = $message;
+		}
+
+		/**
+		 * @todo Set user avatar, user name, and user links for recipients.
+		 */
+
+		 /**
+		 * @todo What about starred threads, starred messages in a thread ?
+		 */
+
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
 		/**
 		 * Filter a thread value returned from the API.
@@ -536,7 +571,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					'description' => __( 'HTML title of the object.', 'buddypress' ),
 					'type'        => 'string',
 				),
-				'content'         => array(
+				'excerpt'         => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'HTML summary of the object.', 'buddypress' ),
+					'type'        => 'string',
+				),
+				'message'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML content of the object.', 'buddypress' ),
 					'type'        => 'string',
@@ -555,6 +595,11 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				'sender_ids'      => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The user IDs of all messages in the message thread.', 'buddypress' ),
+					'type'        => 'array',
+				),
+				'recipients'      => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'Recipient objects in the thread', 'buddypress' ),
 					'type'        => 'array',
 				),
 				'messages'        => array(
@@ -581,7 +626,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		$params['box'] = array(
 			'description'       => __( 'Filter the result by box.', 'buddypress' ),
-			'default'           => 'sentbox',
+			'default'           => 'inbox',
 			'type'              => 'string',
 			'enum'              => array( 'notices', 'sentbox', 'inbox' ),
 			'sanitize_callback' => 'sanitize_key',

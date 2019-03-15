@@ -631,7 +631,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$params['user_ids'] = array(
 			'description'       => __( 'Pass IDs of users to limit result set.', 'buddypress' ),
 			'default'           => array(),
-			'type'              => 'array()',
+			'type'              => 'array',
+			'items'             => array( 'type' => 'integer' ),
 			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
@@ -640,6 +641,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'description'       => __( 'Ensure result set include specific IDs.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'integer' ),
 			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
@@ -648,6 +650,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'description'       => __( 'Ensure result set excludes specific IDs.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'integer' ),
 			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
@@ -656,6 +659,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'description'       => __( 'Limit results set to certain type(s).', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
+			'items'             => array( 'type' => 'string' ),
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
