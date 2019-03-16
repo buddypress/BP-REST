@@ -45,7 +45,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'create_item' ),
 				'permission_callback' => array( $this, 'create_item_permissions_check' ),
-				'args'                => $this->create_item_params(),
+				'args'                => $this->create_update_item_params(),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -56,6 +56,12 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 				'callback'            => array( $this, 'get_item' ),
 				'permission_callback' => array( $this, 'get_item_permissions_check' ),
 				'args'                => $this->get_item_params(),
+			),
+			array(
+				'methods'             => WP_REST_Server::EDITABLE,
+				'callback'            => array( $this, 'update_item' ),
+				'permission_callback' => array( $this, 'update_item_permissions_check' ),
+				'args'                => $this->create_update_item_params(),
 			),
 			array(
 				'methods'             => WP_REST_Server::DELETABLE,
@@ -237,15 +243,42 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full data about the request
+	 * @param WP_REST_Request $request Full data about the request.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
 		$args = array(
-			'type'           => $request['type'],
-			'name'           => $request['name'],
-			'field_group_id' => $request['field-group-id'],
+			'field_group_id'    => $request['field_group_id'],
+			'parent_id'         => $request['parent_id'],
+			'type'              => $request['type'],
+			'name'              => $request['name'],
+			'description'       => $request['description'],
+			'is_required'       => $request['required'],
+			'can_delete'        => $request['can_delete'],
+			'order_by'          => $request['order_by'],
+			'is_default_option' => $request['is_default_option'],
+			'option_order'      => $request['option_order'],
+			'field_order'       => $request['field_order'],
 		);
+
+		/**
+		 * Filter the query arguments for the request.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $args    Key value array of query var to query value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$args = apply_filters( 'bp_rest_xprofile_fields_create_item_query_args', $args, $request );
+
+		if ( empty( $args['field_group_id'] ) ) {
+			return new WP_Error( 'bp_rest_required_param_missing',
+				__( 'Required param missing.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
 
 		$field_id = xprofile_insert_field( $args );
 
@@ -323,6 +356,106 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Update a XProfile field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function update_item( $request ) {
+		$args = array(
+			'field_id'          => $request['id'],
+			'field_group_id'    => $request['field_group_id'],
+			'parent_id'         => $request['parent_id'],
+			'type'              => $request['type'],
+			'name'              => $request['name'],
+			'description'       => $request['description'],
+			'is_required'       => $request['required'],
+			'can_delete'        => $request['can_delete'],
+			'order_by'          => $request['order_by'],
+			'is_default_option' => $request['is_default_option'],
+			'option_order'      => $request['option_order'],
+			'field_order'       => $request['field_order'],
+		);
+
+		/**
+		 * Filter the query arguments for the request.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $args    Key value array of query var to query value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$args = apply_filters( 'bp_rest_xprofile_fields_update_item_query_args', $args, $request );
+
+		if ( empty( $args['field_group_id'] ) ) {
+			return new WP_Error( 'bp_rest_missing_required_param',
+				__( 'Required param missing.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$field_id = xprofile_insert_field( $args );
+
+		if ( ! $field_id ) {
+			return new WP_Error( 'bp_rest_user_cannot_update_xprofile_field',
+				__( 'Cannot update XProfile field.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$field = $this->get_xprofile_field_object( $field_id );
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $field, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a XProfile field is updated via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_XProfile_Field  $field      Updated field object.
+		 * @param WP_REST_Response  $response  The response data.
+		 * @param WP_REST_Request   $request   The request sent to the API.
+		 */
+		do_action( 'bp_rest_xprofile_fields_update_item', $field, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to update a XProfile field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_Error|bool
+	 */
+	public function update_item_permissions_check( $request ) {
+		$retval = $this->delete_item_permissions_check( $request );
+
+		/**
+		 * Filter the XProfile fields `update_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_xprofile_fields_update_item_permissions_check', $retval, $request );
+	}
+
+	/**
 	 * Delete a XProfile field.
 	 *
 	 * @since 0.1.0
@@ -333,8 +466,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	public function delete_item( $request ) {
 		$field   = new BP_XProfile_Field( (int) $request['id'] );
 		$deleted = $field->delete( $request['delete_data'] );
-
-		$request->set_param( 'context', 'edit' );
 
 		if ( ! $deleted ) {
 			return new WP_Error( 'bp_rest_xprofile_field_cannot_delete',
@@ -399,7 +530,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = new WP_Error( 'bp_rest_user_cannot_delete_field',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to delete this field.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -481,10 +612,9 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			$data['data']['value'] = maybe_unserialize( $field->data->value );
 		}
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
+		$context = ! empty( $request['context'] ) ? $request['context']: 'view';
+		$data    = $this->add_additional_fields_to_object( $data, $request );
+		$data    = $this->filter_response_by_context( $data, $context );
 
 		return $data;
 	}
@@ -766,27 +896,69 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @return array
 	 */
-	public function create_item_params() {
+	public function create_update_item_params() {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'edit';
 
+		$params['name'] = array(
+			'description'       => __( 'Name of the object.', 'buddypress' ),
+			'default'           => '',
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['description'] = array(
+			'description'       => __( 'Description of the object.', 'buddypress' ),
+			'default'           => '',
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		$params['type'] = array(
-			'description'       => __( 'Required if you want to add a XProfile field type.', 'buddypress' ),
+			'description'       => __( 'Type of the object.', 'buddypress' ),
 			'type'              => 'string',
 			'enum'              => buddypress()->profile->field_types,
 			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['name'] = array(
-			'description'       => __( 'Required if you want to add the name of XProfile field.', 'buddypress' ),
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_text_field',
+		$params['parent_id'] = array(
+			'description'       => __( 'Parent ID of object.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['field-group-id'] = array(
-			'description'       => __( 'ID of the group you want to add the XProfile field into.', 'buddypress' ),
+		$params['is_required'] = array(
+			'description'       => __( 'Requirement of the object.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['can_delete'] = array(
+			'description'       => __( 'Can the object be deleted.', 'buddypress' ),
+			'default'           => true,
+			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['is_default_option'] = array(
+			'description'       => __( 'Option of the default field.', 'buddypress' ),
+			'default'           => true,
+			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['field_group_id'] = array(
+			'description'       => __( 'ID of the group you want to add the object.', 'buddypress' ),
+			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',

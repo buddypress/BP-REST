@@ -36,7 +36,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
-		$this->assertCount( 2, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
+		$this->assertCount( 3, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
 	}
 
 	/**
@@ -166,7 +166,6 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 
 		$params = $this->set_field_group_data();
 		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->check_create_field_group_response( $response );
@@ -181,7 +180,6 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 
 		$params = $this->set_field_group_data();
 		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
@@ -191,7 +189,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group create_item
 	 */
 	public function test_create_item_user_without_permission() {
-		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u = $this->factory->user->create();
 		$this->bp->set_current_user( $u );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
@@ -199,17 +197,68 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 
 		$params = $this->set_field_group_data();
 		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_create_field_group', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
 	 * @group update_item
 	 */
 	public function test_update_item() {
-		$this->assertTrue( true );
+		$new_name = 'Updated name';
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
+		$request->add_header( 'content-type', 'application/json' );
+		$request->set_body( wp_json_encode( [ 'name' => $new_name ] ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$object  = end( $all_data );
+		$updated = $this->endpoint->get_xprofile_field_group_object( $object['id'] );
+
+		$this->assertSame( $new_name, $updated->name );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_invalid_id() {
+		$this->bp->set_current_user( $this->user );
+
+		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_field_group_id', $response, 404 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_user_not_logged_in() {
+		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_without_permission() {
+		$u = $this->factory->user->create();
+		$this->bp->set_current_user( $u );
+
+		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -259,13 +308,13 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group delete_item
 	 */
 	public function test_delete_item_without_permission() {
-		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u = $this->factory->user->create();
 		$this->bp->set_current_user( $u );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_delete_field_group', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**

@@ -37,7 +37,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
-		$this->assertCount( 2, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
+		$this->assertCount( 3, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
 	}
 
 	/**
@@ -178,7 +178,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	/**
 	 * @group create_item
 	 */
-	public function test_create_item_with_no_required_field() {
+	public function test_create_item_with_without_required_field() {
 		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
@@ -246,7 +246,61 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group update_item
 	 */
 	public function test_update_item() {
-		$this->assertTrue( true );
+		$new_name = 'Updated name';
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data( [ 'name' => $new_name, 'field_group_id' => $this->group_id ] );
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$object  = end( $all_data );
+		$updated = $this->endpoint->get_xprofile_field_object( $object['id'] );
+
+		$this->assertSame( $new_name, $updated->name );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_invalid_id() {
+		$this->bp->set_current_user( $this->user );
+
+		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_field_id', $response, 404 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_user_not_logged_in() {
+		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_without_permission() {
+		$u = $this->factory->user->create();
+		$this->bp->set_current_user( $u );
+
+		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -258,7 +312,6 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$field = $this->endpoint->get_xprofile_field_object( $this->field_id );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $field->id ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 		$this->assertNotInstanceOf( 'WP_Error', $response );
 
@@ -289,7 +342,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -302,7 +355,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_delete_field', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -342,7 +395,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		return wp_parse_args( $args, array(
 			'type'           => 'checkbox',
 			'name'           => 'Test Field Name',
-			'field-group-id' => $this->group_id,
+			'field_group_id' => $this->group_id,
 		) );
 	}
 

@@ -22,7 +22,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @var object
+	 * @var BP_REST_XProfile_Fields_Endpoint
 	 */
 	protected $fields_endpoint;
 
