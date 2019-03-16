@@ -143,7 +143,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 
 		$user = bp_rest_get_user( $request['user_id'] );
 
-		if ( true === $retval && empty( $user->ID ) ) {
+		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
@@ -153,7 +153,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && ! $this->can_see( $user->ID ) ) {
-			$retval = new WP_Error( 'rest_user_cannot_view_field_data',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you cannot save XProfile field data.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -173,7 +173,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Delete users's XProfile data.
+	 * Delete user's XProfile data.
 	 *
 	 * @since 0.1.0
 	 *

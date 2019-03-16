@@ -49,9 +49,9 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @var int
+	 * @var string
 	 */
-	protected $object;
+	protected $object = 'group';
 
 	/**
 	 * Constructor.
@@ -61,7 +61,6 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 	public function __construct() {
 		$this->namespace       = bp_rest_namespace() . '/' . bp_rest_version();
 		$this->rest_base       = buddypress()->groups->id;
-		$this->object          = 'group';
 		$this->groups_endpoint = new BP_REST_Groups_Endpoint();
 		$this->avatar_instance = new BP_Attachment_Avatar();
 	}

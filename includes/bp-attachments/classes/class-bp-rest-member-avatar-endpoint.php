@@ -31,9 +31,9 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @var int
+	 * @var string
 	 */
-	protected $object;
+	protected $object = 'user';
 
 	/**
 	 * Member object.
@@ -52,7 +52,6 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	public function __construct() {
 		$this->namespace       = bp_rest_namespace() . '/' . bp_rest_version();
 		$this->rest_base       = 'members';
-		$this->object          = 'user';
 		$this->avatar_instance = new BP_Attachment_Avatar();
 	}
 
@@ -153,6 +152,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		}
 
 		$this->user = bp_rest_get_user( $request['user_id'] );
+
 		if ( true === $retval && ! $this->user instanceof WP_User ) {
 			$retval = new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),

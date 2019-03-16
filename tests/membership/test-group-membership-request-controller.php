@@ -169,7 +169,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_membership_request_get_item_failed', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -255,7 +255,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_membership_request_not_issued', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**

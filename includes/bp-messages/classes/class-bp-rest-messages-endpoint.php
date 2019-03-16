@@ -138,8 +138,17 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		$user = bp_rest_get_user( $request['user_id'] );
 
-		if ( true === $retval && (int) $user->ID !== bp_loggedin_user_id() && ! bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = new WP_Error( 'bp_rest_user_cannot_view_messages',
+		if ( true === $retval && ! $user instanceof WP_User ) {
+			$retval = new WP_Error( 'bp_rest_member_invalid_id',
+				__( 'Invalid member id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		if ( true === $retval && (int) bp_loggedin_user_id() !== $user->ID && ! bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you cannot view the messages.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -227,8 +236,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		} else {
 			$id = messages_check_thread_access( $thread->thread_id );
 			if ( true === $retval && is_null( $id ) ) {
-				$retval = new WP_Error( 'bp_rest_user_cannot_view_messages',
-					__( 'Sorry, you cannot view this thread.', 'buddypress' ),
+				$retval = new WP_Error( 'bp_rest_authorization_required',
+					__( 'Sorry, you are not allowed to see this thread.', 'buddypress' ),
 					array(
 						'status' => rest_authorization_required_code(),
 					)

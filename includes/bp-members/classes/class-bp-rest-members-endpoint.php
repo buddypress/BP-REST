@@ -136,9 +136,19 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 		$retval = true;
-		$user   = bp_rest_get_user( $request['id'] );
 
-		if ( ! $user ) {
+		if ( ! is_user_logged_in() ) {
+			$retval = new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you are not allowed to view members', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		$user = bp_rest_get_user( $request['id'] );
+
+		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
@@ -150,8 +160,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		if ( true === $retval && get_current_user_id() === $user->ID ) {
 			$retval = true;
 		} elseif ( true === $retval && 'edit' === $request['context'] && ! current_user_can( 'list_users' ) ) {
-			$retval = new WP_Error( 'bp_rest_member_cannot_view',
-				__( 'Sorry, you are not allowed to list users.', 'buddypress' ),
+			$retval = new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -175,14 +185,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return boolean|WP_Error
+	 * @return bool|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
 		$retval = true;
 
-		if ( ! current_user_can( 'bp_moderate' ) ) {
-			$retval = new WP_Error( 'bp_rest_member_cannot_create',
-				__( 'Sorry, you are not allowed to create new members.', 'buddypress' ),
+		if ( ! ( is_user_logged_in() && current_user_can( 'bp_moderate' ) ) ) {
+			$retval = new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -212,7 +222,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$retval = true;
 		$user   = bp_rest_get_user( $request['id'] );
 
-		if ( ! $user ) {
+		if ( ! $user instanceof WP_User ) {
 			$retval = new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
@@ -222,8 +232,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		if ( true === $retval && ! $this->can_manage_member( $user ) ) {
-			$retval = new WP_Error( 'bp_rest_member_cannot_update',
-				__( 'Sorry, you are not allowed to update this member.', 'buddypress' ),
+			$retval = new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -250,26 +260,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
-		$retval = true;
-		$user   = bp_rest_get_user( $request['id'] );
-
-		if ( ! $user ) {
-			$retval = new WP_Error( 'bp_rest_member_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		if ( true === $retval && ! $this->can_manage_member( $user ) ) {
-			$retval = new WP_Error( 'bp_rest_member_cannot_delete',
-				__( 'Sorry, you are not allowed to delete this member.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
+		$retval = $this->update_item_permissions_check( $request );
 
 		/**
 		 * Filter the members `delete_item` permissions check.
@@ -292,8 +283,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $user, $request ) {
-		$data = $this->user_data( $user );
-
+		$data    = $this->user_data( $user );
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
 		if ( 'edit' === $context ) {
@@ -379,7 +369,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return object $prepared_user User object.
+	 * @return stdClass
 	 */
 	protected function prepare_item_for_database( $request ) {
 		$prepared_user = parent::prepare_item_for_database( $request );

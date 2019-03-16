@@ -70,7 +70,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -86,7 +86,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_view_notifications', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -138,7 +138,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_view_notification', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -205,7 +205,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_create_notification', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -244,7 +244,6 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$params = $this->set_notification_data( [ 'is_new' => 0 ] );
 		$request->set_body( wp_json_encode( $params ) );
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_notification_invalid_id', $response, 404 );
@@ -274,7 +273,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_update_notification', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -330,7 +329,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_notification_invalid_id', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_notification_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -357,7 +356,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_delete_notification', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**

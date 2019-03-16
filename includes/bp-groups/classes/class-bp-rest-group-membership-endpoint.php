@@ -23,7 +23,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @var object
+	 * @var BP_REST_Groups_Endpoint
 	 */
 	protected $groups_endpoint;
 
@@ -32,7 +32,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @var object
+	 * @var BP_REST_Members_Endpoint
 	 */
 	protected $members_endpoint;
 
@@ -92,7 +92,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request
+	 * @return WP_REST_Response
 	 */
 	public function get_items( $request ) {
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
@@ -181,7 +181,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
 		$user         = bp_rest_get_user( $request['user_id'] );
@@ -249,7 +249,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to make an update.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to join a group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -258,7 +258,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		$user = bp_rest_get_user( $request['user_id'] );
 
-		if ( true === $retval && empty( $user->ID ) ) {
+		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error( 'bp_rest_group_member_invalid_id',
 				__( 'Invalid group member id.', 'buddypress' ),
 				array(
@@ -288,8 +288,8 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 				// Users may only freely join public groups.
 				if ( true === $retval && 'public' !== $group->status && ! groups_is_user_member( $loggedin_user_id, $group->id ) ) {
-					$retval = new WP_Error( 'bp_rest_group_member_cannot_join',
-						__( 'Sorry, you are not allowed to join this group.', 'buddypress' ),
+					$retval = new WP_Error( 'bp_rest_authorization_required',
+						__( 'Sorry, you need to be logged in to join a group.', 'buddypress' ),
 						array(
 							'status' => rest_authorization_required_code(),
 						)
@@ -405,7 +405,8 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		}
 
 		$user = bp_rest_get_user( $request['user_id'] );
-		if ( true === $retval && empty( $user->ID ) ) {
+
+		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error( 'bp_rest_group_member_invalid_id',
 				__( 'Invalid group member id.', 'buddypress' ),
 				array(
@@ -415,6 +416,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		}
 
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+
 		if ( true === $retval && ! $group ) {
 			$retval = new WP_Error( 'bp_rest_group_invalid_id',
 				__( 'Invalid group id.', 'buddypress' ),
@@ -516,7 +518,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to delete a group membership.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to view a group membership.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -525,7 +527,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		$user = bp_rest_get_user( $request['user_id'] );
 
-		if ( true === $retval && empty( $user->ID ) ) {
+		if ( true === $retval && ! $user instanceof WP_User ) {
 			return new WP_Error( 'bp_rest_group_member_invalid_id',
 				__( 'Invalid group member id.', 'buddypress' ),
 				array(
@@ -554,8 +556,8 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 			if ( $user->ID !== $loggedin_user_id ) {
 				if ( true === $retval && ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
-					$retval = new WP_Error( 'bp_rest_group_member_cannot_remove',
-						__( 'Sorry, you are not allowed to remove this group member.', 'buddypress' ),
+					$retval = new WP_Error( 'bp_rest_authorization_required',
+						__( 'Sorry, you need to be logged in to view a group membership.', 'buddypress' ),
 						array(
 							'status' => rest_authorization_required_code(),
 						)
@@ -569,8 +571,8 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 				$group_admins = groups_get_group_admins( $group->id );
 				if ( true === $retval && 1 === count( $group_admins ) && $loggedin_user_id === $group_admins[0]->user_id && $user->ID === $loggedin_user_id ) {
-					$retval = new WP_Error( 'bp_rest_group_member_cannot_remove',
-						__( 'Sorry, you are not allowed to leave this group.', 'buddypress' ),
+					$retval = new WP_Error( 'bp_rest_authorization_required',
+						__( 'Sorry, you need to be logged in to view a group membership.', 'buddypress' ),
 						array(
 							'status' => rest_authorization_required_code(),
 						)
@@ -625,10 +627,11 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param WP_REST_Response $response The response data.
-		 * @param WP_REST_Request  $request  Request used to generate the response.
+		 * @param WP_REST_Response $response      The response data.
+		 * @param WP_REST_Request  $request       Request used to generate the response.
+		 * @param BP_Groups_Member $group_member  Group member object.
 		 */
-		return apply_filters( 'bp_rest_group_members_prepare_value', $response, $request );
+		return apply_filters( 'bp_rest_group_members_prepare_value', $response, $request, $group_member );
 	}
 
 	/**

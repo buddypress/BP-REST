@@ -23,7 +23,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @var object
+	 * @var BP_REST_Groups_Endpoint
 	 */
 	protected $groups_endpoint;
 
@@ -80,7 +80,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request List of group invites.
+	 * @return WP_REST_Response
 	 */
 	public function get_items( $request ) {
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
@@ -163,8 +163,8 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && ! $this->can_see( $group->id ) ) {
-			$retval = new WP_Error( 'bp_rest_user_cannot_view_group_invite',
-				__( 'Sorry, you are not allowed to list the group invitations.', 'buddypress' ),
+			$retval = new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to see the group invitations.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -188,7 +188,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
 		$group   = $this->groups_endpoint->get_group_object( $request['group_id'] );
@@ -361,7 +361,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
 		$user  = bp_rest_get_user( $request['user_id'] );
 
-		if ( empty( $user->ID ) ) {
+		if ( ! $user instanceof WP_User ) {
 			return new WP_Error( 'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
@@ -445,10 +445,9 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			'is_confirmed' => $invite->is_confirmed,
 		);
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
+		$context = ! empty( $request['context'] ) ? $request['context']: 'view';
+		$data    = $this->add_additional_fields_to_object( $data, $request );
+		$data    = $this->filter_response_by_context( $data, $context );
 
 		$response = rest_ensure_response( $data );
 		$response->add_links( $this->prepare_links( $invite ) );

@@ -145,16 +145,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	public function get_items_permissions_check( $request ) {
 		$retval = true;
 
-		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to list components.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) ) {
+		if ( ! ( is_user_logged_in() && bp_current_user_can( 'bp_moderate' ) ) ) {
 			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you do not have access to list components.', 'buddypress' ),
 				array(

@@ -85,7 +85,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -99,7 +99,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_view_group_invite', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -192,7 +192,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -259,7 +259,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_view_group_invite', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -361,7 +361,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '%d/invites/%d', $this->group_id, $u1 ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_view_group_invite', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -465,7 +465,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/invites/%d', $this->group_id, $u1 ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_view_group_invite', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**

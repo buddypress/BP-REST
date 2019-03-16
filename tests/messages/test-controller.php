@@ -171,7 +171,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_view_messages', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -340,7 +340,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $m );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_user_cannot_view_messages', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**

@@ -92,7 +92,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'parent_id'    => $request['parent_id'],
 			'exclude'      => $request['exclude'],
 			'search_terms' => $request['search'],
-			'meta_query'   => $request['meta'], // WPCS: slow query ok.
+			'meta_query'   => $request['meta'],
 			'group_type'   => $request['group_type'],
 			'show_hidden'  => $request['show_hidden'],
 			'per_page'     => $request['per_page'],
@@ -153,7 +153,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! $this->can_see_hidden_groups( $request ) ) {
-			$retval = new WP_Error( 'bp_rest_user_cannot_view_hidden_groups',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you cannot view hidden groups.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -227,7 +227,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && ! $this->can_see( $group ) ) {
-			$retval = new WP_Error( 'bp_rest_user_cannot_view_group',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you cannot view the group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -252,7 +252,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
 
@@ -312,18 +312,9 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	public function create_item_permissions_check( $request ) {
 		$retval = true;
 
-		if ( ! is_user_logged_in() ) {
+		if ( ! ( is_user_logged_in() && bp_user_can_create_groups() ) ) {
 			$retval = new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to create groups.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		if ( true === $retval && ! bp_user_can_create_groups() ) {
-			return new WP_Error( 'bp_rest_user_cannot_create_groups',
-				__( 'Sorry, you cannot create groups.', 'buddypress' ),
+				__( 'Sorry, you are not allowed to create groups.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -418,7 +409,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		// If group author does not match logged_in user, block update.
 		if ( true === $retval && ! $this->can_user_delete_or_update( $group ) ) {
-			$retval = new WP_Error( 'bp_rest_group_cannot_update',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to update this group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -507,7 +498,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && ! $this->can_user_delete_or_update( $group ) ) {
-			$retval = new WP_Error( 'bp_rest_user_cannot_delete_group',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to delete this group.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -610,8 +601,9 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  Request used to generate the response.
+		 * @param BP_Groups_Group  $item     Group object.
 		 */
-		return apply_filters( 'bp_rest_groups_prepare_value', $response, $request );
+		return apply_filters( 'bp_rest_groups_prepare_value', $response, $request, $item );
 	}
 
 	/**

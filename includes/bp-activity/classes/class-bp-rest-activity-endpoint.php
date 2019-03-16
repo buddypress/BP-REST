@@ -282,7 +282,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! $this->can_see( $request ) ) {
-			$retval = new WP_Error( 'bp_rest_user_cannot_view_activity',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you cannot view the activities.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -420,8 +420,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( true === $retval && bp_is_active( 'groups' ) && buddypress()->groups->id === $component && ! is_null( $item_id ) ) {
 			if ( ! $this->show_hidden( $component, $item_id ) ) {
-				$retval = new WP_Error( 'bp_rest_user_cannot_create_activity',
-					__( 'Sorry, you are not allowed to create activity to this group.', 'buddypress' ),
+				$retval = new WP_Error( 'bp_rest_authorization_required',
+					__( 'Sorry, you are not allowed to create activities.', 'buddypress' ),
 					array(
 						'status' => rest_authorization_required_code(),
 					)
@@ -525,7 +525,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && ! bp_activity_user_can_delete( $activity ) ) {
-			$retval = new WP_Error( 'bp_rest_activity_cannot_update',
+			$retval = new WP_Error( 'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -622,8 +622,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && ! bp_activity_user_can_delete( $activity ) ) {
-			$retval = new WP_Error( 'bp_rest_user_cannot_delete_activity',
-				__( 'Sorry, you cannot delete the activity.', 'buddypress' ),
+			$retval = new WP_Error( 'bp_rest_authorization_required',
+				__( 'Sorry, you are not allowed to delete this activity.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -742,18 +742,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	public function update_favorite_permissions_check( $request ) {
 		$retval = true;
 
-		if ( ! is_user_logged_in() ) {
+		if ( ! ( is_user_logged_in() && bp_activity_can_favorite() ) ) {
 			$retval = new WP_Error( 'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to update your favorites.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		if ( true === $retval && ! bp_activity_can_favorite() ) {
-			$retval = new WP_Error( 'bp_rest_activity_cannot_favorite',
-				__( 'Sorry, Activity cannot be favorited.', 'buddypress' ),
+				__( 'Sorry, you are not allowed to update favorites.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
