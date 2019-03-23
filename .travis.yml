@@ -67,13 +67,13 @@ before_install:
 
 before_script:
   - |
-      if [[ ${TRAVIS_PHP_VERSION:0:3} == "5.6" ]]; then
-        composer require --dev phpunit/phpunit ^5;
-        composer install
-      else
-        composer require --dev phpunit/phpunit ^6;
-        composer install;
-      fi
+    if [[ ${TRAVIS_PHP_VERSION:0:3} == "5.6" ]]; then
+      composer require --dev phpunit/phpunit ^5;
+      composer install
+    else
+      composer require --dev phpunit/phpunit ^6;
+      composer install;
+    fi
 
     composer global require wp-coding-standards/wpcs
     phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs,$HOME/.composer/vendor/wp-coding-standards/wpcs
