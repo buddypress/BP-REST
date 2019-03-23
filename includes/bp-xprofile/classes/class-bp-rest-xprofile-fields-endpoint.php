@@ -34,59 +34,67 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base,
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_items' ),
-				'permission_callback' => array( $this, 'get_items_permissions_check' ),
-				'args'                => $this->get_collection_params(),
-			),
-			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'create_item' ),
-				'permission_callback' => array( $this, 'create_item_permissions_check' ),
-				'args'                => $this->create_update_item_params(),
-			),
-			'schema' => array( $this, 'get_item_schema' ),
-		) );
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_items' ),
+					'permission_callback' => array( $this, 'get_items_permissions_check' ),
+					'args'                => $this->get_collection_params(),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'create_item' ),
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
+					'args'                => $this->create_update_item_params(),
+				),
+				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
 
-		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<id>[\d]+)',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_item' ),
-				'permission_callback' => array( $this, 'get_item_permissions_check' ),
-				'args'                => array(
-					'user_id' => array(
-						'description'       => __( 'Required if you want to load a specific user\'s data.', 'buddypress' ),
-						'default'           => bp_loggedin_user_id(),
-						'type'              => 'integer',
-						'sanitize_callback' => 'absint',
-						'validate_callback' => 'rest_validate_request_arg',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_item' ),
+					'permission_callback' => array( $this, 'get_item_permissions_check' ),
+					'args'                => array(
+						'user_id' => array(
+							'description'       => __( 'Required if you want to load a specific user\'s data.', 'buddypress' ),
+							'default'           => bp_loggedin_user_id(),
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+							'validate_callback' => 'rest_validate_request_arg',
+						),
 					),
 				),
-			),
-			array(
-				'methods'             => WP_REST_Server::EDITABLE,
-				'callback'            => array( $this, 'update_item' ),
-				'permission_callback' => array( $this, 'update_item_permissions_check' ),
-				'args'                => $this->create_update_item_params(),
-			),
-			array(
-				'methods'             => WP_REST_Server::DELETABLE,
-				'callback'            => array( $this, 'delete_item' ),
-				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
-				'args'                => array(
-					'delete_data' => array(
-						'description'       => __( 'Required if you want to delete user\'s data for the field.', 'buddypress' ),
-						'default'           => false,
-						'type'              => 'boolean',
-						'sanitize_callback' => 'rest_sanitize_boolean',
-						'validate_callback' => 'rest_validate_request_arg',
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( $this, 'update_item' ),
+					'permission_callback' => array( $this, 'update_item_permissions_check' ),
+					'args'                => $this->create_update_item_params(),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_item' ),
+					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+					'args'                => array(
+						'delete_data' => array(
+							'description'       => __( 'Required if you want to delete user\'s data for the field.', 'buddypress' ),
+							'default'           => false,
+							'type'              => 'boolean',
+							'sanitize_callback' => 'rest_sanitize_boolean',
+							'validate_callback' => 'rest_validate_request_arg',
+						),
 					),
 				),
-			),
-			'schema' => array( $this, 'get_item_schema' ),
-		) );
+				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
 	}
 
 	/**
@@ -189,7 +197,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		$field = $this->get_xprofile_field_object( $profile_field_id );
 
 		if ( empty( $profile_field_id ) || empty( $field->id ) ) {
-			return new WP_Error( 'bp_rest_xprofile_field_invalid_id',
+			return new WP_Error(
+				'bp_rest_xprofile_field_invalid_id',
 				__( 'Invalid field id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -287,19 +296,10 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 */
 		$args = apply_filters( 'bp_rest_xprofile_fields_create_item_query_args', $args, $request );
 
-		if ( empty( $args['field_group_id'] ) ) {
-			return new WP_Error( 'bp_rest_required_param_missing',
-				__( 'Required param missing.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
 		$field_id = xprofile_insert_field( $args );
-
 		if ( ! $field_id ) {
-			return new WP_Error( 'bp_rest_user_cannot_create_xprofile_field',
+			return new WP_Error(
+				'bp_rest_user_cannot_create_xprofile_field',
 				__( 'Cannot create new XProfile field.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -343,7 +343,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to create a XProfile field.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -352,7 +353,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = new WP_Error( 'bp_rest_user_cannot_create_field',
+			$retval = new WP_Error(
+				'bp_rest_user_cannot_create_field',
 				__( 'Sorry, you are not allowed to create a XProfile field.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -405,19 +407,10 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 */
 		$args = apply_filters( 'bp_rest_xprofile_fields_update_item_query_args', $args, $request );
 
-		if ( empty( $args['field_group_id'] ) ) {
-			return new WP_Error( 'bp_rest_missing_required_param',
-				__( 'Required param missing.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
 		$field_id = xprofile_insert_field( $args );
-
 		if ( ! $field_id ) {
-			return new WP_Error( 'bp_rest_user_cannot_update_xprofile_field',
+			return new WP_Error(
+				'bp_rest_user_cannot_update_xprofile_field',
 				__( 'Cannot update XProfile field.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -484,7 +477,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		$deleted = $field->delete( $request['delete_data'] );
 
 		if ( ! $deleted ) {
-			return new WP_Error( 'bp_rest_xprofile_field_cannot_delete',
+			return new WP_Error(
+				'bp_rest_xprofile_field_cannot_delete',
 				__( 'Could not delete XProfile field.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -526,7 +520,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to delete this field.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -537,7 +532,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		$field = $this->get_xprofile_field_object( $request );
 
 		if ( true === $retval && empty( $field->id ) ) {
-			$retval = new WP_Error( 'bp_rest_invalid_field_id',
+			$retval = new WP_Error(
+				'bp_rest_invalid_field_id',
 				__( 'Invalid field id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -546,7 +542,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to delete this field.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -608,7 +605,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'parent_id'         => (int) $field->parent_id,
 			'type'              => $field->type,
 			'name'              => $field->name,
-			'description'           => array(
+			'description'       => array(
 				'raw'      => $field->description,
 				'rendered' => apply_filters( 'bp_get_the_profile_field_description', $field->description ),
 			),
@@ -727,7 +724,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-				'description'        => array(
+				'description'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The description of the object.', 'buddypress' ),
 					'type'        => 'object',
@@ -736,12 +733,12 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
 					),
 					'properties'  => array(
-						'raw'       => array(
+						'raw'      => array(
 							'description' => __( 'Content for the object, as it exists in the database.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'edit' ),
 						),
-						'rendered'  => array(
+						'rendered' => array(
 							'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'view', 'edit' ),
@@ -974,7 +971,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		$params['field_group_id'] = array(
 			'description'       => __( 'ID of the group you want to add the object.', 'buddypress' ),
-			'default'           => 0,
+			'required'          => true,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',

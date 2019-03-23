@@ -274,7 +274,10 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	public function test_update_item_invalid_id() {
 		$this->bp->set_current_user( $this->user );
 
-		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request->add_header( 'content-type', 'application/json' );
+		$params  = $this->set_field_data( [ 'field_group_id' => $this->group_id ] );
+		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_invalid_field_id', $response, 404 );
@@ -284,7 +287,11 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group update_item
 	 */
 	public function test_update_item_user_not_logged_in() {
-		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data( [ 'field_group_id' => $this->group_id ] );
+		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
@@ -298,6 +305,9 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$this->bp->set_current_user( $u );
 
 		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
+		$request->add_header( 'content-type', 'application/json' );
+		$params  = $this->set_field_data( [ 'field_group_id' => $this->group_id ] );
+		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );

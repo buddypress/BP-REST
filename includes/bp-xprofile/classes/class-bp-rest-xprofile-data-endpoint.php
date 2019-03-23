@@ -43,19 +43,23 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<field_id>[\d]+)/data/(?P<user_id>[\d]+)', array(
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<field_id>[\d]+)/data/(?P<user_id>[\d]+)',
 			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'create_item' ),
-				'permission_callback' => array( $this, 'create_item_permissions_check' ),
-			),
-			array(
-				'methods'             => WP_REST_Server::DELETABLE,
-				'callback'            => array( $this, 'delete_item' ),
-				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
-			),
-			'schema' => array( $this, 'get_item_schema' ),
-		) );
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'create_item' ),
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_item' ),
+					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+				),
+				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
 	}
 
 	/**
@@ -70,7 +74,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		$field = $this->get_xprofile_field_object( $request['field_id'] );
 
 		if ( empty( $field->id ) ) {
-			return new WP_Error( 'rest_invalid_field_id',
+			return new WP_Error(
+				'rest_invalid_field_id',
 				__( 'Invalid field id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -86,7 +91,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! xprofile_set_field_data( $field->id, $user->ID, $value ) ) {
-			return new WP_Error( 'rest_user_cannot_save_xprofile_data',
+			return new WP_Error(
+				'rest_user_cannot_save_xprofile_data',
 				__( 'Cannot save XProfile data.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -133,7 +139,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to save XProfile data.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -144,7 +151,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		$user = bp_rest_get_user( $request['user_id'] );
 
 		if ( true === $retval && ! $user instanceof WP_User ) {
-			$retval = new WP_Error( 'bp_rest_member_invalid_id',
+			$retval = new WP_Error(
+				'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -153,7 +161,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && ! $this->can_see( $user->ID ) ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you cannot save XProfile field data.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -184,7 +193,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		$field = $this->get_xprofile_field_object( $request['field_id'] );
 
 		if ( empty( $field->id ) ) {
-			return new WP_Error( 'bp_rest_invalid_field_id',
+			return new WP_Error(
+				'bp_rest_invalid_field_id',
 				__( 'Invalid field id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -197,7 +207,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		$field_data = $this->get_xprofile_field_data_object( $field->id, $user->ID );
 
 		if ( ! $field_data->delete() ) {
-			return new WP_Error( 'bp_rest_xprofile_data_cannot_delete',
+			return new WP_Error(
+				'bp_rest_xprofile_data_cannot_delete',
 				__( 'Could not delete XProfile data.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -271,11 +282,11 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			'last_updated' => bp_rest_prepare_date_response( $field_data->last_updated ),
 		);
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
-
+		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data     = $this->add_additional_fields_to_object( $data, $request );
+		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
+
 		$response->add_links( $this->prepare_links( $field_data ) );
 
 		/**
@@ -337,6 +348,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param int $field_id Field id.
+	 * @param int $user_id User id.
 	 * @return BP_XProfile_ProfileData
 	 */
 	public function get_xprofile_field_data_object( $field_id, $user_id ) {
@@ -379,24 +391,24 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			'title'      => esc_html__( 'XProfile Data', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
-				'field_id'          => array(
+				'field_id'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the field the data is from.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-				'user_id'          => array(
+				'user_id'      => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of user the field data is from.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-				'value'          => array(
+				'value'        => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The value of the field data.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'last_updated'     => array(
+				'last_updated' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The date the field data was clast updated, in the site\'s timezone.', 'buddypress' ),
 					'type'        => 'string',
