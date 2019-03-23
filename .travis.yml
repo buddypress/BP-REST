@@ -78,8 +78,16 @@ before_script:
   # Install PHP CodeSniffer and WPCS.
   - |
     if [[ "$PHPCS" == "1" ]]; then
-      composer require lipemat/wp-phpcs
-      phpcs --config-set installed_paths '../../wimg/php-compatibility/,../../wp-coding-standards/wpcs/,../../automattic/vipwpcs/'
+      composer self-update
+      composer require squizlabs/php_codesniffer
+      composer require phpcompatibility/phpcompatibility-wp
+      composer require wp-coding-standards/wpcs
+      composer require automattic/vipwpcs
+      composer dealerdirect/phpcodesniffer-composer-installer
+      phpenv rehash
+
+      ./vendor/bin/phpcs --config-set installed_paths '../../wimg/php-compatibility/,../../wp-coding-standards/wpcs/,../../automattic/vipwpcs/'
+      ./vendor/bin/phpcs --config-set default_standard WordPress
     fi
 
 install:
@@ -110,4 +118,4 @@ install:
 script:
   - ./vendor/bin/phpunit;
   - find includes -type "f" -iname "*.php" | xargs -L "1" php -l;
-  - if [[ "$PHPCS" == "1" ]]; then ./vendor/bin/phpcs . --standard=WordPress; fi
+  - if [[ "$PHPCS" == "1" ]]; then ./vendor/bin/phpcs *.php --standard=WordPress; fi
