@@ -78,8 +78,8 @@ before_script:
   # Install PHP CodeSniffer and WPCS.
   - |
     if [[ "$PHPCS" == "1" ]]; then
-      composer require lipemat/wp-phpcs
-      phpcs --config-set installed_paths '../../wimg/php-compatibility/,../../wp-coding-standards/wpcs/,../../automattic/vipwpcs/'
+      composer require lipemat/wp-phpcs;
+      phpcs --config-set installed_paths '../../wimg/php-compatibility/,../../wp-coding-standards/wpcs/,../../automattic/vipwpcs/';
     fi
 
 install:
