@@ -2,5 +2,12 @@
     "name": "buddypress/bp-rest",
     "description": "WP REST API endpoints for BuddyPress",
     "type": "library",
-    "require": {}
+    "prefer-stable" : true,
+    "require": {
+        "php": ">=5.6"
+    },
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^0.5.0",
+        "wp-coding-standards/wpcs": "*",
+    }
 }
