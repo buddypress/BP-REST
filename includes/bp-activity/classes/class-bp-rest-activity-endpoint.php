@@ -40,58 +40,72 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base,
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_items' ),
-				'permission_callback' => array( $this, 'get_items_permissions_check' ),
-				'args'                => $this->get_collection_params(),
-			),
-			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'create_item' ),
-				'permission_callback' => array( $this, 'create_item_permissions_check' ),
-				'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
-			),
-			'schema' => array( $this, 'get_item_schema' ),
-		) );
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_items' ),
+					'permission_callback' => array( $this, 'get_items_permissions_check' ),
+					'args'                => $this->get_collection_params(),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'create_item' ),
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
+					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+				),
+				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
 
 		$activity_endpoint = '/' . $this->rest_base . '/(?P<id>[\d]+)';
 
-		register_rest_route( $this->namespace, $activity_endpoint, array(
+		register_rest_route(
+			$this->namespace,
+			$activity_endpoint,
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_item' ),
-				'permission_callback' => array( $this, 'get_item_permissions_check' ),
-				'args'                => array(
-					'context' => $this->get_context_param( array(
-						'default' => 'view',
-					) ),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_item' ),
+					'permission_callback' => array( $this, 'get_item_permissions_check' ),
+					'args'                => array(
+						'context' => $this->get_context_param(
+							array(
+								'default' => 'view',
+							)
+						),
+					),
 				),
-			),
-			array(
-				'methods'             => WP_REST_Server::EDITABLE,
-				'callback'            => array( $this, 'update_item' ),
-				'permission_callback' => array( $this, 'update_item_permissions_check' ),
-				'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
-			),
-			array(
-				'methods'             => WP_REST_Server::DELETABLE,
-				'callback'            => array( $this, 'delete_item' ),
-				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
-			),
-			'schema' => array( $this, 'get_item_schema' ),
-		) );
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( $this, 'update_item' ),
+					'permission_callback' => array( $this, 'update_item_permissions_check' ),
+					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_item' ),
+					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+				),
+				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
 
 		// Register the favorite route.
-		register_rest_route( $this->namespace, $activity_endpoint . '/favorite', array(
+		register_rest_route(
+			$this->namespace,
+			$activity_endpoint . '/favorite',
 			array(
-				'methods'             => WP_REST_Server::EDITABLE,
-				'callback'            => array( $this, 'update_favorite' ),
-				'permission_callback' => array( $this, 'update_favorite_permissions_check' ),
-			),
-			'schema' => array( $this, 'get_item_schema' ),
-		) );
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( $this, 'update_favorite' ),
+					'permission_callback' => array( $this, 'update_favorite_permissions_check' ),
+				),
+				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
 	}
 
 	/**
@@ -282,7 +296,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! $this->can_see( $request ) ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you cannot view the activities.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -311,7 +326,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	public function create_item( $request ) {
 		if ( empty( $request['content'] ) ) {
-			return new WP_Error( 'bp_rest_create_activity_empty_content',
+			return new WP_Error(
+				'bp_rest_create_activity_empty_content',
 				__( 'Please, enter some content.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -359,7 +375,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! is_numeric( $activity_id ) ) {
-			return new WP_Error( 'bp_rest_user_cannot_create_activity',
+			return new WP_Error(
+				'bp_rest_user_cannot_create_activity',
 				__( 'Cannot create new activity.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -367,11 +384,13 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$activity = bp_activity_get( array(
-			'in'               => $activity_id,
-			'display_comments' => 'stream',
-			'show_hidden'      => $request['hidden'],
-		) );
+		$activity = bp_activity_get(
+			array(
+				'in'               => $activity_id,
+				'display_comments' => 'stream',
+				'show_hidden'      => $request['hidden'],
+			)
+		);
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -407,7 +426,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to create activities.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -420,7 +440,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( true === $retval && bp_is_active( 'groups' ) && buddypress()->groups->id === $component && ! is_null( $item_id ) ) {
 			if ( ! $this->show_hidden( $component, $item_id ) ) {
-				$retval = new WP_Error( 'bp_rest_authorization_required',
+				$retval = new WP_Error(
+					'bp_rest_authorization_required',
 					__( 'Sorry, you are not allowed to create activities.', 'buddypress' ),
 					array(
 						'status' => rest_authorization_required_code(),
@@ -450,7 +471,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	public function update_item( $request ) {
 		if ( empty( $request['content'] ) ) {
-			return new WP_Error( 'bp_rest_update_activity_empty_content',
+			return new WP_Error(
+				'bp_rest_update_activity_empty_content',
 				__( 'Please, enter some content.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -461,7 +483,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$activity_id = bp_activity_add( $this->prepare_item_for_database( $request ) );
 
 		if ( ! is_numeric( $activity_id ) ) {
-			return new WP_Error( 'bp_rest_user_cannot_update_activity',
+			return new WP_Error(
+				'bp_rest_user_cannot_update_activity',
 				__( 'Cannot update existing activity.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -505,7 +528,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -516,7 +540,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$activity = $this->get_activity_object( $request );
 
 		if ( true === $retval && empty( $activity->id ) ) {
-			$retval = new WP_Error( 'bp_rest_activity_invalid_id',
+			$retval = new WP_Error(
+				'bp_rest_activity_invalid_id',
 				__( 'Invalid activity id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -525,7 +550,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && ! bp_activity_user_can_delete( $activity ) ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -562,13 +588,16 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( 'activity_comment' === $activity->type ) {
 			$retval = bp_activity_delete_comment( $activity->item_id, $activity->id );
 		} else {
-			$retval = bp_activity_delete( array(
-				'id' => $activity->id,
-			) );
+			$retval = bp_activity_delete(
+				array(
+					'id' => $activity->id,
+				)
+			);
 		}
 
 		if ( ! $retval ) {
-			return new WP_Error( 'bp_rest_activity_cannot_delete',
+			return new WP_Error(
+				'bp_rest_activity_cannot_delete',
 				__( 'Could not delete the activity.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -602,7 +631,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to delete this activity.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -613,7 +643,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$activity = $this->get_activity_object( $request );
 
 		if ( true === $retval && empty( $activity->id ) ) {
-			$retval = new WP_Error( 'bp_rest_activity_invalid_id',
+			$retval = new WP_Error(
+				'bp_rest_activity_invalid_id',
 				__( 'Invalid activity id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -622,7 +653,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && ! bp_activity_user_can_delete( $activity ) ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to delete this activity.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -673,7 +705,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$activity = $this->get_activity_object( $request );
 
 		if ( empty( $activity->id ) ) {
-			return new WP_Error( 'bp_rest_activity_invalid_id',
+			return new WP_Error(
+				'bp_rest_activity_invalid_id',
 				__( 'Invalid activity id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -699,7 +732,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( ! $result ) {
-			return new WP_Error( 'bp_rest_user_cannot_update_activity_favorite',
+			return new WP_Error(
+				'bp_rest_user_cannot_update_activity_favorite',
 				$message,
 				array(
 					'status' => 500,
@@ -743,7 +777,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! ( is_user_logged_in() && bp_activity_can_favorite() ) ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to update favorites.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -851,16 +886,20 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( ! empty( $schema['properties']['user_avatar'] ) ) {
 			$data['user_avatar'] = array(
-				'full'  => bp_core_fetch_avatar( array(
-					'item_id' => $activity->user_id,
-					'html'    => false,
-					'type'    => 'full',
-				) ),
+				'full'  => bp_core_fetch_avatar(
+					array(
+						'item_id' => $activity->user_id,
+						'html'    => false,
+						'type'    => 'full',
+					)
+				),
 
-				'thumb' => bp_core_fetch_avatar( array(
-					'item_id' => $activity->user_id,
-					'html'    => false,
-				) ),
+				'thumb' => bp_core_fetch_avatar(
+					array(
+						'item_id' => $activity->user_id,
+						'html'    => false,
+					)
+				),
 			);
 		}
 
@@ -1110,10 +1149,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	public function get_activity_object( $request ) {
 		$activity_id = is_numeric( $request ) ? $request : (int) $request['id'];
 
-		$activity = bp_activity_get_specific( array(
-			'activity_ids'     => array( $activity_id ),
-			'display_comments' => true,
-		) );
+		$activity = bp_activity_get_specific(
+			array(
+				'activity_ids'     => array( $activity_id ),
+				'display_comments' => true,
+			)
+		);
 
 		if ( is_array( $activity ) && ! empty( $activity['activities'][0] ) ) {
 			return $activity['activities'][0];
@@ -1135,13 +1176,13 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'title'      => esc_html__( 'Activity', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
-				'id'              => array(
+				'id'                => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-				'primary_item_id' => array(
+				'primary_item_id'   => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
@@ -1151,19 +1192,19 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'user_id'         => array(
+				'user_id'           => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID for the creator of the object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'link'            => array(
+				'link'              => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
 					'readonly'    => true,
 					'format'      => 'uri',
 					'type'        => 'string',
 				),
-				'component'       => array(
+				'component'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The active BuddyPress component the object relates to.', 'buddypress' ),
 					'type'        => 'string',
@@ -1172,7 +1213,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-				'type'            => array(
+				'type'              => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The activity type of the object.', 'buddypress' ),
 					'type'        => 'string',
@@ -1181,7 +1222,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-				'title'           => array(
+				'title'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML title of the object.', 'buddypress' ),
 					'type'        => 'string',
@@ -1189,7 +1230,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-				'content'         => array(
+				'content'           => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML content of the object.', 'buddypress' ),
 					'type'        => 'object',
@@ -1198,12 +1239,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
 					),
 					'properties'  => array(
-						'raw'       => array(
+						'raw'      => array(
 							'description' => __( 'Content for the object, as it exists in the database.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'edit' ),
 						),
-						'rendered'  => array(
+						'rendered' => array(
 							'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'view', 'edit' ),
@@ -1211,13 +1252,13 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						),
 					),
 				),
-				'date'            => array(
+				'date'              => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
-				'status'          => array(
+				'status'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the object has been marked as spam or not.', 'buddypress' ),
 					'type'        => 'string',
@@ -1226,27 +1267,27 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-				'parent'          => array(
+				'parent'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the parent of the object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'comments'        => array(
+				'comments'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A list of objects children of the activity object.', 'buddypress' ),
 					'type'        => 'array',
 				),
-				'comment_count'   => array(
+				'comment_count'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Total number of comments of the activity object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'hidden'          => array(
+				'hidden'            => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'Whether the activity object should be sitewide hidden or not.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
-				'favorited'       => array(
+				'favorited'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the activity object has been favorited by the current user.', 'buddypress' ),
 					'type'        => 'boolean',

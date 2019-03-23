@@ -62,7 +62,7 @@ add_action(
 			$controller->register_routes();
 
 			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
-			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-member-avatar-endpoint.php';
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-member-avatar-endpoint.php';
 			$controller = new BP_REST_Attachments_Member_Avatar_Endpoint();
 			$controller->register_routes();
 		}
@@ -105,7 +105,7 @@ add_action(
 			$controller->register_routes();
 
 			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
-			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-group-avatar-endpoint.php';
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-group-avatar-endpoint.php';
 			$controller = new BP_REST_Attachments_Group_Avatar_Endpoint();
 			$controller->register_routes();
 		}

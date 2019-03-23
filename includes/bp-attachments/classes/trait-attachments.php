@@ -24,7 +24,6 @@ trait BP_REST_Attachments {
 	 * @return stdClass|WP_Error
 	 */
 	protected function upload_avatar_from_file( $files ) {
-
 		$bp = buddypress();
 
 		// Set global variables.
@@ -45,8 +44,13 @@ trait BP_REST_Attachments {
 
 		// Bail early in case of an error.
 		if ( ! empty( $avatar_original['error'] ) ) {
-			return new WP_Error( "bp_rest_attachments_{$this->object}_avatar_upload_error",
-				sprintf( __( 'Upload failed! Error was: %s.', 'buddypress' ), $avatar_original['error'] ),
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_avatar_upload_error",
+				sprintf(
+					/* translators: %s is replaced with the error */
+					__( 'Upload failed! Error was: %s.', 'buddypress' ),
+					$avatar_original['error']
+				),
 				array(
 					'status' => 500,
 				)
@@ -61,9 +65,11 @@ trait BP_REST_Attachments {
 
 		// If the uploaded image is smaller than the "full" dimensions, throw a warning.
 		if ( $avatar_attachment->is_too_small( $image_file ) ) {
-			return new WP_Error( "bp_rest_attachments_{$this->object}_avatar_error",
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_avatar_error",
 				sprintf(
-					__( 'You have selected an image that is smaller than recommended. For best results, upload a picture larger than %d x %d pixels.', 'buddypress' ),
+					/* translators: %$1s and %$2s is replaced with the correct sizes. */
+					__( 'You have selected an image that is smaller than recommended. For best results, upload a picture larger than %$1s x %$2s pixels.', 'buddypress' ),
 					bp_core_avatar_full_width(),
 					bp_core_avatar_full_height()
 				),
@@ -93,7 +99,7 @@ trait BP_REST_Attachments {
 			$avatar_object->{$key_type} = bp_core_avatar_url() . $url;
 		}
 
-		@unlink( $avatar_original['file'] );
+		unlink( $avatar_original['file'] );
 
 		return $avatar_object;
 	}
@@ -131,13 +137,18 @@ trait BP_REST_Attachments {
 		} else {
 			$image_file = $resized['path'];
 			$img_dir    = str_replace( $upload_path, '', $resized['path'] );
-			@unlink( $file );
+			unlink( $file );
 		}
 
 		// Check for WP_Error on what should be an image.
 		if ( is_wp_error( $img_dir ) ) {
-			return new WP_Error( "bp_rest_attachments_{$this->object}_avatar_upload_error",
-				sprintf( __( 'Upload failed! Error was: %s', 'buddypress' ), $img_dir->get_error_message() ),
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_avatar_upload_error",
+				sprintf(
+					/* translators: %$1s is replaced with error message. */
+					__( 'Upload failed! Error was: %$1s', 'buddypress' ),
+					$img_dir->get_error_message()
+				),
 				array(
 					'status' => 500,
 				)
@@ -207,8 +218,13 @@ trait BP_REST_Attachments {
 
 		// Check for errors.
 		if ( empty( $cropped['full'] ) || empty( $cropped['thumb'] ) || is_wp_error( $cropped['full'] ) || is_wp_error( $cropped['thumb'] ) ) {
-			return new WP_Error( "bp_rest_attachments_{$this->object}_avatar_crop_error",
-				sprintf( __( 'There was a problem cropping your %s photo.', 'buddypress' ), $this->object ),
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_avatar_crop_error",
+				sprintf(
+					/* translators: %$1s is replaced with object type. */
+					__( 'There was a problem cropping your %s photo.', 'buddypress' ),
+					$this->object
+				),
 				array(
 					'status' => 500,
 				)
