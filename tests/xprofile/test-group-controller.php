@@ -335,7 +335,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->check_group_data( $group, $all_data[0], 'edit', $response->get_links() );
+		$this->check_group_data( $group, $all_data[0], 'view', $response->get_links() );
 	}
 
 	protected function check_create_field_group_response( $response ) {
@@ -348,7 +348,20 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$this->assertNotEmpty( $data );
 
 		$field_group = $this->endpoint->get_xprofile_field_group_object( $data[0]['id'] );
-		$this->check_group_data( $field_group, $data[0], 'edit', $response->get_links() );
+		$this->check_group_data( $field_group, $data[0], 'view', $response->get_links() );
+	}
+
+	protected function check_group_data( $group, $data, $context, $links ) {
+		$this->assertEquals( $group->id, $data['id'] );
+		$this->assertEquals( $group->name, $data['name'] );
+		$this->assertEquals( $group->group_order, $data['group_order'] );
+		$this->assertEquals( $group->can_delete, $data['can_delete'] );
+
+		if ( 'view' === $context ) {
+			$this->assertEquals( $group->description, $data['description']['rendered'] );
+		} else {
+			$this->assertEquals( $group->description, $data['description']['raw'] );
+		}
 	}
 
 	protected function set_field_group_data( $args = array() ) {
@@ -357,14 +370,6 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 			'name'        => 'Test Field Name',
 			'can_delete'  => true,
 		) );
-	}
-
-	protected function check_group_data( $group, $data, $context, $links ) {
-		$this->assertEquals( $group->id, $data['id'] );
-		$this->assertEquals( $group->name, $data['name'] );
-		$this->assertEquals( $group->description, $data['description'] );
-		$this->assertEquals( $group->group_order, $data['group_order'] );
-		$this->assertEquals( $group->can_delete, $data['can_delete'] );
 	}
 
 	public function test_get_item_schema() {

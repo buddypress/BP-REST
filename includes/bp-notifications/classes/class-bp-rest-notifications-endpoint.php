@@ -634,7 +634,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'notification',
+			'title'      => esc_html__( 'Notifications', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
 				'id'              => array(
@@ -683,7 +683,12 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return $schema;
+		/**
+		 * Filters the notifications schema.
+		 *
+		 * @param array $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_notifications_schema', $schema );
 	}
 
 	/**

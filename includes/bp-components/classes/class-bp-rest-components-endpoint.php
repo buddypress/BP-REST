@@ -424,7 +424,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'component',
+			'title'      => esc_html__( 'Components', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
 				'name'            => array(
@@ -435,7 +435,6 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-
 				'status'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the object is active or inactive.', 'buddypress' ),
@@ -445,7 +444,6 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-
 				'title'           => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML title of the object.', 'buddypress' ),
@@ -454,7 +452,6 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-
 				'description'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'HTML description of the object.', 'buddypress' ),
@@ -466,7 +463,12 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return $schema;
+		/**
+		 * Filters the components schema.
+		 *
+		 * @param string $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_components_schema', $schema );
 	}
 
 	/**

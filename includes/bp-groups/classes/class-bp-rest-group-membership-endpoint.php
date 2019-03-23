@@ -667,7 +667,12 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
+
+		// Get schema from members.
 		$schema = $this->members_endpoint->get_item_schema();
+
+		// Set title to this endpoint.
+		$schema['title'] = __( 'Group Membership', 'buddypress' );
 
 		$schema['properties']['is_mod'] = array(
 			'context'     => array( 'view', 'edit' ),
@@ -700,7 +705,12 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			'format'      => 'date-time',
 		);
 
-		return $this->add_additional_fields_schema( $schema );
+		/**
+		 * Filters the group membership schema.
+		 *
+		 * @param array $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_group_membership_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**

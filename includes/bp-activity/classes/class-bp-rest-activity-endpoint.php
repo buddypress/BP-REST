@@ -1132,7 +1132,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'activity',
+			'title'      => esc_html__( 'Activity', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
 				'id'              => array(
@@ -1284,7 +1284,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return $schema;
+		/**
+		 * Filters the activity schema.
+		 *
+		 * @param string $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_activity_schema', $schema );
 	}
 
 	/**

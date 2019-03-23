@@ -665,13 +665,25 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get the group member schema, conforming to JSON Schema.
+	 * Get the group membership request schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @return array
 	 */
 	public function get_item_schema() {
-		return $this->membership_endpoint->get_item_schema();
+
+		// Get schema from the membership endpoint.
+		$schema = $this->membership_endpoint->get_item_schema();
+
+		// Set title to this endpoint.
+		$schema['title'] = __( 'Group Membership Request', 'buddypress' );
+
+		/**
+		 * Filters the group membership request schema.
+		 *
+		 * @param array $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_group_membership_request_schema', $schema );
 	}
 }

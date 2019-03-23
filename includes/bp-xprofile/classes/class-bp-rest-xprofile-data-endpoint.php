@@ -376,17 +376,19 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'xprofile_data',
+			'title'      => esc_html__( 'XProfile Data', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
 				'field_id'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the field the data is from.', 'buddypress' ),
+					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'user_id'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of user the field data is from.', 'buddypress' ),
+					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'value'          => array(
@@ -403,6 +405,11 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return $schema;
+		/**
+		 * Filters the xprofile data schema.
+		 *
+		 * @param array $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_xprofile_data_schema', $schema );
 	}
 }

@@ -404,23 +404,30 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'group_avatar',
+			'title'      => esc_html__( 'Group Avatar', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
 				'full'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Full size of the image file.', 'buddypress' ),
 					'type'        => 'string',
+					'readonly'    => true,
 				),
 				'thumb'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Thumb size of the image file.', 'buddypress' ),
 					'type'        => 'string',
+					'readonly'    => true,
 				),
 			),
 		);
 
-		return $schema;
+		/**
+		 * Filters the group avatar schema.
+		 *
+		 * @param string $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_group_avatar_schema', $schema );
 	}
 
 	/**

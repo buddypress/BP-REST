@@ -507,7 +507,10 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		$data = array(
 			'id'          => (int) $group->id,
 			'name'        => $group->name,
-			'description' => $group->description,
+			'description' => array(
+				'raw'      => $group->description,
+				'rendered' => apply_filters( 'bp_get_the_profile_field_description', $group->description ),
+			),
 			'group_order' => (int) $group->group_order,
 			'can_delete'  => (bool) $group->can_delete,
 		);
@@ -614,7 +617,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'xprofile_field_group',
+			'title'      => esc_html__( 'XProfile Field Group', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
 				'id'          => array(
@@ -631,12 +634,26 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-				'description' => array(
+				'description'        => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The description of the XProfile field group.', 'buddypress' ),
-					'type'        => 'string',
+					'description' => __( 'The description of the object.', 'buddypress' ),
+					'type'        => 'object',
 					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_text_field',
+						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
+						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
+					),
+					'properties'  => array(
+						'raw'       => array(
+							'description' => __( 'Content for the object, as it exists in the database.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'edit' ),
+						),
+						'rendered'  => array(
+							'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'view', 'edit' ),
+							'readonly'    => true,
+						),
 					),
 				),
 				'group_order' => array(
@@ -657,7 +674,12 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return $schema;
+		/**
+		 * Filters the xprofile field group schema.
+		 *
+		 * @param array $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_xprofile_field_group_schema', $schema );
 	}
 
 	/**

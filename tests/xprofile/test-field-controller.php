@@ -375,7 +375,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->check_field_data( $field, $all_data[0], 'edit', $response->get_links() );
+		$this->check_field_data( $field, $all_data[0], 'view', $response->get_links() );
 	}
 
 	protected function check_create_field_response( $response ) {
@@ -405,7 +405,13 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$this->assertEquals( $field->parent_id, $data['parent_id'] );
 		$this->assertEquals( $field->type, $data['type'] );
 		$this->assertEquals( $field->name, $data['name'] );
-		$this->assertEquals( $field->description, $data['description'] );
+
+		if ( 'view' === $context ) {
+			$this->assertEquals( $field->description, $data['description']['rendered'] );
+		} else {
+			$this->assertEquals( $field->description, $data['description']['raw'] );
+		}
+
 		$this->assertEquals( $field->is_required, $data['is_required'] );
 		$this->assertEquals( $field->can_delete, $data['can_delete'] );
 		$this->assertEquals( $field->field_order, $data['field_order'] );
@@ -444,14 +450,6 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	public function test_context_param() {
 		// Collection.
 		$request  = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
-		$response = $this->server->dispatch( $request );
-		$data     = $response->get_data();
-
-		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
-
-		// Single.
-		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 

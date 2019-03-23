@@ -568,7 +568,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'thread',
+			'title'      => esc_html__( 'Thread', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
 				'id'              => array(
@@ -587,20 +587,71 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					'description' => __( 'The ID of last sender.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'subject'         => array(
+				'subject'        => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'HTML title of the object.', 'buddypress' ),
-					'type'        => 'string',
+					'description' => __( 'Title of the object.', 'buddypress' ),
+					'type'        => 'object',
+					'arg_options' => array(
+						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
+						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
+					),
+					'properties'  => array(
+						'raw'       => array(
+							'description' => __( 'Title of the object, as it exists in the database.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'edit' ),
+						),
+						'rendered'  => array(
+							'description' => __( 'Title of the object, transformed for display.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'view', 'edit' ),
+							'readonly'    => true,
+						),
+					),
 				),
-				'excerpt'         => array(
+				'excerpt'        => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'HTML summary of the object.', 'buddypress' ),
-					'type'        => 'string',
+					'description' => __( 'Summary of the object.', 'buddypress' ),
+					'type'        => 'object',
+					'arg_options' => array(
+						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
+						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
+					),
+					'properties'  => array(
+						'raw'       => array(
+							'description' => __( 'Summary for the object, as it exists in the database.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'edit' ),
+						),
+						'rendered'  => array(
+							'description' => __( 'HTML summary for the object, transformed for display.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'view', 'edit' ),
+							'readonly'    => true,
+						),
+					),
 				),
-				'message'         => array(
+				'message'        => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'HTML content of the object.', 'buddypress' ),
-					'type'        => 'string',
+					'description' => __( 'Content of the object.', 'buddypress' ),
+					'type'        => 'object',
+					'arg_options' => array(
+						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
+						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
+					),
+					'properties'  => array(
+						'raw'       => array(
+							'description' => __( 'Content for the object, as it exists in the database.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'edit' ),
+						),
+						'rendered'  => array(
+							'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'view', 'edit' ),
+							'readonly'    => true,
+						),
+					),
 				),
 				'date'            => array(
 					'context'     => array( 'view', 'edit' ),
@@ -631,7 +682,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return $schema;
+		/**
+		 * Filters the messages schema.
+		 *
+		 * @param array $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_messages_schema', $schema );
 	}
 
 	/**

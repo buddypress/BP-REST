@@ -519,13 +519,12 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'invite',
+			'title'      => esc_html__( 'Group Invites', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
 				'user_id'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID for the user object.', 'buddypress' ),
-					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'invite_sent'     => array(
@@ -544,10 +543,15 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					'description' => __( 'Status of the invite.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
-			)
+			),
 		);
 
-		return $schema;
+		/**
+		 * Filters the group invites schema.
+		 *
+		 * @param array $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_group_invites_schema', $schema );
 	}
 
 	/**

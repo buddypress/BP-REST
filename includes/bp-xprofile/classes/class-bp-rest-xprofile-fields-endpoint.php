@@ -55,7 +55,15 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_item' ),
 				'permission_callback' => array( $this, 'get_item_permissions_check' ),
-				'args'                => $this->get_item_params(),
+				'args'                => array(
+					'user_id' => array(
+						'description'       => __( 'Required if you want to load a specific user\'s data.', 'buddypress' ),
+						'default'           => bp_loggedin_user_id(),
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+						'validate_callback' => 'rest_validate_request_arg',
+					),
+				),
 			),
 			array(
 				'methods'             => WP_REST_Server::EDITABLE,
@@ -67,7 +75,15 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::DELETABLE,
 				'callback'            => array( $this, 'delete_item' ),
 				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
-				'args'                => $this->delete_item_params(),
+				'args'                => array(
+					'delete_data' => array(
+						'description'       => __( 'Required if you want to delete user\'s data for the field.', 'buddypress' ),
+						'default'           => false,
+						'type'              => 'boolean',
+						'sanitize_callback' => 'rest_sanitize_boolean',
+						'validate_callback' => 'rest_validate_request_arg',
+					),
+				),
 			),
 			'schema' => array( $this, 'get_item_schema' ),
 		) );
@@ -97,7 +113,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		);
 
 		if ( empty( $request['member_type'] ) ) {
-			$args['member_type'] = null;
+			$args['member_type'] = false;
 		}
 
 		/**
@@ -592,7 +608,10 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'parent_id'         => (int) $field->parent_id,
 			'type'              => $field->type,
 			'name'              => $field->name,
-			'description'       => $field->description,
+			'description'           => array(
+				'raw'      => $field->description,
+				'rendered' => apply_filters( 'bp_get_the_profile_field_description', $field->description ),
+			),
 			'is_required'       => (bool) $field->is_required,
 			'can_delete'        => (bool) $field->can_delete,
 			'field_order'       => (int) $field->field_order,
@@ -673,7 +692,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'xprofile_fields',
+			'title'      => esc_html__( 'XProfile Fields', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
 				'id'                => array(
@@ -708,12 +727,26 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-				'description'       => array(
+				'description'        => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The description of the profile field group.', 'buddypress' ),
-					'type'        => 'string',
+					'description' => __( 'The description of the object.', 'buddypress' ),
+					'type'        => 'object',
 					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_text_field',
+						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
+						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
+					),
+					'properties'  => array(
+						'raw'       => array(
+							'description' => __( 'Content for the object, as it exists in the database.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'edit' ),
+						),
+						'rendered'  => array(
+							'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'view', 'edit' ),
+							'readonly'    => true,
+						),
 					),
 				),
 				'is_required'       => array(
@@ -759,7 +792,12 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return $schema;
+		/**
+		 * Filters the xprofile fields schema.
+		 *
+		 * @param array $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_xprofile_fields_schema', $schema );
 	}
 
 	/**
@@ -874,28 +912,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 *
 	 * @return array
 	 */
-	public function get_item_params() {
-		$params                       = parent::get_collection_params();
-		$params['context']['default'] = 'view';
-
-		$params['user_id'] = array(
-			'description'       => __( 'Required if you want to load a specific user\'s data.', 'buddypress' ),
-			'default'           => bp_loggedin_user_id(),
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		return $params;
-	}
-
-	/**
-	 * Get the query params for a XProfile field.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return array
-	 */
 	public function create_update_item_params() {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'edit';
@@ -961,28 +977,6 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		return $params;
-	}
-
-	/**
-	 * Get the query params for a XProfile field.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return array
-	 */
-	public function delete_item_params() {
-		$params                       = parent::get_collection_params();
-		$params['context']['default'] = 'edit';
-
-		$params['delete_data'] = array(
-			'description'       => __( 'Required if you want to delete user\'s data for the field.', 'buddypress' ),
-			'default'           => false,
-			'type'              => 'boolean',
-			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

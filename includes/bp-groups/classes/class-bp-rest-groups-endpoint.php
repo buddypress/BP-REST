@@ -815,7 +815,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'group',
+			'title'      => esc_html__( 'Group', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
 				'id'                 => array(
@@ -824,13 +824,11 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-
 				'creator_id'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the user that created the group.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'name'               => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The name of the group.', 'buddypress' ),
@@ -840,7 +838,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-
 				'slug'               => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The URL-friendly slug for the group.', 'buddypress' ),
@@ -849,7 +846,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_title',
 					),
 				),
-
 				'link'               => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
@@ -857,7 +853,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'format'      => 'uri',
 					'readonly'    => true,
 				),
-
 				'description'        => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The description of the group.', 'buddypress' ),
@@ -880,7 +875,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 						),
 					),
 				),
-
 				'status'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The status of the group.', 'buddypress' ),
@@ -890,44 +884,37 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
-
 				'enable_forum'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the group has a forum or not.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
-
 				'parent_id'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID of the parent group.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'date_created'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the group was created, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
-
 				'admins'             => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'Group administrators.', 'buddypress' ),
 					'type'        => 'array',
 				),
-
 				'mods'               => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'Group moderators.', 'buddypress' ),
 					'type'        => 'array',
 				),
-
 				'total_member_count' => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'Count of all group members.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-
 				'last_activity'      => array(
 					'context'     => array( 'edit' ),
 					'description' => __( "The date the group was last active, in the site's timezone.", 'buddypress' ),
@@ -966,7 +953,12 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return $schema;
+		/**
+		 * Filters the group schema.
+		 *
+		 * @param array $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_group_schema', $schema );
 	}
 
 	/**

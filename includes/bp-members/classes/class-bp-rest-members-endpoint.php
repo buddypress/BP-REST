@@ -459,7 +459,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'member',
+			'title'      => esc_html__( 'Members', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
 				'id'          => array(
@@ -587,7 +587,12 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		return $this->add_additional_fields_schema( $schema );
+		/**
+		 * Filters the members schema.
+		 *
+		 * @param array $schema The endpoint schema.
+		 */
+		return apply_filters( 'bp_rest_members_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**
