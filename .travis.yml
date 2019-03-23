@@ -69,10 +69,10 @@ before_install:
   - |
     if [[ "$PHPCS" == "1" ]]; then
       composer self-update
-      composer require squizlabs/php_codesniffer
-      composer require wp-coding-standards/wpcs
+      composer global require squizlabs/php_codesniffer
+      composer global require wp-coding-standards/wpcs
       composer install
-      phpcs --config-set installed_paths ./vendor/wp-coding-standards/wpcs
+      phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs
       phpcs --config-set default_standard WordPress
       phpenv rehash
     fi
