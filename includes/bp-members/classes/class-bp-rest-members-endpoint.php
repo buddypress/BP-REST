@@ -138,7 +138,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to view members', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -149,7 +150,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$user = bp_rest_get_user( $request['id'] );
 
 		if ( true === $retval && ! $user instanceof WP_User ) {
-			$retval = new WP_Error( 'bp_rest_member_invalid_id',
+			$retval = new WP_Error(
+				'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -160,7 +162,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		if ( true === $retval && get_current_user_id() === $user->ID ) {
 			$retval = true;
 		} elseif ( true === $retval && 'edit' === $request['context'] && ! current_user_can( 'list_users' ) ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -191,7 +194,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$retval = true;
 
 		if ( ! ( is_user_logged_in() && current_user_can( 'bp_moderate' ) ) ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -223,7 +227,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$user   = bp_rest_get_user( $request['id'] );
 
 		if ( ! $user instanceof WP_User ) {
-			$retval = new WP_Error( 'bp_rest_member_invalid_id',
+			$retval = new WP_Error(
+				'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -232,7 +237,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		if ( true === $retval && ! $this->can_manage_member( $user ) ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -342,15 +348,19 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		// Avatars.
 		$data['avatar_urls'] = array(
-			'full' => bp_core_fetch_avatar( array(
-				'item_id' => $user->ID,
-				'html'    => false,
-				'type'    => 'full',
-			) ),
-			'thumb' => bp_core_fetch_avatar( array(
-				'item_id' => $user->ID,
-				'html'    => false,
-			) ),
+			'full'  => bp_core_fetch_avatar(
+				array(
+					'item_id' => $user->ID,
+					'html'    => false,
+					'type'    => 'full',
+				)
+			),
+			'thumb' => bp_core_fetch_avatar(
+				array(
+					'item_id' => $user->ID,
+					'html'    => false,
+				)
+			),
 		);
 
 		// Fallback.
@@ -403,11 +413,13 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		// Get XProfile groups, only if the component is active.
 		if ( bp_is_active( 'xprofile' ) ) {
-			$groups = bp_xprofile_get_groups( array(
-				'user_id'          => $user_id,
-				'fetch_fields'     => true,
-				'fetch_field_data' => true,
-			) );
+			$groups = bp_xprofile_get_groups(
+				array(
+					'user_id'          => $user_id,
+					'fetch_fields'     => true,
+					'fetch_field_data' => true,
+				)
+			);
 
 			foreach ( $groups as $group ) {
 				$data['groups'][ $group->id ] = array(
@@ -462,13 +474,13 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'title'      => esc_html__( 'Members', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
-				'id'          => array(
+				'id'                 => array(
 					'description' => __( 'Unique identifier for the member.', 'buddypress' ),
 					'type'        => 'integer',
 					'context'     => array( 'embed', 'view', 'edit' ),
 					'readonly'    => true,
 				),
-				'name'        => array(
+				'name'               => array(
 					'description' => __( 'Display name for the member.', 'buddypress' ),
 					'type'        => 'string',
 					'context'     => array( 'embed', 'view', 'edit' ),
@@ -476,7 +488,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-				'mention_name'        => array(
+				'mention_name'       => array(
 					'description' => __( 'The name used for that user in @-mentions.', 'buddypress' ),
 					'type'        => 'string',
 					'context'     => array( 'embed', 'view', 'edit' ),
@@ -484,21 +496,21 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-				'email'       => array(
+				'email'              => array(
 					'description' => __( 'The email address for the member.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'email',
 					'context'     => array( 'embed', 'view', 'edit' ),
 					'required'    => true,
 				),
-				'link'        => array(
+				'link'               => array(
 					'description' => __( 'Profile URL of the member.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'uri',
 					'context'     => array( 'embed', 'view', 'edit' ),
 					'readonly'    => true,
 				),
-				'user_login'        => array(
+				'user_login'         => array(
 					'description' => __( 'An alphanumeric identifier for the member.', 'buddypress' ),
 					'type'        => 'string',
 					'context'     => array( 'embed', 'view', 'edit' ),
@@ -507,20 +519,20 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'sanitize_callback' => array( $this, 'check_username' ),
 					),
 				),
-				'member_types' => array(
+				'member_types'       => array(
 					'description' => __( 'Member types associated with the member.', 'buddypress' ),
 					'type'        => 'object',
 					'context'     => array( 'embed', 'view', 'edit' ),
 					'readonly'    => true,
 				),
-				'registered_date' => array(
+				'registered_date'    => array(
 					'description' => __( 'Registration date for the member.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 					'context'     => array( 'edit' ),
 					'readonly'    => true,
 				),
-				'password'        => array(
+				'password'           => array(
 					'description' => __( 'Password for the member (never included).', 'buddypress' ),
 					'type'        => 'string',
 					'context'     => array(), // Password is never displayed.
@@ -529,15 +541,15 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'sanitize_callback' => array( $this, 'check_user_password' ),
 					),
 				),
-				'roles'           => array(
+				'roles'              => array(
 					'description' => __( 'Roles assigned to the member.', 'buddypress' ),
 					'type'        => 'array',
 					'context'     => array( 'edit' ),
 					'items'       => array(
-						'type'    => 'string',
+						'type' => 'string',
 					),
 				),
-				'capabilities'    => array(
+				'capabilities'       => array(
 					'description' => __( 'All capabilities assigned to the user.', 'buddypress' ),
 					'type'        => 'object',
 					'context'     => array( 'edit' ),
@@ -549,7 +561,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'context'     => array( 'edit' ),
 					'readonly'    => true,
 				),
-				'xprofile' => array(
+				'xprofile'           => array(
 					'description' => __( 'Member XProfile groups and its fields.', 'buddypress' ),
 					'type'        => 'array',
 					'context'     => array( 'view', 'edit' ),

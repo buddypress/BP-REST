@@ -223,7 +223,17 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item_user_is_not_logged_in() {
-		$request  = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$u = $this->factory->user->create();
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->set_query_params(
+			array(
+				'sender_id'  => $this->user,
+				'recipients' => [ $u ],
+				'subject'    => 'Foo',
+				'content'    => 'Content',
+			)
+		);
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
@@ -248,7 +258,29 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_create_message_required_info', $response, 500 );
+		$this->assertErrorResponse( 'rest_missing_callback_param', $response, 400 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_with_no_receipts() {
+		$u = $this->factory->user->create();
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->set_query_params(
+			array(
+				'sender_id' => $this->user,
+				'subject'   => 'Foo',
+				'content'   => 'Content',
+			)
+		);
+
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_missing_callback_param', $response, 400 );
 	}
 
 	/**

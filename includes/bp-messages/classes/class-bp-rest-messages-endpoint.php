@@ -31,34 +31,59 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-		register_rest_route( $this->namespace, '/' . $this->rest_base, array(
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base,
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_items' ),
-				'permission_callback' => array( $this, 'get_items_permissions_check' ),
-				'args'                => $this->get_collection_params(),
-			),
-			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'create_item' ),
-				'permission_callback' => array( $this, 'create_item_permissions_check' ),
-			),
-			'schema' => array( $this, 'get_item_schema' ),
-		) );
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_items' ),
+					'permission_callback' => array( $this, 'get_items_permissions_check' ),
+					'args'                => $this->get_collection_params(),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'create_item' ),
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
+					'args'                => array(
+						'content'    => array(
+							'description'       => __( 'Content of the message.', 'buddypress' ),
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+							'validate_callback' => 'rest_validate_request_arg',
+						),
+						'recipients' => array(
+							'description'       => __( 'Recipients of the message.', 'buddypress' ),
+							'required'          => true,
+							'type'              => 'array',
+							'items'             => array( 'type' => 'integer' ),
+							'sanitize_callback' => 'wp_parse_id_list',
+							'validate_callback' => 'rest_validate_request_arg',
+						),
+					),
+				),
+				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
 
-		register_rest_route( $this->namespace, $this->rest_base . '/(?P<id>[\d]+)', array(
+		register_rest_route(
+			$this->namespace,
+			$this->rest_base . '/(?P<id>[\d]+)',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_item' ),
-				'permission_callback' => array( $this, 'get_item_permissions_check' ),
-			),
-			array(
-				'methods'             => WP_REST_Server::DELETABLE,
-				'callback'            => array( $this, 'delete_item' ),
-				'permission_callback' => array( $this, 'delete_item_permissions_check' ),
-			),
-			'schema' => array( $this, 'get_item_schema' ),
-		) );
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_item' ),
+					'permission_callback' => array( $this, 'get_item_permissions_check' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_item' ),
+					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+				),
+				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
 	}
 
 	/**
@@ -128,7 +153,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the messages.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -139,7 +165,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$user = bp_rest_get_user( $request['user_id'] );
 
 		if ( true === $retval && ! $user instanceof WP_User ) {
-			$retval = new WP_Error( 'bp_rest_member_invalid_id',
+			$retval = new WP_Error(
+				'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -148,7 +175,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( true === $retval && (int) bp_loggedin_user_id() !== $user->ID && ! bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you cannot view the messages.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -212,7 +240,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see this thread.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -223,7 +252,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$thread = $this->get_thread_object( $request['id'] );
 
 		if ( true === $retval && empty( $thread->thread_id ) ) {
-			$retval = new WP_Error( 'bp_rest_invalid_id',
+			$retval = new WP_Error(
+				'bp_rest_invalid_id',
 				__( 'Sorry, this thread does not exist.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -236,7 +266,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		} else {
 			$id = messages_check_thread_access( $thread->thread_id );
 			if ( true === $retval && is_null( $id ) ) {
-				$retval = new WP_Error( 'bp_rest_authorization_required',
+				$retval = new WP_Error(
+					'bp_rest_authorization_required',
 					__( 'Sorry, you are not allowed to see this thread.', 'buddypress' ),
 					array(
 						'status' => rest_authorization_required_code(),
@@ -269,24 +300,14 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function create_item( $request ) {
-
-		// Bail early.
-		if ( empty( $request['content'] ) || empty( $request['recipients'] ) ) {
-			return new WP_Error( 'bp_rest_create_message_required_info',
-				__( 'Please, add required information..', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
 		$prepared_thread = $this->prepare_item_for_database( $request );
 
 		// Create message.
 		$thread_id = messages_new_message( $prepared_thread );
 
 		if ( ! $thread_id ) {
-			return new WP_Error( 'bp_rest_messages_create_failed',
+			return new WP_Error(
+				'bp_rest_messages_create_failed',
 				__( 'There was an error trying to create the message.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -330,7 +351,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$retval = true;
 
 		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error( 'bp_rest_authorization_required',
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to create a message.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -367,7 +389,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		// Delete a thread.
 		if ( ! messages_delete_thread( $thread->thread_id, $user_id ) ) {
-			return new WP_Error( 'bp_rest_messages_delete_thread_failed',
+			return new WP_Error(
+				'bp_rest_messages_delete_thread_failed',
 				__( 'There was an error trying to delete a thread.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -468,14 +491,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			$data['messages'][] = $message;
 		}
 
-		/**
-		 * @todo Set user avatar, user name, and user links for recipients.
-		 */
-
-		 /**
-		 * @todo What about starred threads, starred messages in a thread ?
-		 */
-
+		// @todo Set user avatar, user name, and user links for recipients.
+		// @todo What about starred threads, starred messages in a thread ?
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 		$data    = $this->add_additional_fields_to_object( $data, $request );
 		$data    = $this->filter_response_by_context( $data, $context );
@@ -571,13 +588,13 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'title'      => esc_html__( 'Thread', 'buddypress' ),
 			'type'       => 'object',
 			'properties' => array(
-				'id'              => array(
+				'id'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-				'message_id' => array(
+				'message_id'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the message.', 'buddypress' ),
 					'type'        => 'integer',
@@ -596,12 +613,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
 					),
 					'properties'  => array(
-						'raw'       => array(
+						'raw'      => array(
 							'description' => __( 'Title of the object, as it exists in the database.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'edit' ),
 						),
-						'rendered'  => array(
+						'rendered' => array(
 							'description' => __( 'Title of the object, transformed for display.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'view', 'edit' ),
@@ -618,12 +635,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
 					),
 					'properties'  => array(
-						'raw'       => array(
+						'raw'      => array(
 							'description' => __( 'Summary for the object, as it exists in the database.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'edit' ),
 						),
-						'rendered'  => array(
+						'rendered' => array(
 							'description' => __( 'HTML summary for the object, transformed for display.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'view', 'edit' ),
@@ -640,12 +657,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
 					),
 					'properties'  => array(
-						'raw'       => array(
+						'raw'      => array(
 							'description' => __( 'Content for the object, as it exists in the database.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'edit' ),
 						),
-						'rendered'  => array(
+						'rendered' => array(
 							'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'view', 'edit' ),
@@ -653,28 +670,28 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 						),
 					),
 				),
-				'date'            => array(
+				'date'           => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
-				'unread_count'          => array(
+				'unread_count'   => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Total count of unread messages.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'sender_ids'      => array(
+				'sender_ids'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The user IDs of all messages in the message thread.', 'buddypress' ),
 					'type'        => 'array',
 				),
-				'recipients'      => array(
+				'recipients'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Recipient objects in the thread', 'buddypress' ),
 					'type'        => 'array',
 				),
-				'messages'        => array(
+				'messages'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'List of messages.', 'buddypress' ),
 					'type'        => 'array',
