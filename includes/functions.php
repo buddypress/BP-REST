@@ -136,12 +136,10 @@ function bp_rest_sanitize_member_types( $value ) {
  *
  * @since 0.1.0
  *
- * @param  mixed           $value   Mixed value.
- * @param  WP_REST_Request $request Full details about the request.
- * @param  string          $param   String.
+ * @param  mixed $value Mixed value.
  * @return WP_Error|boolean
  */
-function bp_rest_validate_member_types( $value, $request, $param ) {
+function bp_rest_validate_member_types( $value ) {
 	if ( empty( $value ) ) {
 		return true;
 	}
@@ -153,9 +151,11 @@ function bp_rest_validate_member_types( $value, $request, $param ) {
 	$registered_types[] = 'any';
 	foreach ( $types as $type ) {
 		if ( ! in_array( $type, $registered_types, true ) ) {
-			/* translators: %1$s and %2$s is replaced with the registered type(s) */
-			return new WP_Error( 'bp_rest_invalid_group_type',
-				sprintf( __( 'The member type you provided, %$1s, is not one of %$2s.' ),
+			return new WP_Error(
+				'bp_rest_invalid_group_type',
+				sprintf(
+					/* translators: %1$s and %2$s is replaced with the registered type(s) */
+					__( 'The member type you provided, %$1s, is not one of %$2s.' ),
 					$type,
 					implode( ', ', $registered_types )
 				)
@@ -188,12 +188,10 @@ function bp_rest_sanitize_group_types( $value ) {
  *
  * @since 0.1.0
  *
- * @param  mixed           $value   Mixed value.
- * @param  WP_REST_Request $request Full details about the request.
- * @param  string          $param   String.
+ * @param  mixed $value Mixed value.
  * @return WP_Error|bool
  */
-function bp_rest_validate_group_types( $value, $request, $param ) {
+function bp_rest_validate_group_types( $value ) {
 	if ( empty( $value ) ) {
 		return true;
 	}
@@ -202,9 +200,11 @@ function bp_rest_validate_group_types( $value, $request, $param ) {
 	$registered_types = bp_groups_get_group_types();
 	foreach ( $types as $type ) {
 		if ( ! in_array( $type, $registered_types, true ) ) {
-			/* translators: %1$s and %2$s is replaced with the registered types */
-			return new WP_Error( 'bp_rest_invalid_group_type',
-				sprintf( __( 'The group type you provided, %1$s, is not one of %2$s.', 'buddypress' ),
+			return new WP_Error(
+				'bp_rest_invalid_group_type',
+				sprintf(
+					/* translators: %1$s and %2$s is replaced with the registered types */
+					__( 'The group type you provided, %1$s, is not one of %2$s.', 'buddypress' ),
 					$type,
 					implode( ', ', $registered_types )
 				)
