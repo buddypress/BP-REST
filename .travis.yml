@@ -56,25 +56,27 @@ matrix:
     - php: 5.6
       env: WP_VERSION=4.7
 
+before_install:
+  - |
+    # Remove Xdebug for a huge performance increase:
+    if [ -f ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ]; then
+      phpenv config-rm xdebug.ini
+    else
+      echo "xdebug.ini does not exist"
+    fi
+
 before_script:
   - |
-    echo "Setting up environment for running tests ..."
+      if [[ ${TRAVIS_PHP_VERSION:0:3} == "5.6" ]]; then
+        composer require --dev phpunit/phpunit ^5;
+        composer install
+      else
+        composer require --dev phpunit/phpunit ^6;
+        composer install;
+      fi
 
-    # Turn off Xdebug. See https://core.trac.wordpress.org/changeset/40138.
-    phpenv config-rm xdebug.ini || echo "Xdebug not available"
-
-    if [[ ${TRAVIS_PHP_VERSION:0:3} == "5.6" ]]; then
-      composer require --dev phpunit/phpunit ^5;
-      composer install
-    else
-      composer require --dev phpunit/phpunit ^6;
-      composer install;
-    fi
-
-    if [[ $WP_PHPCS == "1" ]]; then
-      composer global require wp-coding-standards/wpcs
-      phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs,$HOME/.composer/vendor/wp-coding-standards/wpcs
-    fi
+    composer global require wp-coding-standards/wpcs
+    phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs,$HOME/.composer/vendor/wp-coding-standards/wpcs
 
 install:
   # Set up WP + BP installation
@@ -102,5 +104,6 @@ install:
   - cd $plugin_dir
 
 script:
-  - bash bin/tester.sh
-  - bash bin/linter.sh
+  - ./vendor/bin/phpunit
+  - find . -type "f" -iname "*.php" | xargs -L "1" php -l;
+  - phpcs --standard=WordPress *.php
