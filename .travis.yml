@@ -66,11 +66,16 @@ before_install:
     fi
 
   # Install PHP CodeSniffer and WPCS.
-  - if [[ "$PHPCS" == "1" ]]; then composer self-update; fi
-  - if [[ "$PHPCS" == "1" ]]; then composer require squizlabs/php_codesniffer; fi
-  - if [[ "$PHPCS" == "1" ]]; then composer require wp-coding-standards/wpcs; fi
-  - if [[ "$PHPCS" == "1" ]]; then composer install; fi
-  - phpenv rehash
+  - |
+    if [[ "$PHPCS" == "1" ]]; then
+      composer self-update;
+      composer require squizlabs/php_codesniffer;
+      composer require wp-coding-standards/wpcs;
+      composer install
+      phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs
+      phpcs --config-set default_standard WordPress
+      phpenv rehash
+    fi
 
 before_script:
   - |
@@ -110,9 +115,4 @@ install:
 script:
   - ./vendor/bin/phpunit
   - find includes -type "f" -iname "*.php" | xargs -L "1" php -l;
-  - |
-    if [[ "$PHPCS" == "1" ]]; then
-      phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs
-      phpcs --config-set default_standard WordPress
-      ./vendor/bin/phpcs . --standard=WordPress;
-    fi
+  - if [[ "$PHPCS" == "1" ]]; then ./vendor/bin/phpcs . --standard=WordPress; fi
