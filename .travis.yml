@@ -115,4 +115,4 @@ install:
 script:
   - ./vendor/bin/phpunit
   - find includes -type "f" -iname "*.php" | xargs -L "1" php -l;
-  - if [[ "$PHPCS" == "1" ]]; then ./vendor/bin/phpcs . --standard=WordPress; fi
+  - if [[ "$PHPCS" == "1" ]]; then phpcs . --standard=WordPress; fi
