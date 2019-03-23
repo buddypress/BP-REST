@@ -129,8 +129,7 @@ add_action(
  *
  * @since 0.1.0
  */
-add_action(
-	'bp_include',
+add_action( 'bp_include',
 	function() {
 		require_once dirname( __FILE__ ) . '/includes/functions.php';
 	}
