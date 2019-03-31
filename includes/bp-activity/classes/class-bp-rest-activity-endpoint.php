@@ -135,6 +135,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'filter'            => false,
 		);
 
+		if ( isset( $request['display_comments'] ) && 'false' === $request['display_comments'] ) {
+			$args['display_comments'] = false;
+		}
+
 		if ( empty( $request['exclude'] ) ) {
 			$args['exclude'] = false;
 		}
