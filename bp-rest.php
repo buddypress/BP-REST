@@ -8,8 +8,8 @@
  * Version: 0.1.0
  * Text Domain: bp-rest
  * Domain Path: languages/
- * Requires at least: 4.9.0
- * Tested up to: 4.9.1
+ * Requires at least: 4.7
+ * Tested up to: 5.1
  * Requires PHP: 5.6
  * License: GPLv2
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -19,7 +19,7 @@
  */
 
 /**
- * Copyright (c) 2018 BuddyPress (email: contact@buddypress.org)
+ * Copyright (c) 2019 BuddyPress (email: contact@buddypress.org)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2 or, at
@@ -43,53 +43,95 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 0.1.0
  */
-add_action( 'bp_rest_api_init', function() {
-	// Bail early if no core rest support.
-	if ( ! class_exists( 'WP_REST_Controller' ) ) {
-		return;
-	}
+add_action(
+	'rest_api_init',
+	function() {
 
-	require_once dirname( __FILE__ ) . '/includes/functions.php';
+		// Bail early if no core rest support.
+		if ( ! class_exists( 'WP_REST_Controller' ) ) {
+			return;
+		}
 
-	if ( bp_is_active( 'activity' ) ) {
-		require_once( dirname( __FILE__ ) . '/includes/bp-activity/classes/class-bp-rest-activity-endpoint.php' );
-		$controller = new BP_REST_Activity_Endpoint();
-		$controller->register_routes();
-	}
-
-	if ( bp_is_active( 'xprofile' ) ) {
-		require_once( dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-groups-endpoint.php' );
-		$controller = new BP_REST_XProfile_Groups_Endpoint();
+		require_once dirname( __FILE__ ) . '/includes/bp-components/classes/class-bp-rest-components-endpoint.php';
+		$controller = new BP_REST_Components_Endpoint();
 		$controller->register_routes();
 
-		require_once( dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-fields-endpoint.php' );
-		$controller = new BP_REST_XProfile_Fields_Endpoint();
-		$controller->register_routes();
-	}
+		if ( bp_is_active( 'members' ) ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-members-endpoint.php';
+			$controller = new BP_REST_Members_Endpoint();
+			$controller->register_routes();
 
-	if ( bp_is_active( 'groups' ) ) {
-		require_once( dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-groups-endpoint.php' );
-		$controller = new BP_REST_Groups_Endpoint();
-		$controller->register_routes();
-	}
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-member-avatar-endpoint.php';
+			$controller = new BP_REST_Attachments_Member_Avatar_Endpoint();
+			$controller->register_routes();
+		}
 
-	if ( bp_is_active( 'messages' ) ) {
-		require_once( dirname( __FILE__ ) . '/includes/bp-messages/classes/class-bp-rest-messages-endpoint.php' );
-		$controller = new BP_REST_Messages_Endpoint();
-		$controller->register_routes();
-	}
+		if ( bp_is_active( 'activity' ) ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-activity/classes/class-bp-rest-activity-endpoint.php';
+			$controller = new BP_REST_Activity_Endpoint();
+			$controller->register_routes();
+		}
 
-	if ( bp_is_active( 'members' ) ) {
-		// Member response filters.
-		require_once( dirname( __FILE__ ) . '/includes/bp-members/bp-members-filters.php' );
+		if ( bp_is_active( 'xprofile' ) ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-fields-endpoint.php';
+			$controller = new BP_REST_XProfile_Fields_Endpoint();
+			$controller->register_routes();
 
-		require_once( dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-members-endpoint.php' );
-		$controller = new BP_REST_Members_Endpoint();
-		$controller->register_routes();
+			require_once dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-field-groups-endpoint.php';
+			$controller = new BP_REST_XProfile_Field_Groups_Endpoint();
+			$controller->register_routes();
+
+			require_once dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-data-endpoint.php';
+			$controller = new BP_REST_XProfile_Data_Endpoint();
+			$controller->register_routes();
+		}
+
+		if ( bp_is_active( 'groups' ) ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-groups-endpoint.php';
+			$controller = new BP_REST_Groups_Endpoint();
+			$controller->register_routes();
+
+			require_once dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-group-membership-endpoint.php';
+			$controller = new BP_REST_Group_Membership_Endpoint();
+			$controller->register_routes();
+
+			require_once dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-group-membership-request-endpoint.php';
+			$controller = new BP_REST_Group_Membership_Request_Endpoint();
+			$controller->register_routes();
+
+			require_once dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-group-invites-endpoint.php';
+			$controller = new BP_REST_Group_Invites_Endpoint();
+			$controller->register_routes();
+
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-group-avatar-endpoint.php';
+			$controller = new BP_REST_Attachments_Group_Avatar_Endpoint();
+			$controller->register_routes();
+		}
+
+		if ( bp_is_active( 'messages' ) ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-messages/classes/class-bp-rest-messages-endpoint.php';
+			$controller = new BP_REST_Messages_Endpoint();
+			$controller->register_routes();
+		}
+
+		if ( bp_is_active( 'notifications' ) ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-notifications/classes/class-bp-rest-notifications-endpoint.php';
+			$controller = new BP_REST_Notifications_Endpoint();
+			$controller->register_routes();
+		}
 	}
-	if ( bp_is_active( 'notifications' ) ) {
-		require_once( dirname( __FILE__ ) . '/includes/bp-notifications/classes/class-bp-rest-notifications-endpoint.php' );
-		$controller = new BP_REST_Notifications_Endpoint();
-		$controller->register_routes();
+);
+
+/**
+ * Load functions so that they can also be used out of a REST request.
+ *
+ * @since 0.1.0
+ */
+add_action(
+	'bp_include',
+	function() {
+		require_once dirname( __FILE__ ) . '/includes/functions.php';
 	}
-} );
+);
