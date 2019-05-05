@@ -1082,7 +1082,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( 'groups' === $activity->component && ! empty( $activity->item_id ) ) {
+		if ( bp_is_active( 'groups' ) && 'groups' === $activity->component && ! empty( $activity->item_id ) ) {
 			$group = groups_get_group( $activity->item_id );
 
 			$links['group'] = array(
