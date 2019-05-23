@@ -87,7 +87,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertTrue( 3 === count( $all_data ) );
 
 		foreach ( $all_data as $data ) {
-			$this->check_user_data( get_userdata( $data['id'] ), $data, 'view', $data['_links'] );
+			$this->check_user_data( get_userdata( $data['id'] ), $data, 'view' );
 		}
 	}
 
@@ -120,7 +120,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
-			$this->check_user_data( get_userdata( $data['id'] ), $data, 'view', $data['_links'] );
+			$this->check_user_data( get_userdata( $data['id'] ), $data, 'view' );
 		}
 	}
 
@@ -216,11 +216,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->allow_user_to_manage_multisite();
 
-		$userdata  = get_userdata( $u );
-		$pw_before = $userdata->user_pass;
-
-		$_POST['email'] = 'new@example.com';
-		$_POST['name']  = 'New User Name';
+		$userdata      = get_userdata( $u );
+		$pw_before     = $userdata->user_pass;
+		$_POST['name'] = 'New User Name';
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
@@ -233,7 +231,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertNotEmpty( $new_data );
 
 		$this->assertEquals( $pw_before, $userdata->user_pass );
-		$this->assertEquals( 'new@example.com', $new_data['email'] );
 		$this->assertEquals( 'New User Name', $new_data['name'] );
 	}
 
@@ -375,7 +372,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data = $response->get_data();
 		$user = get_userdata( $data['id'] );
 
-		$this->check_user_data( $user, $data, $context, $response->get_links() );
+		$this->check_user_data( $user, $data, $context );
 	}
 
 	protected function check_add_edit_user_response( $response, $update = false ) {
@@ -386,13 +383,12 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		}
 
 		$data = $response->get_data();
-		$this->check_user_data( get_userdata( $data['id'] ), $data, 'edit', $response->get_links() );
+		$this->check_user_data( get_userdata( $data['id'] ), $data, 'edit' );
 	}
 
-	protected function check_user_data( $user, $data, $context, $links ) {
+	protected function check_user_data( $user, $data, $context ) {
 		$this->assertEquals( $user->ID, $data['id'] );
 		$this->assertEquals( $user->display_name, $data['name'] );
-		$this->assertEquals( $user->user_email, $data['email'] );
 		$this->assertEquals( $user->user_login, $data['user_login'] );
 		$this->assertArrayHasKey( 'avatar_urls', $data );
 		$this->assertArrayHasKey( 'thumb', $data['avatar_urls'] );
@@ -405,15 +401,14 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		);
 
 		if ( 'edit' === $context ) {
-			$this->assertEquals( (object) $user->allcaps, $data['capabilities'] );
-			$this->assertEquals( (object) $user->caps, $data['extra_capabilities'] );
-			$this->assertEquals( $user->roles, $data['roles'] );
+			$this->assertEquals( (array) array_keys( $user->allcaps ), $data['capabilities'] );
+			$this->assertEquals( (array) array_keys( $user->caps ), $data['extra_capabilities'] );
+			$this->assertEquals( (array) array_values( $user->roles ), $data['roles'] );
 			$this->assertEquals( bp_rest_prepare_date_response( $user->user_registered ), $data['registered_date'] );
 		} else {
 			$this->assertArrayNotHasKey( 'roles', $data );
 			$this->assertArrayNotHasKey( 'capabilities', $data );
 			$this->assertArrayNotHasKey( 'extra_capabilities', $data );
-			$this->assertArrayNotHasKey( 'registered_date', $data );
 		}
 	}
 
@@ -431,9 +426,8 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 14, count( $properties ) );
+		$this->assertEquals( 13, count( $properties ) );
 		$this->assertArrayHasKey( 'avatar_urls', $properties );
-		$this->assertArrayHasKey( 'email', $properties );
 		$this->assertArrayHasKey( 'capabilities', $properties );
 		$this->assertArrayHasKey( 'extra_capabilities', $properties );
 		$this->assertArrayHasKey( 'id', $properties );

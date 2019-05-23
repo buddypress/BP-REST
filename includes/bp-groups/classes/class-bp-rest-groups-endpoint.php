@@ -45,7 +45,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'create_item_permissions_check' ),
-					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ), // true.
+					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
 				),
 				'schema' => array( $this, 'get_item_schema' ),
 			)
@@ -71,7 +71,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'update_item' ),
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
-					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ), // false.
+					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
 				),
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
@@ -856,6 +856,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'creator_id'         => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the user that created the group.', 'buddypress' ),
+					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'name'               => array(
@@ -871,6 +872,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The URL-friendly slug for the group.', 'buddypress' ),
 					'type'        => 'string',
+					'readonly'    => true,
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_title',
 					),
@@ -894,7 +896,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 						'raw'      => array(
 							'description' => __( 'Content for the group, as it exists in the database.', 'buddypress' ),
 							'type'        => 'string',
-							'context'     => array( 'edit' ),
+							'context'     => array( 'view', 'edit' ),
 						),
 						'rendered' => array(
 							'description' => __( 'HTML content for the group, transformed for display.', 'buddypress' ),
@@ -907,6 +909,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'status'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The status of the group.', 'buddypress' ),
+					'readonly'    => true,
 					'type'        => 'string',
 					'enum'        => array( 'public', 'private', 'hidden' ),
 					'arg_options' => array(
@@ -916,16 +919,19 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'enable_forum'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the group has a forum or not.', 'buddypress' ),
+					'readonly'    => true,
 					'type'        => 'boolean',
 				),
 				'parent_id'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID of the parent group.', 'buddypress' ),
+					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'date_created'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the group was created, in the site's timezone.", 'buddypress' ),
+					'readonly'    => true,
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
@@ -942,12 +948,14 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'total_member_count' => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'Count of all group members.', 'buddypress' ),
+					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'last_activity'      => array(
 					'context'     => array( 'edit' ),
 					'description' => __( "The date the group was last active, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
+					'readonly'    => true,
 					'format'      => 'date-time',
 				),
 			),
@@ -1019,21 +1027,21 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['status'] = array(
-			'description'       => __( 'Group statuses to limit results to.', 'buddypress' ),
-			'default'           => array(),
-			'type'              => 'array',
-			'items'             => array( 'type' => 'string' ),
-			'sanitize_callback' => 'bp_rest_sanitize_string_list',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
 		$params['orderby'] = array(
 			'description'       => __( 'Order groups by which attribute.', 'buddypress' ),
 			'default'           => 'date_created',
 			'type'              => 'string',
 			'enum'              => array( 'date_created', 'last_activity', 'total_member_count', 'name', 'random' ),
 			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['status'] = array(
+			'description'       => __( 'Group statuses to limit results to.', 'buddypress' ),
+			'default'           => array(),
+			'type'              => 'array',
+			'items'             => array( 'type' => 'string' ),
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -1091,7 +1099,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['enable_forum'] = array(
-			'description'       => __( 'Whether the group should have a forum enabled.', 'buddypress' ),
+			'description'       => __( 'Whether the group has a forum enabled.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',
