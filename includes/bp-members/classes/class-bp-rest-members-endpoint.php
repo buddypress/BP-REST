@@ -331,7 +331,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	public function user_data( $user ) {
 		$data = array(
 			'id'                 => $user->ID,
-			'name'               => $user->display_name ?? $user->fullname,
+			'name'               => $user->display_name,
 			'user_login'         => $user->user_login,
 			'link'               => bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login ),
 			'member_types'       => bp_get_member_type( $user->ID, false ),
