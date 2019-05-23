@@ -216,11 +216,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->allow_user_to_manage_multisite();
 
-		$userdata  = get_userdata( $u );
-		$pw_before = $userdata->user_pass;
-
-		$_POST['email'] = 'new@example.com';
-		$_POST['name']  = 'New User Name';
+		$userdata      = get_userdata( $u );
+		$pw_before     = $userdata->user_pass;
+		$_POST['name'] = 'New User Name';
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
@@ -233,7 +231,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertNotEmpty( $new_data );
 
 		$this->assertEquals( $pw_before, $userdata->user_pass );
-		$this->assertEquals( 'new@example.com', $new_data['email'] );
 		$this->assertEquals( 'New User Name', $new_data['name'] );
 	}
 
@@ -404,7 +401,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		);
 
 		if ( 'edit' === $context ) {
-			$this->assertEquals( $user->user_email, $data['email'] );
 			$this->assertEquals( (object) $user->allcaps, $data['capabilities'] );
 			$this->assertEquals( (object) $user->caps, $data['extra_capabilities'] );
 			$this->assertEquals( $user->roles, $data['roles'] );
@@ -431,7 +427,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 14, count( $properties ) );
+		$this->assertEquals( 13, count( $properties ) );
 		$this->assertArrayHasKey( 'avatar_urls', $properties );
 		$this->assertArrayHasKey( 'capabilities', $properties );
 		$this->assertArrayHasKey( 'extra_capabilities', $properties );

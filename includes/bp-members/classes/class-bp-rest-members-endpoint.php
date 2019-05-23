@@ -293,8 +293,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
 		if ( 'edit' === $context ) {
-			$data['email']              = $user->user_email;
-			$data['roles']              = array_values( $user->roles );
+			$data['roles']              = (array) array_values( $user->roles );
 			$data['capabilities']       = (object) $user->allcaps;
 			$data['extra_capabilities'] = (object) $user->caps;
 		}
@@ -486,13 +485,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-				),
-				'email'              => array(
-					'description' => __( 'The email address for the member.', 'buddypress' ),
-					'type'        => 'string',
-					'format'      => 'email',
-					'context'     => array( 'edit' ),
-					'required'    => true,
 				),
 				'link'               => array(
 					'description' => __( 'Profile URL of the member.', 'buddypress' ),
