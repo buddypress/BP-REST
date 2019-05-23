@@ -401,15 +401,14 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		);
 
 		if ( 'edit' === $context ) {
-			$this->assertEquals( (object) $user->allcaps, $data['capabilities'] );
-			$this->assertEquals( (object) $user->caps, $data['extra_capabilities'] );
-			$this->assertEquals( $user->roles, $data['roles'] );
+			$this->assertEquals( (array) array_keys( $user->allcaps ), $data['capabilities'] );
+			$this->assertEquals( (array) array_keys( $user->caps ), $data['extra_capabilities'] );
+			$this->assertEquals( (array) array_values( $user->roles ), $data['roles'] );
 			$this->assertEquals( bp_rest_prepare_date_response( $user->user_registered ), $data['registered_date'] );
 		} else {
 			$this->assertArrayNotHasKey( 'roles', $data );
 			$this->assertArrayNotHasKey( 'capabilities', $data );
 			$this->assertArrayNotHasKey( 'extra_capabilities', $data );
-			$this->assertArrayNotHasKey( 'registered_date', $data );
 		}
 	}
 

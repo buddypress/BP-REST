@@ -289,13 +289,15 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $user, $request ) {
-		$data    = $this->user_data( $user );
+		$user    = get_userdata( $user->ID );
+		$data    = $this->user_data( $user->data );
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
 		if ( 'edit' === $context ) {
+			$data['registered_date']    = bp_rest_prepare_date_response( $user->data->user_registered );
 			$data['roles']              = (array) array_values( $user->roles );
-			$data['capabilities']       = (object) $user->allcaps;
-			$data['extra_capabilities'] = (object) $user->caps;
+			$data['capabilities']       = (array) array_keys( $user->allcaps );
+			$data['extra_capabilities'] = (array) array_keys( $user->caps );
 		}
 
 		$data = $this->add_additional_fields_to_object( $data, $request );
@@ -329,10 +331,9 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	public function user_data( $user ) {
 		$data = array(
 			'id'                 => $user->ID,
-			'name'               => $user->display_name,
+			'name'               => $user->display_name ?? $user->fullname,
 			'user_login'         => $user->user_login,
 			'link'               => bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login ),
-			'registered_date'    => bp_rest_prepare_date_response( $user->user_registered ),
 			'member_types'       => bp_get_member_type( $user->ID, false ),
 			'roles'              => array(),
 			'capabilities'       => array(),
