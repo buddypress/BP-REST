@@ -1082,7 +1082,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( 'groups' === $activity->component && ! empty( $activity->item_id ) ) {
+		if ( bp_is_active( 'groups' ) && 'groups' === $activity->component && ! empty( $activity->item_id ) ) {
 			$group = groups_get_group( $activity->item_id );
 
 			$links['group'] = array(
@@ -1122,15 +1122,17 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$user_id = get_current_user_id();
 		$retval  = false;
 
-		// If activity is from a group, do an extra cap check.
-		if ( ! $retval && ! empty( $item_id ) && bp_is_active( $component ) && buddypress()->groups->id === $component ) {
-			// Group admins and mods have access as well.
-			if ( groups_is_user_admin( $user_id, $item_id ) || groups_is_user_mod( $user_id, $item_id ) ) {
-				$retval = true;
+		if ( ! is_null( $component ) ) {
+			// If activity is from a group, do an extra cap check.
+			if ( ! $retval && ! empty( $item_id ) && bp_is_active( $component ) && buddypress()->groups->id === $component ) {
+				// Group admins and mods have access as well.
+				if ( groups_is_user_admin( $user_id, $item_id ) || groups_is_user_mod( $user_id, $item_id ) ) {
+					$retval = true;
 
-				// User is a member of the group.
-			} elseif ( (bool) groups_is_user_member( $user_id, $item_id ) ) {
-				$retval = true;
+					// User is a member of the group.
+				} elseif ( (bool) groups_is_user_member( $user_id, $item_id ) ) {
+					$retval = true;
+				}
 			}
 		}
 
