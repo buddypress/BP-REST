@@ -293,6 +293,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
 		if ( 'edit' === $context ) {
+			$data['email']              = $user->user_email;
 			$data['roles']              = array_values( $user->roles );
 			$data['capabilities']       = (object) $user->allcaps;
 			$data['extra_capabilities'] = (object) $user->caps;
@@ -330,7 +331,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$data = array(
 			'id'                 => $user->ID,
 			'name'               => $user->display_name,
-			'email'              => $user->user_email,
 			'user_login'         => $user->user_login,
 			'link'               => bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login ),
 			'registered_date'    => bp_rest_prepare_date_response( $user->user_registered ),
@@ -406,7 +406,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  int $user_id User ID.
-	 * @return array XProfile info.
+	 * @return array
 	 */
 	protected function xprofile_data( $user_id ) {
 		$data = array();
@@ -449,16 +449,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return bool
 	 */
 	protected function can_manage_member( $user ) {
-
-		if ( current_user_can( 'bp_moderate' ) ) {
-			return true;
-		}
-
-		if ( current_user_can( 'delete_user', $user->ID ) ) {
-			return true;
-		}
-
-		return false;
+		return ( current_user_can( 'bp_moderate' ) || current_user_can( 'delete_user', $user->ID ) );
 	}
 
 	/**
@@ -500,7 +491,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'description' => __( 'The email address for the member.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'email',
-					'context'     => array( 'embed', 'view', 'edit' ),
+					'context'     => array( 'edit' ),
 					'required'    => true,
 				),
 				'link'               => array(

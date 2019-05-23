@@ -436,10 +436,9 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		return $group_member;
 	}
 
-	protected function check_user_data( $user, $data, $member_object) {
+	protected function check_user_data( $user, $data, $member_object ) {
 		$this->assertEquals( $user->ID, $data['id'] );
 		$this->assertEquals( $user->display_name, $data['name'] );
-		$this->assertEquals( $user->user_email, $data['email'] );
 		$this->assertEquals( $user->user_login, $data['user_login'] );
 		$this->assertArrayHasKey( 'avatar_urls', $data );
 		$this->assertArrayHasKey( 'thumb', $data['avatar_urls'] );
@@ -471,7 +470,6 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 
 		$this->assertEquals( 19, count( $properties ) );
 		$this->assertArrayHasKey( 'avatar_urls', $properties );
-		$this->assertArrayHasKey( 'email', $properties );
 		$this->assertArrayHasKey( 'capabilities', $properties );
 		$this->assertArrayHasKey( 'extra_capabilities', $properties );
 		$this->assertArrayHasKey( 'id', $properties );

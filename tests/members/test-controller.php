@@ -87,7 +87,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertTrue( 3 === count( $all_data ) );
 
 		foreach ( $all_data as $data ) {
-			$this->check_user_data( get_userdata( $data['id'] ), $data, 'view', $data['_links'] );
+			$this->check_user_data( get_userdata( $data['id'] ), $data, 'view' );
 		}
 	}
 
@@ -120,7 +120,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertNotEmpty( $all_data );
 
 		foreach ( $all_data as $data ) {
-			$this->check_user_data( get_userdata( $data['id'] ), $data, 'view', $data['_links'] );
+			$this->check_user_data( get_userdata( $data['id'] ), $data, 'view' );
 		}
 	}
 
@@ -375,7 +375,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data = $response->get_data();
 		$user = get_userdata( $data['id'] );
 
-		$this->check_user_data( $user, $data, $context, $response->get_links() );
+		$this->check_user_data( $user, $data, $context );
 	}
 
 	protected function check_add_edit_user_response( $response, $update = false ) {
@@ -386,13 +386,12 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		}
 
 		$data = $response->get_data();
-		$this->check_user_data( get_userdata( $data['id'] ), $data, 'edit', $response->get_links() );
+		$this->check_user_data( get_userdata( $data['id'] ), $data, 'edit' );
 	}
 
-	protected function check_user_data( $user, $data, $context, $links ) {
+	protected function check_user_data( $user, $data, $context ) {
 		$this->assertEquals( $user->ID, $data['id'] );
 		$this->assertEquals( $user->display_name, $data['name'] );
-		$this->assertEquals( $user->user_email, $data['email'] );
 		$this->assertEquals( $user->user_login, $data['user_login'] );
 		$this->assertArrayHasKey( 'avatar_urls', $data );
 		$this->assertArrayHasKey( 'thumb', $data['avatar_urls'] );
@@ -405,6 +404,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		);
 
 		if ( 'edit' === $context ) {
+			$this->assertEquals( $user->user_email, $data['email'] );
 			$this->assertEquals( (object) $user->allcaps, $data['capabilities'] );
 			$this->assertEquals( (object) $user->caps, $data['extra_capabilities'] );
 			$this->assertEquals( $user->roles, $data['roles'] );
@@ -433,7 +433,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 14, count( $properties ) );
 		$this->assertArrayHasKey( 'avatar_urls', $properties );
-		$this->assertArrayHasKey( 'email', $properties );
 		$this->assertArrayHasKey( 'capabilities', $properties );
 		$this->assertArrayHasKey( 'extra_capabilities', $properties );
 		$this->assertArrayHasKey( 'id', $properties );
