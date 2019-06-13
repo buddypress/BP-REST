@@ -6,7 +6,7 @@
  * Author: The BuddyPress Community
  * Author URI: https://buddypress.org/
  * Version: 0.1.0
- * Text Domain: bp-rest
+ * Text Domain: buddypress
  * Domain Path: languages/
  * Requires at least: 4.7
  * Tested up to: 5.1
