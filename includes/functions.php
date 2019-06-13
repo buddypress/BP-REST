@@ -155,7 +155,7 @@ function bp_rest_validate_member_types( $value ) {
 				'bp_rest_invalid_group_type',
 				sprintf(
 					/* translators: %1$s and %2$s is replaced with the registered type(s) */
-					__( 'The member type you provided, %$1s, is not one of %$2s.' ),
+					__( 'The member type you provided, %$1s, is not one of %$2s.', 'buddypress' ),
 					$type,
 					implode( ', ', $registered_types )
 				)
