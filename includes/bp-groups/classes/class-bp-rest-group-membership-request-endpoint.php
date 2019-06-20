@@ -1,4 +1,4 @@
-	<?php
+<?php
 /**
  * BP REST: BP_REST_Group_Membership_Request_Endpoint class
  *
