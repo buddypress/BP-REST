@@ -129,6 +129,11 @@ add_action( 'bp_rest_api_init', 'bp_rest', 5 );
 add_action(
 	'bp_include',
 	function() {
+		// BuddyPress is already including the needed functions.
+		if ( function_exists( 'bp_rest_namespace' ) ) {
+			return;
+		}
+
 		require_once dirname( __FILE__ ) . '/includes/functions.php';
 	}
 );
