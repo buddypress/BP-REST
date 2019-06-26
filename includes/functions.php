@@ -272,7 +272,8 @@ function bp_rest_register_field( $component_id, $attribute, $args = array() ) {
 	}
 
 	$args = bp_parse_args(
-		$args, array(
+		$args,
+		array(
 			'get_callback'    => null,
 			'update_callback' => null,
 			'schema'          => null,
