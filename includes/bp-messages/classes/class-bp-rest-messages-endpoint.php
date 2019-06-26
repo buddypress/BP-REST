@@ -494,7 +494,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		// @todo Set user avatar, user name, and user links for recipients.
 		// @todo What about starred threads, starred messages in a thread ?
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data    = $this->add_additional_fields_to_object( $data, $request );
 		$data    = $this->filter_response_by_context( $data, $context );
 
 		$response = rest_ensure_response( $data );

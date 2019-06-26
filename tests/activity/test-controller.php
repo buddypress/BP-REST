@@ -920,4 +920,88 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
 		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 	}
+
+	public function update_additional_field( $value, $data, $attribute ) {
+		return bp_activity_update_meta( $data->id, '_' . $attribute, $value );
+	}
+
+	public function get_additional_field( $data, $attribute )  {
+		return bp_activity_get_meta( $data['id'], '_' . $attribute );
+	}
+
+	/**
+	 * @group additional_fields
+	 */
+	public function test_additional_fields() {
+		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
+
+		bp_rest_register_field( 'activity', 'foo_field', array(
+			'get_callback'    => array( $this, 'get_additional_field' ),
+			'update_callback' => array( $this, 'update_additional_field' ),
+			'schema'          => array(
+				'description' => 'Activity Meta Field',
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+			),
+		) );
+
+		$this->bp->set_current_user( $this->user );
+		$expected = 'bar_value';
+
+		// POST
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$params = $this->set_activity_data( array( 'foo_field' => $expected ) );
+		$request->set_body_params( $params );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$create_data = $response->get_data();
+		$this->assertTrue( $expected === $create_data[0]['foo_field'] );
+
+		// GET
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $create_data[0]['id'] ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$get_data = $response->get_data();
+		$this->assertTrue( $expected === $get_data[0]['foo_field'] );
+
+		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
+	}
+
+	/**
+	 * @group additional_fields
+	 */
+	public function test_update_additional_fields() {
+		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
+
+		bp_rest_register_field( 'activity', 'bar_field', array(
+			'get_callback'    => array( $this, 'get_additional_field' ),
+			'update_callback' => array( $this, 'update_additional_field' ),
+			'schema'          => array(
+				'description' => 'Activity Meta Field',
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+			),
+		) );
+
+		$this->bp->set_current_user( $this->user );
+		$expected = 'foo_value';
+		$a_id     = $this->bp_factory->activity->create();
+
+		// PUT
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $a_id ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data( array( 'bar_field' => 'foo_value' ) );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$update_data = $response->get_data();
+		$this->assertTrue( $expected === $update_data[0]['bar_field'] );
+
+		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
+	}
 }

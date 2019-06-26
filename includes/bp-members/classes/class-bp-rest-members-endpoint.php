@@ -463,7 +463,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => esc_html__( 'Members', 'buddypress' ),
+			'title'      => 'bp_members',
 			'type'       => 'object',
 			'properties' => array(
 				'id'                 => array(
@@ -665,5 +665,28 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		);
 
 		return $params;
+	}
+
+	/**
+	 * Updates the values of additional fields added to a data object.
+	 *
+	 * This function makes sure updating the field value thanks to the `id` property of
+	 * the created/updated object type is consistent accross BuddyPress components.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_User         $object  The WordPress user object.
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error True on success, WP_Error object if a field cannot be updated.
+	 */
+	protected function update_additional_fields_for_object( $object, $request ) {
+		if ( isset( $object->data ) ) {
+			$member     = $object->data;
+			$member->id = $member->ID;
+		} else {
+			return new WP_Error( 'invalid_user', __( 'The data for the user was not found.', 'buddypress' ) );
+		}
+
+		return WP_REST_Controller::update_additional_fields_for_object( $member, $request );
 	}
 }

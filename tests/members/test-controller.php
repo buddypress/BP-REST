@@ -457,4 +457,96 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
 		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 	}
+
+	public function update_additional_field( $value, $data, $attribute ) {
+		return bp_update_user_meta( $data->id, '_' . $attribute, $value );
+	}
+
+	public function get_additional_field( $data, $attribute )  {
+		return bp_get_user_meta( $data['id'], '_' . $attribute, true );
+	}
+
+	/**
+	 * @group additional_fields
+	 */
+	public function test_additional_fields() {
+		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
+
+		bp_rest_register_field( 'members', 'foo_field', array(
+			'get_callback'    => array( $this, 'get_additional_field' ),
+			'update_callback' => array( $this, 'update_additional_field' ),
+			'schema'          => array(
+				'description' => 'Members single item Meta Field',
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+			),
+		) );
+
+		$this->allow_user_to_manage_multisite();
+		$expected = 'bar_value';
+
+		$params = array(
+			'password'   => 'testpassword',
+			'email'      => 'test@example.com',
+			'user_login' => 'testuser',
+			'name'       => 'Test User',
+			'foo_field'  => $expected,
+		);
+
+		// POST
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$request->set_body_params( $params );
+		$response = $this->server->dispatch( $request );
+
+		$create_data = $response->get_data();
+		$this->assertTrue( $expected === $create_data['foo_field'] );
+
+		// GET
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $create_data['id'] ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$get_data = $response->get_data();
+		$this->assertTrue( $expected === $get_data['foo_field'] );
+
+		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
+	}
+
+	/**
+	 * @group additional_fields
+	 */
+	public function test_update_additional_fields() {
+		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
+
+		bp_rest_register_field( 'members', 'bar_field', array(
+			'get_callback'    => array( $this, 'get_additional_field' ),
+			'update_callback' => array( $this, 'update_additional_field' ),
+			'schema'          => array(
+				'description' => 'Members single item Meta Field',
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+			),
+		) );
+
+		$u = $this->factory->user->create( array(
+			'email' => 'test@example.com',
+			'name'  => 'User Name',
+		) );
+		$expected = 'foo_value';
+
+		$this->allow_user_to_manage_multisite();
+
+		// PUT
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$request->set_body_params( array( 'bar_field' => 'foo_value' ) );
+
+		$response = $this->server->dispatch( $request );
+
+		$update_data = $response->get_data();
+		$this->assertTrue( $expected === $update_data['bar_field'] );
+
+		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
+	}
 }

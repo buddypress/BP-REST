@@ -292,7 +292,12 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$group = $this->get_group_object( $group_id );
+		$group         = $this->get_group_object( $group_id );
+		$fields_update = $this->update_additional_fields_for_object( $group, $request );
+
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
+		}
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -369,7 +374,12 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$group = $this->get_group_object( $group_id );
+		$group         = $this->get_group_object( $group_id );
+		$fields_update = $this->update_additional_fields_for_object( $group, $request );
+
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
+		}
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -844,7 +854,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => esc_html__( 'Group', 'buddypress' ),
+			'title'      => 'bp_groups',
 			'type'       => 'object',
 			'properties' => array(
 				'id'                 => array(
@@ -995,7 +1005,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_group_schema', $schema );
+		return apply_filters( 'bp_rest_group_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**
