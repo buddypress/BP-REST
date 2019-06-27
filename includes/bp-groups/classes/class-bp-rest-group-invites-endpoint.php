@@ -236,7 +236,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 
 		$retval = array(
 			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $invite, $request );
+				$this->prepare_item_for_response( $invite, $request )
 			),
 		);
 
