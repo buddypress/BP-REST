@@ -95,7 +95,6 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 
 		$args = array(
 			'group_id'     => $group->id,
-			'is_confirmed' => $request['is_confirmed'],
 			'per_page'     => $request['per_page'],
 			'page'         => $request['page'],
 		);
@@ -111,8 +110,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		$args = apply_filters( 'bp_rest_group_invites_get_items_query_args', $args, $request );
 
 		// Get invites.
-		$invite_query = new BP_Group_Member_Query( $args );
-		$invites_data = $invite_query->results;
+		$invites_data = groups_get_invites( $args );
 
 		$retval = array();
 		foreach ( $invites_data as $invited_user ) {
@@ -122,7 +120,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		}
 
 		$response = rest_ensure_response( $retval );
-		$response = bp_rest_response_add_total_headers( $response, $invite_query->total_users, $args['per_page'] );
+		$response = bp_rest_response_add_total_headers( $response, count( $invites_data ), $args['per_page'] );
 
 		/**
 		 * Fires after a list of group invites are fetched via the REST API.
@@ -215,15 +213,16 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$invite = groups_invite_user(
+		$invite_id = groups_invite_user(
 			array(
-				'user_id'    => $user->ID,
-				'group_id'   => $group->id,
-				'inviter_id' => $inviter->ID,
+				'user_id'     => $user->ID,
+				'group_id'    => $group->id,
+				'inviter_id'  => $inviter->ID,
+				'send_invite' => 1,
 			)
 		);
 
-		if ( ! $invite ) {
+		if ( ! $invite_id ) {
 			return new WP_Error(
 				'bp_rest_group_invite_cannot_invite',
 				__( 'Could not invite member to the group.', 'buddypress' ),
@@ -233,14 +232,11 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Send invites.
-		groups_send_invites( $inviter->ID, $group->id );
-
-		$invited_member = new BP_Groups_Member( $user->ID, $group->id );
+		$invite = new BP_Invitation( $invite_id );
 
 		$retval = array(
 			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $invited_member, $request )
+				$this->prepare_item_for_response( $invite, $request );
 			),
 		);
 
@@ -251,13 +247,14 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param BP_Groups_Member $invited_member The group member object.
+		 * @param BP_Invitation    $invite         The invitation object.
+		 * @param WP_User          $user           The invited user.
 		 * @param WP_User          $inviter        The inviter user.
 		 * @param BP_Groups_Group  $group          The group object.
 		 * @param WP_REST_Response $response       The response data.
 		 * @param WP_REST_Request  $request        The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_invites_create_item', $invited_member, $inviter, $group, $response, $request );
+		do_action( 'bp_rest_group_invites_create_item', $invite, $user, $inviter, $group, $response, $request );
 
 		return $response;
 	}
@@ -458,7 +455,6 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			'user_id'      => $invite->user_id,
 			'invite_sent'  => $invite->invite_sent,
 			'inviter_id'   => $invite->inviter_id,
-			'is_confirmed' => $invite->is_confirmed,
 		);
 
 		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';

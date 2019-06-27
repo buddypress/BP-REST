@@ -23,6 +23,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->group_id = $this->bp_factory->group->create( array(
 			'name'        => 'Group Test',
 			'description' => 'Group Description',
+			'status'      => 'private',
 			'creator_id'  => $this->user,
 		) );
 
@@ -131,7 +132,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->assertEquals( $u1, $all_data[0]['user_id'] );
 		$this->assertEquals( $this->user, $all_data[0]['inviter_id'] );
-		$this->assertFalse( (bool) $all_data[0]['is_confirmed'] );
 		$this->assertTrue( (bool) $all_data[0]['invite_sent'] );
 	}
 
@@ -144,6 +144,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$g1 = $this->bp_factory->group->create( array(
 			'creator_id' => $u1,
+			'status'     => 'private',
 		) );
 
 		$this->bp->set_current_user( $u1 );
@@ -161,7 +162,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$this->assertEquals( $u2, $all_data[0]['user_id'] );
 		$this->assertEquals( $this->user, $all_data[0]['inviter_id'] );
-		$this->assertFalse( (bool) $all_data[0]['is_confirmed'] );
 		$this->assertTrue( (bool) $all_data[0]['invite_sent'] );
 	}
 
@@ -281,7 +281,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$all_data = $response->get_data();
 
 		$this->assertEquals( $u1, $all_data[0]['user_id'] );
-		$this->assertTrue( (bool) $all_data[0]['is_confirmed'] );
 	}
 
 	/**
@@ -293,6 +292,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$g1 = $this->bp_factory->group->create( array(
 			'creator_id' => $u1,
+			'status'     => 'private',
 		) );
 
 		$this->populate_group_with_invites( [ $u2 ], $g1 );
@@ -308,7 +308,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$all_data = $response->get_data();
 
 		$this->assertEquals( $u2, $all_data[0]['user_id'] );
-		$this->assertTrue( (bool) $all_data[0]['is_confirmed'] );
 	}
 
 	/**
@@ -383,7 +382,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$all_data = $response->get_data();
 
 		$this->assertEquals( $u1, $all_data[0]['user_id'] );
-		$this->assertFalse( (bool) $all_data[0]['is_confirmed'] );
 	}
 
 	/**
@@ -395,6 +393,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$g1 = $this->bp_factory->group->create( array(
 			'creator_id' => $u1,
+			'status'     => 'private'
 		) );
 
 		$this->populate_group_with_invites( [ $u2 ], $g1 );
@@ -410,7 +409,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$all_data = $response->get_data();
 
 		$this->assertEquals( $u2, $all_data[0]['user_id'] );
-		$this->assertFalse( (bool) $all_data[0]['is_confirmed'] );
 	}
 
 	/**
@@ -479,15 +477,15 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( $user->ID, $data['user_id'] );
 		$this->assertEquals( $user->invite_sent, $data['invite_sent'] );
 		$this->assertEquals( $user->inviter_id, $data['inviter_id'] );
-		$this->assertEquals( $user->is_confirmed, $data['is_confirmed'] );
 	}
 
 	protected function populate_group_with_invites( $users, $group_id ) {
 		foreach ( $users as $user_id ) {
 			groups_invite_user( array(
-				'user_id'    => $user_id,
-				'group_id'   => $group_id,
-				'inviter_id' => $this->user,
+				'user_id'     => $user_id,
+				'group_id'    => $group_id,
+				'inviter_id'  => $this->user,
+				'send_invite' => 1,
 			) );
 		}
 	}
@@ -502,7 +500,6 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertArrayHasKey( 'user_id', $properties );
 		$this->assertArrayHasKey( 'invite_sent', $properties );
 		$this->assertArrayHasKey( 'inviter_id', $properties );
-		$this->assertArrayHasKey( 'is_confirmed', $properties );
 	}
 
 	public function test_context_param() {
