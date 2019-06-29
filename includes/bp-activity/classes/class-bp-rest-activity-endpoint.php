@@ -396,9 +396,16 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			)
 		);
 
+		$activity      = current( $activity['activities'] );
+		$fields_update = $this->update_additional_fields_for_object( $activity, $request );
+
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
+		}
+
 		$retval = array(
 			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( current( $activity['activities'] ), $request )
+				$this->prepare_item_for_response( $activity, $request )
 			),
 		);
 
@@ -496,7 +503,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$activity = $this->get_activity_object( $activity_id );
+		$activity      = $this->get_activity_object( $activity_id );
+		$fields_update = $this->update_additional_fields_for_object( $activity, $request );
+
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
+		}
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -1179,7 +1191,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => esc_html__( 'Activity', 'buddypress' ),
+			'title'      => 'bp_activity',
 			'type'       => 'object',
 			'properties' => array(
 				'id'                => array(
@@ -1336,7 +1348,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param string $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_activity_schema', $schema );
+		return apply_filters( 'bp_rest_activity_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**

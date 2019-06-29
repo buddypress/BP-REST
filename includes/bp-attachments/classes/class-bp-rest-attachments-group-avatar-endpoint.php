@@ -393,7 +393,6 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 		}
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data    = $this->add_additional_fields_to_object( $data, $request );
 		$data    = $this->filter_response_by_context( $data, $context );
 
 		$response = rest_ensure_response( $data );

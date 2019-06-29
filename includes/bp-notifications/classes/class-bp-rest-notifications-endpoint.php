@@ -290,7 +290,12 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$notification = $this->get_notification_object( $notification_id );
+		$notification  = $this->get_notification_object( $notification_id );
+		$fields_update = $this->update_additional_fields_for_object( $notification, $request );
+
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
+		}
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -370,6 +375,12 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 					'status' => 500,
 				)
 			);
+		}
+
+		$fields_update = $this->update_additional_fields_for_object( $notification, $request );
+
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
 		}
 
 		$retval = array(
@@ -652,7 +663,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => esc_html__( 'Notifications', 'buddypress' ),
+			'title'      => 'bp_notifications',
 			'type'       => 'object',
 			'properties' => array(
 				'id'                => array(
@@ -706,7 +717,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_notifications_schema', $schema );
+		return apply_filters( 'bp_rest_notifications_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**

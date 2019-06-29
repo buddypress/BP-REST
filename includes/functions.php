@@ -249,3 +249,44 @@ function bp_rest_get_user( $user_id ) {
 
 	return $user;
 }
+
+/**
+ * Registers a new field on an existing BuddyPress object.
+ *
+ * @since 0.1.0
+ *
+ * @param string $component_id The name of the *active* component (eg: `activity`, `groups`, `xprofile`).
+ *                             Required.
+ * @param string $attribute    The attribute name. Required.
+ * @param array  $args {
+ *     Optional. An array of arguments used to handle the registered field.
+ *     @see `register_rest_field()` for a full description.
+ * }
+ * @return bool                True if the field has been registered successfully. False otherwise.
+ */
+function bp_rest_register_field( $component_id, $attribute, $args = array() ) {
+	$registered_fields = false;
+
+	if ( ! $component_id || ! bp_is_active( $component_id ) || ! $attribute ) {
+		return $registered_fields;
+	}
+
+	$args = bp_parse_args(
+		$args,
+		array(
+			'get_callback'    => null,
+			'update_callback' => null,
+			'schema'          => null,
+		),
+		'rest_register_field'
+	);
+
+	// Use the `bp_` prefix as we're using a WordPress global used for Post Types.
+	register_rest_field( 'bp_' . $component_id, $attribute, $args );
+
+	if ( isset( $GLOBALS['wp_rest_additional_fields'][ 'bp_' . $component_id ] ) ) {
+		$registered_fields = $GLOBALS['wp_rest_additional_fields'][ 'bp_' . $component_id ];
+	}
+
+	return isset( $registered_fields[ $attribute ] );
+}
