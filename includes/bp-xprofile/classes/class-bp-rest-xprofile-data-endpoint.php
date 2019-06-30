@@ -103,6 +103,13 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		// Get Field data.
 		$field_data = $this->get_xprofile_field_data_object( $field->id, $user->ID );
 
+		// Create Additional fields.
+		$fields_update = $this->update_additional_fields_for_object( $field, $request );
+
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
+		}
+
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $field_data, $request )
@@ -280,9 +287,12 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			'user_id'      => $field_data->user_id,
 			'value'        => $field_data->value,
 			'last_updated' => bp_rest_prepare_date_response( $field_data->last_updated ),
+			// To be consistent about the way to get REST fields across components.
+			'id'           => $field_data->field_id,
 		);
 
 		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
@@ -387,7 +397,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => esc_html__( 'XProfile Data', 'buddypress' ),
+			'title'      => 'bp_xprofile_data',
 			'type'       => 'object',
 			'properties' => array(
 				'field_id'     => array(
@@ -421,6 +431,6 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_xprofile_data_schema', $schema );
+		return apply_filters( 'bp_rest_xprofile_data_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 }
