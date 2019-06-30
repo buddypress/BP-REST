@@ -295,6 +295,13 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 
 		$field_group = $this->get_xprofile_field_group_object( $group_id );
 
+		// Create Additional fields.
+		$fields_update = $this->update_additional_fields_for_object( $field_group, $request );
+
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
+		}
+
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $field_group, $request )
@@ -390,6 +397,13 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		$field_group = $this->get_xprofile_field_group_object( $group_id );
+
+		// Update Additional fields.
+		$fields_update = $this->update_additional_fields_for_object( $field_group, $request );
+
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
+		}
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -541,6 +555,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data    = $this->add_additional_fields_to_object( $data, $request );
 		$data    = $this->filter_response_by_context( $data, $context );
 
 		$response = rest_ensure_response( $data );
@@ -632,7 +647,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => esc_html__( 'XProfile Field Group', 'buddypress' ),
+			'title'      => 'bp_xprofile_group',
 			'type'       => 'object',
 			'properties' => array(
 				'id'          => array(
@@ -694,7 +709,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_xprofile_field_group_schema', $schema );
+		return apply_filters( 'bp_rest_xprofile_field_group_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**
