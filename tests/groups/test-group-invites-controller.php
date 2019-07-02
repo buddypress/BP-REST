@@ -66,6 +66,8 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
+		var_dump( $response );
+
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
