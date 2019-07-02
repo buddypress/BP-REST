@@ -94,11 +94,14 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
 
 		$args = array(
-			'group_id'     => $group->id,
+			'item_id'      => $group->id,
+			'user_id'      => isset( $request['user_id'] ) ? $request['user_id'] : false,
+			// 'inviter_id'   => isset( $request['inviter_id'] ) ? $request['inviter_id'] : false,
+			'invite_sent'  => isset( $request['invite_sent'] ) ? $request['invite_sent'] : 'sent',
 			'per_page'     => $request['per_page'],
 			'page'         => $request['page'],
 		);
-
+// return rest_ensure_response( $args );
 		/**
 		 * Filter the query arguments for the request.
 		 *
@@ -113,10 +116,12 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		$invites_data = groups_get_invites( $args );
 
 		$retval = array();
-		foreach ( $invites_data as $invited_user ) {
-			$retval[] = $this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $invited_user, $request )
-			);
+		foreach ( $invites_data as $invitation ) {
+			if ( $invitation instanceof BP_Invitation ) {
+				$retval[] = $this->prepare_response_for_collection(
+					$this->prepare_item_for_response( $invitation, $request )
+				);
+			}
 		}
 
 		$response = rest_ensure_response( $retval );
@@ -218,7 +223,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				'user_id'     => $user->ID,
 				'group_id'    => $group->id,
 				'inviter_id'  => $inviter->ID,
-				'send_invite' => 1,
+				'send_invite' => isset( $request['send_invite'] ) ? (boolean) $request['send_invite'] : 1,
 			)
 		);
 
@@ -452,9 +457,16 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $invite, $request ) {
 		$data = array(
-			'user_id'      => $invite->user_id,
-			'invite_sent'  => $invite->invite_sent,
-			'inviter_id'   => $invite->inviter_id,
+			'user_id'       => $invite->user_id,
+			'invite_sent'   => $invite->invite_sent,
+			'inviter_id'    => $invite->inviter_id,
+			'group_id'      => $invite->item_id,
+			'date_modified' => $invite->date_modified,
+			'type'          => $invite->type,
+			'message'       => array(
+				'raw'      => $invite->content,
+				'rendered' => apply_filters( 'the_content', $invite->content ),
+			),
 		);
 
 		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -486,7 +498,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	protected function prepare_links( $invite ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $invite->user_id;
+		$url  = $base . $invite->item_id;
 
 		// Entity meta.
 		$links = array(
@@ -549,20 +561,54 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				),
 				'invite_sent'  => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Date on which the invite was sent.', 'buddypress' ),
+					'description' => __( 'Whether the invite has been sent to the invitee.', 'buddypress' ),
 					'type'        => 'string',
-					'format'      => 'date-time',
+					'format'      => 'boolean',
 				),
 				'inviter_id'   => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID of the user who made the invite.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'is_confirmed' => array(
+				'group_id'     => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Status of the invite.', 'buddypress' ),
-					'type'        => 'boolean',
+					'description' => __( 'ID of the group to which the user has been invited.', 'buddypress' ),
+					'type'        => 'integer',
 				),
+				'date_modified' => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( "The date the object was created or last updated, in the site's timezone.", 'buddypress' ),
+					'type'        => 'string',
+					'format'      => 'date-time',
+				),
+				'type'          => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'Invitation or request.', 'buddypress' ),
+					'type'        => 'string',
+				),
+				'message'       => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'Content of the object.', 'buddypress' ),
+					'type'        => 'object',
+					'arg_options' => array(
+						'sanitize_callback' => null,
+						'validate_callback' => null,
+					),
+					'properties'  => array(
+						'raw'      => array(
+							'description' => __( 'Content for the object, as it exists in the database.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'edit' ),
+						),
+						'rendered' => array(
+							'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'view', 'edit' ),
+							'readonly'    => true,
+						),
+					),
+				),
+
 			),
 		);
 
@@ -585,7 +631,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
-		$params['group_id'] = array(
+		$params['group_id']   = array(
 			'description'       => __( 'ID of the group to limit results to.', 'buddypress' ),
 			'required'          => true,
 			'type'              => 'integer',
@@ -593,11 +639,29 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['is_confirmed'] = array(
-			'description'       => __( 'Limit result set to (un)confirmed invites.', 'buddypress' ),
+		$params['user_id']    = array(
+			'description'       => __( 'Return only invitations extended to this user.', 'buddypress' ),
+			'required'          => false,
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['inviter_id'] = array(
+			'description'       => __( 'Return only invitations extended by this user.', 'buddypress' ),
+			'required'          => false,
 			'default'           => false,
-			'type'              => 'boolean',
-			'sanitize_callback' => 'rest_sanitize_boolean',
+			// 'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['invite_sent'] = array(
+			'description'       => __( 'Limit result set to invites that have been sent, not sent, or include all.', 'buddypress' ),
+			'default'           => 'sent',
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
