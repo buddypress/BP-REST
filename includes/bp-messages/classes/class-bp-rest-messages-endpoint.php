@@ -430,11 +430,10 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$user_id = get_current_user_id();
-
-		$result = false;
-		$action = 'star';
-		$info   = __( 'Sorry, you cannot add the message to your starred box.', 'buddypress' );
+		$user_id = bp_loggedin_user_id();
+		$result  = false;
+		$action  = 'star';
+		$info    = __( 'Sorry, you cannot add the message to your starred box.', 'buddypress' );
 
 		if ( bp_messages_is_message_starred( $message->id, $user_id ) ) {
 			$action = 'unstar';
@@ -457,7 +456,10 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return rest_ensure_response( (array) $message );
+		// Prepare the message for the REST response.
+		$data = $this->prepare_message_for_response( $message, $request );
+
+		return rest_ensure_response( $data );
 	}
 
 	/**
@@ -469,9 +471,10 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_starred_permissions_check( $request ) {
-		$retval = true;
+		$retval     = true;
+		$thread_id  = messages_get_message_thread_id( $request['id'] );
 
-		if ( ! ( is_user_logged_in() && bp_core_can_edit_settings() ) ) {
+		if ( ! is_user_logged_in() || ! messages_check_thread_access( $thread_id ) ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to star/unstar messages.', 'buddypress' ),
@@ -563,6 +566,38 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		return apply_filters( 'bp_rest_messages_delete_item_permissions_check', $retval, $request );
 	}
 
+	public function prepare_message_for_response( $message, $request ) {
+		$data = array(
+			'id'        => (int) $message->id,
+			'thread_id' => (int) $message->thread_id,
+			'sender_id' => (int) $message->sender_id,
+			'subject'   => array(
+				'raw'      => $message->subject,
+				'rendered' => apply_filters( 'bp_get_message_thread_subject', wp_staticize_emoji( $message->subject ) ),
+			),
+			'message' => array(
+				'raw'      => $message->message,
+				'rendered' => apply_filters( 'bp_get_the_thread_message_content', wp_staticize_emoji( $message->message ) ),
+			),
+			'date_sent' => bp_rest_prepare_date_response( $message->date_sent ),
+		);
+
+		if ( bp_is_active( 'messages', 'star' ) ) {
+			$user_id = bp_loggedin_user_id();
+
+			if ( isset( $request['user_id'] ) && $request['user_id'] ) {
+				$user_id = (int) $request['user_id'];
+			}
+
+			$data['is_starred'] = bp_messages_is_message_starred( $data['id'], $user_id );
+		}
+
+		// Add REST Fields (BP Messages meta) data.
+		$data = $this->add_additional_fields_to_object( $data, $request );
+
+		return apply_filters( 'bp_rest_messages_prepare_message_for_response', $data, $request );
+	}
+
 	/**
 	 * Prepares message data for return as an object.
 	 *
@@ -573,7 +608,10 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $thread, $request ) {
-		$excerpt = wp_strip_all_tags( bp_create_excerpt( $thread->last_message_content, 75 ) );
+		$excerpt = '';
+		if ( isset( $thread->last_message_content ) ) {
+			$excerpt = wp_strip_all_tags( bp_create_excerpt( $thread->last_message_content, 75 ) );
+		}
 
 		$data = array(
 			'id'                => $thread->thread_id,
@@ -592,28 +630,21 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				'rendered' => apply_filters( 'bp_get_message_thread_content', wp_staticize_emoji( $thread->last_message_content ) ),
 			),
 			'date'              => bp_rest_prepare_date_response( $thread->last_message_date ),
-			'unread'            => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
+			'unread_count'      => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
 			'sender_ids'        => $thread->sender_ids,
 			'recipients'        => $thread->recipients,
 			'messages'          => array(),
 		);
 
+		// Loop through messages to prepare them for the response.
 		foreach ( $thread->messages as $message ) {
-			$message->subject = array(
-				'raw'      => $message->subject,
-				'rendered' => apply_filters( 'bp_get_message_thread_subject', wp_staticize_emoji( $message->subject ) ),
-			);
-
-			$message->message = array(
-				'raw'      => $message->message,
-				'rendered' => apply_filters( 'bp_get_the_thread_message_content', wp_staticize_emoji( $message->message ) ),
-			);
-
-			$data['messages'][] = $message;
+			$data['messages'][] = $this->prepare_message_for_response( $message, $request );
 		}
 
+		// Pluck starred message ids.
+		$data['starred_message_ids'] = array_keys( array_filter( wp_list_pluck( $data['messages'], 'is_starred', 'id' ) ) );
+
 		// @todo Set user avatar, user name, and user links for recipients.
-		// @todo What about starred threads, starred messages in a thread ?
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 		$data    = $this->filter_response_by_context( $data, $context );
 
@@ -819,6 +850,15 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'List of messages.', 'buddypress' ),
 					'type'        => 'array',
+				),
+				'starred_message_ids' => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'List of starred message ids.', 'buddypress' ),
+					'type'        => 'array',
+					'items'       => array(
+						'type' => 'integer',
+					),
+					'default'     => array(),
 				),
 			),
 		);

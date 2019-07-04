@@ -418,7 +418,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 11, count( $properties ) );
+		$this->assertEquals( 12, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'message_id', $properties );
 		$this->assertArrayHasKey( 'last_sender_id', $properties );
@@ -427,6 +427,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'unread_count', $properties );
 		$this->assertArrayHasKey( 'sender_ids', $properties );
 		$this->assertArrayHasKey( 'messages', $properties );
+		$this->assertArrayHasKey( 'starred_message_ids', $properties );
 	}
 
 	public function test_context_param() {
@@ -437,5 +438,123 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
 		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+	}
+
+	/**
+	 * @group starred
+	 */
+	public function test_get_starred_items() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		// Init a thread.
+		$m1 = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		// Init another thread.
+		$m2_id = $this->bp_factory->message->create( array(
+			'sender_id'  => $u2,
+			'recipients' => array( $u1 ),
+			'subject'    => 'Taz',
+		) );
+
+		// Create a reply.
+		$r1 = $this->bp_factory->message->create( array(
+			'thread_id'  => $m1->thread_id,
+			'sender_id'  => $u2,
+			'recipients' => array( $u1 ),
+			'content'    => 'Bar',
+		) );
+
+		$this->bp->set_current_user( $u1 );
+
+		$star = bp_messages_star_set_action( array(
+			'user_id'    => $u1,
+			'message_id' => $r1,
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params(
+			array(
+				'user_id' => $u1,
+				'box'     => 'starred',
+			)
+		);
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+		$data     = $response->get_data();
+
+		$threads  = wp_list_pluck( $data, 'id' );
+		$this->assertNotContains( $m2_id, $threads );
+		$this->assertContains( $m1->id, $threads );
+
+		$result = reset( $data );
+		$this->assertNotEmpty( $result['starred_message_ids'] );
+		$this->assertContains( $r1, $result['starred_message_ids'] );
+	}
+
+	/**
+	 * @group starred
+	 */
+	public function test_update_starred_add_star() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		// Init a thread.
+		$m1 = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		// Create a reply.
+		$r1 = $this->bp_factory->message->create( array(
+			'thread_id'  => $m1->thread_id,
+			'sender_id'  => $u2,
+			'recipients' => array( $u1 ),
+			'content'    => 'Bar',
+		) );
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $r1 . '/' . bp_get_messages_starred_slug() );
+		$request->add_header( 'content-type', 'application/json' );
+		$response = $this->server->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertTrue( $data['is_starred'] );
+	}
+
+	/**
+	 * @group starred
+	 */
+	public function test_update_starred_remove_star() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		// Init a thread.
+		$m = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		$star = bp_messages_star_set_action( array(
+			'user_id'    => $u2,
+			'message_id' => $m->id,
+		) );
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $m->id . '/' . bp_get_messages_starred_slug() );
+		$request->add_header( 'content-type', 'application/json' );
+		$response = $this->server->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertFalse( $data['is_starred'] );
 	}
 }
