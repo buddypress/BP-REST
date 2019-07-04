@@ -46,15 +46,29 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'create_item_permissions_check' ),
 					'args'                => array(
+						'thread_id'  => array(
+							'description'       => __( 'Leave empty to init a new thread. Specify the thread ID to reply to an existing one.', 'buddypress' ),
+							'required'          => false,
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+							'validate_callback' => 'rest_validate_request_arg',
+						),
+						'sender_id'  => array(
+							'description'       => __( 'The user ID of the sender. Defaults to the logged in user.', 'buddypress' ),
+							'required'          => false,
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+							'validate_callback' => 'rest_validate_request_arg',
+						),
 						'content'    => array(
-							'description'       => __( 'Content of the message.', 'buddypress' ),
+							'description'       => __( 'Content of the message/reply.', 'buddypress' ),
 							'required'          => true,
 							'type'              => 'string',
 							'sanitize_callback' => 'sanitize_text_field',
 							'validate_callback' => 'rest_validate_request_arg',
 						),
 						'recipients' => array(
-							'description'       => __( 'Recipients of the message.', 'buddypress' ),
+							'description'       => __( 'Recipients of the message/reply.', 'buddypress' ),
 							'required'          => true,
 							'type'              => 'array',
 							'items'             => array( 'type' => 'integer' ),
@@ -67,11 +81,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		$message_endpoint = '/' . $this->rest_base . '/(?P<id>[\d]+)';
+		// Attention: (?P<id>[\d]+) is the placeholder for **Thread** ID, not the Message ID one.
+		$thread_endpoint = '/' . $this->rest_base . '/(?P<id>[\d]+)';
 
 		register_rest_route(
 			$this->namespace,
-			$message_endpoint,
+			$thread_endpoint,
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
@@ -89,9 +104,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		// Register the starred route.
 		if ( bp_is_active( 'messages', 'star' ) ) {
+			// Attention: (?P<id>[\d]+) is the placeholder for **Message** ID, not the Thread ID one.
+			$starred_endpoint = '/' . $this->rest_base . '/' . bp_get_messages_starred_slug() . '/(?P<id>[\d]+)';
+
 			register_rest_route(
 				$this->namespace,
-				trailingslashit( $message_endpoint ) . bp_get_messages_starred_slug(),
+				$starred_endpoint,
 				array(
 					array(
 						'methods'             => WP_REST_Server::EDITABLE,
@@ -102,16 +120,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
-
-		/**
-		 * Fires when REST API supported endpoints are registered.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param string  $namespace        The Messages component namespace.
-		 * @param string  $message_endpoint The single item message endpoint.
-		 */
-		do_action( 'bp_rest_messages_register_routes', $this->namespace, $message_endpoint );
 	}
 
 	/**
@@ -566,6 +574,15 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		return apply_filters( 'bp_rest_messages_delete_item_permissions_check', $retval, $request );
 	}
 
+	/**
+	 * Prepares message data for the REST response.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param object The Message object.
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return array The Message data for the REST response.
+	 */
 	public function prepare_message_for_response( $message, $request ) {
 		$data = array(
 			'id'        => (int) $message->id,
@@ -599,7 +616,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Prepares message data for return as an object.
+	 * Prepares thread data for return as an object.
 	 *
 	 * @since 0.1.0
 	 *
@@ -614,26 +631,26 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		}
 
 		$data = array(
-			'id'                => $thread->thread_id,
-			'primary_item_id'   => $thread->last_message_id,
-			'secondary_item_id' => $thread->last_sender_id,
-			'subject'           => array(
+			'id'             => $thread->thread_id,
+			'message_id'     => $thread->last_message_id,
+			'last_sender_id' => $thread->last_sender_id,
+			'subject'        => array(
 				'raw'      => $thread->last_message_subject,
 				'rendered' => apply_filters( 'bp_get_message_thread_subject', wp_staticize_emoji( $thread->last_message_subject ) ),
 			),
-			'excerpt'           => array(
+			'excerpt'        => array(
 				'raw'      => $excerpt,
 				'rendered' => apply_filters( 'bp_get_message_thread_excerpt', $excerpt ),
 			),
-			'message'           => array(
+			'message'        => array(
 				'raw'      => $thread->last_message_content,
 				'rendered' => apply_filters( 'bp_get_message_thread_content', wp_staticize_emoji( $thread->last_message_content ) ),
 			),
-			'date'              => bp_rest_prepare_date_response( $thread->last_message_date ),
-			'unread_count'      => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
-			'sender_ids'        => $thread->sender_ids,
-			'recipients'        => $thread->recipients,
-			'messages'          => array(),
+			'date'           => bp_rest_prepare_date_response( $thread->last_message_date ),
+			'unread_count'   => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
+			'sender_ids'     => $thread->sender_ids,
+			'recipients'     => $thread->recipients,
+			'messages'       => array(),
 		);
 
 		// Loop through messages to prepare them for the response.
@@ -673,12 +690,17 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	protected function prepare_item_for_database( $request ) {
 		$prepared_thread = new stdClass();
 		$schema          = $this->get_item_schema();
-		$thread          = $this->get_thread_object( $request['id'] );
 
-		if ( ! empty( $schema['properties']['id'] ) && ! empty( $thread->thread_id ) ) {
-			$prepared_thread->thread_id = $thread->thread_id;
-		} else {
-			$prepared_thread->thread_id = false;
+		// By default, let's init a new Thread.
+		$prepared_thread->thread_id = false;
+
+		// If it's a reply, get the parent thread.
+		if ( $request['thread_id'] ) {
+			$thread = $this->get_thread_object( $request['thread_id'] );
+
+			if ( ! empty( $schema['properties']['id'] ) && ! empty( $thread->thread_id ) ) {
+				$prepared_thread->thread_id = $thread->thread_id;
+			}
 		}
 
 		if ( ! empty( $schema['properties']['last_sender_id'] ) && ! empty( $thread->sender_id ) ) {
@@ -719,6 +741,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	/**
 	 * Get thread object.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $thread_id Thread ID.
 	 * @return BP_Messages_Thread
 	 */
@@ -726,12 +750,20 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		return new BP_Messages_Thread( $thread_id );
 	}
 
+	/**
+	 * Get the message object thanks to its ID.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $message_id Message ID.
+	 * @return BP_Messages_Message
+	 */
 	public function get_message_object( $message_id ) {
 		return new BP_Messages_Message( $message_id );
 	}
 
 	/**
-	 * Get the plugin schema, conforming to JSON Schema.
+	 * Get the BP Messages schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
 	 *

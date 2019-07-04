@@ -462,7 +462,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 
 		// Create a reply.
-		$r1 = $this->bp_factory->message->create( array(
+		$r1 = $this->bp_factory->message->create_and_get( array(
 			'thread_id'  => $m1->thread_id,
 			'sender_id'  => $u2,
 			'recipients' => array( $u1 ),
@@ -473,7 +473,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$star = bp_messages_star_set_action( array(
 			'user_id'    => $u1,
-			'message_id' => $r1,
+			'message_id' => $r1->id,
 		) );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
@@ -490,11 +490,11 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$threads  = wp_list_pluck( $data, 'id' );
 		$this->assertNotContains( $m2_id, $threads );
-		$this->assertContains( $m1->id, $threads );
+		$this->assertContains( $m1->thread_id, $threads );
 
 		$result = reset( $data );
 		$this->assertNotEmpty( $result['starred_message_ids'] );
-		$this->assertContains( $r1, $result['starred_message_ids'] );
+		$this->assertContains( $r1->id, $result['starred_message_ids'] );
 	}
 
 	/**
@@ -512,7 +512,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 
 		// Create a reply.
-		$r1 = $this->bp_factory->message->create( array(
+		$r1 = $this->bp_factory->message->create_and_get( array(
 			'thread_id'  => $m1->thread_id,
 			'sender_id'  => $u2,
 			'recipients' => array( $u1 ),
@@ -521,7 +521,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->bp->set_current_user( $u2 );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $r1 . '/' . bp_get_messages_starred_slug() );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . bp_get_messages_starred_slug() . '/' . $r1->id );
 		$request->add_header( 'content-type', 'application/json' );
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
@@ -550,7 +550,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->bp->set_current_user( $u2 );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $m->id . '/' . bp_get_messages_starred_slug() );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . bp_get_messages_starred_slug() . '/' . $m->id );
 		$request->add_header( 'content-type', 'application/json' );
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
