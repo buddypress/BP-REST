@@ -69,7 +69,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 						),
 						'recipients' => array(
 							'description'       => __( 'Recipients of the message/reply.', 'buddypress' ),
-							'required'          => true,
+							'required'          => false,
 							'type'              => 'array',
 							'items'             => array( 'type' => 'integer' ),
 							'sanitize_callback' => 'wp_parse_id_list',
@@ -348,6 +348,16 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	public function create_item( $request ) {
 		$prepared_thread = $this->prepare_item_for_database( $request );
 
+		if ( ! isset( $prepared_thread->recipients ) || ! $prepared_thread->recipients ) {
+			return new WP_Error(
+				'bp_rest_messages_missing_recipients',
+				__( 'Please provide some recipients for your message or reply.', 'buddypress' ),
+				array(
+					'status' => 400,
+				)
+			);
+		}
+
 		// Create message.
 		$thread_id = messages_new_message( $prepared_thread );
 
@@ -361,7 +371,15 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$thread = $this->get_thread_object( $thread_id );
+		// Make sure to get the newest message to update REST Additional fields.
+		$thread        = $this->get_thread_object( $thread_id );
+		$last_message  = wp_list_filter( $thread->messages, array( 'id' => $thread->last_message_id ) );
+		$last_message  = reset( $last_message );
+		$fields_update = $this->update_additional_fields_for_object( $last_message, $request );
+
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
+		}
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -612,7 +630,15 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		// Add REST Fields (BP Messages meta) data.
 		$data = $this->add_additional_fields_to_object( $data, $request );
 
-		return apply_filters( 'bp_rest_messages_prepare_message_for_response', $data, $request );
+		/**
+		 * Filter a message value returned from the API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $data    The message value for the REST response.
+		 * @param WP_REST_Request $request Request used to generate the response.
+		 */
+		return apply_filters( 'bp_rest_messages_prepare_message_value', $data, $request );
 	}
 
 	/**
@@ -703,10 +729,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			}
 		}
 
-		if ( ! empty( $schema['properties']['last_sender_id'] ) && ! empty( $thread->sender_id ) ) {
+		// Defaults to current user.
+		$prepared_thread->sender_id = bp_loggedin_user_id();
+		if ( $request['sender_id'] ) {
+			$prepared_thread->sender_id = $request['sender_id'];
+		} elseif ( ! empty( $schema['properties']['last_sender_id'] ) && ! empty( $thread->sender_id ) ) {
 			$prepared_thread->sender_id = $thread->sender_id;
-		} else {
-			$prepared_thread->sender_id = bp_loggedin_user_id();
 		}
 
 		if ( ! empty( $schema['properties']['content'] ) && ! empty( $thread->last_message_content ) ) {
@@ -725,6 +753,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		if ( ! empty( $request['recipients'] ) ) {
 			$prepared_thread->recipients = $request['recipients'];
+		} elseif ( isset( $thread->recipients ) && $thread->recipients ) {
+			$prepared_thread->recipients = wp_parse_id_list( wp_list_pluck( $thread->recipients, 'user_id' ) );
 		}
 
 		/**
@@ -772,7 +802,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => esc_html__( 'Thread', 'buddypress' ),
+			'title'      => 'bp_messages',
 			'type'       => 'object',
 			'properties' => array(
 				'id'             => array(
@@ -898,9 +928,11 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		/**
 		 * Filters the messages schema.
 		 *
+		 * @since 0.1.0
+		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_messages_schema', $schema );
+		return apply_filters( 'bp_rest_messages_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**

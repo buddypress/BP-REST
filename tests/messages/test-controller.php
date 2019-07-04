@@ -280,7 +280,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_missing_callback_param', $response, 400 );
+		$this->assertErrorResponse( 'bp_rest_messages_missing_recipients', $response, 400 );
 	}
 
 	/**
@@ -556,5 +556,146 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data     = $response->get_data();
 
 		$this->assertFalse( $data['is_starred'] );
+	}
+
+	public function update_additional_field( $value, $data, $attribute ) {
+		return bp_messages_update_meta( $data->id, '_' . $attribute, $value );
+	}
+
+	public function get_additional_field( $data, $attribute )  {
+		return bp_messages_get_meta( $data['id'], '_' . $attribute );
+	}
+
+	/**
+	 * @group additional_fields
+	 */
+	public function test_additional_fields_for_get_item() {
+		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
+
+		bp_rest_register_field( 'messages', 'taz_field', array(
+			'get_callback'    => array( $this, 'get_additional_field' ),
+			'update_callback' => array( $this, 'update_additional_field' ),
+			'schema'          => array(
+				'description' => 'Message Meta Field',
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+			),
+		) );
+
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		// Init a thread.
+		$m1 = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		$expected = 'boz_value';
+		bp_messages_update_meta( $m1->id, '_taz_field', $expected );
+		$this->bp->set_current_user( $u2 );
+
+		// GET
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m1->thread_id );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$get_data = $response->get_data();
+
+		$last_message = wp_list_filter( $get_data[0]['messages'], array( 'id' => $get_data[0]['message_id'] ) );
+		$last_message = reset( $last_message );
+		$this->assertTrue( $expected === $last_message['taz_field'] );
+
+		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
+	}
+
+	/**
+	 * @group additional_fields
+	 */
+	public function test_additional_fields_for_created_thread() {
+		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
+
+		bp_rest_register_field( 'messages', 'foo_field', array(
+			'get_callback'    => array( $this, 'get_additional_field' ),
+			'update_callback' => array( $this, 'update_additional_field' ),
+			'schema'          => array(
+				'description' => 'Message Meta Field',
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+			),
+		) );
+
+		$u = $this->factory->user->create();
+		$this->bp->set_current_user( $this->user );
+		$expected = 'bar_value';
+
+		// POST
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->set_query_params(
+			array(
+				'sender_id'  => $this->user,
+				'recipients' => [ $u ],
+				'subject'    => 'Foo',
+				'content'    => 'Bar',
+				'foo_field'  => $expected,
+			)
+		);
+		$response = $this->server->dispatch( $request );
+
+		$create_data = $response->get_data();
+		$last_message = wp_list_filter( $create_data[0]['messages'], array( 'id' => $create_data[0]['message_id'] ) );
+		$last_message = reset( $last_message );
+		$this->assertTrue( $expected === $last_message['foo_field'] );
+
+		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
+	}
+
+	/**
+	 * @group additional_fields
+	 */
+	public function test_additional_fields_for_created_reply() {
+		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
+
+		bp_rest_register_field( 'messages', 'bar_field', array(
+			'get_callback'    => array( $this, 'get_additional_field' ),
+			'update_callback' => array( $this, 'update_additional_field' ),
+			'schema'          => array(
+				'description' => 'Message Meta Field',
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+			),
+		) );
+
+		$u1  = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		// Init a thread.
+		$m1 = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u2,
+			'recipients' => array( $u1 ),
+			'subject'    => 'Foo',
+		) );
+
+		$this->bp->set_current_user( $u1 );
+		$expected = 'foo_value';
+
+		// POST a reply.
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->set_query_params(
+			array(
+				'thread_id'  => $m1->thread_id,
+				'content'    => 'Taz',
+				'bar_field'  => $expected,
+			)
+		);
+		$response = $this->server->dispatch( $request );
+
+		$create_data = $response->get_data();
+		$last_message = wp_list_filter( $create_data[0]['messages'], array( 'id' => $create_data[0]['message_id'] ) );
+		$last_message = reset( $last_message );
+		$this->assertTrue( $expected === $last_message['bar_field'] );
+
+		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
 	}
 }
