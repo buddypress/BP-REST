@@ -67,9 +67,11 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			)
 		);
 
+		$message_endpoint = '/' . $this->rest_base . '/(?P<id>[\d]+)';
+
 		register_rest_route(
 			$this->namespace,
-			$this->rest_base . '/(?P<id>[\d]+)',
+			$message_endpoint,
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
@@ -84,6 +86,32 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				'schema' => array( $this, 'get_item_schema' ),
 			)
 		);
+
+		// Register the starred route.
+		if ( bp_is_active( 'messages', 'star' ) ) {
+			register_rest_route(
+				$this->namespace,
+				trailingslashit( $message_endpoint ) . bp_get_messages_starred_slug(),
+				array(
+					array(
+						'methods'             => WP_REST_Server::EDITABLE,
+						'callback'            => array( $this, 'update_starred' ),
+						'permission_callback' => array( $this, 'update_starred_permissions_check' ),
+					),
+					'schema' => array( $this, 'get_item_schema' ),
+				)
+			);
+		}
+
+		/**
+		 * Fires when REST API supported endpoints are registered.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param string  $namespace        The Messages component namespace.
+		 * @param string  $message_endpoint The single item message endpoint.
+		 */
+		do_action( 'bp_rest_messages_register_routes', $this->namespace, $message_endpoint );
 	}
 
 	/**
@@ -113,6 +141,16 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		$args = apply_filters( 'bp_rest_messages_get_items_query_args', $args, $request );
+
+		// Include the meta_query for starred messages.
+		if ( 'starred' === $args['box'] ) {
+			$args['meta_query'] = array(
+				array(
+					'key'   => 'starred_by_user',
+					'value' => $args['user_id'],
+				),
+			);
+		}
 
 		// Actually, query it.
 		$messages_box = new BP_Messages_Box_Template( $args );
@@ -372,6 +410,89 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Adds or removes the message from the current user's starred box.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function update_starred( $request ) {
+		$message = $this->get_message_object( $request['id'] );
+
+		if ( empty( $message->id ) ) {
+			return new WP_Error(
+				'bp_rest_message_invalid_id',
+				__( 'Invalid message id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$user_id = get_current_user_id();
+
+		$result = false;
+		$action = 'star';
+		$info   = __( 'Sorry, you cannot add the message to your starred box.', 'buddypress' );
+
+		if ( bp_messages_is_message_starred( $message->id, $user_id ) ) {
+			$action = 'unstar';
+			$info   = __( 'Sorry, you cannot remove the message from your starred box.', 'buddypress' );
+		}
+
+		$result = bp_messages_star_set_action( array(
+			'user_id'    => $user_id,
+			'message_id' => $message->id,
+			'action'     => $action,
+		) );
+
+		if ( ! $result ) {
+			return new WP_Error(
+				'bp_rest_user_cannot_update_starred_message',
+				$info,
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return rest_ensure_response( (array) $message );
+	}
+
+	/**
+	 * Check if a given request has access to update user starred messages.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function update_starred_permissions_check( $request ) {
+		$retval = true;
+
+		if ( ! ( is_user_logged_in() && bp_core_can_edit_settings() ) ) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you are not allowed to star/unstar messages.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		/**
+		 * Filter the message `update_starred` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_messages_update_starred_permissions_check', $retval, $request );
+	}
+
+	/**
 	 * Delete a thread.
 	 *
 	 * @since 0.1.0
@@ -574,6 +695,10 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		return new BP_Messages_Thread( $thread_id );
 	}
 
+	public function get_message_object( $message_id ) {
+		return new BP_Messages_Message( $message_id );
+	}
+
 	/**
 	 * Get the plugin schema, conforming to JSON Schema.
 	 *
@@ -716,12 +841,17 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	public function get_collection_params() {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
+		$boxes                        = array( 'sentbox', 'inbox' );
+
+		if ( bp_is_active( 'messages', 'star' ) ) {
+			$boxes[] = 'starred';
+		}
 
 		$params['box'] = array(
 			'description'       => __( 'Filter the result by box.', 'buddypress' ),
 			'default'           => 'inbox',
 			'type'              => 'string',
-			'enum'              => array( 'notices', 'sentbox', 'inbox' ),
+			'enum'              => $boxes,
 			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
