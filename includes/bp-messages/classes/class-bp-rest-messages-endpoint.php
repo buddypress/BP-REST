@@ -98,7 +98,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					'callback'            => array( $this, 'update_item' ),
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
 					'args'                => array(
-						'message_id'  => array(
+						'message_id' => array(
 							'description'       => __( 'By default the latest message of the thread will be updated. Specify this message ID to edit another message of the thread.', 'buddypress' ),
 							'required'          => false,
 							'type'              => 'integer',
@@ -166,7 +166,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		// Include the meta_query for starred messages.
 		if ( 'starred' === $args['box'] ) {
-			$args['meta_query'] = array(
+			$args['meta_query'] = array( // phpcs:ignore
 				array(
 					'key'   => 'starred_by_user',
 					'value' => $args['user_id'],
@@ -491,7 +491,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param object           $updated_message The updated message object.
 		 * @param WP_REST_Request  $request         The request sent to the API.
 		 */
-		$can_edit_item_meta = apply_filters( 'bp_rest_messages_can_edit_item_meta',
+		$can_edit_item_meta = apply_filters(
+			'bp_rest_messages_can_edit_item_meta',
 			bp_loggedin_user_id() === $updated_message->sender_id || bp_current_user_can( 'bp_moderate' ),
 			$updated_message,
 			$request
@@ -538,8 +539,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
-		$retval     = true;
-		$thread_id  = $request['id'];
+		$retval    = true;
+		$thread_id = $request['id'];
 
 		if ( ! is_user_logged_in() || ! messages_check_thread_access( $thread_id ) ) {
 			$retval = new WP_Error(
@@ -593,11 +594,13 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			$info   = __( 'Sorry, you cannot remove the message from your starred box.', 'buddypress' );
 		}
 
-		$result = bp_messages_star_set_action( array(
-			'user_id'    => $user_id,
-			'message_id' => $message->id,
-			'action'     => $action,
-		) );
+		$result = bp_messages_star_set_action(
+			array(
+				'user_id'    => $user_id,
+				'message_id' => $message->id,
+				'action'     => $action,
+			)
+		);
 
 		if ( ! $result ) {
 			return new WP_Error(
@@ -624,8 +627,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_starred_permissions_check( $request ) {
-		$retval     = true;
-		$thread_id  = messages_get_message_thread_id( $request['id'] );
+		$retval    = true;
+		$thread_id = messages_get_message_thread_id( $request['id'] );
 
 		if ( ! is_user_logged_in() || ! messages_check_thread_access( $thread_id ) ) {
 			$retval = new WP_Error(
@@ -724,9 +727,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param object The Message object.
+	 * @param object          $message The Message object.
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return array The Message data for the REST response.
+	 * @return array                   The Message data for the REST response.
 	 */
 	public function prepare_message_for_response( $message, $request ) {
 		$data = array(
@@ -737,7 +740,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				'raw'      => $message->subject,
 				'rendered' => apply_filters( 'bp_get_message_thread_subject', wp_staticize_emoji( $message->subject ) ),
 			),
-			'message' => array(
+			'message'   => array(
 				'raw'      => $message->message,
 				'rendered' => apply_filters( 'bp_get_the_thread_message_content', wp_staticize_emoji( $message->message ) ),
 			),
@@ -932,23 +935,23 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'title'      => 'bp_messages',
 			'type'       => 'object',
 			'properties' => array(
-				'id'             => array(
+				'id'                  => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-				'message_id'     => array(
+				'message_id'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of the message.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'last_sender_id' => array(
+				'last_sender_id'      => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID of last sender.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'subject'        => array(
+				'subject'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Title of the object.', 'buddypress' ),
 					'type'        => 'object',
@@ -970,7 +973,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 						),
 					),
 				),
-				'excerpt'        => array(
+				'excerpt'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Summary of the object.', 'buddypress' ),
 					'type'        => 'object',
@@ -992,7 +995,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 						),
 					),
 				),
-				'message'        => array(
+				'message'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Content of the object.', 'buddypress' ),
 					'type'        => 'object',
@@ -1014,28 +1017,28 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 						),
 					),
 				),
-				'date'           => array(
+				'date'                => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
-				'unread_count'   => array(
+				'unread_count'        => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Total count of unread messages.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'sender_ids'     => array(
+				'sender_ids'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The user IDs of all messages in the message thread.', 'buddypress' ),
 					'type'        => 'array',
 				),
-				'recipients'     => array(
+				'recipients'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Recipient objects in the thread', 'buddypress' ),
 					'type'        => 'array',
 				),
-				'messages'       => array(
+				'messages'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'List of messages.', 'buddypress' ),
 					'type'        => 'array',
