@@ -37,7 +37,13 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$single_endpoint = $endpoint . '/(?P<id>[\d]+)';
 
 		$this->assertArrayHasKey( $single_endpoint, $routes );
-		$this->assertCount( 2, $routes[ $single_endpoint ] );
+		$this->assertCount( 3, $routes[ $single_endpoint ] );
+
+		// Starred.
+		$starred_endpoint = $endpoint . '/' . bp_get_messages_starred_slug() . '/(?P<id>[\d]+)';
+
+		$this->assertArrayHasKey( $starred_endpoint, $routes );
+		$this->assertCount( 1, $routes[ $starred_endpoint ] );
 	}
 
 	/**
@@ -667,7 +673,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 			),
 		) );
 
-		$u1  = $this->factory->user->create();
+		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
 
 		// Init a thread.
@@ -695,6 +701,127 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$last_message = wp_list_filter( $create_data[0]['messages'], array( 'id' => $create_data[0]['message_id'] ) );
 		$last_message = reset( $last_message );
 		$this->assertTrue( $expected === $last_message['bar_field'] );
+
+		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
+	}
+
+	/**
+	 * @group additional_fields
+	 */
+	public function test_additional_fields_for_last_message_updated() {
+		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
+
+		bp_rest_register_field( 'messages', 'boz_field', array(
+			'get_callback'    => array( $this, 'get_additional_field' ),
+			'update_callback' => array( $this, 'update_additional_field' ),
+			'schema'          => array(
+				'description' => 'Message Meta Field',
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+			),
+		) );
+
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		// Init a thread.
+		$m1 = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u2,
+			'recipients' => array( $u1 ),
+			'subject'    => 'Foo',
+		) );
+
+		$r1 = $this->bp_factory->message->create_and_get( array(
+			'thread_id'  => $m1->thread_id,
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Bar',
+		) );
+
+		$r1 = $this->bp_factory->message->create_and_get( array(
+			'thread_id'  => $m1->thread_id,
+			'sender_id'  => $u2,
+			'recipients' => array( $u1 ),
+			'subject'    => 'Taz',
+		) );
+
+		$this->bp->set_current_user( $u2 );
+		$expected = 'taz_value';
+
+		// Update the last message.
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $m1->thread_id );
+		$request->set_query_params(
+			array(
+				'boz_field'  => $expected,
+			)
+		);
+		$response = $this->server->dispatch( $request );
+
+		$update_data = $response->get_data();
+		$last_message = wp_list_filter( $update_data[0]['messages'], array( 'id' => $update_data[0]['message_id'] ) );
+		$last_message = reset( $last_message );
+		$this->assertTrue( $expected === $last_message['boz_field'] );
+
+		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
+	}
+
+	/**
+	 * @group additional_fields
+	 */
+	public function test_additional_fields_for_specific_message_updated() {
+		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
+
+		bp_rest_register_field( 'messages', 'top_field', array(
+			'get_callback'    => array( $this, 'get_additional_field' ),
+			'update_callback' => array( $this, 'update_additional_field' ),
+			'schema'          => array(
+				'description' => 'Message Meta Field',
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+			),
+		) );
+
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		// Init a thread.
+		$m1 = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u2,
+			'recipients' => array( $u1 ),
+			'subject'    => 'Top',
+		) );
+
+		$r1 = $this->bp_factory->message->create_and_get( array(
+			'thread_id'  => $m1->thread_id,
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Up',
+		) );
+
+		$r1 = $this->bp_factory->message->create_and_get( array(
+			'thread_id'  => $m1->thread_id,
+			'sender_id'  => $u2,
+			'recipients' => array( $u1 ),
+			'subject'    => 'Upper',
+		) );
+
+		$this->bp->set_current_user( $u2 );
+		$expected = 'up_value';
+
+		// Update the last message.
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $m1->thread_id );
+		$request->set_query_params(
+			array(
+				'message_id' => $r1->id,
+				'top_field'  => $expected,
+			)
+		);
+		$response = $this->server->dispatch( $request );
+
+		$update_data = $response->get_data();
+		$specific_message = wp_list_filter( $update_data[0]['messages'], array( 'id' => $r1->id ) );
+		$specific_message = reset( $specific_message );
+		$this->assertTrue( $expected === $specific_message['top_field'] );
 
 		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
 	}

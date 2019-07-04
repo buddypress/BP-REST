@@ -94,6 +94,20 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 				),
 				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( $this, 'update_item' ),
+					'permission_callback' => array( $this, 'update_item_permissions_check' ),
+					'args'                => array(
+						'message_id'  => array(
+							'description'       => __( 'By default the latest message of the thread will be updated. Specify this message ID to edit another message of the thread.', 'buddypress' ),
+							'required'          => false,
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+							'validate_callback' => 'rest_validate_request_arg',
+						),
+					),
+				),
+				array(
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_item' ),
 					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
@@ -433,6 +447,119 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_messages_create_item_permissions_check', $retval, $request );
+	}
+
+	/**
+	 * Update the metadata of one of the messages of the thread.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function update_item( $request ) {
+		// Get the thread.
+		$thread = $this->get_thread_object( $request['id'] );
+		$error  = new WP_Error(
+			'bp_rest_messages_create_failed',
+			__( 'There was an error trying to update the message.', 'buddypress' ),
+			array(
+				'status' => 500,
+			)
+		);
+
+		if ( ! $thread->thread_id ) {
+			return $error;
+		}
+
+		// By default use the last message.
+		$message_id = $thread->last_message_id;
+		if ( $request['message_id'] ) {
+			$message_id = $request['message_id'];
+		}
+
+		$updated_message = wp_list_filter( $thread->messages, array( 'id' => $message_id ) );
+		$updated_message = reset( $updated_message );
+
+		/**
+		 * Filter here to allow more users to edit the message meta (eg: the recipients).
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param boolean          $value           Whether the user can edit the message meta.
+		 *                                          By default: only the sender and a community moderator can.
+		 * @param object           $updated_message The updated message object.
+		 * @param WP_REST_Request  $request         The request sent to the API.
+		 */
+		$can_edit_item_meta = apply_filters( 'bp_rest_messages_can_edit_item_meta',
+			bp_loggedin_user_id() === $updated_message->sender_id || bp_current_user_can( 'bp_moderate' ),
+			$updated_message,
+			$request
+		);
+
+		// The message must exist in the thread, and the logged in user must be the sender.
+		if ( ! isset( $updated_message->id ) || ! $updated_message->id || ! $can_edit_item_meta ) {
+			return $error;
+		}
+
+		$fields_update = $this->update_additional_fields_for_object( $updated_message, $request );
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
+		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $thread, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after the meta data of a message has been updated via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param object           $updated_message The updated message.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'bp_rest_messages_update_item', $updated_message, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to update the metadata of a message.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function update_item_permissions_check( $request ) {
+		$retval     = true;
+		$thread_id  = $request['id'];
+
+		if ( ! is_user_logged_in() || ! messages_check_thread_access( $thread_id ) ) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you are not allowed to update this message.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		/**
+		 * Filter the message `update_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_messages_update_item_permissions_check', $retval, $request );
 	}
 
 	/**
