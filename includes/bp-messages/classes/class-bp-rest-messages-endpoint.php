@@ -166,7 +166,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
-				'bp_rest_member_invalid_id',
+				'bp_rest_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -256,7 +256,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				'bp_rest_invalid_id',
 				__( 'Sorry, this thread does not exist.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => 404,
 				)
 			);
 		}
