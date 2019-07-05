@@ -135,7 +135,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_invalid_field_group_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -235,7 +235,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_invalid_field_group_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -291,7 +291,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_invalid_field_group_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**

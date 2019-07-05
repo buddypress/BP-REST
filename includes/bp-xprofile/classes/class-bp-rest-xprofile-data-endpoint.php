@@ -75,7 +75,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 
 		if ( empty( $field->id ) ) {
 			return new WP_Error(
-				'rest_invalid_field_id',
+				'bp_rest_invalid_id',
 				__( 'Invalid field id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -159,7 +159,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 
 		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
-				'bp_rest_member_invalid_id',
+				'bp_rest_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -201,7 +201,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 
 		if ( empty( $field->id ) ) {
 			return new WP_Error(
-				'bp_rest_invalid_field_id',
+				'bp_rest_invalid_id',
 				__( 'Invalid field id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -287,7 +287,6 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			'user_id'      => $field_data->user_id,
 			'value'        => $field_data->value,
 			'last_updated' => bp_rest_prepare_date_response( $field_data->last_updated ),
-			// To be consistent about the way to get REST fields across components.
 			'id'           => $field_data->field_id,
 		);
 

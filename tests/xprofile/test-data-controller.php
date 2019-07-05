@@ -79,7 +79,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -112,7 +112,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'rest_invalid_field_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -128,7 +128,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -210,7 +210,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER, $this->user ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_invalid_field_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -222,7 +222,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -232,7 +232,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**

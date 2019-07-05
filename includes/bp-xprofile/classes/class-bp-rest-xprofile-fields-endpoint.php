@@ -153,7 +153,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array            $field_groups Fetched field groups.
+		 * @param array            $field_groups  Fetched field groups.
 		 * @param WP_REST_Response $response     The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
@@ -198,7 +198,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		if ( empty( $profile_field_id ) || empty( $field->id ) ) {
 			return new WP_Error(
-				'bp_rest_xprofile_field_invalid_id',
+				'bp_rest_invalid_id',
 				__( 'Invalid field id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -349,19 +349,9 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	public function create_item_permissions_check( $request ) {
 		$retval = true;
 
-		if ( ! is_user_logged_in() ) {
+		if ( ! is_user_logged_in() || ! bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to create a XProfile field.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = new WP_Error(
-				'bp_rest_user_cannot_create_field',
 				__( 'Sorry, you are not allowed to create a XProfile field.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
@@ -547,7 +537,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		if ( true === $retval && empty( $field->id ) ) {
 			$retval = new WP_Error(
-				'bp_rest_invalid_field_id',
+				'bp_rest_invalid_id',
 				__( 'Invalid field id.', 'buddypress' ),
 				array(
 					'status' => 404,
