@@ -916,7 +916,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		// Pluck starred message ids.
 		$data['starred_message_ids'] = array_keys( array_filter( wp_list_pluck( $data['messages'], 'is_starred', 'id' ) ) );
 
-		// @todo Set user avatar, user name, and user links for recipients.
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 		$data    = $this->filter_response_by_context( $data, $context );
 
