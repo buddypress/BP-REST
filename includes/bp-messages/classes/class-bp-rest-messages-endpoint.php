@@ -415,7 +415,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response   $retval  The response data.
 		 * @param WP_REST_Request    $request The request sent to the API.
 		 */
-		do_action( 'bp_rest_messages_create_item', $thread, $response, $request );
+		do_action( 'bp_rest_messages_delete_item', $thread, $response, $request );
 
 		return $response;
 	}
