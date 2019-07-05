@@ -772,6 +772,56 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Prepares recipient data for the REST response.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param object          $recipient The recipient object.
+	 * @param WP_REST_Request $request   Full details about the request.
+	 * @return array                     The recipient data for the REST response.
+	 */
+	public function prepare_recipient_for_response( $recipient, $request ) {
+		$data = array(
+			'id'        => (int) $recipient->id,
+			'user_id'   => (int) $recipient->user_id,
+			'user_link' => esc_url( bp_core_get_user_domain( $recipient->user_id ) ),
+		);
+
+		// Fetch the user avatar urls (Full & thumb).
+		if ( true === buddypress()->avatar->show_avatars ) {
+			foreach ( array( 'full', 'thumb' ) as $type ) {
+				$data['user_avatars'][ $type ] = bp_core_fetch_avatar(
+					array(
+						'item_id' => $recipient->user_id,
+						'html'    => false,
+						'type'    => $type,
+					)
+				);
+			}
+		}
+
+		$data = array_merge(
+			$data,
+			array(
+				'thread_id'    => (int) $recipient->thread_id,
+				'unread_count' => (int) $recipient->unread_count,
+				'sender_only'  => (int) $recipient->sender_only,
+				'is_deleted'   => (int) $recipient->is_deleted,
+			)
+		);
+
+		/**
+		 * Filter a recipient value returned from the API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $data    The recipient value for the REST response.
+		 * @param WP_REST_Request $request Request used to generate the response.
+		 */
+		return apply_filters( 'bp_rest_messages_prepare_recipient_value', $data, $request );
+	}
+
+	/**
 	 * Prepares thread data for return as an object.
 	 *
 	 * @since 0.1.0
@@ -805,13 +855,18 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'date'           => bp_rest_prepare_date_response( $thread->last_message_date ),
 			'unread_count'   => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
 			'sender_ids'     => $thread->sender_ids,
-			'recipients'     => $thread->recipients,
+			'recipients'     => array(),
 			'messages'       => array(),
 		);
 
 		// Loop through messages to prepare them for the response.
 		foreach ( $thread->messages as $message ) {
 			$data['messages'][] = $this->prepare_message_for_response( $message, $request );
+		}
+
+		// Loop through recipients to prepare them for the response.
+		foreach ( $thread->recipients as $recipient ) {
+			$data['recipients'][ $recipient->user_id ] = $this->prepare_recipient_for_response( $recipient, $request );
 		}
 
 		// Pluck starred message ids.

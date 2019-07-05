@@ -825,4 +825,47 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
 	}
+
+	/**
+	 * @group prepare_recipient_for_response
+	 */
+	public function test_prepare_prepare_recipient_for_response() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$u3 = $this->factory->user->create();
+
+		$m = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2, $u3 ),
+			'subject'    => 'Foo',
+			'content'    => 'Content',
+		) );
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m->thread_id );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$get_data   = $response->get_data();
+		$recipients = $get_data[0]['recipients'];
+		$expended   = array();
+
+		foreach( array( $u1, $u2, $u3 ) as $user_id ) {
+			$this->assertEquals( esc_url( bp_core_get_user_domain( $user_id ) ), $recipients[ $user_id  ]['user_link'] );
+
+			foreach ( array( 'full', 'thumb' ) as $type ) {
+				$expected['user_avatars'][ $type ] = bp_core_fetch_avatar(
+					array(
+						'item_id' => $user_id ,
+						'html'    => false,
+						'type'    => $type,
+					)
+				);
+
+				$this->assertEquals( $expected['user_avatars'][ $type ], $recipients[ $user_id ]['user_avatars'][ $type ] );
+			}
+		}
+	}
 }
