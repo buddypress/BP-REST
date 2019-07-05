@@ -450,7 +450,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Update the metadata of one of the messages of the thread.
+	 * Update one of the messages of the thread.
 	 *
 	 * @since 0.1.0
 	 *
@@ -461,7 +461,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		// Get the thread.
 		$thread = $this->get_thread_object( $request['id'] );
 		$error  = new WP_Error(
-			'bp_rest_messages_create_failed',
+			'bp_rest_messages_update_failed',
 			__( 'There was an error trying to update the message.', 'buddypress' ),
 			array(
 				'status' => 500,
@@ -517,7 +517,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$response = rest_ensure_response( $retval );
 
 		/**
-		 * Fires after the meta data of a message has been updated via the REST API.
+		 * Fires after a message is updated via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
@@ -531,7 +531,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check if a given request has access to update the metadata of a message.
+	 * Check if a given request has access to update a message.
 	 *
 	 * @since 0.1.0
 	 *
@@ -539,18 +539,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
-		$retval    = true;
-		$thread_id = $request['id'];
-
-		if ( ! is_user_logged_in() || ! messages_check_thread_access( $thread_id ) ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to update this message.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
+		$retval = $this->get_item_permissions_check( $request );
 
 		/**
 		 * Filter the message `update_item` permissions check.
@@ -576,8 +565,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		if ( empty( $message->id ) ) {
 			return new WP_Error(
-				'bp_rest_message_invalid_id',
-				__( 'Invalid message id.', 'buddypress' ),
+				'bp_rest_invalid_id',
+				__( 'Sorry, this message does not exist.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -613,9 +602,28 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		}
 
 		// Prepare the message for the REST response.
-		$data = $this->prepare_message_for_response( $message, $request );
+		$data = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_message_for_response( $message, $request )
+			),
+		);
 
-		return rest_ensure_response( $data );
+		$response = rest_ensure_response( $data );
+
+		/**
+		 * Fires after a message is starred/unstarred via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_Messages_Message $message  Message object.
+		 * @param string              $action   Informs about the update performed.
+		 *                                      Possible values are `star` or `unstar`.
+		 * @param WP_REST_Response    $response The response data.
+		 * @param WP_REST_Request     $request  The request sent to the API.
+		 */
+		do_action( 'bp_rest_message_update_starred_item', $message, $action, $response, $request );
+
+		return $response;
 	}
 
 	/**
@@ -766,9 +774,10 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param array           $data    The message value for the REST response.
+		 * @param object          $message The Message object.
 		 * @param WP_REST_Request $request Request used to generate the response.
 		 */
-		return apply_filters( 'bp_rest_messages_prepare_message_value', $data, $request );
+		return apply_filters( 'bp_rest_message_prepare_value', $data, $message, $request );
 	}
 
 	/**
@@ -815,10 +824,11 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array           $data    The recipient value for the REST response.
-		 * @param WP_REST_Request $request Request used to generate the response.
+		 * @param array           $data      The recipient value for the REST response.
+		 * @param object          $recipient The recipient object.
+		 * @param WP_REST_Request $request   Request used to generate the response.
 		 */
-		return apply_filters( 'bp_rest_messages_prepare_recipient_value', $data, $request );
+		return apply_filters( 'bp_rest_messages_prepare_recipient_value', $data, $recipient, $request );
 	}
 
 	/**

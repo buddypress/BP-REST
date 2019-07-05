@@ -531,6 +531,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->add_header( 'content-type', 'application/json' );
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
+		$data     = reset( $data );
 
 		$this->assertTrue( $data['is_starred'] );
 	}
@@ -560,6 +561,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->add_header( 'content-type', 'application/json' );
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
+		$data     = reset( $data );
 
 		$this->assertFalse( $data['is_starred'] );
 	}
