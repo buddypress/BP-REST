@@ -491,6 +491,16 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		if ( empty( $request['type'] ) ) {
+			return new WP_Error(
+				'bp_rest_update_activity_empty_type',
+				__( 'Please, activity type is required.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		$activity_id = bp_activity_add( $this->prepare_item_for_database( $request ) );
 
 		if ( ! is_numeric( $activity_id ) ) {
@@ -557,7 +567,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( true === $retval && empty( $activity->id ) ) {
 			$retval = new WP_Error(
-				'bp_rest_activity_invalid_id',
+				'bp_rest_invalid_id',
 				__( 'Invalid activity id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -570,7 +580,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to update this activity.', 'buddypress' ),
 				array(
-					'status' => rest_authorization_required_code(),
+					'status' => 500,
 				)
 			);
 		}
@@ -660,7 +670,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( true === $retval && empty( $activity->id ) ) {
 			$retval = new WP_Error(
-				'bp_rest_activity_invalid_id',
+				'bp_rest_invalid_id',
 				__( 'Invalid activity id.', 'buddypress' ),
 				array(
 					'status' => 404,
@@ -722,7 +732,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		if ( empty( $activity->id ) ) {
 			return new WP_Error(
-				'bp_rest_activity_invalid_id',
+				'bp_rest_invalid_id',
 				__( 'Invalid activity id.', 'buddypress' ),
 				array(
 					'status' => 404,
