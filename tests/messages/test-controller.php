@@ -868,4 +868,40 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 			}
 		}
 	}
+
+	/**
+	 * @group prepare_links
+	 */
+	public function test_prepare_add_links_to_response() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		$m1 = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Bar',
+			'content'    => 'Content',
+		) );
+
+		$r1 = $this->bp_factory->message->create_and_get( array(
+			'thread_id'  => $m1->thread_id,
+			'sender_id'  => $u2,
+			'content'    => 'Reply',
+		) );
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m1->thread_id );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$get_links = $response->get_data();
+		$links     = $get_links[0]['_links'];
+
+		$this->assertEquals( rest_url( $this->endpoint_url . '/' ), $links['collection'][0]['href'] );
+		$this->assertEquals( rest_url( $this->endpoint_url . '/' . $m1->thread_id ), $links['self'][0]['href'] );
+		$this->assertEquals( rest_url( $this->endpoint_url . '/' . bp_get_messages_starred_slug() . '/' . $m1->id ), $links[ $m1->id ][0]['href'] );
+		$this->assertEquals( rest_url( $this->endpoint_url . '/' . bp_get_messages_starred_slug() . '/' . $r1->id ), $links[ $r1->id ][0]['href'] );
+	}
 }

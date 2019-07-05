@@ -822,6 +822,50 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Prepare links for the request.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param BP_Messages_Thread $thread  Thread object.
+	 * @return array Links for the given thread.
+	 */
+	protected function prepare_links( $thread ) {
+		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
+		$url  = $base . $thread->thread_id;
+
+		// Entity meta.
+		$links = array(
+			'self'       => array(
+				'href' => rest_url( $url ),
+			),
+			'collection' => array(
+				'href' => rest_url( $base ),
+			),
+		);
+
+		// Add star links for each message of the thread.
+		if ( bp_is_active( 'messages', 'star' ) ) {
+			$starred_base = $base . bp_get_messages_starred_slug() . '/';
+
+			foreach ( $thread->messages as $message ) {
+				$links[ $message->id ] = array(
+					'href' => rest_url( $starred_base . $message->id ),
+				);
+			}
+		}
+
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array              $links   The prepared links of the REST response.
+		 * @param BP_Messages_Thread $thread  Thread object.
+		 */
+		return apply_filters( 'bp_rest_messages_prepare_links', $links, $thread );
+	}
+
+	/**
 	 * Prepares thread data for return as an object.
 	 *
 	 * @since 0.1.0
@@ -877,6 +921,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$data    = $this->filter_response_by_context( $data, $context );
 
 		$response = rest_ensure_response( $data );
+		$links    = $this->prepare_links( $thread );
+		$response->add_links( $links );
 
 		/**
 		 * Filter a thread value returned from the API.
