@@ -4,8 +4,6 @@ Access your BuddyPress site's data through an easy-to-use HTTP REST API.
 
 [![Build Status](https://travis-ci.org/buddypress/BP-REST.svg?branch=master)](https://travis-ci.org/buddypress/BP-REST)
 
-The current endpoints are pretty much in flux, as we work toward adding and updating them.
-
 Please use and provide feedback!
 
 ## System Requirements
@@ -29,9 +27,6 @@ Please use and provide feedback!
 - [x] Members Profile Photo (aka Avatar) `http://site.com/wp-json/buddypress/v1/members/<user_id>/avatar`
 - [x] Notifications `http://site.com/wp-json/buddypress/v1/notifications`
 - [x] Components `http://site.com/wp-json/buddypress/v1/components`
-
-## Endpoints (Components) Partly Supported
-
 - [x] Messages `http://site.com/wp-json/buddypress/v1/messages`
 
 ## Endpoints (Components) Pending
