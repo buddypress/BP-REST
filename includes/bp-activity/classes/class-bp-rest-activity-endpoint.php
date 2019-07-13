@@ -1071,8 +1071,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param object $activity Activity object.
-	 * @return array Links for the given plugin.
+	 * @param BP_Activity_Activity $activity Activity object.
+	 * @return array
 	 */
 	protected function prepare_links( $activity ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
@@ -1113,7 +1113,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		return $links;
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array                $links     The prepared links of the REST response.
+		 * @param BP_Activity_Activity $activity  Activity object.
+		 */
+		return apply_filters( 'bp_rest_activity_prepare_links', $links, $activity );
 	}
 
 	/**
@@ -1138,7 +1146,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 *
 	 * @param  string $component The activity component.
 	 * @param  int    $item_id   The activity item ID.
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function show_hidden( $component, $item_id ) {
 		$user_id = get_current_user_id();
@@ -1479,6 +1487,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
+		/**
+		 * Filters the collection query params.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_activity_collection_params', $params );
 	}
 }

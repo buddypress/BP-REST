@@ -449,7 +449,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass        $invite  Invited user object.
+	 * @param stdClass        $invite  Invite object.
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response
 	 */
@@ -475,7 +475,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  Request used to generate the response.
-		 * @param stdClass         $invite   The group invite.
+		 * @param stdClass         $invite   The invite object.
 		 */
 		return apply_filters( 'bp_rest_group_invites_prepare_value', $response, $request, $invite );
 	}
@@ -485,12 +485,12 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass $user Invited user object.
+	 * @param stdClass $invite Invite object.
 	 * @return array Links for the given plugin.
 	 */
-	protected function prepare_links( $user ) {
+	protected function prepare_links( $invite ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $user->user_id;
+		$url  = $base . $invite->user_id;
 
 		// Entity meta.
 		$links = array(
@@ -501,12 +501,20 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'user'       => array(
-				'href'       => rest_url( bp_rest_get_user_url( $user->user_id ) ),
+				'href'       => rest_url( bp_rest_get_user_url( $invite->user_id ) ),
 				'embeddable' => true,
 			),
 		);
 
-		return $links;
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array    $links  The prepared links of the REST response.
+		 * @param stdClass $invite Invite object.
+		 */
+		return apply_filters( 'bp_rest_group_invites_prepare_links', $links, $invite );
 	}
 
 	/**
@@ -535,7 +543,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => esc_html__( 'Group Invites', 'buddypress' ),
+			'title'      => 'bp_group_invites',
 			'type'       => 'object',
 			'properties' => array(
 				'user_id'      => array(
@@ -567,7 +575,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_group_invites_schema', $schema );
+		return apply_filters( 'bp_rest_group_invites_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**
@@ -597,6 +605,11 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
+		/**
+		 * Filters the collection query params.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_group_invites_collection_params', $params );
 	}
 }

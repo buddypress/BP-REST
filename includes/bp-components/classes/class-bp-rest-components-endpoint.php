@@ -287,7 +287,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array           $component Component.
+	 * @param array           $component The component and its values.
 	 * @param WP_REST_Request $request   Full details about the request.
 	 * @return WP_REST_Response
 	 */
@@ -296,6 +296,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 		$data    = $this->add_additional_fields_to_object( $component, $request );
 		$data    = $this->filter_response_by_context( $data, $context );
 
+		// @todo add prepare_links
 		$response = rest_ensure_response( $data );
 
 		/**
@@ -315,14 +316,12 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $id Component id.
+	 * @param string $name Component name.
 	 * @return string
 	 */
-	protected function verify_component_status( $id ) {
-		$active = __( 'active', 'buddypress' );
-
-		if ( 'core' === $id || bp_is_active( $id ) ) {
-			return $active;
+	protected function verify_component_status( $name ) {
+		if ( 'core' === $name || bp_is_active( $name ) ) {
+			return __( 'active', 'buddypress' );
 		}
 
 		return __( 'inactive', 'buddypress' );
@@ -419,13 +418,11 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	protected function component_exists( $component ) {
-		$keys = array_keys( bp_core_get_components() );
-
-		return in_array( $component, $keys, true );
+		return in_array( $component, array_keys( bp_core_get_components() ), true );
 	}
 
 	/**
-	 * Get the plugin schema, conforming to JSON Schema.
+	 * Get the components schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
 	 *
@@ -434,7 +431,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => esc_html__( 'Components', 'buddypress' ),
+			'title'      => 'bp_components',
 			'type'       => 'object',
 			'properties' => array(
 				'name'        => array(
@@ -478,7 +475,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param string $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_components_schema', $schema );
+		return apply_filters( 'bp_rest_components_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**
@@ -510,6 +507,11 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
+		/**
+		 * Filters the collection query params.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_components_collection_params', $params );
 	}
 }

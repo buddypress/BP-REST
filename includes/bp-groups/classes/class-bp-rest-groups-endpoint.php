@@ -627,10 +627,10 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			}
 		}
 
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
-
+		$data     = $this->add_additional_fields_to_object( $data, $request );
+		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
+
 		$response->add_links( $this->prepare_links( $item ) );
 
 		/**
@@ -720,17 +720,16 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param BP_Groups_Group $group Group item.
-	 * @return array Links for the given plugin.
+	 * @param BP_Groups_Group $group Group object.
+	 * @return array
 	 */
 	protected function prepare_links( $group ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $group->id;
 
 		// Entity meta.
 		$links = array(
 			'self'       => array(
-				'href' => rest_url( $url ),
+				'href' => rest_url( $base . $group->id ),
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),
@@ -741,7 +740,15 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return $links;
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $links  The prepared links of the REST response.
+		 * @param BP_Groups_Group $group  Group object.
+		 */
+		return apply_filters( 'bp_rest_groups_prepare_links', $links, $group );
 	}
 
 	/**
@@ -781,16 +788,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	protected function can_user_delete_or_update( $group ) {
-
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
-		}
-
-		if ( bp_loggedin_user_id() === $group->creator_id ) {
-			return true;
-		}
-
-		return false;
+		return ( bp_current_user_can( 'bp_moderate' ) || bp_loggedin_user_id() === $group->creator_id );
 	}
 
 	/**
@@ -1124,6 +1122,11 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
+		/**
+		 * Filters the collection query params.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_groups_collection_params', $params );
 	}
 }

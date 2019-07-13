@@ -384,8 +384,10 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		}
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data    = $this->add_additional_fields_to_object( $data, $request );
 		$data    = $this->filter_response_by_context( $data, $context );
 
+		// @todo add prepare_links
 		$response = rest_ensure_response( $data );
 
 		/**
@@ -395,12 +397,13 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param WP_REST_Response  $response Response.
 		 * @param WP_REST_Request   $request  Request used to generate the response.
+		 * @param stdClass|string   $avatar   Avatar object or string with url or image with html.
 		 */
-		return apply_filters( 'bp_rest_attachments_avatar_prepare_value', $response, $request );
+		return apply_filters( 'bp_rest_attachments_avatar_prepare_value', $response, $request, $avatar );
 	}
 
 	/**
-	 * Get the plugin schema, conforming to JSON Schema.
+	 * Get the member avatar schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
 	 *
@@ -409,7 +412,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => esc_html__( 'Member Avatar', 'buddypress' ),
+			'title'      => 'bp_attachments_avatar',
 			'type'       => 'object',
 			'properties' => array(
 				'full'  => array(
@@ -432,7 +435,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param string $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_member_avatar_schema', $schema );
+		return apply_filters( 'bp_rest_attachments_avatar_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**
@@ -479,6 +482,11 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
+		/**
+		 * Filters the item collection query params.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_attachments_avatar_collection_params', $params );
 	}
 }

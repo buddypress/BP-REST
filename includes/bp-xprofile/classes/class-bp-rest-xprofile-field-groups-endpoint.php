@@ -554,11 +554,11 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			}
 		}
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
-
+		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data     = $this->add_additional_fields_to_object( $data, $request );
+		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
+
 		$response->add_links( $this->prepare_links( $group ) );
 
 		/**
@@ -594,7 +594,15 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return $links;
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array            $links The prepared links of the REST response.
+		 * @param BP_XProfile_Group $group XProfile field group object.
+		 */
+		return apply_filters( 'bp_rest_xprofile_field_groups_prepare_links', $links, $group );
 	}
 
 	/**
@@ -822,6 +830,11 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
+		/**
+		 * Filters the collection query params.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_xprofile_field_groups_collection_params', $params );
 	}
 }

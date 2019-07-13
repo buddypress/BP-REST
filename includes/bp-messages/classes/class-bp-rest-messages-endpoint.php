@@ -841,12 +841,11 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 */
 	protected function prepare_links( $thread ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $thread->thread_id;
 
 		// Entity meta.
 		$links = array(
 			'self'       => array(
-				'href' => rest_url( $url ),
+				'href' => rest_url( $base . $thread->thread_id ),
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),
@@ -926,12 +925,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		// Pluck starred message ids.
 		$data['starred_message_ids'] = array_keys( array_filter( wp_list_pluck( $data['messages'], 'is_starred', 'id' ) ) );
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data    = $this->filter_response_by_context( $data, $context );
-
+		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data     = $this->add_additional_fields_to_object( $data, $request );
+		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
-		$links    = $this->prepare_links( $thread );
-		$response->add_links( $links );
+
+		$response->add_links( $this->prepare_links( $thread ) );
 
 		/**
 		 * Filter a thread value returned from the API.
@@ -1033,7 +1032,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get the BP Messages schema, conforming to JSON Schema.
+	 * Get the message schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
 	 *
@@ -1166,17 +1165,17 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		);
 
 		/**
-		 * Filters the messages schema.
+		 * Filters the message schema.
 		 *
 		 * @since 0.1.0
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_messages_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_message_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**
-	 * Get the query params for collections.
+	 * Get the query params for Messages collections.
 	 *
 	 * @since 0.1.0
 	 *
@@ -1217,6 +1216,11 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
+		/**
+		 * Filters the collection query params.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_messages_collection_params', $params );
 	}
 }

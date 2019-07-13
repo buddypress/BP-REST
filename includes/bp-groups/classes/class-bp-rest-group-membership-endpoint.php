@@ -674,7 +674,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_User $user User object.
-	 * @return array Links for the given plugin.
+	 * @return array
 	 */
 	protected function prepare_links( $user ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
@@ -690,7 +690,15 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return $links;
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array   $links The prepared links of the REST response.
+		 * @param WP_User $user  User object.
+		 */
+		return apply_filters( 'bp_rest_group_members_prepare_links', $links, $user );
 	}
 
 	/**
@@ -706,7 +714,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		$schema = $this->members_endpoint->get_item_schema();
 
 		// Set title to this endpoint.
-		$schema['title'] = __( 'Group Membership', 'buddypress' );
+		$schema['title'] = 'bp_group_members';
 
 		$schema['properties']['is_mod'] = array(
 			'context'     => array( 'view', 'edit' ),
@@ -744,11 +752,11 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_group_membership_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_group_members_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**
-	 * Get the query params for collections of group members.
+	 * Get the query params for collections of group memberships.
 	 *
 	 * @since 0.1.0
 	 *
@@ -809,11 +817,16 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
+		/**
+		 * Filters the collection query params.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_group_members_collection_params', $params );
 	}
 
 	/**
-	 * Get the query params for a group member update.
+	 * Get the query params for a group membership update.
 	 *
 	 * @since 0.1.0
 	 *
@@ -857,6 +870,11 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
+		/**
+		 * Filters the collection query params.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_group_members_update_collection_params', $params );
 	}
 }

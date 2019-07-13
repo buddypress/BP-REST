@@ -300,10 +300,10 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$data['extra_capabilities'] = (array) array_keys( $user->caps );
 		}
 
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
-
+		$data     = $this->add_additional_fields_to_object( $data, $request );
+		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
+
 		$response->add_links( $this->prepare_links( $user ) );
 
 		/**
@@ -312,10 +312,10 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param WP_REST_Response $response The response object.
-		 * @param WP_User          $user     WP_User object.
 		 * @param WP_REST_Request  $request  The request object.
+		 * @param WP_User          $user     WP_User object.
 		 */
-		return apply_filters( 'bp_rest_members_prepare_value', $response, $user, $request );
+		return apply_filters( 'bp_rest_members_prepare_value', $response, $request, $user );
 	}
 
 	/**
@@ -454,7 +454,30 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
-	 * Get the plugin schema, conforming to JSON Schema.
+	 * Updates the values of additional fields added to a data object.
+	 *
+	 * This function makes sure updating the field value thanks to the `id` property of
+	 * the created/updated object type is consistent accross BuddyPress components.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_User         $object  The WordPress user object.
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error True on success, WP_Error object if a field cannot be updated.
+	 */
+	protected function update_additional_fields_for_object( $object, $request ) {
+		if ( ! isset( $object->data ) ) {
+			return new WP_Error( 'invalid_user', __( 'The data for the user was not found.', 'buddypress' ) );
+		}
+
+		$member     = $object->data;
+		$member->id = $member->ID;
+
+		return WP_REST_Controller::update_additional_fields_for_object( $member, $request );
+	}
+
+	/**
+	 * Get the members schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
 	 *
@@ -664,29 +687,11 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
-	}
-
-	/**
-	 * Updates the values of additional fields added to a data object.
-	 *
-	 * This function makes sure updating the field value thanks to the `id` property of
-	 * the created/updated object type is consistent accross BuddyPress components.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_User         $object  The WordPress user object.
-	 * @param WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error True on success, WP_Error object if a field cannot be updated.
-	 */
-	protected function update_additional_fields_for_object( $object, $request ) {
-		if ( isset( $object->data ) ) {
-			$member     = $object->data;
-			$member->id = $member->ID;
-		} else {
-			return new WP_Error( 'invalid_user', __( 'The data for the user was not found.', 'buddypress' ) );
-		}
-
-		return WP_REST_Controller::update_additional_fields_for_object( $member, $request );
+		/**
+		 * Filters the collection query params.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_members_collection_params', $params );
 	}
 }

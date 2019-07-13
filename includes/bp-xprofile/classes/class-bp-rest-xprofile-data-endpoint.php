@@ -319,12 +319,11 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 */
 	protected function prepare_links( $field_data ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $field_data->field_id;
 
 		// Entity meta.
 		$links = array(
 			'self'       => array(
-				'href' => rest_url( $url ),
+				'href' => rest_url( $base . $field_data->field_id ),
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),
@@ -335,7 +334,15 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return $links;
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array                 $links     The prepared links of the REST response.
+		 * @param BP_XProfile_ProfileData $field_data XProfile field data object.
+		 */
+		return apply_filters( 'bp_rest_xprofile_data_prepare_links', $links, $field_data );
 	}
 
 	/**
@@ -372,18 +379,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	protected function can_see( $field_user_id ) {
-
-		// Moderators can as well.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
-		}
-
-		// Field owners also can.
-		if ( bp_loggedin_user_id() === $field_user_id ) {
-			return true;
-		}
-
-		return false;
+		return ( bp_current_user_can( 'bp_moderate' ) || bp_loggedin_user_id() === $field_user_id );
 	}
 
 	/**

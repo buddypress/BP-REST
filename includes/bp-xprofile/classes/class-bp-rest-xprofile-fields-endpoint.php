@@ -645,7 +645,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param BP_XProfile_Field $field XProfile field object.
-	 * @return array Links for the given plugin.
+	 * @return array
 	 */
 	protected function prepare_links( $field ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
@@ -660,7 +660,15 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return $links;
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array            $links The prepared links of the REST response.
+		 * @param BP_XProfile_Field $field  XProfile field object.
+		 */
+		return apply_filters( 'bp_rest_xprofile_fields_prepare_links', $links, $field );
 	}
 
 	/**
@@ -669,12 +677,11 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return BP_XProfile_Field|string XProfile field object.
+	 * @return BP_XProfile_Field|string XProfile field object|string.
 	 */
 	public function get_xprofile_field_object( $request ) {
 		$field_id = is_numeric( $request ) ? $request : (int) $request['id'];
-
-		$field = xprofile_get_field( $field_id );
+		$field    = xprofile_get_field( $field_id );
 
 		if ( empty( $field ) ) {
 			return '';
@@ -794,15 +801,15 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		);
 
 		/**
-		 * Filters the xprofile fields schema.
+		 * Filters the xprofile field schema.
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_xprofile_fields_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_xprofile_field_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**
-	 * Get the query params for XProfile fields.
+	 * Get the query params for the XProfile fields.
 	 *
 	 * @since 0.1.0
 	 *
@@ -903,11 +910,16 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
+		/**
+		 * Filters the collection query params.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_xprofile_fields_collection_params', $params );
 	}
 
 	/**
-	 * Get the query params for a XProfile field.
+	 * Get the query params for the POST/PUT item actions.
 	 *
 	 * @since 0.1.0
 	 *
@@ -981,6 +993,11 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
+		/**
+		 * Filters the query params for the POST/PUT actions.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_xprofile_fields_create_update_item_params', $params );
 	}
 }

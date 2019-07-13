@@ -491,7 +491,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param BP_Notifications_Notification $notification Notification data.
-	 * @param WP_REST_Request               $request      Full details about the request.
+	 * @param WP_REST_Request               $request     Full details about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $notification, $request ) {
@@ -506,9 +506,11 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'unread'            => $notification->is_new,
 		);
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data     = $this->add_additional_fields_to_object( $data, $request );
-		$data     = $this->filter_response_by_context( $data, $context );
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data    = $this->add_additional_fields_to_object( $data, $request );
+		$data    = $this->filter_response_by_context( $data, $context );
+
+		// @todo add prepare_links
 		$response = rest_ensure_response( $data );
 
 		/**
@@ -529,7 +531,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return stdClass Object.
+	 * @return stdClass
 	 */
 	protected function prepare_item_for_database( $request ) {
 		$prepared_notification = new stdClass();
@@ -591,12 +593,11 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	protected function prepare_links( $notification ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $notification->id;
 
 		// Entity meta.
 		$links = array(
 			'self'       => array(
-				'href' => rest_url( $url ),
+				'href' => rest_url( $base . $notification->id ),
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),
@@ -607,7 +608,15 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		return $links;
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array                       $links       The prepared links of the REST response.
+		 * @param BP_Notifications_Notification $notification Notification object.
+		 */
+		return apply_filters( 'bp_rest_notifications_prepare_links', $links, $notification );
 	}
 
 	/**
@@ -654,7 +663,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get the plugin schema, conforming to JSON Schema.
+	 * Get the notification schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
 	 *
@@ -717,11 +726,11 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_notifications_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_notification_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**
-	 * Get the query params for collections.
+	 * Get the query params for the notifications collections.
 	 *
 	 * @since 0.1.0
 	 *
@@ -795,6 +804,11 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		return $params;
+		/**
+		 * Filters the collection query params.
+		 *
+		 * @param array $params Query params.
+		 */
+		return apply_filters( 'bp_rest_notifications_collection_params', $params );
 	}
 }
