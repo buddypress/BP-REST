@@ -38,32 +38,13 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	protected $invites_endpoint;
 
 	/**
-	 * Membership slug.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @var string
-	 */
-	protected $membership_slug;
-
-	/**
-	 * Membership object.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @var BP_Groups_Member
-	 */
-	protected $membership;
-
-	/**
 	 * Constructor.
 	 *
 	 * @since 0.1.0
 	 */
 	public function __construct() {
 		$this->namespace           = bp_rest_namespace() . '/' . bp_rest_version();
-		$this->rest_base           = buddypress()->groups->id;
-		$this->membership_slug     = 'membership-request';
+		$this->rest_base           = buddypress()->groups->id . '/membership-requests';
 		$this->groups_endpoint     = new BP_REST_Groups_Endpoint();
 		$this->invites_endpoint    = new BP_REST_Group_Invites_Endpoint();
 	}
@@ -74,11 +55,9 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function register_routes() {
-		$base = $this->rest_base . '/(?P<group_id>[\d]+)/' . $this->membership_slug;
-
 		register_rest_route(
 			$this->namespace,
-			'/' . $base,
+			'/' . $this->rest_base,
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
@@ -92,7 +71,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->rest_base . '/' . $this->membership_slug . '/(?P<request_id>[\d]+)',
+			'/' . $this->rest_base . '/(?P<request_id>[\d]+)',
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
@@ -112,7 +91,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 
 		register_rest_route(
 			$this->namespace,
-			'/' . $base . '/(?P<user_id>[\d]+)',
+			'/' . $this->rest_base . '/(?P<user_id>[\d]+)',
 			array(
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
@@ -144,9 +123,10 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
+			'item_id'  => isset( $request['group_id'] ) ? $request['group_id'] : false,
+			'user_id'  => isset( $request['user_id'] ) ? $request['user_id'] : false,
+			'per_page' => isset( $request['per_page'] ) ? $request['per_page'] : 10,
 			'page'     => isset( $request['page'] ) ? $request['page'] : 1,
-			'per_page' => $request['per_page'],
-			'group_id' => $request['group_id'],
 		);
 
 		/**
@@ -159,29 +139,57 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		 */
 		$args = apply_filters( 'bp_rest_group_membership_request_get_items_query_args', $args, $request );
 
-		$requests = groups_get_requests( $args );
+		// If a group ID has been passed, check that it is valid.
+		if ( $args['item_id'] ) {
+			$group = $this->groups_endpoint->get_group_object( $args['item_id'] );
+
+			if ( ! $group instanceof BP_Groups_Group ) {
+				return new WP_Error(
+					'bp_rest_group_invalid_id',
+					__( 'Invalid group id.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			}
+		}
+
+		// If a user ID has been passed, check that it is valid.
+		if ( $args['user_id'] ) {
+			$user = bp_rest_get_user( $args['user_id'] );
+
+			if ( ! $user instanceof WP_User ) {
+				$retval = new WP_Error(
+					'bp_rest_member_invalid_id',
+					__( 'Invalid member id.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			}
+		}
+		$memreqs = groups_get_requests( $args );
 
 		$retval = array();
-		foreach ( $requests as $request ) {
+		foreach ( $memreqs as $memreq ) {
 			$retval[] = $this->prepare_response_for_collection(
-				$this->invites_endpoint->prepare_item_for_response( $request, $request )
+				$this->invites_endpoint->prepare_item_for_response( $memreq, $request )
 			);
 		}
 
 		$response = rest_ensure_response( $retval );
-		$response = bp_rest_response_add_total_headers( $response, count( $requests ), $args['per_page'] );
+		$response = bp_rest_response_add_total_headers( $response, count( $memreqs ), $args['per_page'] );
 
 		/**
 		 * Fires after a list of group membership request is fetched via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array of BP_Invitations $requests     List of membership requests.
-		 * @param BP_Groups_Group         $group        The group object.
+		 * @param array of BP_Invitations $memreqs      List of membership requests.
 		 * @param WP_REST_Response        $response     The response data.
 		 * @param WP_REST_Request         $request      The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_membership_request_get_items', $requests, $group, $response, $request );
+		do_action( 'bp_rest_group_membership_request_get_items', $memreqs, $response, $request );
 
 		return $response;
 	}
@@ -195,46 +203,58 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
-		$retval = true;
+		$retval       = true;
+		$user_id      = bp_loggedin_user_id();
+		$group_id_arg = isset( $request['group_id'] ) ? $request['group_id'] : false;
+		$user_id_arg  = isset( $request['user_id'] ) ? $request['user_id'] : false;
 
-		if ( ! is_user_logged_in() ) {
+		// Site administrators can do anything.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			// Do nothing.
+		} else if ( ! $user_id ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in view membership requests.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to view membership requests.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
-
-		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-
-		if ( true === $retval && ! $group instanceof BP_Groups_Group ) {
-			$retval = new WP_Error(
-				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		// Site administrators can do anything.
-		if ( true === $retval && bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
 		} else {
-			if ( true === $retval && ! groups_is_user_admin( bp_loggedin_user_id(), $group->id ) ) {
-				$retval = new WP_Error(
-					'bp_rest_authorization_required',
-					__( 'Sorry, you are not allowed to view membership requests.', 'buddypress' ),
-					array(
-						'status' => rest_authorization_required_code(),
-					)
-				);
+			/**
+			 * If attempting to fetch the membership requests for a group,
+			 * the group must exist and the current user must be a group admin.
+			 */
+			if ( $group_id_arg ) {
+				$group = $this->groups_endpoint->get_group_object( $group_id_arg );
+
+				if ( ! groups_is_user_admin( $user_id, $group->id ) ) {
+					$retval = new WP_Error(
+						'bp_rest_authorization_required',
+						__( 'Sorry, you are not allowed to view membership requests.', 'buddypress' ),
+						array(
+							'status' => rest_authorization_required_code(),
+						)
+					);
+				}
 			}
 
-			if ( true === $retval ) {
-				$retval = true;
+			/**
+			 * If attempting to fetch the membership requests for a user,
+			 * the subject user should be the current user.
+			 */
+
+			if ( true === $retval && $user_id_arg ) {
+				$user = bp_rest_get_user( $user_id_arg );
+
+				if ( true === $retval && $user_id !== $user_id_arg ) {
+					$retval = new WP_Error(
+						'bp_rest_authorization_required',
+						__( 'Sorry, you are not allowed to view membership requests.', 'buddypress' ),
+						array(
+							'status' => rest_authorization_required_code(),
+						)
+					);
+				}
 			}
 		}
 
@@ -250,7 +270,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Fetch pending group membership request.
+	 * Fetch a sepcific pending group membership request by ID.
 	 *
 	 * @since 0.1.0
 	 *
@@ -258,13 +278,26 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
+		$request_id = isset( $request['request_id'] ) ? absint( $request['request_id'] ) : 0;
+
 		// Get membership.
-		$request = groups_get_requests( array( 'id' => $request['request_id'] ) );
+		$memreqs = groups_get_requests( array( 'id' => $request_id ) );
 
-
-		$retval = $this->prepare_response_for_collection(
-			$this->invite_endpoint->prepare_item_for_response( $request, $request )
-		);
+		if ( $memreqs ) {
+			$memreq = current( $memreqs );
+			$retval = $this->prepare_response_for_collection(
+				$this->invites_endpoint->prepare_item_for_response( $memreq, $request )
+			);
+		} else {
+			$memreq = new BP_Invitation( 0 );
+			$retval = new WP_Error(
+				'bp_rest_group_membership_request_invalid_id',
+				__( 'Invalid group membership request id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
 
 		$response = rest_ensure_response( $retval );
 
@@ -273,11 +306,11 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param BP_Groups_Member  $membership  Membership object.
+		 * @param BP_Invitation     $membership  Membership object.
 		 * @param WP_REST_Response  $response    The response data.
 		 * @param WP_REST_Request   $request     The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_membership_request_get_item', $membership, $response, $request );
+		do_action( 'bp_rest_group_membership_request_get_item', $memreq, $response, $request );
 
 		return $response;
 	}
@@ -291,9 +324,14 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		$retval = true;
+		$retval  = true;
+		$user_id = bp_loggedin_user_id();
+		$request_id = isset( $request['request_id'] ) ? absint( $request['request_id'] ) : 0;
 
-		if ( ! is_user_logged_in() ) {
+		// Site admins can view anything.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			// Do nothing.
+		} else if ( ! $user_id ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to get a membership.', 'buddypress' ),
@@ -301,37 +339,31 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
-
-		$user_id          = bp_loggedin_user_id();
-		$this->invite    = new BP_Invitation( absint( $request['request_id'] ) );
-
-		if ( true === $retval && is_null( $this->invite->user_id ) && is_null( $this->invite->item_id ) ) {
-			$retval = new WP_Error(
-				'bp_rest_group_membership_request_invalid_membership',
-				__( 'Invalid membership request.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		// Site administrators can do anything.
-		if ( true === $retval && bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
 		} else {
-			if ( true === $retval && ! groups_is_user_admin( $user_id, $this->invite->item_id ) ) {
+			// Fetch the request
+			$requests = groups_get_requests( array( 'id' => $request_id ) );
+			if ( ! $requests ) {
 				$retval = new WP_Error(
-					'bp_rest_authorization_required',
-					__( 'Sorry, you are not allowed to get a membership.', 'buddypress' ),
+					'bp_rest_group_membership_request_invalid_membership',
+					__( 'Invalid membership request.', 'buddypress' ),
 					array(
-						'status' => rest_authorization_required_code(),
+						'status' => 404,
 					)
 				);
-			}
+			} else {
+				$request = current( $requests );
 
-			if ( true === $retval ) {
-				$retval = true;
+				// Group admins can see requests to their group, and the requester can see her requests.
+				if ( $user_id !== $request->user_id && ! groups_is_user_admin( $user_id, $request->item_id ) ) {
+					$retval = new WP_Error(
+						'bp_rest_authorization_required',
+						__( 'Sorry, you are not allowed to view a membership request.', 'buddypress' ),
+						array(
+							'status' => rest_authorization_required_code(),
+						)
+					);
+				}
+
 			}
 		}
 
@@ -355,20 +387,60 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
-		$user     = bp_rest_get_user( $request['user_id'] );
-		$group    = $this->groups_endpoint->get_group_object( $request['group_id'] );
-		$group_id = $group->id;
+		$group_id_arg = isset( $request['group_id'] ) ? absint( $request['group_id'] ) : false;
+		$user_id_arg  = isset( $request['user_id'] ) ? absint( $request['user_id'] ) : false;
+		$user         = bp_rest_get_user( $user_id_arg );
+		$group        = $this->groups_endpoint->get_group_object( $group_id_arg );
 
-		// $group_member                = new BP_Groups_Member();
-		// $group_member->group_id      = $group_id;
-		// $group_member->user_id       = $user->ID;
-		// $group_member->inviter_id    = 0;
-		// $group_member->is_admin      = 0;
-		// $group_member->user_title    = '';
-		// $group_member->date_modified = bp_core_current_time();
-		// $group_member->is_confirmed  = 0;
+		// Check for valid user.
+		if ( ! $user instanceof WP_User ) {
+			return new WP_Error(
+				'bp_rest_group_member_invalid_id',
+				__( 'Invalid user id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
 
-		$request_id = groups_send_membership_request( array( 'group_id' => $group_id, 'user_id' => $user->ID ) );
+		// Check for valid group.
+		if ( ! $group instanceof BP_Groups_Group ) {
+			return new WP_Error(
+				'bp_rest_group_invalid_id',
+				__( 'Invalid group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		// Avoid duplicate requests.
+		if ( groups_check_for_membership_request( $user->ID, $group->id ) ) {
+			return new WP_Error(
+				'bp_rest_group_membership_duplicate_request',
+				__( 'There is already a request to this member.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Avoid general failures.
+		$group_inv_mgr = new BP_Groups_Invitation_Manager();
+		if ( ! $group_inv_mgr->allow_request( array(
+			'user_id'    => $user->ID,
+			'item_id'    => $group->id,
+		) ) ) {
+			return new WP_Error(
+				'bp_rest_group_member_request_disallowed',
+				__( 'Sorry, you are not allowed to create the invitation as requested.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$request_id = groups_send_membership_request( array( 'group_id' => $group->id, 'user_id' => $user->ID ) );
 
 		if ( ! $request_id ) {
 			return new WP_Error(
@@ -415,9 +487,15 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
-		$retval = true;
+		$user_id     = bp_loggedin_user_id();
+		$user_id_arg = isset( $request['user_id'] ) ? absint( $request['user_id'] ) : false;
+		$retval       = true;
 
-		if ( ! is_user_logged_in() ) {
+		// Site administrators can do anything.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			// Don't stop the rock.
+		// User must be logged in.
+		} else if ( ! $user_id ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to create a membership request.', 'buddypress' ),
@@ -425,59 +503,15 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
-
-		$user = bp_rest_get_user( $request['user_id'] );
-
-		if ( true === $retval && ! $user instanceof WP_User ) {
+		// Normal users can only extend invitations on their own behalf.
+		} else if ( $user_id !== $user_id_arg ) {
 			$retval = new WP_Error(
-				'bp_rest_group_member_invalid_id',
-				__( 'Invalid group member id.', 'buddypress' ),
+				'bp_rest_authorization_required',
+				__( 'User may not extend requests on behalf of another user.', 'buddypress' ),
 				array(
-					'status' => 404,
+					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
-
-		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-
-		if ( true === $retval && ! $group instanceof BP_Groups_Group ) {
-			$retval = new WP_Error(
-				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		if ( true === $retval && groups_check_for_membership_request( $user->ID, $group->id ) && groups_check_user_has_invite( $user->ID, $group->id ) ) {
-			$retval = new WP_Error(
-				'bp_rest_group_membership_duplicate_request',
-				__( 'There is already a request to this member.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
-		// Site administrators can do anything.
-		if ( true === $retval && bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
-		} else {
-			if ( true === $retval && ( groups_is_user_member( $user->ID, $group->id ) || groups_is_user_banned( $user->ID, $group->id ) ) ) {
-				$retval = new WP_Error(
-					'bp_rest_authorization_required',
-					__( 'User is not allowed to have request membership issued to this group.', 'buddypress' ),
-					array(
-						'status' => rest_authorization_required_code(),
-					)
-				);
-			}
-
-			if ( true === $retval ) {
-				$retval = true;
-			}
 		}
 
 		/**
@@ -500,8 +534,43 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$user  = bp_rest_get_user( $request['user_id'] );
-		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+		$group_id_arg = isset( $request['group_id'] ) ? absint( $request['group_id'] ) : false;
+		$user_id_arg  = isset( $request['user_id'] ) ? absint( $request['user_id'] ) : false;
+		$user         = bp_rest_get_user( $user_id_arg );
+		$group        = $this->groups_endpoint->get_group_object( $group_id_arg );
+
+		// Check for valid user.
+		if ( ! $user instanceof WP_User ) {
+			return new WP_Error(
+				'bp_rest_group_member_invalid_id',
+				__( 'Invalid user id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		// Check for valid group.
+		if ( ! $group instanceof BP_Groups_Group ) {
+			return new WP_Error(
+				'bp_rest_group_invalid_id',
+				__( 'Invalid group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		// Check for valid membership request.
+		if ( ! groups_check_for_membership_request( $user->ID, $group->id ) ) {
+			return new WP_Error(
+				'bp_rest_group_membership_update_no_request',
+				__( 'There is no membership request from this member to this group.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
 
 		$invite_id = groups_accept_membership_request( false, $user->ID, $group->id );
 		if ( ! $invite_id ) {
@@ -514,6 +583,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// @TODO: Return the user membership?
 		$invite = new BP_Invitation( $invite_id );
 
 		$retval = array(
@@ -549,9 +619,13 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
-		$retval = true;
+		$group_id_arg = isset( $request['group_id'] ) ? absint( $request['group_id'] ) : false;
+		$user_id      = bp_loggedin_user_id();
+		$retval       = true;
 
-		if ( ! is_user_logged_in() ) {
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			// Do nothing.
+		} else if ( ! $user_id ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to make an update.', 'buddypress' ),
@@ -559,59 +633,14 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
-
-		$user = bp_rest_get_user( $request['user_id'] );
-
-		if ( true === $retval && ! $user instanceof WP_User ) {
+		} else if ( ! groups_is_user_admin( $user_id, $group_id_arg ) ) {
 			$retval = new WP_Error(
-				'bp_rest_group_member_invalid_id',
-				__( 'Invalid group member id.', 'buddypress' ),
+				'bp_rest_authorization_required',
+				__( 'User is not allowed to approve membership requests to this group.', 'buddypress' ),
 				array(
-					'status' => 404,
+					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
-
-		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-
-		if ( true === $retval && ! $group instanceof BP_Groups_Group ) {
-			$retval = new WP_Error(
-				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		if ( true === $retval && ! groups_check_for_membership_request( $user->ID, $group->id ) ) {
-			$retval = new WP_Error(
-				'bp_rest_group_membership_update_no_request',
-				__( 'There is no membership request to this member.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
-		// Site administrators can do anything.
-		if ( true === $retval && bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
-		} else {
-			if ( true === $retval && ! groups_is_user_admin( $user->ID, $group->id ) ) {
-				$retval = new WP_Error(
-					'bp_rest_authorization_required',
-					__( 'User is not allowed to have request membership issued to this group.', 'buddypress' ),
-					array(
-						'status' => rest_authorization_required_code(),
-					)
-				);
-			}
-
-			if ( true === $retval ) {
-				$retval = true;
-			}
 		}
 
 		/**
@@ -634,11 +663,46 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		$user  = bp_rest_get_user( $request['user_id'] );
-		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+		$user_id_arg  = isset( $request['user_id'] ) ? absint( $request['user_id'] ) : 0;
+		$user         = bp_rest_get_user( $user_id_arg );
+		$group_id_arg = isset( $request['group_id'] ) ? absint( $request['group_id'] ) : 0;
+		$group        = $this->groups_endpoint->get_group_object( $group_id_arg );
+
+		// Check for valid user.
+		if ( ! $user instanceof WP_User ) {
+			return new WP_Error(
+				'bp_rest_group_member_invalid_id',
+				__( 'Invalid user id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		// Check for valid group.
+		if ( ! $group instanceof BP_Groups_Group ) {
+			return new WP_Error(
+				'bp_rest_group_invalid_id',
+				__( 'Invalid group id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		// Check for valid membership request.
+		if ( ! groups_check_for_membership_request( $user->ID, $group->id ) ) {
+			return new WP_Error(
+				'bp_rest_group_membership_update_no_request',
+				__( 'There is no membership request from this member to this group.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
 
 		$success = groups_reject_membership_request( false, $user->ID, $group->id );
-		if ( ! $invite_id ) {
+		if ( ! $success ) {
 			return new WP_Error(
 				'bp_rest_group_membership_request_rejection_failed',
 				__( 'There was an error rejecting the membership request.', 'buddypress' ),
@@ -664,12 +728,11 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param WP_User          $user         The user.
-		 * @param BP_Groups_Member $group_member The group member object.
 		 * @param BP_Groups_Group  $group        The group object.
 		 * @param WP_REST_Response $response     The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
-		do_action( 'bp_rest_group_membership_request_delete_item', $user, $group_member, $group, $response, $request );
+		do_action( 'bp_rest_group_membership_request_delete_item', $user, $group, $response, $request );
 
 		return $response;
 	}
@@ -683,17 +746,44 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
-		$retval = $this->update_item_permissions_check( $request );
+		$user_id      = bp_loggedin_user_id();
+		$group_id_arg = isset( $request['group_id'] ) ? absint( $request['group_id'] ) : 0;
+		$group        = $this->groups_endpoint->get_group_object( $group_id_arg );
+		$user_id_arg  = isset( $request['user_id'] ) ? absint( $request['user_id'] ) : 0;
+		$allow        = true;
+
+		// Site admins can delete requests.
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			// Do nothing.
+		// User must be logged in.
+		} else if ( ! $user_id ) {
+			$allow = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to make an update.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		// User must either be the requesting user or a group admin of the subject group.
+		} else if ( $user_id !== $user_id_arg && ! groups_is_user_admin( $user_id, $group_id_arg ) ) {
+			$allow = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'User is not allowed to delete membership requests with these parameters.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
 
 		/**
 		 * Filter the group membership request `delete_item` permissions check.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param bool|WP_Error   $allow   Whether the request may proceed.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_group_membership_request_delete_item_permissions_check', $retval, $request );
+		return apply_filters( 'bp_rest_group_membership_request_delete_item_permissions_check', $allow, $request );
 	}
 
 	/**
