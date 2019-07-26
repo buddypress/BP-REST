@@ -42,7 +42,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 			// But we absolutely need the email.
 			$args['email'] = array(
-				'description' => __( 'The email address for the user.' ),
+				'description' => __( 'The email address for the member.', 'buddypress' ),
 				'type'        => 'string',
 				'format'      => 'email',
 				'context'     => array( 'edit' ),
