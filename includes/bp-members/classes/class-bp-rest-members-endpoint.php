@@ -26,7 +26,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
-	 * Make sure to retrieve the needed argument for the endpoint CREATABLE methods.
+	 * Make sure to retrieve the needed arguments for the endpoint CREATABLE method.
 	 *
 	 * @since 0.1.0
 	 *
