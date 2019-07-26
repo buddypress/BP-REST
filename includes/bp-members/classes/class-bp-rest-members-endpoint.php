@@ -26,6 +26,34 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
+	 * Make sure to retrieve the needed argument for the endpoint CREATABLE methods.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+
+		if ( WP_REST_Server::CREATABLE === $method ) {
+			// We don't need the mention name to create a user.
+			unset( $args['mention_name'] );
+
+			// But we absolutely need the email.
+			$args['email'] = array(
+				'description' => __( 'The email address for the user.' ),
+				'type'        => 'string',
+				'format'      => 'email',
+				'context'     => array( 'edit' ),
+				'required'    => true,
+			);
+		}
+
+		return $args;
+	}
+
+	/**
 	 * Retrieve users.
 	 *
 	 * @since 0.1.0
