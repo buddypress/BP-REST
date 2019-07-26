@@ -623,8 +623,12 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params                       = parent::get_collection_params();
-		$params['context']['default'] = 'view';
+		$params = array_intersect_key( parent::get_collection_params(), array(
+			'context'  => true,
+			'page'     => true,
+			'per_page' => true,
+			'search'   => true,
+		) );
 
 		$params['type'] = array(
 			'description'       => __( 'Shorthand for certain orderby/order combinations.', 'buddypress' ),
