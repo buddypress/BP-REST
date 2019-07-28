@@ -26,6 +26,34 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
+	 * Make sure to retrieve the needed arguments for the endpoint CREATABLE method.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+
+		if ( WP_REST_Server::CREATABLE === $method ) {
+			// We don't need the mention name to create a user.
+			unset( $args['mention_name'] );
+
+			// But we absolutely need the email.
+			$args['email'] = array(
+				'description' => __( 'The email address for the member.', 'buddypress' ),
+				'type'        => 'string',
+				'format'      => 'email',
+				'context'     => array( 'edit' ),
+				'required'    => true,
+			);
+		}
+
+		return $args;
+	}
+
+	/**
 	 * Retrieve users.
 	 *
 	 * @since 0.1.0
@@ -623,8 +651,12 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params                       = parent::get_collection_params();
-		$params['context']['default'] = 'view';
+		$params = array_intersect_key( parent::get_collection_params(), array(
+			'context'  => true,
+			'page'     => true,
+			'per_page' => true,
+			'search'   => true,
+		) );
 
 		$params['type'] = array(
 			'description'       => __( 'Shorthand for certain orderby/order combinations.', 'buddypress' ),
