@@ -45,7 +45,25 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'update_item' ),
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
-					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
+					'args'                => array(
+						'name'   => array(
+							'type'        => 'string',
+							'required'    => true,
+							'description' => __( 'Name of the component.', 'buddypress' ),
+							'arg_options' => array(
+								'sanitize_callback' => 'sanitize_key',
+							),
+						),
+						'action' => array(
+							'description' => __( 'Whether to activate or deactivate the component.', 'buddypress' ),
+							'type'        => 'string',
+							'enum'        => array( 'activate', 'deactivate' ),
+							'required'    => true,
+							'arg_options' => array(
+								'sanitize_callback' => 'sanitize_key',
+							),
+						),
+					),
 				),
 				'schema' => array( $this, 'get_item_schema' ),
 			)
