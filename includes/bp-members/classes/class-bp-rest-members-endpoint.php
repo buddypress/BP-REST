@@ -48,6 +48,12 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				'context'     => array( 'edit' ),
 				'required'    => true,
 			);
+		} elseif ( WP_REST_Server::EDITABLE === $method ) {
+			/**
+			 * 1. The mention name or user login are not updatable.
+			 * 2. The password belongs to the Settings endpoint parameter.
+			 */
+			unset( $args['mention_name'], $args['user_login'], $args['password'] );
 		}
 
 		return $args;
@@ -264,7 +270,12 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		if ( true === $retval && ! $this->can_manage_member( $user ) ) {
+		$action = 'delete';
+		if ( 'DELETE' !== $request->get_method() ) {
+			$action = 'update';
+		}
+
+		if ( true === $retval && ! $this->can_manage_member( $user, $action ) ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
@@ -305,6 +316,48 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_members_delete_item_permissions_check', $retval, $request );
+	}
+
+	/**
+	 * Deleting the current user is not implemented into this endpoint.
+	 *
+	 * This action is specific to the User Settings endpoint.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_Error                WP_Error object to inform it's not implemented.
+	 */
+	public function delete_current_item_permissions_check( $request ) {
+		return new WP_Error(
+			'bp_rest_invalid_method',
+			/* translators: %s: transport method name */
+			sprintf( __( '\'%s\' Transport Method not implemented.', 'buddypress' ), $request->get_method() ),
+			array(
+				'status' => 405,
+			)
+		);
+	}
+
+	/**
+	 * Deleting the current user is not implemented into this endpoint.
+	 *
+	 * This action is specific to the User Settings endpoint.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_Error                WP_Error to inform it's not implemented.
+	 */
+	public function delete_current_item( $request ) {
+		return new WP_Error(
+			'bp_rest_invalid_method',
+			/* translators: %s: transport method name */
+			sprintf( __( '\'%s\' Transport method not implemented.', 'buddypress' ), $request->get_method() ),
+			array(
+				'status' => 405,
+			)
+		);
 	}
 
 	/**
@@ -475,10 +528,16 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_User $user User object.
+	 * @param  string  $action The action to perform (update or delete).
 	 * @return bool
 	 */
-	protected function can_manage_member( $user ) {
-		return ( current_user_can( 'bp_moderate' ) || current_user_can( 'delete_user', $user->ID ) );
+	protected function can_manage_member( $user, $action = 'delete' ) {
+		$capability = 'delete_user';
+		if ( 'update' === $action ) {
+			$capability = 'edit_user';
+		}
+
+		return ( current_user_can( 'bp_moderate' ) || current_user_can( $capability, $user->ID ) );
 	}
 
 	/**
@@ -651,12 +710,15 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params = array_intersect_key( parent::get_collection_params(), array(
-			'context'  => true,
-			'page'     => true,
-			'per_page' => true,
-			'search'   => true,
-		) );
+		$params = array_intersect_key(
+			parent::get_collection_params(),
+			array(
+				'context'  => true,
+				'page'     => true,
+				'per_page' => true,
+				'search'   => true,
+			)
+		);
 
 		$params['type'] = array(
 			'description'       => __( 'Shorthand for certain orderby/order combinations.', 'buddypress' ),
