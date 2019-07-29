@@ -195,7 +195,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			 * So, the request must be scoped if the user is not a site admin.
 			 */
 			if ( bp_current_user_can( 'bp_moderate' )
-				|| $group_id_arg && $this->can_see( $group_id_arg ) // @TODO: This allows group admins, too. Is that OK?
+				|| $group_id_arg && $this->can_see( $group_id_arg )
 				|| $user_id_arg === $user_id
 				|| $inviter_id_arg === $user_id
 			) {
@@ -278,7 +278,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to get a membership.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to see the group invitations.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -327,7 +327,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_group_membership_request_get_item_permissions_check', $retval, $request );
+		return apply_filters( 'bp_rest_group_invites_get_item_permissions_check', $retval, $request );
 	}
 
 	/**
