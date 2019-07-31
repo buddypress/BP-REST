@@ -678,13 +678,10 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'send_invite' => 1,
 		) );
 
-		var_dump( $invite_id );
-
 		$this->bp->set_current_user( $this->g1admin );
 
 		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $invite_id );
 		$response = $this->server->dispatch( $request );
-var_dump( groups_is_user_admin( $this->g1admin, $this->g1 ) );
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
