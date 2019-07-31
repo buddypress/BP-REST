@@ -123,6 +123,11 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			'page'     => isset( $request['page'] ) ? $request['page'] : 1,
 		);
 
+		// If the query is not restricted by group or user, limit it to the current user, if not an admin.
+		if ( ! $args['item_id'] && ! $args['user_id'] && ! bp_current_user_can( 'bp_moderate' ) ) {
+			$args['user_id'] = bp_loggedin_user_id();
+		}
+
 		/**
 		 * Filter the query arguments for the request.
 		 *
@@ -201,6 +206,10 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		$user_id      = bp_loggedin_user_id();
 		$group_id_arg = isset( $request['group_id'] ) ? absint( $request['group_id'] ) : false;
 		$user_id_arg  = isset( $request['user_id'] ) ? absint( $request['user_id'] ) : false;
+		// If the query is not restricted by group or user, limit it to the current user, if not an admin.
+		if ( ! $group_id_arg && ! $user_id_arg && ! bp_current_user_can( 'bp_moderate' ) ) {
+			$user_id_arg = $user_id;
+		}
 
 		if ( ! $user_id ) {
 			$allow = new WP_Error(
