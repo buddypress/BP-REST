@@ -66,6 +66,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			$activity_endpoint,
 			array(
+				'args'   => array(
+					'id' => array(
+						'description' => __( 'A unique numeric ID for the activity.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+				),
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
@@ -98,6 +104,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			$activity_endpoint . '/favorite',
 			array(
+				'args'   => array(
+					'id' => array(
+						'description' => __( 'A unique numeric ID for the activity.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+				),
 				array(
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'update_favorite' ),
@@ -106,6 +118,29 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'schema' => array( $this, 'get_item_schema' ),
 			)
 		);
+	}
+
+	/**
+	 * Edit the type of the some properties for the CREATABLE & EDITABLE methods.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+
+		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
+			$args['content']['type'] = 'string';
+			unset( $args['content']['properties'] );
+
+			if ( WP_REST_Server::EDITABLE === $method ) {
+				$args['type']['required'] = true;
+			}
+		}
+
+		return $args;
 	}
 
 	/**
@@ -485,16 +520,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			return new WP_Error(
 				'bp_rest_update_activity_empty_content',
 				__( 'Please, enter some content.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
-		if ( empty( $request['type'] ) ) {
-			return new WP_Error(
-				'bp_rest_update_activity_empty_type',
-				__( 'Please, activity type is required.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
@@ -1214,7 +1239,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'properties' => array(
 				'id'                => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
+					'description' => __( 'A unique numeric ID for the activity.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
@@ -1230,19 +1255,18 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				),
 				'user_id'           => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID for the creator of the object.', 'buddypress' ),
+					'description' => __( 'The ID for the author of the activity.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'link'              => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
-					'readonly'    => true,
+					'description' => __( 'The permalink to this activity on the site.', 'buddypress' ),
 					'format'      => 'uri',
 					'type'        => 'string',
 				),
 				'component'         => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The active BuddyPress component the object relates to.', 'buddypress' ),
+					'description' => __( 'The active BuddyPress component the activity relates to.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array_keys( buddypress()->active_components ),
 					'arg_options' => array(
@@ -1251,7 +1275,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				),
 				'type'              => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The activity type of the object.', 'buddypress' ),
+					'description' => __( 'The activity type of the activity.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array_keys( bp_activity_get_types() ),
 					'arg_options' => array(
@@ -1260,15 +1284,16 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				),
 				'title'             => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'HTML title of the object.', 'buddypress' ),
+					'description' => __( 'The description of the activity\'s type (eg: Username posted an update)', 'buddypress' ),
 					'type'        => 'string',
+					'readonly'    => true,
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
 				'content'           => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'HTML content of the object.', 'buddypress' ),
+					'description' => __( 'Allowed HTML content for the activity.', 'buddypress' ),
 					'type'        => 'object',
 					'arg_options' => array(
 						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
@@ -1276,12 +1301,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					),
 					'properties'  => array(
 						'raw'      => array(
-							'description' => __( 'Content for the object, as it exists in the database.', 'buddypress' ),
+							'description' => __( 'Content for the activity, as it exists in the database.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'edit' ),
 						),
 						'rendered' => array(
-							'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
+							'description' => __( 'HTML content for the activity, transformed for display.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'view', 'edit' ),
 							'readonly'    => true,
@@ -1290,33 +1315,36 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				),
 				'date'              => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( "The date the object was published, in the site's timezone.", 'buddypress' ),
+					'description' => __( "The date the activity was published, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 				),
 				'status'            => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the object has been marked as spam or not.', 'buddypress' ),
+					'description' => __( 'Whether the activity has been marked as spam or not.', 'buddypress' ),
 					'type'        => 'string',
 					'enum'        => array( 'published', 'spam' ),
+					'readonly'    => true,
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
 				'parent'            => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the parent of the object.', 'buddypress' ),
+					'description' => __( 'The ID of the parent of the activity.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'comments'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A list of objects children of the activity object.', 'buddypress' ),
 					'type'        => 'array',
+					'readonly'    => true,
 				),
 				'comment_count'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Total number of comments of the activity object.', 'buddypress' ),
 					'type'        => 'integer',
+					'readonly'    => true,
 				),
 				'hidden'            => array(
 					'context'     => array( 'edit' ),
@@ -1354,7 +1382,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 			$schema['properties']['user_avatar'] = array(
 				'context'     => array( 'view', 'edit' ),
-				'description' => __( 'Avatar URLs for the member.', 'buddypress' ),
+				'description' => __( 'Avatar URLs for the author of the activity.', 'buddypress' ),
 				'type'        => 'object',
 				'readonly'    => true,
 				'properties'  => $avatar_properties,
