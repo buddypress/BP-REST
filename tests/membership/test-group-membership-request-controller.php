@@ -137,6 +137,8 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 	 * @group get_items
 	 */
 	public function test_get_items_user_is_not_logged_in() {
+		$this->bp->set_current_user( 0 );
+
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
 			'group_id' => $this->group_id,
@@ -164,7 +166,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_get_membership_request_disallowed', $response, 500 );
 	}
 
 	/**
@@ -184,7 +186,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_delete_membership_request_disallowed', $response, 500 );
 	}
 
 	/**
@@ -234,6 +236,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 
 		$request_id = groups_send_membership_request( array( 'group_id' => $this->group_id, 'user_id' => $u ) );
 
+		$this->bp->set_current_user( 0 );
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/'. $request_id );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -319,6 +322,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 	public function test_create_item_user_is_not_logged_in() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
+		$this->bp->set_current_user( 0 );
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params( array(
 			'user_id'  => $u,
@@ -458,6 +462,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 
 		$request_id = groups_send_membership_request( array( 'group_id' => $this->group_id, 'user_id' => $u ) );
 
+		$this->bp->set_current_user( 0 );
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $request_id );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -563,6 +568,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 
 		$request_id = groups_send_membership_request( array( 'group_id' => $this->g1, 'user_id' => $u ) );
 
+		$this->bp->set_current_user( 0 );
 		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $request_id );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );

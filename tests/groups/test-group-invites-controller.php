@@ -220,7 +220,8 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_items
 	 */
 	public function test_get_items_user_not_logged_in() {
-		$url = add_query_arg( 'group_id', $this->group_id, $this->endpoint_url );
+		$this->bp->set_current_user( 0 );
+
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
 			'group_id' => $this->group_id,
@@ -245,7 +246,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_group_invites_not_allowed', $response, 500 );
 	}
 
 	/**
@@ -383,7 +384,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_group_invite_creation_disallowed', $response, 500 );
 	}
 
 	/**
@@ -392,7 +393,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	public function test_create_item_user_not_logged_in() {
 		$u = $this->factory->user->create();
 
-		// @TODO: Is this really testing a not-logged-in user?
+		$this->bp->set_current_user( 0 );
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params( array(
 			'user_id'    => $u,
@@ -437,7 +438,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -553,7 +554,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'inviter_id'  => $this->user,
 			'send_invite' => 1,
 		) );
-
+		$this->bp->set_current_user( 0 );
 		$request  = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $invite_id );
 		$response = $this->server->dispatch( $request );
 
@@ -701,6 +702,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'inviter_id'  => $this->user,
 			'send_invite' => 1,
 		) );
+		$this->bp->set_current_user( 0 );
 		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $invite_id );
 		$request->set_query_params( array(
 			'user_id'    => $u1,
@@ -733,7 +735,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_delete_invite_disallowed', $response, 500 );
 	}
 
 	/**
