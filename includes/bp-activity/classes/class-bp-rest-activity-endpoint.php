@@ -121,29 +121,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Edit the type of the some properties for the CREATABLE & EDITABLE methods.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $method Optional. HTTP method of the request.
-	 * @return array Endpoint arguments.
-	 */
-	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
-
-		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
-			$args['content']['type'] = 'string';
-			unset( $args['content']['properties'] );
-
-			if ( WP_REST_Server::EDITABLE === $method ) {
-				$args['type']['required'] = true;
-			}
-		}
-
-		return $args;
-	}
-
-	/**
 	 * Retrieve activities.
 	 *
 	 * @since 0.1.0
@@ -1222,6 +1199,29 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Edit the type of the some properties for the CREATABLE & EDITABLE methods.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+
+		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
+			$args['content']['type'] = 'string';
+			unset( $args['content']['properties'] );
+
+			if ( WP_REST_Server::EDITABLE === $method ) {
+				$args['type']['required'] = true;
+			}
+		}
+
+		return $args;
 	}
 
 	/**

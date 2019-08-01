@@ -99,7 +99,9 @@ trait BP_REST_Attachments {
 			$avatar_object->{$key_type} = bp_core_avatar_url() . $url;
 		}
 
-		unlink( $avatar_original['file'] );
+		if ( file_exists( $avatar_original['file'] ) ) {
+			unlink( $avatar_original['file'] );
+		}
 
 		return $avatar_object;
 	}
