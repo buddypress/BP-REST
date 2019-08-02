@@ -68,6 +68,12 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			'/' . $this->rest_base . '/(?P<id>[\d]+)',
 			array(
+				'args'   => array(
+					'id' => array(
+						'description' => __( 'A unique numeric ID for the group of profile fields.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+				),
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
@@ -87,6 +93,29 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 				'schema' => array( $this, 'get_item_schema' ),
 			)
 		);
+	}
+
+	/**
+	 * Edit some properties for the CREATABLE & EDITABLE methods.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+
+		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
+			$args['description']['type'] = 'string';
+			unset( $args['description']['properties'] );
+
+			if ( WP_REST_Server::CREATABLE === $method ) {
+				unset( $args['group_order'] );
+			}
+		}
+
+		return $args;
 	}
 
 	/**
@@ -379,9 +408,9 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 
 		$args = array(
 			'field_group_id' => $field_group->id,
-			'name'           => $request['name'],
-			'description'    => $request['description'],
-			'can_delete'     => $request['can_delete'],
+			'name'           => is_null( $request['name'] ) ? $field_group->name : $request['name'],
+			'description'    => is_null( $request['description'] ) ? $field_group->description : $request['description'],
+			'can_delete'     => is_null( $request['can_delete'] ) ? (bool) $field_group->can_delete : $request['can_delete'],
 		);
 
 		$group_id = xprofile_insert_field_group( $args );
@@ -394,6 +423,11 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 					'status' => 500,
 				)
 			);
+		}
+
+		// Update the position if the group_order exists.
+		if ( is_numeric( $request['group_order'] ) ) {
+			xprofile_update_field_group_position( $group_id, $request['group_order'] );
 		}
 
 		$field_group = $this->get_xprofile_field_group_object( $group_id );
@@ -660,13 +694,13 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			'properties' => array(
 				'id'          => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
+					'description' => __( 'A unique numeric ID for the group of profile fields.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'name'        => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The name of the XProfile field group.', 'buddypress' ),
+					'description' => __( 'The name of group of profile fields.', 'buddypress' ),
 					'type'        => 'string',
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_text_field',
@@ -674,7 +708,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 				),
 				'description' => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The description of the object.', 'buddypress' ),
+					'description' => __( 'The description of the group of profile fields.', 'buddypress' ),
 					'type'        => 'object',
 					'arg_options' => array(
 						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
@@ -682,12 +716,12 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 					),
 					'properties'  => array(
 						'raw'      => array(
-							'description' => __( 'Content for the object, as it exists in the database.', 'buddypress' ),
+							'description' => __( 'Content for the group of profile fields, as it exists in the database.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'edit' ),
 						),
 						'rendered' => array(
-							'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
+							'description' => __( 'HTML content for the group of profile fields, transformed for display.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'view', 'edit' ),
 							'readonly'    => true,
@@ -696,18 +730,19 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 				),
 				'group_order' => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The order of the group.', 'buddypress' ),
+					'description' => __( 'The order of the group of profile fields.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'can_delete'  => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the XProfile field group can be deleted or not.', 'buddypress' ),
+					'description' => __( 'Whether the group of profile fields can be deleted or not.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
 				'fields'      => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The fields associated with this field group.', 'buddypress' ),
+					'description' => __( 'The fields associated with this group of profile fields.', 'buddypress' ),
 					'type'        => 'array',
+					'readonly'    => true,
 				),
 			),
 		);
