@@ -775,7 +775,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['hide_empty_groups'] = array(
-			'description'       => __( 'True to hide groups that do not have any fields.', 'buddypress' ),
+			'description'       => __( 'Whether to hide profile groups of fields that do not have any profile fields or not.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',
@@ -799,16 +799,8 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'bp_rest_validate_member_types',
 		);
 
-		$params['hide_empty_groups'] = array(
-			'description'       => __( 'True to hide field groups where the user has not provided data.', 'buddypress' ),
-			'default'           => false,
-			'type'              => 'boolean',
-			'sanitize_callback' => 'rest_sanitize_boolean',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
 		$params['hide_empty_fields'] = array(
-			'description'       => __( 'True to hide fields where the user has not provided data.', 'buddypress' ),
+			'description'       => __( 'Whether to hide profile groups of fields that do not have any profile fields or not.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',

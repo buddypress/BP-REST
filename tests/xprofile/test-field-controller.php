@@ -252,7 +252,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
 		$request->add_header( 'content-type', 'application/json' );
 
-		$params = $this->set_field_data( [ 'name' => $new_name, 'field_group_id' => $this->group_id ] );
+		$params = $this->set_field_data( [ 'name' => $new_name, 'group_id' => $this->group_id ] );
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
@@ -276,7 +276,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$request->add_header( 'content-type', 'application/json' );
-		$params  = $this->set_field_data( [ 'field_group_id' => $this->group_id ] );
+		$params  = $this->set_field_data( [ 'group_id' => $this->group_id ] );
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
@@ -290,7 +290,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
 		$request->add_header( 'content-type', 'application/json' );
 
-		$params = $this->set_field_data( [ 'field_group_id' => $this->group_id ] );
+		$params = $this->set_field_data( [ 'group_id' => $this->group_id ] );
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
@@ -306,7 +306,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 
 		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
 		$request->add_header( 'content-type', 'application/json' );
-		$params  = $this->set_field_data( [ 'field_group_id' => $this->group_id ] );
+		$params  = $this->set_field_data( [ 'group_id' => $this->group_id ] );
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
@@ -403,9 +403,9 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 
 	protected function set_field_data( $args = array() ) {
 		return wp_parse_args( $args, array(
-			'type'           => 'checkbox',
-			'name'           => 'Test Field Name',
-			'field_group_id' => $this->group_id,
+			'type'     => 'checkbox',
+			'name'     => 'Test Field Name',
+			'group_id' => $this->group_id,
 		) );
 	}
 
@@ -539,9 +539,9 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->field_id ) );
 		$request->add_header( 'content-type', 'application/json' );
 		$params = $this->set_field_data( array(
-			'name'           => $this->endpoint->get_xprofile_field_object( $this->field_id )->name,
-			'field_group_id' => $this->group_id,
-			'bar_field_key'  => $expected,
+			'name'          => $this->endpoint->get_xprofile_field_object( $this->field_id )->name,
+			'group_id'      => $this->group_id,
+			'bar_field_key' => $expected,
 		) );
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
