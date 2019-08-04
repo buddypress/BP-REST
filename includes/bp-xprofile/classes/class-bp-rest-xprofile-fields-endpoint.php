@@ -289,9 +289,12 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			// Ensure that the requester is allowed to see this field.
 			$hidden_user_fields = bp_xprofile_get_hidden_fields_for_user( $request['user_id'] );
 
-			$field->data->value = in_array( $profile_field_id, $hidden_user_fields, true )
-				? __( 'Value suppressed.', 'buddypress' )
-				: xprofile_get_field_data( $profile_field_id, $request['user_id'] );
+			if ( in_array( $profile_field_id, $hidden_user_fields, true ) ) {
+				$field->data->value = __( 'Value suppressed.', 'buddypress' );
+			} else {
+				// Get the raw value for the field.
+				$field->data->value = BP_XProfile_ProfileData::get_value_byid( $profile_field_id, $request['user_id'] );
+			}
 
 			// Set 'fetch_field_data' to true so that the data is included in the response.
 			$request['fetch_field_data'] = true;
@@ -782,7 +785,12 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			if ( isset( $field->data->id ) ) {
 				$data['data']['id'] = $field->data->id;
 			}
-			$data['data']['value'] = maybe_unserialize( $field->data->value );
+
+			$data['data']['value'] = array(
+				'raw'          => $field->data->value,
+				'unserialized' => $this->get_profile_field_unserialized_value( $field->data->value ),
+				'rendered'     => $this->get_profile_field_rendered_value( $field->data->value, $field ),
+			);
 		}
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -841,6 +849,73 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		}
 
 		return $field;
+	}
+
+	/**
+	 * Retrieve the rendered value of a profile field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  string                    $value         The raw value of the field.
+	 * @param  integer|BP_XProfile_Field $profile_field The ID or the full object for the field.
+	 * @return string                                   The field value for the display context.
+	 */
+	public function get_profile_field_rendered_value( $value = '', $profile_field = null ) {
+		if ( ! $value ) {
+			return '';
+		}
+
+		$profile_field = xprofile_get_field( $profile_field );
+
+		if ( ! isset( $profile_field->id ) ) {
+			return '';
+		}
+
+		// Unserialize the BuddyPress way.
+		$value = bp_unserialize_profile_field( $value );
+
+		global $field;
+		$reset_global = $field;
+
+		// Set the $field global as the `xprofile_filter_link_profile_data` filter needs it.
+		$field = $profile_field;
+
+		/**
+		 * Apply Filters to sanitize XProfile field value.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param string $value Value for the profile field.
+		 * @param string $type  Type for the profile field.
+		 * @param int    $id    ID for the profile field.
+		 */
+		$value = apply_filters( 'bp_get_the_profile_field_value', $value, $field->type, $field->id );
+
+		// Reset the global before returning the value.
+		$field = $reset_global;
+
+		return $value;
+	}
+
+	/**
+	 * Retrieve the unserialized value of a profile field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  string $value The raw value of the field.
+	 * @return array         The unserialized field value.
+	 */
+	public function get_profile_field_unserialized_value( $value = '' ) {
+		if ( ! $value ) {
+			return array();
+		}
+
+		$unserialized_value = maybe_unserialize( $value );
+		if ( ! is_array( $unserialized_value ) ) {
+			$unserialized_value = (array) $unserialized_value;
+		}
+
+		return $unserialized_value;
 	}
 
 	/**
@@ -954,8 +1029,27 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 				'data'              => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The saved value for this profile field.', 'buddypress' ),
-					'type'        => 'array',
+					'type'        => 'object',
 					'readonly'    => true,
+					'properties'  => array(
+						'raw'          => array(
+							'description' => __( 'Value for the field, as it exists in the database.', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array( 'view', 'edit' ),
+						),
+						'unserialized' => array(
+							'description' => __( 'Unserialized value for the field, regular string will be casted as array.', 'buddypress' ),
+							'type'        => 'array',
+							'context'     => array( 'view', 'edit' ),
+							'readonly'    => true,
+						),
+						'rendered'     => array(
+							'description' => __( 'HTML value for the field, transformed for display.' ),
+							'type'        => 'string',
+							'context'     => array( 'view', 'edit' ),
+							'readonly'    => true,
+						),
+					),
 				),
 			),
 		);

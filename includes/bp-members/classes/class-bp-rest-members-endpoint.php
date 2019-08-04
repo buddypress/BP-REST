@@ -495,6 +495,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		// Get XProfile groups, only if the component is active.
 		if ( bp_is_active( 'xprofile' ) ) {
+			$fields_endpoint = new BP_REST_XProfile_Fields_Endpoint();
+
 			$groups = bp_xprofile_get_groups(
 				array(
 					'user_id'          => $user_id,
@@ -511,7 +513,11 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				foreach ( $group->fields as $item ) {
 					$data['groups'][ $group->id ]['fields'][ $item->id ] = array(
 						'name'  => $item->name,
-						'value' => maybe_unserialize( $item->data->value ),
+						'value' => array(
+							'raw'          => $item->data->value,
+							'unserialized' => $fields_endpoint->get_profile_field_unserialized_value( $item->data->value ),
+							'rendered'     => $fields_endpoint->get_profile_field_rendered_value( $item->data->value, $item ),
+						),
 					);
 				}
 			}
