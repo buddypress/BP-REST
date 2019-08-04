@@ -154,16 +154,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'search_terms' => $request['search'],
 		);
 
-		/**
-		 * Filter the query arguments for the request.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param array           $args    Key value array of query var to query value.
-		 * @param WP_REST_Request $request The request sent to the API.
-		 */
-		$args = apply_filters( 'bp_rest_messages_get_items_query_args', $args, $request );
-
 		// Include the meta_query for starred messages.
 		if ( 'starred' === $args['box'] ) {
 			$args['meta_query'] = array( // phpcs:ignore
@@ -173,6 +163,16 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				),
 			);
 		}
+
+		/**
+		 * Filter the query arguments for the request.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array           $args    Key value array of query var to query value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$args = apply_filters( 'bp_rest_messages_get_items_query_args', $args, $request );
 
 		// Actually, query it.
 		$messages_box = new BP_Messages_Box_Template( $args );

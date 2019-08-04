@@ -273,7 +273,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Request|WP_Error
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
 		$activity = $this->get_activity_object( $request );
@@ -900,16 +900,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'favorited'         => in_array( $activity->id, $this->get_user_favorites(), true ),
 		);
 
-		// Get comment count.
+		// Get comments (count).
 		if ( ! empty( $activity->children ) ) {
 			$comment_count         = wp_filter_object_list( $activity->children, array( 'type' => 'activity_comment' ), 'AND', 'id' );
 			$data['comment_count'] = ! empty( $comment_count ) ? count( $comment_count ) : 0;
-		}
 
-		$schema = $this->get_item_schema();
-
-		if ( ! empty( $schema['properties']['comments'] ) && 'threaded' === $request['display_comments'] ) {
-			$data['comments'] = $this->prepare_activity_comments( $activity->children, $request );
+			$schema = $this->get_item_schema();
+			if ( ! empty( $schema['properties']['comments'] ) && 'threaded' === $request['display_comments'] ) {
+				$data['comments'] = $this->prepare_activity_comments( $activity->children, $request );
+			}
 		}
 
 		if ( ! empty( $schema['properties']['user_avatar'] ) ) {
@@ -943,7 +942,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param WP_REST_Response     $response The Response data.
+		 * @param WP_REST_Response     $response The response data.
 		 * @param WP_REST_Request      $request  Request used to generate the response.
 		 * @param BP_Activity_Activity $activity The activity object.
 		 */
@@ -1135,10 +1134,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return boolean
 	 */
 	protected function can_see( $request ) {
-		$user_id  = bp_loggedin_user_id();
-		$activity = $this->get_activity_object( $request );
-
-		return bp_activity_user_can_read( $activity, $user_id );
+		return bp_activity_user_can_read(
+			$this->get_activity_object( $request ),
+			bp_loggedin_user_id()
+		);
 	}
 
 	/**
@@ -1148,7 +1147,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 *
 	 * @param  string $component The activity component.
 	 * @param  int    $item_id   The activity item ID.
-	 * @return bool
+	 * @return boolean
 	 */
 	protected function show_hidden( $component, $item_id ) {
 		$user_id = get_current_user_id();
