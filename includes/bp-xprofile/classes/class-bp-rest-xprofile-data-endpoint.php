@@ -533,8 +533,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 					'description' => __( 'The value of the field data.', 'buddypress' ),
 					'type'        => 'object',
 					'arg_options' => array(
-						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
-						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
+						'sanitize_callback' => null,
+						'validate_callback' => null,
 					),
 					'properties'  => array(
 						'raw'          => array(
