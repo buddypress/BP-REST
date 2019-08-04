@@ -139,7 +139,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		$field = $this->get_xprofile_field_object( $request['field_id'] );
 
 		if ( empty( $field->id ) ) {
-			return new WP_Error(
+			$retval = new WP_Error(
 				'bp_rest_invalid_id',
 				__( 'Invalid field id.', 'buddypress' ),
 				array(
@@ -151,8 +151,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		// Check the user can view this field value.
 		$hidden_user_fields = bp_xprofile_get_hidden_fields_for_user( $request['user_id'] );
 
-		if ( in_array( $field->id, $hidden_user_fields, true ) ) {
-			return new WP_Error(
+		if ( true === $retval && in_array( $field->id, $hidden_user_fields, true ) ) {
+			$retval = new WP_Error(
 				'bp_rest_hidden_profile_field',
 				__( 'Sorry, the profile field value is not viewable for this user.', 'buddypress' ),
 				array(
