@@ -907,7 +907,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_profile_field_unserialized_value( $value = '' ) {
 		if ( ! $value ) {
-			return '';
+			return array();
 		}
 
 		$unserialized_value = maybe_unserialize( $value );

@@ -148,6 +148,17 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Check the requested user exists.
+		if ( true === $retval && ! bp_rest_get_user( $request['user_id'] ) ) {
+			$retval = new WP_Error(
+				'bp_rest_member_invalid_id',
+				__( 'Invalid member id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
 		// Check the user can view this field value.
 		$hidden_user_fields = bp_xprofile_get_hidden_fields_for_user( $request['user_id'] );
 
