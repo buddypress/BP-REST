@@ -962,9 +962,9 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'status'             => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The status of the Group.', 'buddypress' ),
-					'required'    => true,
 					'type'        => 'string',
 					'enum'        => buddypress()->groups->valid_status,
+					'default'     => 'public',
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_key',
 					),
