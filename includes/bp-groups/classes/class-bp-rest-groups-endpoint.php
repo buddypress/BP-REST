@@ -695,11 +695,11 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		if ( ! empty( $schema['properties']['creator_id'] ) && isset( $request['creator_id'] ) ) {
 			$prepared_group->creator_id = (int) $request['creator_id'];
 
-		// Fallback on the existing creator id in case of an update.
+			// Fallback on the existing creator id in case of an update.
 		} elseif ( isset( $group->creator_id ) && $group->creator_id ) {
 			$prepared_group->creator_id = (int) $group->creator_id;
 
-		// Fallback on the current user otherwise.
+			// Fallback on the current user otherwise.
 		} else {
 			$prepared_group->creator_id = bp_loggedin_user_id();
 		}

@@ -608,6 +608,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 			'slug'        => 'group-name',
 			'description' => 'Group Description',
 			'creator_id'  => $this->user,
+			'status'      => 'public',
 		) );
 	}
 
