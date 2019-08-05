@@ -340,6 +340,21 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group create_item
+	 */
+	public function test_create_item_invalid_status() {
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_group_data( array( 'status' => 'foo' ) );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_invalid_param', $response, 400 );
+	}
+
+	/**
 	 * @group update_item
 	 */
 	public function test_update_item() {
@@ -450,6 +465,24 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$group = $this->endpoint->get_group_object( $new_data['id'] );
 		$this->assertEquals( $params['description'], $group->description );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_invalid_status() {
+		$group = $this->endpoint->get_group_object( $this->group_id );
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_group_data( array( 'status' => 'bar' ) );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_invalid_param', $response, 400 );
 	}
 
 	/**
