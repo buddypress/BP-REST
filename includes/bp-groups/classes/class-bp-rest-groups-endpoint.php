@@ -55,6 +55,12 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			'/' . $this->rest_base . '/(?P<id>[\d]+)',
 			array(
+				'args'   => array(
+					'id' => array(
+						'description' => __( 'A unique numeric ID for the Group.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+				),
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
@@ -81,6 +87,28 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'schema' => array( $this, 'get_item_schema' ),
 			)
 		);
+	}
+
+	/**
+	 * Edit some arguments for the endpoint's CREATABLE and EDITABLE methods.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+
+		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
+			$args['description']['type'] = 'string';
+
+			if ( WP_REST_Server::EDITABLE === $method ) {
+				unset( $args['slug'] );
+			}
+		}
+
+		return $args;
 	}
 
 	/**
@@ -664,10 +692,16 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		// Group Creator ID.
-		if ( ! empty( $schema['properties']['creator_id'] ) && isset( $request['user_id'] ) ) {
-			$prepared_group->creator_id = (int) $request['user_id'];
+		if ( ! empty( $schema['properties']['creator_id'] ) && isset( $request['creator_id'] ) ) {
+			$prepared_group->creator_id = (int) $request['creator_id'];
+
+		// Fallback on the existing creator id in case of an update.
+		} elseif ( isset( $group->creator_id ) && $group->creator_id ) {
+			$prepared_group->creator_id = (int) $group->creator_id;
+
+		// Fallback on the current user otherwise.
 		} else {
-			$prepared_group->creator_id = get_current_user_id();
+			$prepared_group->creator_id = bp_loggedin_user_id();
 		}
 
 		// Group Slug.
@@ -678,6 +712,17 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// Group Name.
 		if ( ! empty( $schema['properties']['name'] ) && isset( $request['name'] ) ) {
 			$prepared_group->name = $request['name'];
+		}
+
+		// Do additional checks for the Group's slug.
+		if ( WP_REST_Server::CREATABLE === $request->get_method() || ( isset( $group->slug ) && isset( $prepared_group->slug ) && $group->slug !== $prepared_group->slug ) ) {
+			// Fallback on the group name if the slug is not defined.
+			if ( ! isset( $prepared_group->slug ) && ! isset( $group->slug ) ) {
+				$prepared_group->slug = $prepared_group->name;
+			}
+
+			// Make sure it is unique and sanitize it.
+			$prepared_group->slug = groups_check_slug( sanitize_title( esc_attr( $prepared_group->slug ) ) );
 		}
 
 		// Group description.
@@ -857,19 +902,19 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'properties' => array(
 				'id'                 => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique alphanumeric ID for the object.', 'buddypress' ),
+					'description' => __( 'A unique numeric ID for the Group.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'creator_id'         => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the user that created the group.', 'buddypress' ),
-					'readonly'    => true,
+					'description' => __( 'The ID of the user who created the Group.', 'buddypress' ),
 					'type'        => 'integer',
+					'default'     => bp_loggedin_user_id(),
 				),
 				'name'               => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The name of the group.', 'buddypress' ),
+					'description' => __( 'The name of the Group.', 'buddypress' ),
 					'type'        => 'string',
 					'required'    => true,
 					'arg_options' => array(
@@ -878,36 +923,36 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				),
 				'slug'               => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The URL-friendly slug for the group.', 'buddypress' ),
+					'description' => __( 'The URL-friendly slug for the Group.', 'buddypress' ),
 					'type'        => 'string',
-					'readonly'    => true,
 					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_title',
+						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
 					),
 				),
 				'link'               => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The permalink to this object on the site.', 'buddypress' ),
+					'description' => __( 'The permalink to the Group on the site.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'uri',
 					'readonly'    => true,
 				),
 				'description'        => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The description of the group.', 'buddypress' ),
+					'description' => __( 'The description of the Group.', 'buddypress' ),
 					'type'        => 'object',
+					'required'    => true,
 					'arg_options' => array(
 						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
 						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
 					),
 					'properties'  => array(
 						'raw'      => array(
-							'description' => __( 'Content for the group, as it exists in the database.', 'buddypress' ),
+							'description' => __( 'Content for the description of the Group, as it exists in the database.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'view', 'edit' ),
 						),
 						'rendered' => array(
-							'description' => __( 'HTML content for the group, transformed for display.', 'buddypress' ),
+							'description' => __( 'HTML content for the description of the Group, transformed for display.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'view', 'edit' ),
 							'readonly'    => true,
@@ -916,29 +961,27 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				),
 				'status'             => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The status of the group.', 'buddypress' ),
-					'readonly'    => true,
+					'description' => __( 'The status of the Group.', 'buddypress' ),
+					'required'    => true,
 					'type'        => 'string',
-					'enum'        => array( 'public', 'private', 'hidden' ),
+					'enum'        => buddypress()->groups->valid_status,
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_key',
 					),
 				),
 				'enable_forum'       => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the group has a forum or not.', 'buddypress' ),
-					'readonly'    => true,
+					'description' => __( 'Whether the Group has a forum or not.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
 				'parent_id'          => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'ID of the parent group.', 'buddypress' ),
-					'readonly'    => true,
+					'description' => __( 'ID of the parent Group.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'date_created'       => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( "The date the group was created, in the site's timezone.", 'buddypress' ),
+					'description' => __( "The date the Group was created, in the site's timezone.", 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'string',
 					'format'      => 'date-time',
@@ -946,22 +989,30 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'admins'             => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'Group administrators.', 'buddypress' ),
+					'readonly'    => true,
 					'type'        => 'array',
+					'items'       => array(
+						'type' => 'object',
+					),
 				),
 				'mods'               => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'Group moderators.', 'buddypress' ),
+					'readonly'    => true,
 					'type'        => 'array',
+					'items'       => array(
+						'type' => 'object',
+					),
 				),
 				'total_member_count' => array(
 					'context'     => array( 'edit' ),
-					'description' => __( 'Count of all group members.', 'buddypress' ),
+					'description' => __( 'Count of all Group members.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'last_activity'      => array(
 					'context'     => array( 'edit' ),
-					'description' => __( "The date the group was last active, in the site's timezone.", 'buddypress' ),
+					'description' => __( "The date the Group was last active, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'readonly'    => true,
 					'format'      => 'date-time',
@@ -1021,7 +1072,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Shorthand for certain orderby/order combinations.', 'buddypress' ),
 			'default'           => 'active',
 			'type'              => 'string',
-			'enum'              => array( 'active', 'newest', 'alphabetical', 'random', 'popular', 'most-forum-topics', 'most-forum-posts' ),
+			'enum'              => array( 'active', 'newest', 'alphabetical', 'random', 'popular' ),
 			'sanitize_callback' => 'sanitize_text_field',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
@@ -1036,7 +1087,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['orderby'] = array(
-			'description'       => __( 'Order groups by which attribute.', 'buddypress' ),
+			'description'       => __( 'Order Groups by which attribute.', 'buddypress' ),
 			'default'           => 'date_created',
 			'type'              => 'string',
 			'enum'              => array( 'date_created', 'last_activity', 'total_member_count', 'name', 'random' ),
@@ -1048,13 +1099,16 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'description'       => __( 'Group statuses to limit results to.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
-			'items'             => array( 'type' => 'string' ),
+			'items'             => array(
+				'enum' => buddypress()->groups->valid_status,
+				'type' => 'string',
+			),
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['user_id'] = array(
-			'description'       => __( 'Pass a user_id to limit to only groups that this user is a member of.', 'buddypress' ),
+			'description'       => __( 'Pass a user_id to limit to only Groups that this user is a member of.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
@@ -1062,7 +1116,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['parent_id'] = array(
-			'description'       => __( 'Get groups that are children of the specified group(s) IDs.', 'buddypress' ),
+			'description'       => __( 'Get Groups that are children of the specified Group(s) IDs.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'items'             => array( 'type' => 'integer' ),
@@ -1072,7 +1126,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		// @todo Confirm what's the proper sanitization here.
 		$params['meta'] = array(
-			'description'       => __( 'Get groups based on their meta data information.', 'buddypress' ),
+			'description'       => __( 'Get Groups based on their meta data information.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'items'             => array( 'type' => 'string' ),
@@ -1080,7 +1134,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['include'] = array(
-			'description'       => __( 'Ensure result set includes groups with specific IDs.', 'buddypress' ),
+			'description'       => __( 'Ensure result set includes Groups with specific IDs.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'items'             => array( 'type' => 'integer' ),
@@ -1089,7 +1143,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['exclude'] = array(
-			'description'       => __( 'Ensure result set excludes specific IDs.', 'buddypress' ),
+			'description'       => __( 'Ensure result set excludes Groups with specific IDs', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'items'             => array( 'type' => 'integer' ),
@@ -1098,7 +1152,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['group_type'] = array(
-			'description'       => __( 'Limit results set to a certain type.', 'buddypress' ),
+			'description'       => __( 'Limit results set to a certain Group type.', 'buddypress' ),
 			'default'           => '',
 			'type'              => 'string',
 			'enum'              => bp_groups_get_group_types(),
@@ -1107,7 +1161,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['enable_forum'] = array(
-			'description'       => __( 'Whether the group has a forum enabled.', 'buddypress' ),
+			'description'       => __( 'Whether the Group has a forum enabled or not.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',
@@ -1115,7 +1169,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['show_hidden'] = array(
-			'description'       => __( 'Whether results should include hidden groups.', 'buddypress' ),
+			'description'       => __( 'Whether results should include hidden Groups.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',
