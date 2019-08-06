@@ -275,9 +275,8 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$invites   = groups_get_invites( array( 'id' => $request['invite_id'] ) );
-		$invite    = current( $invites );
-		$retval    = $this->prepare_response_for_collection(
+		$invite = $this->fetch_single_invite( array( 'id' => $request['invite_id'] ) );
+		$retval = $this->prepare_response_for_collection(
 			$this->prepare_item_for_response( $invite, $request )
 		);
 
@@ -306,10 +305,9 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		$user_id   = bp_loggedin_user_id();
-		$invites   = groups_get_invites( array( 'id' => $request['invite_id'] ) );
-		if ( $invites ) {
-			$invite = current( $invites );
+		$user_id = bp_loggedin_user_id();
+		$invite  = $this->fetch_single_invite( array( 'id' => $request['invite_id'] ) );
+		if ( $invite ) {
 			/**
 			 * Users can see a specific invitation if they
 			 * - are a site admin
@@ -508,10 +506,8 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function update_item( $request ) {
 		$user_id = bp_loggedin_user_id();
-		$invites = groups_get_invites( array( 'id' => $request['invite_id'] ) );
-		$invite  = current( $invites );
-
-		$accept = groups_accept_invite( $invite->user_id, $invite->item_id );
+		$invite  = $this->fetch_single_invite( array( 'id' => $request['invite_id'] ) );
+		$accept  = groups_accept_invite( $invite->user_id, $invite->item_id );
 		if ( ! $accept ) {
 			return new WP_Error(
 				'bp_rest_group_invite_cannot_update_item',
@@ -559,7 +555,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	public function update_item_permissions_check( $request ) {
 		$retval  = true;
 		$user_id = bp_loggedin_user_id();
-		$invites = groups_get_invites( array( 'id' => $request['invite_id'] ) );
+		$invite  = $this->fetch_single_invite( array( 'id' => $request['invite_id'] ) );
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
@@ -568,8 +564,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		} else if ( $invites ) {
-			$invite = current( $invites );
+		} else if ( $invite ) {
 			// Only the invitee or a site admin should be able to accept an invitation, and one must exist.
 			if ( bp_current_user_can( 'bp_moderate' ) ) {
 				// Nothing to do.
@@ -612,10 +607,9 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		$user_id   = bp_loggedin_user_id();
-		$invites   = groups_get_invites( array( 'id' => $request['invite_id'] ) );
-		$invite    = current( $invites );
-		$deleted   = groups_delete_invite( $invite->user_id, $invite->item_id, $invite->inviter_id );
+		$user_id = bp_loggedin_user_id();
+		$invite  = $this->fetch_single_invite( array( 'id' => $request['invite_id'] ) );
+		$deleted = groups_delete_invite( $invite->user_id, $invite->item_id, $invite->inviter_id );
 		if ( ! $deleted ) {
 			return new WP_Error(
 				'bp_rest_group_invite_cannot_delete_item',
@@ -664,7 +658,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	public function delete_item_permissions_check( $request ) {
 		$retval  = true;
 		$user_id = bp_loggedin_user_id();
-		$invites = groups_get_invites( array( 'id' => $request['invite_id'] ) );
+		$invite  = $this->fetch_single_invite( array( 'id' => $request['invite_id'] ) );
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
@@ -673,8 +667,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		} else if ( $invites ) {
-			$invite = current( $invites );
+		} else if ( $invite ) {
 			// The inviter, the invitee, group admins, and site admins can all delete invites.
 			if ( bp_current_user_can( 'bp_moderate' ) ) {
 				// Nothing to do.
@@ -942,5 +935,21 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 * @param array $params Query params.
 		 */
 		return apply_filters( 'bp_rest_group_invites_collection_params', $params );
+	}
+
+	/**
+	 * Helper function to fetch a single group invite.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return BP_Invitation|bool $invite Invitation if found, false otherwise.
+	 */
+	public function fetch_single_invite( $args = array() ) {
+		$invites = groups_get_invites( $args );
+		if ( $invites ) {
+			return current( $invites );
+		} else {
+			return false;
+		}
 	}
 }

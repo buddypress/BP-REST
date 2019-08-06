@@ -251,8 +251,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$memreqs = groups_get_requests( array( 'id' => $request['request_id'] ) );
-		$memreq = current( $memreqs );
+		$memreq = $this->fetch_single_invite( array( 'id' => $request['request_id'] ) );
 		$retval = $this->prepare_response_for_collection(
 			$this->prepare_item_for_response( $memreq, $request )
 		);
@@ -284,9 +283,8 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	public function get_item_permissions_check( $request ) {
 		$retval  = true;
 		$user_id = bp_loggedin_user_id();
-		$memreqs = groups_get_requests( array( 'id' => $request['request_id'] ) );
-		if ( $memreqs ) {
-			$request = current( $memreqs );
+		$memreq  = $this->fetch_single_invite( array( 'id' => $request['request_id'] ) );
+		if ( $memreq ) {
 			// Site admins can view anything.
 			if ( bp_current_user_can( 'bp_moderate' ) ) {
 				// Do nothing.
@@ -470,8 +468,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$memreqs = groups_get_requests( array( 'id' => $request['request_id'] ) );
-		$memreq  = current( $memreqs );
+		$memreq = $this->fetch_single_invite( array( 'id' => $request['request_id'] ) );
 		$success = groups_accept_membership_request( false, $memreq->user_id, $memreq->item_id );
 		if ( ! $success ) {
 			return new WP_Error(
@@ -520,9 +517,8 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	public function update_item_permissions_check( $request ) {
 		$retval  = true;
 		$user_id = bp_loggedin_user_id();
-		$memreqs = groups_get_requests( array( 'id' => $request['request_id'] ) );
-		if ( $memreqs ) {
-			$request = current( $memreqs );
+		$memreq  = $this->fetch_single_invite( array( 'id' => $request['request_id'] ) );
+		if ( $memreq ) {
 			// Site admins can do anything.
 			if ( bp_current_user_can( 'bp_moderate' ) ) {
 				// Do nothing.
@@ -573,9 +569,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		$memreqs = groups_get_requests( array( 'id' => $request['request_id'] ) );
-		$memreq  = current( $memreqs );
-
+		$memreq  = $this->fetch_single_invite( array( 'id' => $request['request_id'] ) );
 		$success = groups_reject_membership_request( false, $memreq->user_id, $memreq->item_id );
 		if ( ! $success ) {
 			return new WP_Error(
@@ -626,9 +620,8 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	public function delete_item_permissions_check( $request ) {
 		$retval  = true;
 		$user_id = bp_loggedin_user_id();
-		$memreqs = groups_get_requests( array( 'id' => $request['request_id'] ) );
-		if ( $memreqs ) {
-			$request = current( $memreqs );
+		$memreq  = $this->fetch_single_invite( array( 'id' => $request['request_id'] ) );
+		if ( $memreq ) {
 			// Site admins can view anything.
 			if ( bp_current_user_can( 'bp_moderate' ) ) {
 				// Do nothing.
@@ -816,5 +809,21 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		 * @param array $params Query params.
 		 */
 		return apply_filters( 'bp_rest_group_invites_collection_params', $params );
+	}
+
+	/**
+	 * Helper function to fetch a single group invite.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return BP_Invitation|bool $memreq Membership request if found, false otherwise.
+	 */
+	public function fetch_single_invite( $args = array() ) {
+		$memreqs = groups_get_requests( $args );
+		if ( $memreqs ) {
+			return current( $memreqs );
+		} else {
+			return false;
+		}
 	}
 }
