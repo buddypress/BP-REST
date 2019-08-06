@@ -58,6 +58,12 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			'/' . $this->rest_base . '/(?P<group_id>[\d]+)/members',
 			array(
+				'args'   => array(
+					'group_id' => array(
+						'description' => __( 'A unique numeric ID for the Group.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+				),
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_items' ),
@@ -72,27 +78,95 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			'/' . $this->rest_base . '/(?P<group_id>[\d]+)/members/(?P<user_id>[\d]+)',
 			array(
+				'args'   => array(
+					'group_id' => array(
+						'description' => __( 'A unique numeric ID for the Group.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'user_id'  => array(
+						'description' => __( 'A unique numeric ID for the Group Member.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'create_item_permissions_check' ),
-					'args'                => $this->get_update_collection_params(),
+					'args'                => $this->get_endpoint_args_for_method( WP_REST_Server::CREATABLE ),
 				),
 				array(
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'update_item' ),
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
-					'args'                => $this->get_update_collection_params(),
+					'args'                => $this->get_endpoint_args_for_method( WP_REST_Server::EDITABLE ),
 				),
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_item' ),
 					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
-					'args'                => $this->get_update_collection_params(),
+					'args'                => $this->get_endpoint_args_for_method( WP_REST_Server::DELETABLE ),
 				),
 				'schema' => array( $this, 'get_item_schema' ),
 			)
 		);
+	}
+
+	/**
+	 * GET arguments for the endpoint's CREATABLE, EDITABLE & DELETABLE methods.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_method( $method = WP_REST_Server::CREATABLE ) {
+		$filer_key = 'get_item';
+
+		$args = array(
+			'context' => $this->get_context_param(
+				array(
+					'default' => 'edit',
+				)
+			),
+		);
+
+		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
+			$filer_key   = 'create_item';
+			$group_roles = array_diff( array_keys( bp_groups_get_group_roles() ), array( 'banned' ) );
+
+			$args['role'] = array(
+				'description'       => __( 'Group role to assign the user to.', 'buddypress' ),
+				'default'           => 'member',
+				'type'              => 'string',
+				'enum'              => $group_roles,
+				'sanitize_callback' => 'sanitize_key',
+				'validate_callback' => 'rest_validate_request_arg',
+			);
+
+			if ( WP_REST_Server::EDITABLE === $method ) {
+				$filer_key = 'update_item';
+
+				$args['action'] = array(
+					'description'       => __( 'Action used to update a group member.', 'buddypress' ),
+					'default'           => 'promote',
+					'type'              => 'string',
+					'enum'              => array( 'promote', 'demote', 'ban', 'unban' ),
+					'sanitize_callback' => 'sanitize_key',
+					'validate_callback' => 'rest_validate_request_arg',
+				);
+			}
+		} elseif ( WP_REST_Server::DELETABLE === $method ) {
+			$filer_key = 'delete_item';
+		}
+
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array $args Query arguments.
+		 */
+		return apply_filters( "bp_rest_group_members_{$filer_key}_query_arguments", $args );
 	}
 
 	/**
@@ -219,7 +293,10 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		// If new role set, promote it too.
 		if ( $saved && 'member' !== $role ) {
-			groups_promote_member( $user->ID, $group_id, $role );
+			// Make sure to update the group role.
+			if ( groups_promote_member( $user->ID, $group_id, $role ) ) {
+				$group_member = new BP_Groups_Member( $user->ID, $group_id );
+			}
 		}
 
 		$retval = array(
@@ -718,31 +795,35 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		$schema['properties']['is_mod'] = array(
 			'context'     => array( 'view', 'edit' ),
-			'description' => __( 'Is this user a mod of the group?', 'buddypress' ),
+			'description' => __( '`1` if this member is a Group moderator, `0` otherwise.', 'buddypress' ),
 			'type'        => 'integer',
+			'enum'        => array( 0, 1 ),
 		);
 
 		$schema['properties']['is_banned'] = array(
 			'context'     => array( 'view', 'edit' ),
-			'description' => __( 'Is this user banned from the group?', 'buddypress' ),
+			'description' => __( '`1` if this member has been banned from the Group, `0` otherwise.', 'buddypress' ),
 			'type'        => 'integer',
+			'enum'        => array( 0, 1 ),
 		);
 
 		$schema['properties']['is_admin'] = array(
 			'context'     => array( 'view', 'edit' ),
-			'description' => __( 'Is this user an admin of the group?', 'buddypress' ),
+			'description' => __( '`1` if this member is a Group administrator, `0` otherwise.', 'buddypress' ),
 			'type'        => 'integer',
+			'enum'        => array( 0, 1 ),
 		);
 
 		$schema['properties']['is_confirmed'] = array(
 			'context'     => array( 'view', 'edit' ),
-			'description' => __( 'Is this user membership confirmed?', 'buddypress' ),
+			'description' => __( '`1` if the membership of this user has been confirmed, `0` otherwise.', 'buddypress' ),
 			'type'        => 'integer',
+			'enum'        => array( 0, 1 ),
 		);
 
 		$schema['properties']['date_modified'] = array(
 			'context'     => array( 'view', 'edit' ),
-			'description' => __( "The date of the last time this user was modified, in the site's timezone.", 'buddypress' ),
+			'description' => __( "The date of the last time the membership of this user was modified, in the site's timezone.", 'buddypress' ),
 			'type'        => 'string',
 			'format'      => 'date-time',
 		);
@@ -765,29 +846,29 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	public function get_collection_params() {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
+		$statuses                     = array( 'last_joined', 'first_joined', 'alphabetical' );
 
-		$params['group_id'] = array(
-			'description'       => __( 'ID of the group to limit results to.', 'buddypress' ),
-			'default'           => 0,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
+		if ( bp_is_active( 'activity' ) ) {
+			$statuses[] = 'group_activity';
+		}
 
 		$params['status'] = array(
 			'description'       => __( 'Sort the order of results by the status of the group members.', 'buddypress' ),
 			'default'           => 'last_joined',
 			'type'              => 'string',
-			'enum'              => array( 'last_joined', 'first_joined' ),
+			'enum'              => $statuses,
 			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
 		$params['roles'] = array(
-			'description'       => __( 'Ensure result set includes specific group roles.', 'buddypress' ),
+			'description'       => __( 'Ensure result set includes specific Group roles.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
-			'items'             => array( 'type' => 'string' ),
+			'items'             => array(
+				'type' => 'string',
+				'enum' => array_keys( bp_groups_get_group_roles() ),
+			),
 			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
@@ -823,58 +904,5 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		 * @param array $params Query params.
 		 */
 		return apply_filters( 'bp_rest_group_members_collection_params', $params );
-	}
-
-	/**
-	 * Get the query params for a group membership update.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return array
-	 */
-	public function get_update_collection_params() {
-		$params                       = parent::get_collection_params();
-		$params['context']['default'] = 'view';
-
-		$params['user_id'] = array(
-			'description'       => __( 'ID of the group member.', 'buddypress' ),
-			'default'           => 0,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['group_id'] = array(
-			'description'       => __( 'ID of the group.', 'buddypress' ),
-			'default'           => 0,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['action'] = array(
-			'description'       => __( 'Action used to update a group member.', 'buddypress' ),
-			'default'           => 'promote',
-			'type'              => 'string',
-			'enum'              => array( 'promote', 'demote', 'ban', 'unban' ),
-			'sanitize_callback' => 'sanitize_key',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['role'] = array(
-			'description'       => __( 'Member role to update him into.', 'buddypress' ),
-			'default'           => 'member',
-			'type'              => 'string',
-			'enum'              => array( 'member', 'mod', 'admin' ),
-			'sanitize_callback' => 'sanitize_key',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		/**
-		 * Filters the collection query params.
-		 *
-		 * @param array $params Query params.
-		 */
-		return apply_filters( 'bp_rest_group_members_update_collection_params', $params );
 	}
 }
