@@ -445,7 +445,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				)
 			);
 		} else if ( empty( $group->id ) ) {
-			return new WP_Error(
+			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
 				__( 'Invalid group id.', 'buddypress' ),
 				array(
@@ -453,7 +453,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				)
 			);
 		} else if ( ( empty( $user->ID ) || empty( $inviter->ID ) || $user->ID === $inviter->ID ) ) {
-			return new WP_Error(
+			$retval = new WP_Error(
 				'bp_rest_member_invalid_id',
 				__( 'Invalid member id.', 'buddypress' ),
 				array(

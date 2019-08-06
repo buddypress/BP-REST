@@ -308,7 +308,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 				);
 			}
 		} else {
-			return new WP_Error(
+			$retval = new WP_Error(
 				'bp_rest_group_membership_request_invalid_id',
 				__( 'Invalid group membership request id.', 'buddypress' ),
 				array(
@@ -411,7 +411,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 
 		// Check for valid user.
 		if ( ! $user instanceof WP_User ) {
-			return new WP_Error(
+			$retval = new WP_Error(
 				'bp_rest_group_member_invalid_id',
 				__( 'Invalid user id.', 'buddypress' ),
 				array(
@@ -420,7 +420,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			);
 		// Check for valid group.
 		} else if ( ! $group instanceof BP_Groups_Group ) {
-			return new WP_Error(
+			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
 				__( 'Invalid group id.', 'buddypress' ),
 				array(
