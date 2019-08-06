@@ -726,7 +726,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			'invite_sent'   => $invite->invite_sent,
 			'inviter_id'    => $invite->inviter_id,
 			'group_id'      => $invite->item_id,
-			'date_modified' => $invite->date_modified,
+			'date_modified' => bp_rest_prepare_date_response( $invite->date_modified ),
 			'type'          => $invite->type,
 			'message'       => array(
 				'raw'      => $invite->content,
