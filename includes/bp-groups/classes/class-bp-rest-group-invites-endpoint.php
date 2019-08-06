@@ -247,7 +247,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			// Do nothing.
 		} else {
 			$retval = new WP_Error(
-				'bp_rest_group_invites_cannot_get',
+				'bp_rest_group_invites_cannot_get_items',
 				__( 'Sorry, you are not allowed to fetch group invitations with those arguments.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -331,7 +331,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 						&& ! in_array( $user_id, array( $invite->user_id, $invite->inviter_id ), true )
 						) {
 				$retval = new WP_Error(
-					'bp_rest_authorization_required',
+					'bp_rest_group_invites_cannot_get_item',
 					__( 'Sorry, you are not allowed to fetch an invitation.', 'buddypress' ),
 					array(
 						'status' => 500,
@@ -386,7 +386,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 
 		if ( ! $invite_id ) {
 			return new WP_Error(
-				'bp_rest_group_invite_cannot_create',
+				'bp_rest_group_invite_cannot_create_item',
 				__( 'Could not invite member to the group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -463,7 +463,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		// Only a site admin or the user herself can extend invites.
 		} else if ( $inviter_id_arg !== bp_loggedin_user_id() && ! bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = new WP_Error(
-				'bp_rest_group_invite_cannot_create',
+				'bp_rest_group_invite_cannot_create_item',
 				__( 'Sorry, you are not allowed to create the invitation as requested.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -478,7 +478,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				'inviter_id' => $inviter_id_arg
 			) ) ) {
 				$retval = new WP_Error(
-					'bp_rest_group_invite_cannot_create',
+					'bp_rest_group_invite_cannot_create_item',
 					__( 'Sorry, you are not allowed to create the invitation as requested.', 'buddypress' ),
 					array(
 						'status' => 500,
@@ -514,7 +514,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		$accept = groups_accept_invite( $invite->user_id, $invite->item_id );
 		if ( ! $accept ) {
 			return new WP_Error(
-				'bp_rest_group_invite_cannot_update',
+				'bp_rest_group_invite_cannot_update_item',
 				__( 'Could not accept group invitation.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -575,7 +575,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				// Nothing to do.
 			} else if ( $user_id !== $invite->user_id	) {
 				$retval = new WP_Error(
-					'bp_rest_group_invite_cannot_update',
+					'bp_rest_group_invite_cannot_update_item',
 					__( 'Sorry, you are not allowed to accept the invitation as requested.', 'buddypress' ),
 					array(
 						'status' => 500,
@@ -618,7 +618,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		$deleted   = groups_delete_invite( $invite->user_id, $invite->item_id, $invite->inviter_id );
 		if ( ! $deleted ) {
 			return new WP_Error(
-				'bp_rest_group_invite_cannot_delete',
+				'bp_rest_group_invite_cannot_delete_item',
 				__( 'Could not delete group invitation.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -682,7 +682,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					&& ! groups_is_user_admin( $user_id, $invite->item_id )
 				) {
 				$retval = new WP_Error(
-					'bp_rest_group_invite_cannot_delete',
+					'bp_rest_group_invite_cannot_delete_item',
 					__( 'Sorry, you are not allowed to delete the invitation as requested.', 'buddypress' ),
 					array(
 						'status' => 500,

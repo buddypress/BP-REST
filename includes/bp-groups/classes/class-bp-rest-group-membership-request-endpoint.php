@@ -223,7 +223,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 				// Do nothing.
 		} else {
 			$retval = new WP_Error(
-				'bp_rest_group_membership_requests_cannot_get',
+				'bp_rest_group_membership_requests_cannot_get_items',
 				__( 'Sorry, you are not allowed to view membership requests.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -300,7 +300,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 				);
 			} else if ( $user_id !== $request->user_id && ! groups_is_user_admin( $user_id, $request->item_id ) ) {
 				$retval = new WP_Error(
-					'bp_rest_group_membership_requests_cannot_get',
+					'bp_rest_group_membership_requests_cannot_get_item',
 					__( 'Sorry, you are not allowed to view a membership request.', 'buddypress' ),
 					array(
 						'status' => 500,
@@ -360,7 +360,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 
 		if ( ! $request_id ) {
 			return new WP_Error(
-				'bp_rest_group_membership_request_cannot_create',
+				'bp_rest_group_membership_request_cannot_create_item',
 				__( 'Could not send membership request to this group.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -442,7 +442,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		// Normal users can only extend invitations on their own behalf.
 		} else if ( $user_id !== $user_id_arg ) {
 			$retval = new WP_Error(
-				'bp_rest_group_membership_request_cannot_create',
+				'bp_rest_group_membership_request_cannot_create_item',
 				__( 'User may not extend requests on behalf of another user.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -475,7 +475,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		$success = groups_accept_membership_request( false, $memreq->user_id, $memreq->item_id );
 		if ( ! $success ) {
 			return new WP_Error(
-				'bp_rest_group_member_request_cannot_update',
+				'bp_rest_group_member_request_cannot_update_item',
 				__( 'There was an error accepting the membership request.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -536,7 +536,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 				);
 			} else if ( ! groups_is_user_admin( $user_id, $request->item_id ) ) {
 				$retval = new WP_Error(
-					'bp_rest_group_member_request_cannot_update',
+					'bp_rest_group_member_request_cannot_update_item',
 					__( 'User is not allowed to approve membership requests to this group.', 'buddypress' ),
 					array(
 						'status' => 500,
@@ -579,7 +579,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		$success = groups_reject_membership_request( false, $memreq->user_id, $memreq->item_id );
 		if ( ! $success ) {
 			return new WP_Error(
-				'bp_rest_group_membership_request_cannot_delete',
+				'bp_rest_group_membership_request_cannot_delete_item',
 				__( 'There was an error rejecting the membership request.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -642,7 +642,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 				);
 			} else if ( $user_id !== $request->user_id && ! groups_is_user_admin( $user_id, $request->item_id ) ) {
 				$retval = new WP_Error(
-					'bp_rest_group_membership_request_cannot_delete',
+					'bp_rest_group_membership_request_cannot_delete_item',
 					__( 'User is not allowed to delete this membership request.', 'buddypress' ),
 					array(
 						'status' => 500,
