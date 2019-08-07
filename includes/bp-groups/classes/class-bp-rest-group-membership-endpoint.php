@@ -267,35 +267,51 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
-		$user         = bp_rest_get_user( $request['user_id'] );
-		$group        = $this->groups_endpoint->get_group_object( $request['group_id'] );
-		$role         = $request['role'];
-		$group_id     = $group->id;
-		$group_member = new BP_Groups_Member( $user->ID, $group_id );
+		$user  = bp_rest_get_user( $request['user_id'] );
+		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
 
-		// Add member to the group.
-		$group_member->group_id      = $group_id;
-		$group_member->user_id       = $user->ID;
-		$group_member->is_admin      = 0;
-		$group_member->date_modified = bp_core_current_time();
-		$group_member->is_confirmed  = 1;
-		$saved                       = $group_member->save();
+		if ( ! $request['context'] || 'view' === $request['context'] ) {
+			if ( ! groups_join_group( $user->ID, $group->id ) ) {
+				return new WP_Error(
+					'bp_rest_group_member_failed_to_join',
+					__( 'Could not join the group.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
 
-		if ( ! $saved ) {
-			return new WP_Error(
-				'bp_rest_group_member_failed_to_join',
-				__( 'Could not add member to the group.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
+			// Set the group member.
+			$group_member = new BP_Groups_Member( $user->ID, $group->id );
+		} else {
+			$role         = $request['role'];
+			$group_id     = $group->id;
+			$group_member = new BP_Groups_Member( $user->ID, $group_id );
 
-		// If new role set, promote it too.
-		if ( $saved && 'member' !== $role ) {
-			// Make sure to update the group role.
-			if ( groups_promote_member( $user->ID, $group_id, $role ) ) {
-				$group_member = new BP_Groups_Member( $user->ID, $group_id );
+			// Add member to the group.
+			$group_member->group_id      = $group_id;
+			$group_member->user_id       = $user->ID;
+			$group_member->is_admin      = 0;
+			$group_member->date_modified = bp_core_current_time();
+			$group_member->is_confirmed  = 1;
+			$saved                       = $group_member->save();
+
+			if ( ! $saved ) {
+				return new WP_Error(
+					'bp_rest_group_member_failed_to_join',
+					__( 'Could not add member to the group.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
+
+			// If new role set, promote it too.
+			if ( $saved && 'member' !== $role ) {
+				// Make sure to update the group role.
+				if ( groups_promote_member( $user->ID, $group_id, $role ) ) {
+					$group_member = new BP_Groups_Member( $user->ID, $group_id );
+				}
 			}
 		}
 
@@ -373,15 +389,19 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		} else {
 
 			$loggedin_user_id = bp_loggedin_user_id();
-			if ( $loggedin_user_id === $user->ID ) {
+			if ( $loggedin_user_id === $user->ID && 'view' === $request['context'] ) {
 
 				// Users may only freely join public groups.
-				if ( true === $retval && 'public' !== $group->status && ! groups_is_user_member( $loggedin_user_id, $group->id ) ) {
+				if ( true === $retval && (
+					! bp_current_user_can( 'groups_join_group', array( 'group_id' => $group->id ) )
+					|| groups_is_user_member( $loggedin_user_id, $group->id ) // As soon as they are not already members.
+					|| groups_is_user_banned( $loggedin_user_id, $group->id ) // And as soon as they are not banned from it.
+				) ) {
 					$retval = new WP_Error(
-						'bp_rest_authorization_required',
-						__( 'Sorry, you need to be logged in to join a group.', 'buddypress' ),
+						'bp_rest_group_member_failed_to_join',
+						__( 'Could not join the group.', 'buddypress' ),
 						array(
-							'status' => rest_authorization_required_code(),
+							'status' => 500,
 						)
 					);
 				}
@@ -712,7 +732,8 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $group_member, $request ) {
 		$user        = bp_rest_get_user( $group_member->user_id );
-		$member_data = $this->members_endpoint->user_data( $user );
+		$context     = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$member_data = $this->members_endpoint->user_data( $user, $context );
 
 		// Merge both info.
 		$data = array_merge(
@@ -726,7 +747,6 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );

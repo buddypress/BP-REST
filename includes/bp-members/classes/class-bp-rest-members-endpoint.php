@@ -370,17 +370,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $user, $request ) {
-		$user    = get_userdata( $user->ID );
-		$data    = $this->user_data( $user->data );
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-
-		if ( 'edit' === $context ) {
-			$data['registered_date']    = bp_rest_prepare_date_response( $user->data->user_registered );
-			$data['roles']              = (array) array_values( $user->roles );
-			$data['capabilities']       = (array) array_keys( $user->allcaps );
-			$data['extra_capabilities'] = (array) array_keys( $user->caps );
-		}
-
+		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data     = $this->user_data( $user, $context );
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
@@ -406,10 +397,11 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_User $user User object.
+	 * @param WP_User $user    User object.
+	 * @param string  $context The context of the request. Defaults to 'view'.
 	 * @return array
 	 */
-	public function user_data( $user ) {
+	public function user_data( $user, $context = 'view' ) {
 		$data = array(
 			'id'                 => $user->ID,
 			'name'               => $user->display_name,
@@ -422,6 +414,13 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'registered_date'    => '',
 			'xprofile'           => $this->xprofile_data( $user->ID ),
 		);
+
+		if ( 'edit' === $context ) {
+			$data['registered_date']    = bp_rest_prepare_date_response( $user->data->user_registered );
+			$data['roles']              = (array) array_values( $user->roles );
+			$data['capabilities']       = (array) array_keys( $user->allcaps );
+			$data['extra_capabilities'] = (array) array_keys( $user->caps );
+		}
 
 		// The name used for that user in @-mentions.
 		if ( bp_is_active( 'activity' ) ) {

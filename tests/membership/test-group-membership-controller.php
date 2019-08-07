@@ -218,6 +218,31 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	/**
 	 * @group create_item
 	 */
+	public function test_create_item_as_admin() {
+		$u = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $this->group_id . '/members/' . $u );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$user          = bp_rest_get_user( $data['id'] );
+			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
+
+			$this->check_user_data( $user, $data, $member_object, 'edit' );
+		}
+	}
+
+	/**
+	 * @group create_item
+	 */
 	public function test_member_can_add_himself_to_public_group() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
@@ -256,7 +281,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_group_member_failed_to_join', $response, 500 );
 	}
 
 	/**
@@ -275,7 +300,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'bp_rest_group_member_failed_to_join', $response, 500 );
 	}
 
 	/**
@@ -794,7 +819,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		}
 	}
 
-	protected function check_user_data( $user, $data, $member_object ) {
+	protected function check_user_data( $user, $data, $member_object, $context = 'view' ) {
 		$this->assertEquals( $user->ID, $data['id'] );
 		$this->assertEquals( $user->display_name, $data['name'] );
 		$this->assertEquals( $user->user_login, $data['user_login'] );
@@ -806,11 +831,15 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			bp_core_get_user_domain( $data['id'], $user->user_nicename, $user->user_login ),
 			$data['link']
 		);
-		$this->assertArrayNotHasKey( 'roles', $data );
-		$this->assertArrayNotHasKey( 'capabilities', $data );
-		$this->assertArrayNotHasKey( 'extra_capabilities', $data );
+
+		if ( 'view' === $context ) {
+			$this->assertArrayNotHasKey( 'roles', $data );
+			$this->assertArrayNotHasKey( 'capabilities', $data );
+			$this->assertArrayNotHasKey( 'extra_capabilities', $data );
+			$this->assertArrayNotHasKey( 'registered_date', $data );
+		}
+
 		$this->assertArrayHasKey( 'xprofile', $data );
-		$this->assertArrayNotHasKey( 'registered_date', $data );
 
 		// Checking extra.
 		$this->assertEquals( $member_object->is_mod, (bool) $data['is_mod'] );
