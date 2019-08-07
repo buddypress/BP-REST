@@ -281,7 +281,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$invite = $this->fetch_single_invite( array( 'id' => $request['invite_id'] ) );
+		$invite = $this->fetch_single_invite( $request['invite_id'] );
 		$retval = $this->prepare_response_for_collection(
 			$this->prepare_item_for_response( $invite, $request )
 		);
@@ -312,7 +312,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 		$user_id = bp_loggedin_user_id();
-		$invite  = $this->fetch_single_invite( array( 'id' => $request['invite_id'] ) );
+		$invite  = $this->fetch_single_invite( $request['invite_id'] );
 		$retval  = true;
 
 		if ( ! $user_id ) {
@@ -506,7 +506,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function update_item( $request ) {
 		$user_id = bp_loggedin_user_id();
-		$invite  = $this->fetch_single_invite( array( 'id' => $request['invite_id'] ) );
+		$invite  = $this->fetch_single_invite( $request['invite_id'] );
 		$accept  = groups_accept_invite( $invite->user_id, $invite->item_id );
 		if ( ! $accept ) {
 			return new WP_Error(
@@ -555,7 +555,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	public function update_item_permissions_check( $request ) {
 		$retval  = true;
 		$user_id = bp_loggedin_user_id();
-		$invite  = $this->fetch_single_invite( array( 'id' => $request['invite_id'] ) );
+		$invite  = $this->fetch_single_invite( $request['invite_id'] );
 
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
@@ -611,7 +611,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function delete_item( $request ) {
 		$user_id = bp_loggedin_user_id();
-		$invite  = $this->fetch_single_invite( array( 'id' => $request['invite_id'] ) );
+		$invite  = $this->fetch_single_invite( $request['invite_id'] );
 		$deleted = groups_delete_invite( $invite->user_id, $invite->item_id, $invite->inviter_id );
 		if ( ! $deleted ) {
 			return new WP_Error(
@@ -640,10 +640,10 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param WP_User          $user            Subject user.
-		 * @param BP_Groups_Group  $group           The group object.
-		 * @param WP_REST_Response $response        The response data.
-		 * @param WP_REST_Request  $request         The request sent to the API.
+		 * @param WP_User          $user     The invited user.
+		 * @param BP_Groups_Group  $group    The group object.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
 		do_action( 'bp_rest_group_invites_delete_item', $user, $group, $response, $request );
 
@@ -661,7 +661,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	public function delete_item_permissions_check( $request ) {
 		$retval  = true;
 		$user_id = bp_loggedin_user_id();
-		$invite  = $this->fetch_single_invite( array( 'id' => $request['invite_id'] ) );
+		$invite  = $this->fetch_single_invite( $request['invite_id'] );
 
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
@@ -757,7 +757,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass $invite Invite object.
+	 * @param BP_Invitation $invite Invite object.
 	 * @return array Links for the given plugin.
 	 */
 	protected function prepare_links( $invite ) {
@@ -933,6 +933,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_text_field',
 			'validate_callback' => 'rest_validate_request_arg',
+			'enum'              => array( 'draft', 'sent', 'all' ),
 		);
 
 		/**
@@ -948,10 +949,12 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
+	 * @param int $invite_id The ID of the invitation you wish to fetch.
+	 *
 	 * @return BP_Invitation|bool $invite Invitation if found, false otherwise.
 	 */
-	public function fetch_single_invite( $args = array() ) {
-		$invites = groups_get_invites( $args );
+	public function fetch_single_invite( $invite_id = 0 ) {
+		$invites = groups_get_invites( array( 'id' => $invite_id ) );
 		if ( $invites ) {
 			return current( $invites );
 		} else {

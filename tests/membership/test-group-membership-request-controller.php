@@ -254,7 +254,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_membership_request_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_group_membership_requests_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -386,7 +386,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_membership_request_cannot_create_item', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_membership_requests_cannot_create_item', $response, 500 );
 	}
 
 	/**
@@ -406,7 +406,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_membership_request_duplicate_request', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_membership_requests_duplicate_request', $response, 500 );
 	}
 
 	/**
@@ -500,7 +500,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_membership_request_invalid_id', $response, 404 );
+		$this->assertErrorResponse( 'bp_rest_group_membership_requests_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -591,7 +591,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_membership_request_cannot_delete_item', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_membership_requests_cannot_delete_item', $response, 500 );
 	}
 
 	/**
