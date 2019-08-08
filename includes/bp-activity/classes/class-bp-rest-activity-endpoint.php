@@ -607,11 +607,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		$activity = $this->get_activity_object( $request );
-
 		$request->set_param( 'context', 'edit' );
 
-		$response = $this->prepare_item_for_response( $activity, $request );
+		// Get the activity before it's deleted.
+		$activity = $this->get_activity_object( $request );
+		$previous = $this->prepare_item_for_response( $activity, $request );
 
 		if ( 'activity_comment' === $activity->type ) {
 			$retval = bp_activity_delete_comment( $activity->item_id, $activity->id );
@@ -632,6 +632,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
+
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'deleted'  => true,
+				'previous' => $previous->get_data(),
+			)
+		);
 
 		/**
 		 * Fires after an activity is deleted via the REST API.

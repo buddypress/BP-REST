@@ -279,7 +279,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->check_group_data( $field_group, $all_data[0], 'view', $response->get_links() );
+		$this->check_group_data( $field_group, $all_data['previous'], 'view', $response->get_links() );
 	}
 
 	/**

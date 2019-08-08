@@ -492,6 +492,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		// Get the field group before it's deleted.
 		$field_group = $this->get_xprofile_field_group_object( $request );
 
 		if ( empty( $field_group->id ) ) {
@@ -514,13 +515,15 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $field_group, $request )
-			),
+		// Build the response.
+		$previous = $this->prepare_item_for_response( $field_group, $request );
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'deleted'  => true,
+				'previous' => $previous->get_data(),
+			)
 		);
-
-		$response = rest_ensure_response( $retval );
 
 		/**
 		 * Fires after a field group is deleted via the REST API.

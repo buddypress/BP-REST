@@ -668,7 +668,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		$thread = $this->get_thread_object( $request['id'] );
+		// Get the thread before it's deleted.
+		$thread   = $this->get_thread_object( $request['id'] );
+		$previous = $this->prepare_item_for_response( $thread, $request );
 
 		$user_id = bp_loggedin_user_id();
 		if ( ! empty( $request['user_id'] ) ) {
@@ -686,13 +688,14 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $thread, $request )
-			),
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'deleted'  => true,
+				'previous' => $previous->get_data(),
+			)
 		);
-
-		$response = rest_ensure_response( $retval );
 
 		/**
 		 * Fires after a thread is deleted via the REST API.

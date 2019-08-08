@@ -686,10 +686,8 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		foreach ( $all_data as $data ) {
-			$user = bp_rest_get_user( $data['id'] );
-			$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
-		}
+		$user = bp_rest_get_user( $all_data['previous']['id'] );
+		$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
 	}
 
 	/**
@@ -718,10 +716,8 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		foreach ( $all_data as $data ) {
-			$user = bp_rest_get_user( $data['id'] );
-			$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
-		}
+		$user = bp_rest_get_user( $all_data['previous']['id'] );
+		$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
 	}
 
 	/**
@@ -774,10 +770,8 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		foreach ( $all_data as $data ) {
-			$user = bp_rest_get_user( $data['id'] );
-			$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
-		}
+		$user = bp_rest_get_user( $all_data['previous']['id'] );
+		$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
 	}
 
 	/**

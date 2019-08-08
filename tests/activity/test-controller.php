@@ -727,9 +727,9 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
-		$this->assertNotEmpty( $data );
+		$this->assertNotEmpty( $data['deleted'] );
 
-		$this->assertEquals( 'Deleted activity', $data['content']['raw'] );
+		$this->assertEquals( 'Deleted activity', $data['previous']['content']['raw'] );
 	}
 
 	/**

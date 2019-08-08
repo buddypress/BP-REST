@@ -330,7 +330,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->check_field_data( $field, $all_data[0], 'view', $response->get_links() );
+		$this->check_field_data( $field, $all_data['previous'], 'view', $response->get_links() );
 	}
 
 	/**

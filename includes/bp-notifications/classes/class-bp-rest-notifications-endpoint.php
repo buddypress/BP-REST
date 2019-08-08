@@ -436,8 +436,9 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		// Get the notification before it's deleted.
 		$notification = $this->get_notification_object( $request );
-		$response     = $this->prepare_item_for_response( $notification, $request );
+		$previous     = $this->prepare_item_for_response( $notification, $request );
 
 		if ( ! BP_Notifications_Notification::delete( array( 'id' => $notification->id ) ) ) {
 			return new WP_Error(
@@ -448,6 +449,15 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
+
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'deleted'  => true,
+				'previous' => $previous->get_data(),
+			)
+		);
 
 		/**
 		 * Fires after a notification is deleted via the REST API.
