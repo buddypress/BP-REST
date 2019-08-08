@@ -497,8 +497,9 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	public function delete_item( $request ) {
 		$request->set_param( 'context', 'edit' );
 
+		// Get the group before it's deleted.
 		$group    = $this->get_group_object( $request );
-		$response = $this->prepare_item_for_response( $group, $request );
+		$previous = $this->prepare_item_for_response( $group, $request );
 
 		if ( ! groups_delete_group( $group->id ) ) {
 			return new WP_Error(
@@ -509,6 +510,15 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
+
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'deleted'  => true,
+				'previous' => $previous->get_data(),
+			)
+		);
 
 		/**
 		 * Fires after a group is deleted via the REST API.

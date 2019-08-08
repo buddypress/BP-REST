@@ -633,10 +633,11 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		$field   = new BP_XProfile_Field( (int) $request['id'] );
-		$deleted = $field->delete( $request['delete_data'] );
+		// Get the field before it's deleted.
+		$field    = new BP_XProfile_Field( (int) $request['id'] );
+		$previous = $this->prepare_item_for_response( $field, $request );
 
-		if ( ! $deleted ) {
+		if ( ! $field->delete( $request['delete_data'] ) ) {
 			return new WP_Error(
 				'bp_rest_xprofile_field_cannot_delete',
 				__( 'Could not delete XProfile field.', 'buddypress' ),
@@ -646,13 +647,14 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $field, $request )
-			),
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'deleted'  => true,
+				'previous' => $previous->get_data(),
+			)
 		);
-
-		$response = rest_ensure_response( $retval );
 
 		/**
 		 * Fires after a XProfile field is deleted via the REST API.

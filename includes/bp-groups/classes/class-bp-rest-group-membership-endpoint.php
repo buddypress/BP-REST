@@ -590,10 +590,11 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		$member  = new BP_Groups_Member( $request['user_id'], $request['group_id'] );
-		$removed = $member->remove();
+		// Get the Group member before it's removed.
+		$member   = new BP_Groups_Member( $request['user_id'], $request['group_id'] );
+		$previous = $this->prepare_item_for_response( $member, $request );
 
-		if ( ! $removed ) {
+		if ( ! $member->remove() ) {
 			return new WP_Error(
 				'bp_rest_group_member_failed_to_remove',
 				__( 'Could not remove member from this group.', 'buddypress' ),
@@ -603,13 +604,14 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $member, $request )
-			),
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'removed'  => true,
+				'previous' => $previous->get_data(),
+			)
 		);
-
-		$response = rest_ensure_response( $retval );
 
 		$user  = bp_rest_get_user( $request['user_id'] );
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );

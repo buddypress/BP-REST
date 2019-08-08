@@ -336,7 +336,9 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 
 		$user = bp_rest_get_user( $request['user_id'] );
 
+		// Get the field data before it's deleted.
 		$field_data = $this->get_xprofile_field_data_object( $field->id, $user->ID );
+		$previous   = $this->prepare_item_for_response( $field_data, $request );
 
 		if ( ! $field_data->delete() ) {
 			return new WP_Error(
@@ -348,16 +350,14 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Set empty for the response.
-		$field_data->value = '';
-
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $field_data, $request )
-			),
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'deleted'  => true,
+				'previous' => $previous->get_data(),
+			)
 		);
-
-		$response = rest_ensure_response( $retval );
 
 		/**
 		 * Fires after a XProfile data is deleted via the REST API.
