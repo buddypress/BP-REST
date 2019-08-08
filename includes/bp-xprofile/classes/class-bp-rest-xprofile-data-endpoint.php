@@ -338,7 +338,10 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 
 		// Get the field data before it's deleted.
 		$field_data = $this->get_xprofile_field_data_object( $field->id, $user->ID );
-		$previous   = $this->prepare_item_for_response( $field_data, $request );
+
+		// Set empty for the response.
+		$field_data->value = '';
+		$previous          = $this->prepare_item_for_response( $field_data, $request );
 
 		if ( ! $field_data->delete() ) {
 			return new WP_Error(

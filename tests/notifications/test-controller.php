@@ -316,7 +316,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->check_notification_data( $notification, $all_data, 'view', $response->get_links() );
+		$this->check_notification_data( $notification, $all_data['previous'], 'view', $response->get_links() );
 	}
 
 	/**

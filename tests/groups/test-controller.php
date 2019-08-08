@@ -510,7 +510,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$data = $response->get_data();
 
-		$this->assertEquals( 'Deleted group', $data['description']['raw'] );
+		$this->assertEquals( 'Deleted group', $data['previous']['description']['raw'] );
 	}
 
 	/**
@@ -582,7 +582,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$data = $response->get_data();
 
-		$this->assertEquals( 'Deleted group', $data['description']['raw'] );
+		$this->assertEquals( 'Deleted group', $data['previous']['description']['raw'] );
 	}
 
 	public function test_prepare_item() {

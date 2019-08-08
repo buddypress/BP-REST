@@ -187,9 +187,9 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$data = $response->get_data();
 		$this->assertNotEmpty( $data );
 
-		$this->assertEmpty( $data[0]['value']['unserialized'] );
+		$this->assertEmpty( $data['previous']['value']['unserialized'] );
 
-		$field_data = $this->endpoint->get_xprofile_field_data_object( $data[0]['field_id'], $data[0]['user_id'] );
+		$field_data = $this->endpoint->get_xprofile_field_data_object( $data['previous']['field_id'], $data['previous']['user_id'] );
 
 		$this->assertEmpty( $field_data->value );
 		$this->assertEmpty( $field_data->last_updated );
@@ -220,9 +220,9 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$data = $response->get_data();
 		$this->assertNotEmpty( $data );
 
-		$this->assertEmpty( $data[0]['value']['unserialized'] );
+		$this->assertEmpty( $data['previous']['value']['unserialized'] );
 
-		$field_data = $this->endpoint->get_xprofile_field_data_object( $data[0]['field_id'], $data[0]['user_id'] );
+		$field_data = $this->endpoint->get_xprofile_field_data_object( $data['previous']['field_id'], $data['previous']['user_id'] );
 
 		$this->assertEmpty( $field_data->value );
 		$this->assertEmpty( $field_data->last_updated );
@@ -355,7 +355,6 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		// POST
 		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
 		$request->add_header( 'content-type', 'application/json' );
-		
 
 		$params = $this->set_field_data( array(
 			'foo_metadata_key' => $expected,

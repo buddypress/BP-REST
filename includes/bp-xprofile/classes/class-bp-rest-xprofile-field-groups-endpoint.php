@@ -494,7 +494,6 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 	public function delete_item( $request ) {
 		// Get the field group before it's deleted.
 		$field_group = $this->get_xprofile_field_group_object( $request );
-		$previous    = $this->prepare_item_for_response( $field_group, $request );
 
 		if ( empty( $field_group->id ) ) {
 			return new WP_Error(
@@ -517,6 +516,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		// Build the response.
+		$previous = $this->prepare_item_for_response( $field_group, $request );
 		$response = new WP_REST_Response();
 		$response->set_data(
 			array(
