@@ -706,6 +706,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_query_params(
 			array(
 				'id'         => $m1->thread_id,
+				'sender_id'  => $u1,
 				'message'    => 'Taz',
 				'bar_field'  => $expected,
 			)
