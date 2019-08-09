@@ -744,7 +744,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			$user_id = $request['user_id'];
 		}
 
-		// Check the user is one of the recipients
+		// Check the user is one of the recipients.
 		$recipient_ids = wp_parse_id_list( wp_list_pluck( $thread->recipients, 'user_id' ) );
 
 		// Delete a thread.
