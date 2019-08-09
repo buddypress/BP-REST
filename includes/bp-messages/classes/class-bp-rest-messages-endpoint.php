@@ -89,6 +89,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				$this->namespace,
 				$starred_endpoint,
 				array(
+					'args'   => array(
+						'id' => array(
+							'description' => __( 'ID of one of the message of the Thread.', 'buddypress' ),
+							'type'        => 'integer',
+						),
+					),
 					array(
 						'methods'             => WP_REST_Server::EDITABLE,
 						'callback'            => array( $this, 'update_starred' ),
@@ -161,7 +167,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			if ( WP_REST_Server::DELETABLE === $method ) {
 				$args['user_id'] = array(
 					'description'       => __( 'The user ID to remove from the thread', 'buddypress' ),
-					'required'          => false,
+					'required'          => true,
 					'type'              => 'integer',
 					'sanitize_callback' => 'absint',
 					'validate_callback' => 'rest_validate_request_arg',
@@ -738,8 +744,11 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			$user_id = $request['user_id'];
 		}
 
+		// Check the user is one of the recipients
+		$recipient_ids = wp_parse_id_list( wp_list_pluck( $thread->recipients, 'user_id' ) );
+
 		// Delete a thread.
-		if ( ! messages_delete_thread( $thread->thread_id, $user_id ) ) {
+		if ( ! in_array( $user_id, $recipient_ids, true ) || ! messages_delete_thread( $thread->thread_id, $user_id ) ) {
 			return new WP_Error(
 				'bp_rest_messages_delete_thread_failed',
 				__( 'There was an error trying to delete a thread.', 'buddypress' ),
