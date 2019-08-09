@@ -206,7 +206,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 				'sender_id'  => $this->user,
 				'recipients' => [ $u ],
 				'subject'    => 'Foo',
-				'content'    => 'Content',
+				'message'    => 'Content',
 			)
 		);
 
@@ -237,7 +237,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 				'sender_id'  => $this->user,
 				'recipients' => [ $u ],
 				'subject'    => 'Foo',
-				'content'    => 'Content',
+				'message'    => 'Content',
 			)
 		);
 		$response = $this->server->dispatch( $request );
@@ -280,7 +280,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 			array(
 				'sender_id' => $this->user,
 				'subject'   => 'Foo',
-				'content'   => 'Content',
+				'message'   => 'Content',
 			)
 		);
 
@@ -645,7 +645,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 				'sender_id'  => $this->user,
 				'recipients' => [ $u ],
 				'subject'    => 'Foo',
-				'content'    => 'Bar',
+				'message'    => 'Bar',
 				'foo_field'  => $expected,
 			)
 		);
@@ -692,8 +692,8 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params(
 			array(
-				'thread_id'  => $m1->thread_id,
-				'content'    => 'Taz',
+				'id'         => $m1->thread_id,
+				'message'    => 'Taz',
 				'bar_field'  => $expected,
 			)
 		);
