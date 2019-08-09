@@ -23,6 +23,13 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
 		}
+
+		$this->old_current_user = get_current_user_id();
+	}
+
+	public function tearDown() {
+		parent::tearDown();
+		$this->bp->set_current_user( $this->old_current_user );
 	}
 
 	public function test_register_routes() {
@@ -206,7 +213,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 				'sender_id'  => $this->user,
 				'recipients' => [ $u ],
 				'subject'    => 'Foo',
-				'content'    => 'Content',
+				'message'    => 'Content',
 			)
 		);
 
@@ -237,7 +244,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 				'sender_id'  => $this->user,
 				'recipients' => [ $u ],
 				'subject'    => 'Foo',
-				'content'    => 'Content',
+				'message'    => 'Content',
 			)
 		);
 		$response = $this->server->dispatch( $request );
@@ -280,7 +287,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 			array(
 				'sender_id' => $this->user,
 				'subject'   => 'Foo',
-				'content'   => 'Content',
+				'message'   => 'Content',
 			)
 		);
 
@@ -344,6 +351,12 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->bp->set_current_user( $this->user );
 
 		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $m->thread_id );
+		$request->set_query_params(
+			array(
+				'user_id' => $u2,
+			)
+		);
+
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -645,7 +658,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 				'sender_id'  => $this->user,
 				'recipients' => [ $u ],
 				'subject'    => 'Foo',
-				'content'    => 'Bar',
+				'message'    => 'Bar',
 				'foo_field'  => $expected,
 			)
 		);
@@ -692,8 +705,9 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params(
 			array(
-				'thread_id'  => $m1->thread_id,
-				'content'    => 'Taz',
+				'id'         => $m1->thread_id,
+				'sender_id'  => $u1,
+				'message'    => 'Taz',
 				'bar_field'  => $expected,
 			)
 		);
