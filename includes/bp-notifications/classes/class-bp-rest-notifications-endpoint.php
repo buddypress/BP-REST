@@ -98,10 +98,9 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'secondary_item_id' => $request['secondary_item_id'],
 			'component_name'    => $request['component_name'],
 			'component_action'  => $request['component_action'],
-			'date_query'        => $request['date'],
-			'sort_order'        => $request['sortby'],
+			'order_by'          => $request['order_by'],
+			'sort_order'        => strtoupper( $request['sort_order'] ),
 			'is_new'            => $request['is_new'],
-			'search_terms'      => $request['search'],
 			'page'              => $request['page'],
 			'per_page'          => $request['per_page'],
 		);
@@ -161,7 +160,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	public function get_items_permissions_check( $request ) {
 		$retval = true;
 
-		if ( ! ( is_user_logged_in() && $this->can_see() ) ) {
+		if ( bp_loggedin_user_id() !== $request['user_id'] && ! $this->can_see() ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the notifications.', 'buddypress' ),
@@ -513,7 +512,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'component'         => $notification->component_name,
 			'action'            => $notification->component_action,
 			'date'              => bp_rest_prepare_date_response( $notification->date_notified ),
-			'unread'            => $notification->is_new,
+			'is_new'            => $notification->is_new,
 		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -554,32 +553,46 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 
 		if ( ! empty( $schema['properties']['user_id'] ) && isset( $request['user_id'] ) ) {
 			$prepared_notification->user_id = (int) $request['user_id'];
+		} elseif ( isset( $notification->user_id ) && $notification->user_id ) {
+			$prepared_notification->user_id = $notification->user_id;
 		} else {
 			$prepared_notification->user_id = bp_loggedin_user_id();
 		}
 
 		if ( ! empty( $schema['properties']['item_id'] ) && isset( $request['item_id'] ) ) {
 			$prepared_notification->item_id = $request['item_id'];
+		} elseif ( isset( $notification->item_id ) && $notification->item_id ) {
+			$prepared_notification->item_id = $notification->item_id;
 		}
 
 		if ( ! empty( $schema['properties']['secondary_item_id'] ) && isset( $request['secondary_item_id'] ) ) {
 			$prepared_notification->secondary_item_id = $request['secondary_item_id'];
+		} elseif ( isset( $notification->secondary_item_id ) && $notification->secondary_item_id ) {
+			$prepared_notification->secondary_item_id = $notification->secondary_item_id;
 		}
 
 		if ( ! empty( $schema['properties']['component'] ) && isset( $request['component'] ) ) {
 			$prepared_notification->component_name = $request['component'];
+		} elseif ( isset( $notification->component_name ) && $notification->component_name ) {
+			$prepared_notification->component_name = $notification->component_name;
 		}
 
 		if ( ! empty( $schema['properties']['action'] ) && isset( $request['action'] ) ) {
 			$prepared_notification->component_action = $request['action'];
+		} elseif ( isset( $notification->component_action ) && $notification->component_action ) {
+			$prepared_notification->component_action = $notification->component_action;
 		}
 
-		if ( ! empty( $schema['properties']['unread'] ) && isset( $request['unread'] ) ) {
-			$prepared_notification->is_new = $request['unread'];
+		if ( ! empty( $schema['properties']['is_new'] ) && isset( $request['is_new'] ) ) {
+			$prepared_notification->is_new = $request['is_new'];
+		} elseif ( isset( $notification->is_new ) && $notification->is_new ) {
+			$prepared_notification->is_new = $notification->is_new;
 		}
 
 		if ( ! empty( $schema['properties']['date'] ) && isset( $request['date'] ) ) {
 			$prepared_notification->date_notified = $request['date'];
+		} elseif ( isset( $notification->date_notified ) && $notification->date_notified ) {
+			$prepared_notification->date_notified = $notification->date_notified;
 		}
 
 		/**
@@ -687,15 +700,15 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'properties' => array(
 				'id'                => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The notification ID.', 'buddypress' ),
+					'description' => __( 'A unique numeric ID for the notification.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'user_id'           => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the user the notification is associated with.', 'buddypress' ),
-					'readonly'    => true,
+					'description' => __( 'The ID of the user the notification is addressed to.', 'buddypress' ),
 					'type'        => 'integer',
+					'default'     => bp_loggedin_user_id(),
 				),
 				'item_id'           => array(
 					'context'     => array( 'view', 'edit' ),
@@ -709,24 +722,25 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 				),
 				'component'         => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The name of the component that the notification is for.', 'buddypress' ),
+					'description' => __( 'The name of the BuddyPress component the notification relates to.', 'buddypress' ),
 					'type'        => 'string',
 				),
 				'action'            => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The component action which the notification is related to.', 'buddypress' ),
+					'description' => __( 'The name of the component\'s action the notification is about.', 'buddypress' ),
 					'type'        => 'string',
 				),
 				'date'              => array(
-					'description' => __( "The date the notification was created, in the site's timezone.", 'buddypress' ),
+					'description' => __( 'The date the notification was created, in the site\'s timezone.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'date-time',
 					'context'     => array( 'view', 'edit' ),
 				),
-				'unread'            => array(
+				'is_new'            => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The status of the notification.', 'buddypress' ),
+					'description' => __( 'Whether it\'s a new notification or not.', 'buddypress' ),
 					'type'        => 'integer',
+					'default'     => 1,
 				),
 			),
 		);
@@ -750,7 +764,19 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
-		$params['sortby'] = array(
+		// Remove the search argument.
+		unset( $params['search'] );
+
+		$params['order_by'] = array(
+			'description'       => __( 'Name of the field to order according to.', 'buddypress' ),
+			'default'           => 'id',
+			'type'              => 'string',
+			'enum'              => array( 'id', 'date_notified', 'item_id', 'secondary_item_id', 'component_name', 'component_action' ),
+			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['sort_order'] = array(
 			'description'       => __( 'Order sort attribute ascending or descending.', 'buddypress' ),
 			'default'           => 'ASC',
 			'type'              => 'string',
@@ -759,16 +785,16 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['component_action'] = array(
-			'description'       => __( 'Limit result set to items from a specific action.', 'buddypress' ),
+		$params['component_name'] = array(
+			'description'       => __( 'Limit result set to notifications associated with a specific component', 'buddypress' ),
 			'default'           => '',
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_text_field',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['component_name'] = array(
-			'description'       => __( 'Limit result set to items from a specific component.', 'buddypress' ),
+		$params['component_action'] = array(
+			'description'       => __( 'Limit result set to notifications associated with a specific component\'s action name.', 'buddypress' ),
 			'default'           => '',
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_text_field',
@@ -776,7 +802,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['user_id'] = array(
-			'description'       => __( 'Limit result set to items created by a specific user.', 'buddypress' ),
+			'description'       => __( 'Limit result set to notifications addressed to a specific user.', 'buddypress' ),
 			'default'           => bp_loggedin_user_id(),
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
@@ -784,7 +810,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['item_id'] = array(
-			'description'       => __( 'Limit result set to items with a specific item id.', 'buddypress' ),
+			'description'       => __( 'Limit result set to notifications associated with a specific item ID.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
@@ -792,7 +818,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['secondary_item_id'] = array(
-			'description'       => __( 'Limit result set to items with a secondary item id.', 'buddypress' ),
+			'description'       => __( 'Limit result set to notifications associated with a specific secondary item ID.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
@@ -804,13 +830,6 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'default'           => true,
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['date'] = array(
-			'description'       => __( 'Limit result set to items published before or after a given ISO8601 compliant date.', 'buddypress' ),
-			'type'              => 'string',
-			'format'            => 'date-time',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
