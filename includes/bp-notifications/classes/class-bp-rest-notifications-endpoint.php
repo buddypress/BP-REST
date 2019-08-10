@@ -102,7 +102,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 
 		if ( WP_REST_Server::EDITABLE === $method ) {
 			// Only switching the is_new property can be achieved.
-			$args = array_intersect_key( $args, array( 'is_new' => true ) );
+			$args                      = array_intersect_key( $args, array( 'is_new' => true ) );
 			$args['is_new']['default'] = 0;
 		}
 
