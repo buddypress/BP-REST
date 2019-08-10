@@ -55,6 +55,12 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			'/' . $this->rest_base . '/(?P<id>[\d]+)',
 			array(
+				'args'   => array(
+					'id' => array(
+						'description' => __( 'The unique numeric ID for the notification.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+				),
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
