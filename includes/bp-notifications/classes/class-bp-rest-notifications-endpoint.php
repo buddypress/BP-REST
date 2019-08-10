@@ -90,6 +90,26 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Select the item schema arguments needed for the EDITABLE method.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+
+		if ( WP_REST_Server::EDITABLE === $method ) {
+			// Only switching the is_new property can be achieved.
+			$args = array_intersect_key( $args, array( 'is_new' => true ) );
+			$args['is_new']['default'] = 0;
+		}
+
+		return $args;
+	}
+
+	/**
 	 * Retrieve notifications.
 	 *
 	 * @since 0.1.0
@@ -382,6 +402,10 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Make sure to update the status of the notification.
+		$notification = $this->prepare_item_for_database( $request );
+
+		// Update additional fields.
 		$fields_update = $this->update_additional_fields_for_object( $notification, $request );
 
 		if ( is_wp_error( $fields_update ) ) {
