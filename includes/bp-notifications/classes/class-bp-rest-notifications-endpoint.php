@@ -186,7 +186,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	public function get_items_permissions_check( $request ) {
 		$retval = true;
 
-		if ( bp_loggedin_user_id() !== $request['user_id'] && ! $this->can_see() ) {
+		if ( ! is_user_logged_in() || ( bp_loggedin_user_id() !== $request['user_id'] && ! $this->can_see() ) ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the notifications.', 'buddypress' ),
@@ -583,7 +583,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 
 		if ( ! empty( $schema['properties']['user_id'] ) && isset( $request['user_id'] ) ) {
 			$prepared_notification->user_id = (int) $request['user_id'];
-		} elseif ( isset( $notification->user_id ) && $notification->user_id ) {
+		} elseif ( isset( $notification->user_id ) ) {
 			$prepared_notification->user_id = $notification->user_id;
 		} else {
 			$prepared_notification->user_id = bp_loggedin_user_id();
@@ -591,37 +591,37 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 
 		if ( ! empty( $schema['properties']['item_id'] ) && isset( $request['item_id'] ) ) {
 			$prepared_notification->item_id = $request['item_id'];
-		} elseif ( isset( $notification->item_id ) && $notification->item_id ) {
+		} elseif ( isset( $notification->item_id ) ) {
 			$prepared_notification->item_id = $notification->item_id;
 		}
 
 		if ( ! empty( $schema['properties']['secondary_item_id'] ) && isset( $request['secondary_item_id'] ) ) {
 			$prepared_notification->secondary_item_id = $request['secondary_item_id'];
-		} elseif ( isset( $notification->secondary_item_id ) && $notification->secondary_item_id ) {
+		} elseif ( isset( $notification->secondary_item_id ) ) {
 			$prepared_notification->secondary_item_id = $notification->secondary_item_id;
 		}
 
 		if ( ! empty( $schema['properties']['component'] ) && isset( $request['component'] ) ) {
 			$prepared_notification->component_name = $request['component'];
-		} elseif ( isset( $notification->component_name ) && $notification->component_name ) {
+		} elseif ( isset( $notification->component_name ) ) {
 			$prepared_notification->component_name = $notification->component_name;
 		}
 
 		if ( ! empty( $schema['properties']['action'] ) && isset( $request['action'] ) ) {
 			$prepared_notification->component_action = $request['action'];
-		} elseif ( isset( $notification->component_action ) && $notification->component_action ) {
+		} elseif ( isset( $notification->component_action ) ) {
 			$prepared_notification->component_action = $notification->component_action;
 		}
 
 		if ( ! empty( $schema['properties']['is_new'] ) && isset( $request['is_new'] ) ) {
 			$prepared_notification->is_new = $request['is_new'];
-		} elseif ( isset( $notification->is_new ) && $notification->is_new ) {
+		} elseif ( isset( $notification->is_new ) ) {
 			$prepared_notification->is_new = $notification->is_new;
 		}
 
 		if ( ! empty( $schema['properties']['date'] ) && isset( $request['date'] ) ) {
 			$prepared_notification->date_notified = $request['date'];
-		} elseif ( isset( $notification->date_notified ) && $notification->date_notified ) {
+		} elseif ( isset( $notification->date_notified ) ) {
 			$prepared_notification->date_notified = $notification->date_notified;
 		}
 
