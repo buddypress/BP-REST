@@ -387,7 +387,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( $notification->component_name, $data['component'] );
 		$this->assertEquals( $notification->component_action, $data['action'] );
 		$this->assertEquals( bp_rest_prepare_date_response( $notification->date_notified ), $data['date'] );
-		$this->assertEquals( $notification->is_new, $data['unread'] );
+		$this->assertEquals( $notification->is_new, $data['is_new'] );
 	}
 
 	protected function set_notification_data( $args = array() ) {
@@ -441,7 +441,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertArrayHasKey( 'component', $properties );
 		$this->assertArrayHasKey( 'action', $properties );
 		$this->assertArrayHasKey( 'date', $properties );
-		$this->assertArrayHasKey( 'unread', $properties );
+		$this->assertArrayHasKey( 'is_new', $properties );
 	}
 
 	public function test_context_param() {
