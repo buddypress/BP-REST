@@ -98,15 +98,32 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @return array Endpoint arguments.
 	 */
 	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$args      = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$filer_key = 'get_item';
 
 		if ( WP_REST_Server::EDITABLE === $method ) {
+			$filer_key = 'update_item';
+
 			// Only switching the is_new property can be achieved.
 			$args                      = array_intersect_key( $args, array( 'is_new' => true ) );
 			$args['is_new']['default'] = 0;
+
+		} elseif ( WP_REST_Server::CREATABLE === $method ) {
+			$filer_key = 'create_item';
+
+		} elseif ( WP_REST_Server::DELETABLE === $method ) {
+			$filer_key = 'delete_item';
+
 		}
 
-		return $args;
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array $args Query arguments.
+		 */
+		return apply_filters( "bp_rest_notifications_{$filer_key}_query_arguments", $args );
 	}
 
 	/**
