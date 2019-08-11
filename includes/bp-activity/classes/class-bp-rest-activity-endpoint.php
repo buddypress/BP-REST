@@ -1219,17 +1219,30 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
 		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$key  = 'get_item';
 
 		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
+			$key                     = 'create_item';
 			$args['content']['type'] = 'string';
 			unset( $args['content']['properties'] );
 
 			if ( WP_REST_Server::EDITABLE === $method ) {
+				$key                      = 'update_item';
 				$args['type']['required'] = true;
 			}
+		} elseif ( WP_REST_Server::DELETABLE === $method ) {
+			$key = 'delete_item';
 		}
 
-		return $args;
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array  $args   Query arguments.
+		 * @param string $method HTTP method of the request.
+		 */
+		return apply_filters( "bp_rest_activity_{$key}_query_arguments", $args, $method );
 	}
 
 	/**

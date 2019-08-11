@@ -115,12 +115,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return array Endpoint arguments.
 	 */
 	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$filer_key                 = 'get_item';
+		$key                       = 'get_item';
 		$args                      = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
 		$args['id']['description'] = __( 'ID of the Messages Thread.', 'buddypress' );
 
 		if ( WP_REST_Server::CREATABLE === $method ) {
-			$filer_key = 'create_item';
+			$key = 'create_item';
 
 			// Edit the Thread ID description and default properties.
 			$args['id']['description'] = __( 'ID of the Messages Thread. Required when replying to an existing Thread.', 'buddypress' );
@@ -158,7 +158,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			unset( $args['sender_id'], $args['subject'], $args['message'], $args['recipients'] );
 
 			if ( WP_REST_Server::EDITABLE === $method ) {
-				$filer_key = 'update_item';
+				$key = 'update_item';
 
 				$args['message_id'] = array(
 					'description'       => __( 'By default the latest message of the thread will be updated. Specify this message ID to edit another message of the thread.', 'buddypress' ),
@@ -170,7 +170,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			}
 
 			if ( WP_REST_Server::DELETABLE === $method ) {
-				$filer_key = 'delete_item';
+				$key = 'delete_item';
 
 				$args['user_id'] = array(
 					'description'       => __( 'The user ID to remove from the thread', 'buddypress' ),
@@ -189,8 +189,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param array $args Query arguments.
+		 * @param string $method HTTP method of the request.
 		 */
-		return apply_filters( "bp_rest_messages_{$filer_key}_query_arguments", $args );
+		return apply_filters( "bp_rest_messages_{$key}_query_arguments", $args, $method );
 	}
 
 	/**

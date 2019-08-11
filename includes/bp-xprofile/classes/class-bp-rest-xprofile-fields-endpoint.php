@@ -113,6 +113,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
 		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$key  = 'get_item';
 
 		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
 			$args['description']['type'] = 'string';
@@ -147,31 +148,32 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 			// Set required params for the CREATABLE method.
 			if ( WP_REST_Server::CREATABLE === $method ) {
+				$key                          = 'create_item';
 				$args['group_id']['required'] = true;
 				$args['type']['required']     = true;
 				$args['name']['required']     = true;
 			} elseif ( WP_REST_Server::EDITABLE === $method ) {
+				$key                                        = 'update_item';
 				$args['can_delete']['default']              = true;
 				$args['order_by']['default']                = 'asc';
 				$edit_args['default_visibility']['default'] = 'public';
 			}
 
-			/**
-			 * Filter here to modify specific arguments for the edit context.
-			 *
-			 * @since 0.1.0
-			 *
-			 * @param array  $edit_args List of specific arguments for the edit context.
-			 * @param array  $args      List of arguments for the edit context of the item schema.
-			 * @param string $method    HTTP method of the request.
-			 */
-			$edit_args = apply_filters( 'bp_rest_xprofile_fields_edit_args_for_item_schema', $edit_args, $args, $method );
-
 			// Merge arguments.
 			$args = array_merge( $args, $edit_args );
+		} elseif ( WP_REST_Server::DELETABLE === $method ) {
+			$key = 'delete_item';
 		}
 
-		return $args;
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array  $args   Query arguments.
+		 * @param string $method HTTP method of the request.
+		 */
+		return apply_filters( "bp_rest_xprofile_fields_{$key}_query_arguments", $args, $method );
 	}
 
 	/**
