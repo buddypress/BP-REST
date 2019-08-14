@@ -195,24 +195,19 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	 */
 	public function test_create_item() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$g = $this->bp_factory->group->create();
 
-		$this->bp->set_current_user( $this->user );
+		$this->bp->set_current_user( $u );
 
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $this->group_id . '/members/' . $u );
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $g . '/members/' . $u );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
-
-		foreach ( $all_data as $data ) {
-			$user          = bp_rest_get_user( $data['id'] );
-			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
-
-			$this->check_user_data( $user, $data, $member_object );
-		}
+		$data = reset( $all_data );
+		$this->assertTrue( $data['is_confirmed'] );
 	}
 
 	/**
