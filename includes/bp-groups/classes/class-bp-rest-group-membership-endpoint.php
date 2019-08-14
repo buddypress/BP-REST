@@ -271,7 +271,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
 
 		if ( ! $request['context'] || 'view' === $request['context'] ) {
-			if ( ! groups_join_group( $user->ID, $group->id ) ) {
+			if ( ! groups_join_group( $group->id, $user->ID ) ) {
 				return new WP_Error(
 					'bp_rest_group_member_failed_to_join',
 					__( 'Could not join the group.', 'buddypress' ),
