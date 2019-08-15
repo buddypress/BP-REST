@@ -29,6 +29,13 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
 		}
+
+		$this->old_current_user = get_current_user_id();
+	}
+
+	public function tearDown() {
+		parent::tearDown();
+		$this->bp->set_current_user( $this->old_current_user );
 	}
 
 	public function test_register_routes() {
@@ -37,13 +44,13 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		// Main.
 		$this->assertArrayHasKey( $endpoint, $routes );
-		$this->assertCount( 1, $routes[ $endpoint ] );
+		$this->assertCount( 2, $routes[ $endpoint ] );
 
 		// Single.
 		$single_endpoint = $endpoint . '/(?P<user_id>[\d]+)';
 
 		$this->assertArrayHasKey( $single_endpoint, $routes );
-		$this->assertCount( 3, $routes[ $single_endpoint ] );
+		$this->assertCount( 2, $routes[ $single_endpoint ] );
 	}
 
 	/**
@@ -199,8 +206,11 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		$this->bp->set_current_user( $u );
 
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $g . '/members/' . $u );
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $g . '/members' );
 		$request->set_param( 'context', 'view' );
+		$request->set_query_params( array(
+			'user_id' => $u,
+		) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -218,8 +228,12 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		$this->bp->set_current_user( $this->user );
 
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $this->group_id . '/members/' . $u );
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $this->group_id . '/members' );
 		$request->set_param( 'context', 'edit' );
+		$request->set_query_params( array(
+			'user_id' => $u,
+		) );
+
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -243,8 +257,11 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		$this->bp->set_current_user( $u );
 
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $this->group_id . '/members/' . $u );
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $this->group_id . '/members' );
 		$request->set_param( 'context', 'view' );
+		$request->set_query_params( array(
+			'user_id' => $u,
+		) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -272,8 +289,11 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		$this->bp->set_current_user( $u );
 
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $g1 . '/members/' . $u );
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $g1 . '/members' );
 		$request->set_param( 'context', 'view' );
+		$request->set_query_params( array(
+			'user_id' => $u,
+		) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_member_failed_to_join', $response, 500 );
@@ -291,8 +311,11 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		$this->bp->set_current_user( $u );
 
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $g1 . '/members/' . $u );
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $g1 . '/members' );
 		$request->set_param( 'context', 'view' );
+		$request->set_query_params( array(
+			'user_id' => $u,
+		) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_member_failed_to_join', $response, 500 );
@@ -307,8 +330,11 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		$this->bp->set_current_user( $u1 );
 
-		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $this->group_id . '/members/' . $u2 );
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $this->group_id . '/members' );
 		$request->set_param( 'context', 'view' );
+		$request->set_query_params( array(
+			'user_id' => $u2,
+		) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'rest_forbidden', $response, 403 );
