@@ -113,11 +113,11 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'item_id'      => $request['group_id'],
-			'user_id'      => $request['user_id'],
-			'invite_sent'  => $request['invite_sent'],
-			'per_page'     => $request['per_page'],
-			'page'         => $request['page'],
+			'item_id'     => $request['group_id'],
+			'user_id'     => $request['user_id'],
+			'invite_sent' => $request['invite_sent'],
+			'per_page'    => $request['per_page'],
+			'page'        => $request['page'],
 		);
 
 		/**
@@ -385,7 +385,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				'user_id'     => $user->ID,
 				'group_id'    => $group->id,
 				'inviter_id'  => $inviter->ID,
-				'send_invite' => isset( $request['invite_sent'] ) ? (boolean) $request['invite_sent'] : 1,
+				'send_invite' => isset( $request['invite_sent'] ) ? (bool) $request['invite_sent'] : 1,
 				'content'     => $request['message'],
 			)
 		);
@@ -437,7 +437,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function create_item_permissions_check( $request ) {
 		$inviter_id_arg = $request['inviter_id'] ? $request['inviter_id'] : bp_loggedin_user_id();
-		$group          = $this->groups_endpoint->get_group_object( $request['group_id']  );
+		$group          = $this->groups_endpoint->get_group_object( $request['group_id'] );
 		$user           = bp_rest_get_user( $request['user_id'] );
 		$inviter        = bp_rest_get_user( $inviter_id_arg );
 		$retval         = true;
@@ -473,9 +473,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		}
 
 		// Only a site admin or the user herself can extend invites.
-		if ( true === $retval
-			&& ! bp_current_user_can( 'bp_moderate' )
-			&& $inviter_id_arg !== bp_loggedin_user_id() ) {
+		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) && bp_loggedin_user_id() !== $inviter_id_arg ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invite_cannot_create_item',
 				__( 'Sorry, you are not allowed to create the invitation as requested.', 'buddypress' ),
@@ -527,7 +525,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		);
 
 		$response = rest_ensure_response( $retval );
-		$group    = $this->groups_endpoint->get_group_object( $invite->item_id  );
+		$group    = $this->groups_endpoint->get_group_object( $invite->item_id );
 
 		/**
 		 * Fires after a group invite is accepted via the REST API.
@@ -633,7 +631,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 
 		$response = rest_ensure_response( $retval );
 		$user     = bp_rest_get_user( $invite->user_id );
-		$group    = $this->groups_endpoint->get_group_object( $invite->item_id  );
+		$group    = $this->groups_endpoint->get_group_object( $invite->item_id );
 
 		/**
 		 * Fires after a group invite is deleted via the REST API.
@@ -673,7 +671,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( true === $retval && ! $invite )  {
+		if ( true === $retval && ! $invite ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invite_invalid_id',
 				__( 'Invalid group invitation id.', 'buddypress' ),
@@ -818,28 +816,28 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			'title'      => 'bp_group_invites',
 			'type'       => 'object',
 			'properties' => array(
-				'id'      => array(
+				'id'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID for the BP_Invitation object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'user_id'      => array(
+				'user_id'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID for the user object.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'invite_sent'  => array(
+				'invite_sent'   => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the invite has been sent to the invitee.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'boolean',
 				),
-				'inviter_id'   => array(
+				'inviter_id'    => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID of the user who made the invite.', 'buddypress' ),
 					'type'        => 'integer',
 				),
-				'group_id'     => array(
+				'group_id'      => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'ID of the group to which the user has been invited.', 'buddypress' ),
 					'type'        => 'integer',
@@ -900,7 +898,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
-		$params['group_id']   = array(
+		$params['group_id'] = array(
 			'description'       => __( 'ID of the group to limit results to.', 'buddypress' ),
 			'required'          => false,
 			'default'           => 0,
@@ -909,7 +907,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['user_id']    = array(
+		$params['user_id'] = array(
 			'description'       => __( 'Return only invitations extended to this user.', 'buddypress' ),
 			'required'          => false,
 			'default'           => 0,
