@@ -604,8 +604,8 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-
-		$this->assertTrue( 0 === $all_data[0]['id'] );
+		$this->assertTrue( $all_data['deleted'] );
+		$this->assertEquals( $invite_id, $all_data['previous']['id']);
 	}
 
 	/**
@@ -629,8 +629,8 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-
-		$this->assertTrue( 0 === $all_data[0]['id'] );
+		$this->assertTrue( $all_data['deleted'] );
+		$this->assertEquals( $invite_id, $all_data['previous']['id']);
 	}
 
 	/**
@@ -657,8 +657,8 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-
-		$this->assertTrue( 0 === $all_data[0]['id'] );
+		$this->assertTrue( $all_data['deleted'] );
+		$this->assertEquals( $invite_id, $all_data['previous']['id']);
 	}
 
 	/**
@@ -686,8 +686,8 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-
-		$this->assertTrue( 0 === $all_data[0]['id'] );
+		$this->assertTrue( $all_data['deleted'] );
+		$this->assertEquals( $invite_id, $all_data['previous']['id']);
 	}
 
 	/**

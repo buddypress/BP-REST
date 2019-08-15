@@ -586,7 +586,11 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		$request->set_param( 'context', 'edit' );
+
 		$group_request = $this->fetch_single_invite( $request['request_id'] );
+		// Set the invite response before it is deleted.
+		$previous = $this->prepare_item_for_response( $group_request, $request );
 
 		/**
 		 * If this change is being initiated by the requesting user,
@@ -612,15 +616,14 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$invite = new BP_Invitation( $request['request_id'] );
-
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $invite, $request )
-			),
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'deleted'  => true,
+				'previous' => $previous->get_data(),
+			)
 		);
-
-		$response = rest_ensure_response( $retval );
 
 		$user  = bp_rest_get_user( $group_request->user_id );
 		$group = $this->groups_endpoint->get_group_object( $group_request->item_id );

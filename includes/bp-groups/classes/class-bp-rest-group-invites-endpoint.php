@@ -608,8 +608,12 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		$user_id = bp_loggedin_user_id();
-		$invite  = $this->fetch_single_invite( $request['invite_id'] );
+		$request->set_param( 'context', 'edit' );
+
+		$user_id  = bp_loggedin_user_id();
+		$invite   = $this->fetch_single_invite( $request['invite_id'] );
+		// Set the invite response before it is deleted.
+		$previous = $this->prepare_item_for_response( $invite, $request );
 
 		/**
 		 * If this change is being initiated by the invited user,
@@ -625,7 +629,6 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			$deleted = groups_uninvite_user( $invite->user_id, $invite->item_id, $invite->inviter_id );
 		}
 
-
 		if ( ! $deleted ) {
 			return new WP_Error(
 				'bp_rest_group_invite_cannot_delete_item',
@@ -636,15 +639,15 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$deleted_invite = new BP_Invitation( $request['invite_id'] );
-
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $deleted_invite, $request )
-			),
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'deleted'  => true,
+				'previous' => $previous->get_data(),
+			)
 		);
 
-		$response = rest_ensure_response( $retval );
 		$user     = bp_rest_get_user( $invite->user_id );
 		$group    = $this->groups_endpoint->get_group_object( $invite->item_id );
 
