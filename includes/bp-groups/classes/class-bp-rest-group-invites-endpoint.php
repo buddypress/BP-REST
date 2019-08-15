@@ -610,7 +610,22 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	public function delete_item( $request ) {
 		$user_id = bp_loggedin_user_id();
 		$invite  = $this->fetch_single_invite( $request['invite_id'] );
-		$deleted = groups_delete_invite( $invite->user_id, $invite->item_id, $invite->inviter_id );
+
+		/**
+		 * If this change is being initiated by the invited user,
+		 * use the `reject` function.
+		 */
+		if ( $user_id === $invite->user_id ) {
+			$deleted = groups_reject_invite( $invite->user_id, $invite->item_id, $invite->inviter_id );
+		/**
+		 * Otherwise, this change is being initiated by a group admin, site admin,
+		 * or the inviter, and we should use the `uninvite` function.
+		 */
+		} else {
+			$deleted = groups_uninvite_user( $invite->user_id, $invite->item_id, $invite->inviter_id );
+		}
+
+
 		if ( ! $deleted ) {
 			return new WP_Error(
 				'bp_rest_group_invite_cannot_delete_item',

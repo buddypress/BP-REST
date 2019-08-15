@@ -587,7 +587,21 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 */
 	public function delete_item( $request ) {
 		$group_request = $this->fetch_single_invite( $request['request_id'] );
-		$success       = groups_reject_membership_request( false, $group_request->user_id, $group_request->item_id );
+
+		/**
+		 * If this change is being initiated by the requesting user,
+		 * use the `delete` function.
+		 */
+		if ( bp_loggedin_user_id() === $group_request->user_id ) {
+			$success = groups_delete_membership_request( false, $group_request->user_id, $group_request->item_id );
+		/**
+		 * Otherwise, this change is being initiated by a group admin or site admin,
+		 * and we should use the `reject` function.
+		 */
+		} else {
+			$success = groups_reject_membership_request( false, $group_request->user_id, $group_request->item_id );
+		}
+
 		if ( ! $success ) {
 			return new WP_Error(
 				'bp_rest_group_membership_requests_cannot_delete_item',
