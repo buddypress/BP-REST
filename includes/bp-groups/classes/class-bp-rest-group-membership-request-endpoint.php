@@ -586,8 +586,26 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		$request->set_param( 'context', 'edit' );
+
 		$group_request = $this->fetch_single_invite( $request['request_id'] );
-		$success       = groups_reject_membership_request( false, $group_request->user_id, $group_request->item_id );
+		// Set the invite response before it is deleted.
+		$previous = $this->prepare_item_for_response( $group_request, $request );
+
+		/**
+		 * If this change is being initiated by the requesting user,
+		 * use the `delete` function.
+		 */
+		if ( bp_loggedin_user_id() === $group_request->user_id ) {
+			$success = groups_delete_membership_request( false, $group_request->user_id, $group_request->item_id );
+		/**
+		 * Otherwise, this change is being initiated by a group admin or site admin,
+		 * and we should use the `reject` function.
+		 */
+		} else {
+			$success = groups_reject_membership_request( false, $group_request->user_id, $group_request->item_id );
+		}
+
 		if ( ! $success ) {
 			return new WP_Error(
 				'bp_rest_group_membership_requests_cannot_delete_item',
@@ -598,15 +616,14 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$invite = new BP_Invitation( $request['request_id'] );
-
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $invite, $request )
-			),
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'deleted'  => true,
+				'previous' => $previous->get_data(),
+			)
 		);
-
-		$response = rest_ensure_response( $retval );
 
 		$user  = bp_rest_get_user( $group_request->user_id );
 		$group = $this->groups_endpoint->get_group_object( $group_request->item_id );

@@ -519,7 +519,8 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-		$this->assertTrue( 0 === $all_data[0]['id'] );
+		$this->assertTrue( $all_data['deleted'] );
+		$this->assertEquals( $request_id, $all_data['previous']['id']);
 	}
 
 	/**
@@ -538,7 +539,8 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-		$this->assertTrue( 0 === $all_data[0]['id'] );
+		$this->assertTrue( $all_data['deleted'] );
+		$this->assertEquals( $request_id, $all_data['previous']['id']);
 	}
 
 	/**
@@ -557,7 +559,8 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-		$this->assertTrue( 0 === $all_data[0]['id'] );
+		$this->assertTrue( $all_data['deleted'] );
+		$this->assertEquals( $request_id, $all_data['previous']['id']);
 	}
 
 	/**
