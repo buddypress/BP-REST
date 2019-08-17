@@ -275,6 +275,9 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function create_item( $request ) {
 
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		// If no group name.
 		if ( empty( $request['name'] ) ) {
 			return new WP_Error(
@@ -368,6 +371,9 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		$group_id = groups_create_group( $this->prepare_item_for_database( $request ) );
 
 		if ( ! is_numeric( $group_id ) ) {
@@ -473,6 +479,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		// Setting context.
 		$request->set_param( 'context', 'edit' );
 
 		// Get the group before it's deleted.

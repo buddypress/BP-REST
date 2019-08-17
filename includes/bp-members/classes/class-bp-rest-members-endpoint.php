@@ -26,55 +26,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
-	 * Make sure to retrieve the needed arguments for the endpoint CREATABLE method.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $method Optional. HTTP method of the request.
-	 * @return array Endpoint arguments.
-	 */
-	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
-		$key  = 'get_item';
-
-		if ( WP_REST_Server::CREATABLE === $method ) {
-			$key = 'create_item';
-
-			// We don't need the mention name to create a user.
-			unset( $args['mention_name'] );
-
-			// But we absolutely need the email.
-			$args['email'] = array(
-				'description' => __( 'The email address for the member.', 'buddypress' ),
-				'type'        => 'string',
-				'format'      => 'email',
-				'context'     => array( 'edit' ),
-				'required'    => true,
-			);
-		} elseif ( WP_REST_Server::EDITABLE === $method ) {
-			$key = 'update_item';
-
-			/**
-			 * 1. The mention name or user login are not updatable.
-			 * 2. The password belongs to the Settings endpoint parameter.
-			 */
-			unset( $args['mention_name'], $args['user_login'], $args['password'] );
-		} elseif ( WP_REST_Server::DELETABLE === $method ) {
-			$key = 'delete_item';
-		}
-
-		/**
-		 * Filters the method query arguments.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param array  $args   Query arguments.
-		 * @param string $method HTTP method of the request.
-		 */
-		return apply_filters( "bp_rest_members_{$key}_query_arguments", $args, $method );
-	}
-
-	/**
 	 * Retrieve users.
 	 *
 	 * @since 0.1.0
@@ -581,6 +532,55 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$member->id = $member->ID;
 
 		return WP_REST_Controller::update_additional_fields_for_object( $member, $request );
+	}
+
+	/**
+	 * Make sure to retrieve the needed arguments for the endpoint CREATABLE method.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$key  = 'get_item';
+
+		if ( WP_REST_Server::CREATABLE === $method ) {
+			$key = 'create_item';
+
+			// We don't need the mention name to create a user.
+			unset( $args['mention_name'] );
+
+			// But we absolutely need the email.
+			$args['email'] = array(
+				'description' => __( 'The email address for the member.', 'buddypress' ),
+				'type'        => 'string',
+				'format'      => 'email',
+				'context'     => array( 'edit' ),
+				'required'    => true,
+			);
+		} elseif ( WP_REST_Server::EDITABLE === $method ) {
+			$key = 'update_item';
+
+			/**
+			 * 1. The mention name or user login are not updatable.
+			 * 2. The password belongs to the Settings endpoint parameter.
+			 */
+			unset( $args['mention_name'], $args['user_login'], $args['password'] );
+		} elseif ( WP_REST_Server::DELETABLE === $method ) {
+			$key = 'delete_item';
+		}
+
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array  $args   Query arguments.
+		 * @param string $method HTTP method of the request.
+		 */
+		return apply_filters( "bp_rest_members_{$key}_query_arguments", $args, $method );
 	}
 
 	/**

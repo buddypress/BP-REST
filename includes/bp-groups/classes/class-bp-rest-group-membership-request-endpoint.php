@@ -821,6 +821,10 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 
 		if ( WP_REST_Server::CREATABLE === $method ) {
 			$key = 'create_item';
+		} elseif ( WP_REST_Server::EDITABLE === $method ) {
+			$key = 'update_item';
+		} elseif ( WP_REST_Server::DELETABLE === $method ) {
+			$key = 'delete_item';
 		}
 
 		/**
@@ -831,7 +835,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		 * @param array  $args   Query arguments.
 		 * @param string $method HTTP method of the request.
 		 */
-		return apply_filters( "bp_rest_group_membership_requests{$key}_query_arguments", $args, $method );
+		return apply_filters( "bp_rest_group_membership_requests_{$key}_query_arguments", $args, $method );
 	}
 
 	/**

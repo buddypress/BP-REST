@@ -407,6 +407,9 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		$args = array(
 			'field_group_id'    => $request['group_id'],
 			'parent_id'         => $request['parent_id'],
@@ -517,6 +520,9 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		$field = $this->get_xprofile_field_object( $request );
 
 		if ( empty( $field->id ) ) {
@@ -635,6 +641,9 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		// Get the field before it's deleted.
 		$field    = new BP_XProfile_Field( (int) $request['id'] );
 		$previous = $this->prepare_item_for_response( $field, $request );
