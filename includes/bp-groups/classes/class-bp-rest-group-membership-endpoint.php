@@ -112,73 +112,6 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * GET arguments for the endpoint's CREATABLE, EDITABLE & DELETABLE methods.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $method Optional. HTTP method of the request.
-	 * @return array Endpoint arguments.
-	 */
-	public function get_endpoint_args_for_method( $method = WP_REST_Server::CREATABLE ) {
-		$filer_key = 'get_item';
-
-		$args = array(
-			'context' => $this->get_context_param(
-				array(
-					'default' => 'edit',
-				)
-			),
-		);
-
-		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
-			$filer_key   = 'create_item';
-			$group_roles = array_diff( array_keys( bp_groups_get_group_roles() ), array( 'banned' ) );
-
-			$args['role'] = array(
-				'description'       => __( 'Group role to assign the user to.', 'buddypress' ),
-				'default'           => 'member',
-				'type'              => 'string',
-				'enum'              => $group_roles,
-				'sanitize_callback' => 'sanitize_key',
-				'validate_callback' => 'rest_validate_request_arg',
-			);
-
-			if ( WP_REST_Server::CREATABLE === $method ) {
-				$schema          = $this->get_item_schema();
-				$args['user_id'] = array_merge( $schema['properties']['id'], array(
-					'description' => __( 'A unique numeric ID for the Member to add to the Group.', 'buddypress' ),
-					'default'     => bp_loggedin_user_id(),
-					'readonly'    => false,
-				) );
-			}
-
-			if ( WP_REST_Server::EDITABLE === $method ) {
-				$filer_key = 'update_item';
-
-				$args['action'] = array(
-					'description'       => __( 'Action used to update a group member.', 'buddypress' ),
-					'default'           => 'promote',
-					'type'              => 'string',
-					'enum'              => array( 'promote', 'demote', 'ban', 'unban' ),
-					'sanitize_callback' => 'sanitize_key',
-					'validate_callback' => 'rest_validate_request_arg',
-				);
-			}
-		} elseif ( WP_REST_Server::DELETABLE === $method ) {
-			$filer_key = 'delete_item';
-		}
-
-		/**
-		 * Filters the method query arguments.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param array $args Query arguments.
-		 */
-		return apply_filters( "bp_rest_group_members_{$filer_key}_query_arguments", $args );
-	}
-
-	/**
 	 * Retrieve group members.
 	 *
 	 * @since 0.1.0
@@ -323,6 +256,9 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 				}
 			}
 		}
+
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -486,6 +422,9 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			}
 		}
 
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $group_member, $request )
@@ -599,6 +538,9 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		// Get the Group member before it's removed.
 		$member   = new BP_Groups_Member( $request['user_id'], $request['group_id'] );
 		$previous = $this->prepare_item_for_response( $member, $request );
@@ -807,6 +749,75 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		 * @param WP_User $user  User object.
 		 */
 		return apply_filters( 'bp_rest_group_members_prepare_links', $links, $user );
+	}
+
+	/**
+	 * GET arguments for the endpoint's CREATABLE, EDITABLE & DELETABLE methods.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_method( $method = WP_REST_Server::CREATABLE ) {
+		$key  = 'get_item';
+		$args = array(
+			'context' => $this->get_context_param(
+				array(
+					'default' => 'edit',
+				)
+			),
+		);
+
+		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
+			$group_roles = array_diff( array_keys( bp_groups_get_group_roles() ), array( 'banned' ) );
+
+			$args['role'] = array(
+				'description'       => __( 'Group role to assign the user to.', 'buddypress' ),
+				'default'           => 'member',
+				'type'              => 'string',
+				'enum'              => $group_roles,
+				'sanitize_callback' => 'sanitize_key',
+				'validate_callback' => 'rest_validate_request_arg',
+			);
+
+			if ( WP_REST_Server::CREATABLE === $method ) {
+				$key             = 'create_item';
+				$schema          = $this->get_item_schema();
+				$args['user_id'] = array_merge(
+					$schema['properties']['id'],
+					array(
+						'description' => __( 'A unique numeric ID for the Member to add to the Group.', 'buddypress' ),
+						'default'     => bp_loggedin_user_id(),
+						'readonly'    => false,
+					)
+				);
+			}
+
+			if ( WP_REST_Server::EDITABLE === $method ) {
+				$key            = 'update_item';
+				$args['action'] = array(
+					'description'       => __( 'Action used to update a group member.', 'buddypress' ),
+					'default'           => 'promote',
+					'type'              => 'string',
+					'enum'              => array( 'promote', 'demote', 'ban', 'unban' ),
+					'sanitize_callback' => 'sanitize_key',
+					'validate_callback' => 'rest_validate_request_arg',
+				);
+			}
+		} elseif ( WP_REST_Server::DELETABLE === $method ) {
+			$key = 'delete_item';
+		}
+
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array $args Query arguments.
+		 * @param string $method HTTP method of the request.
+		 */
+		return apply_filters( "bp_rest_group_members_{$key}_query_arguments", $args, $method );
 	}
 
 	/**

@@ -218,6 +218,7 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
+		$request->set_param( 'context', 'edit' );
 
 		// Get the image file via $_FILES.
 		$files = $request->get_file_params();
@@ -301,6 +302,8 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		$request->set_param( 'context', 'edit' );
+
 		$deleted = bp_core_delete_existing_avatar(
 			array(
 				'object'  => $this->object,

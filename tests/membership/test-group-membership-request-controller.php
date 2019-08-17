@@ -297,7 +297,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 	}
 
 	/**
-	 * @group create_item
+	 * @group tst
 	 */
 	public function test_create_item_as_subscriber() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -307,7 +307,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_query_params( array(
 			'group_id' => $this->group_id,
 		) );
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -328,7 +328,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 			'user_id'  => $u,
 			'group_id' => $this->group_id,
 		) );
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
@@ -345,7 +345,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 			'user_id'  => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER,
 			'group_id' => $this->group_id,
 		) );
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_member_invalid_id', $response, 404 );
@@ -363,7 +363,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 			'user_id'  => $u,
 			'group_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER,
 		) );
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
@@ -383,7 +383,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 			'user_id'  => $u,
 			'group_id' => $this->group_id,
 		) );
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_membership_requests_cannot_create_item', $response, 500 );

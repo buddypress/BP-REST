@@ -258,7 +258,10 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$this->bp->set_current_user( $u );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $this->group_id . '/members' );
+
+		// This usually would be 'edit', but we are testing a public group.
 		$request->set_param( 'context', 'view' );
+
 		$request->set_query_params( array(
 			'user_id' => $u,
 		) );
@@ -273,7 +276,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			$user          = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
 
-			$this->check_user_data( $user, $data, $member_object );
+			$this->check_user_data( $user, $data, $member_object, 'edit' );
 		}
 	}
 
@@ -312,13 +315,13 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$this->bp->set_current_user( $u );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $g1 . '/members' );
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$request->set_query_params( array(
 			'user_id' => $u,
 		) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_failed_to_join', $response, 500 );
+		$this->assertErrorResponse( 'rest_forbidden', $response, 403 );
 	}
 
 	/**
@@ -367,7 +370,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			$user          = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
 
-			$this->check_user_data( $user, $data, $member_object );
+			$this->check_user_data( $user, $data, $member_object, 'edit' );
 		}
 	}
 
@@ -386,7 +389,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			'action' => 'ban',
 		) );
 
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -399,7 +402,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
 
 			$this->assertTrue( (bool) $member_object->is_banned );
-			$this->check_user_data( $user, $data, $member_object );
+			$this->check_user_data( $user, $data, $member_object, 'edit' );
 		}
 	}
 
@@ -423,7 +426,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			'action' => 'ban',
 		) );
 
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -456,7 +459,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			'role'     => 'mod',
 		) );
 
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -468,7 +471,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			$user          = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $this->group_id );
 
-			$this->check_user_data( $user, $data, $member_object );
+			$this->check_user_data( $user, $data, $member_object, 'edit' );
 		}
 	}
 
@@ -493,7 +496,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			'role'     => 'mod',
 		) );
 
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -505,7 +508,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			$user          = bp_rest_get_user( $data['id'] );
 			$member_object = new BP_Groups_Member( $user->ID, $g1 );
 
-			$this->check_user_data( $user, $data, $member_object );
+			$this->check_user_data( $user, $data, $member_object, 'edit' );
 		}
 	}
 
@@ -531,7 +534,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			'role'   => 'mod',
 		) );
 
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_member_cannot_promote', $response, 403 );
@@ -558,7 +561,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			'action' => 'demote',
 		) );
 
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -574,7 +577,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			$this->assertFalse( (bool) $member_object->is_mod );
 			$this->assertFalse( (bool) $member_object->is_admin );
 			$this->assertTrue( (bool) $member_object::check_is_member( $u2, $g1 ) );
-			$this->check_user_data( $user, $data, $member_object );
+			$this->check_user_data( $user, $data, $member_object, 'edit' );
 		}
 	}
 
@@ -606,7 +609,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			'role'   => 'mod',
 		) );
 
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -620,7 +623,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 			$this->assertTrue( $u2 === $user->ID );
 			$this->assertTrue( (bool) $member_object->is_mod );
-			$this->check_user_data( $user, $data, $member_object );
+			$this->check_user_data( $user, $data, $member_object, 'edit' );
 		}
 	}
 
@@ -645,7 +648,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			'action' => 'demote',
 		) );
 
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_member_cannot_demote', $response, 403 );
@@ -665,7 +668,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			'role'   => 'mod',
 		) );
 
-		$request->set_param( 'context', 'view' );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );

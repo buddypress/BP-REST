@@ -90,41 +90,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Edit some arguments for the endpoint's CREATABLE and EDITABLE methods.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $method Optional. HTTP method of the request.
-	 * @return array Endpoint arguments.
-	 */
-	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
-		$key  = 'get_item';
-
-		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
-			$key                         = 'create_item';
-			$args['description']['type'] = 'string';
-
-			if ( WP_REST_Server::EDITABLE === $method ) {
-				$key = 'update_item';
-				unset( $args['slug'] );
-			}
-		} elseif ( WP_REST_Server::DELETABLE === $method ) {
-			$key = 'delete_item';
-		}
-
-		/**
-		 * Filters the method query arguments.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param array  $args   Query arguments.
-		 * @param string $method HTTP method of the request.
-		 */
-		return apply_filters( "bp_rest_groups_{$key}_query_arguments", $args, $method );
-	}
-
-	/**
 	 * Retrieve groups.
 	 *
 	 * @since 0.1.0
@@ -908,6 +873,41 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		return $group;
+	}
+
+	/**
+	 * Edit some arguments for the endpoint's CREATABLE and EDITABLE methods.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$key  = 'get_item';
+
+		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
+			$key                         = 'create_item';
+			$args['description']['type'] = 'string';
+
+			if ( WP_REST_Server::EDITABLE === $method ) {
+				$key = 'update_item';
+				unset( $args['slug'] );
+			}
+		} elseif ( WP_REST_Server::DELETABLE === $method ) {
+			$key = 'delete_item';
+		}
+
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array  $args   Query arguments.
+		 * @param string $method HTTP method of the request.
+		 */
+		return apply_filters( "bp_rest_groups_{$key}_query_arguments", $args, $method );
 	}
 
 	/**

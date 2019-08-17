@@ -376,6 +376,9 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		$invite = new BP_Invitation( $request_id );
 
 		$retval = array(
@@ -418,7 +421,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		$group       = $this->groups_endpoint->get_group_object( $request['group_id'] );
 
 		// User must be logged in.
-		if ( ! $user_id ) {
+		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to create a membership request.', 'buddypress' ),
@@ -429,7 +432,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		}
 
 		// Check for valid user.
-		if ( ! $user instanceof WP_User ) {
+		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_group_member_invalid_id',
 				__( 'Invalid user id.', 'buddypress' ),
@@ -494,6 +497,9 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
+
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
 
 		$g_member = new BP_Groups_Member( $group_request->user_id, $group_request->item_id );
 
@@ -586,9 +592,13 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+
+		// Setting context.
 		$request->set_param( 'context', 'edit' );
 
+		// Get invite.
 		$group_request = $this->fetch_single_invite( $request['request_id'] );
+
 		// Set the invite response before it is deleted.
 		$previous = $this->prepare_item_for_response( $group_request, $request );
 
@@ -781,6 +791,50 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Helper function to fetch a single group invite.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $request_id The ID of the request you wish to fetch.
+	 * @return BP_Invitation|bool $group_request Membership request if found, false otherwise.
+	 */
+	public function fetch_single_invite( $request_id = 0 ) {
+		$group_requests = groups_get_requests( array( 'id' => $request_id ) );
+		if ( $group_requests ) {
+			return current( $group_requests );
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Endpoint args.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$key  = 'get_item';
+
+		if ( WP_REST_Server::CREATABLE === $method ) {
+			$key = 'create_item';
+		}
+
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array  $args   Query arguments.
+		 * @param string $method HTTP method of the request.
+		 */
+		return apply_filters( "bp_rest_group_membership_requests{$key}_query_arguments", $args, $method );
+	}
+
+	/**
 	 * Get the group membership request schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
@@ -846,23 +900,5 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		 * @param array $params Query params.
 		 */
 		return apply_filters( 'bp_rest_group_membership_requests_collection_params', $params );
-	}
-
-	/**
-	 * Helper function to fetch a single group invite.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param int $request_id The ID of the request you wish to fetch.
-	 *
-	 * @return BP_Invitation|bool $group_request Membership request if found, false otherwise.
-	 */
-	public function fetch_single_invite( $request_id = 0 ) {
-		$group_requests = groups_get_requests( array( 'id' => $request_id ) );
-		if ( $group_requests ) {
-			return current( $group_requests );
-		} else {
-			return false;
-		}
 	}
 }

@@ -402,6 +402,9 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 
 		$invite = new BP_Invitation( $invite_id );
 
+		// Set context.
+		$request->set_param( 'context', 'edit' );
+
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $invite, $request )
@@ -503,9 +506,8 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$user_id = bp_loggedin_user_id();
-		$invite  = $this->fetch_single_invite( $request['invite_id'] );
-		$accept  = groups_accept_invite( $invite->user_id, $invite->item_id );
+		$invite = $this->fetch_single_invite( $request['invite_id'] );
+		$accept = groups_accept_invite( $invite->user_id, $invite->item_id );
 		if ( ! $accept ) {
 			return new WP_Error(
 				'bp_rest_group_invite_cannot_update_item',
@@ -515,6 +517,9 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
+
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
 
 		$accepted_member = new BP_Groups_Member( $invite->user_id, $invite->item_id );
 
@@ -608,10 +613,12 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		// Setting context.
 		$request->set_param( 'context', 'edit' );
 
-		$user_id  = bp_loggedin_user_id();
-		$invite   = $this->fetch_single_invite( $request['invite_id'] );
+		$user_id = bp_loggedin_user_id();
+		$invite  = $this->fetch_single_invite( $request['invite_id'] );
+
 		// Set the invite response before it is deleted.
 		$previous = $this->prepare_item_for_response( $invite, $request );
 
@@ -648,8 +655,8 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		$user     = bp_rest_get_user( $invite->user_id );
-		$group    = $this->groups_endpoint->get_group_object( $invite->item_id );
+		$user  = bp_rest_get_user( $invite->user_id );
+		$group = $this->groups_endpoint->get_group_object( $invite->item_id );
 
 		/**
 		 * Fires after a group invite is deleted via the REST API.
@@ -822,6 +829,24 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Helper function to fetch a single group invite.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $invite_id The ID of the invitation you wish to fetch.
+	 *
+	 * @return BP_Invitation|bool $invite Invitation if found, false otherwise.
+	 */
+	public function fetch_single_invite( $invite_id = 0 ) {
+		$invites = groups_get_invites( array( 'id' => $invite_id ) );
+		if ( $invites ) {
+			return current( $invites );
+		} else {
+			return false;
+		}
+	}
+
+	/**
 	 * Get the group invite schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
@@ -958,23 +983,5 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 * @param array $params Query params.
 		 */
 		return apply_filters( 'bp_rest_group_invites_collection_params', $params );
-	}
-
-	/**
-	 * Helper function to fetch a single group invite.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param int $invite_id The ID of the invitation you wish to fetch.
-	 *
-	 * @return BP_Invitation|bool $invite Invitation if found, false otherwise.
-	 */
-	public function fetch_single_invite( $invite_id = 0 ) {
-		$invites = groups_get_invites( array( 'id' => $invite_id ) );
-		if ( $invites ) {
-			return current( $invites );
-		} else {
-			return false;
-		}
 	}
 }
