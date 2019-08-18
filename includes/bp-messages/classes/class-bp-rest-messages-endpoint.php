@@ -107,94 +107,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Select the item schema arguments needed for the CREATABLE, EDITABLE and DELETABLE methods.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $method Optional. HTTP method of the request.
-	 * @return array Endpoint arguments.
-	 */
-	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$key                       = 'get_item';
-		$args                      = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
-		$args['id']['description'] = __( 'ID of the Messages Thread.', 'buddypress' );
-
-		if ( WP_REST_Server::CREATABLE === $method ) {
-			$key = 'create_item';
-
-			// Edit the Thread ID description and default properties.
-			$args['id']['description'] = __( 'ID of the Messages Thread. Required when replying to an existing Thread.', 'buddypress' );
-			$args['id']['default']     = 0;
-
-			// Add the sender_id argument.
-			$args['sender_id'] = array(
-				'description'       => __( 'The user ID of the Message sender.', 'buddypress' ),
-				'required'          => false,
-				'default'           => bp_loggedin_user_id(),
-				'type'              => 'integer',
-				'sanitize_callback' => 'absint',
-				'validate_callback' => 'rest_validate_request_arg',
-			);
-
-			// Edit subject's properties.
-			$args['subject']['type']        = 'string';
-			$args['subject']['default']     = false;
-			$args['subject']['description'] = __( 'Subject of the Message initializing the Thread.', 'buddypress' );
-
-			// Edit message's properties.
-			$args['message']['type']        = 'string';
-			$args['message']['description'] = __( 'Content of the Message to add to the Thread.', 'buddypress' );
-
-			// Edit recipients properties.
-			$args['recipients']['items']             = array( 'type' => 'integer' );
-			$args['recipients']['sanitize_callback'] = 'wp_parse_id_list';
-			$args['recipients']['validate_callback'] = 'rest_validate_request_arg';
-			$args['recipients']['description']       = __( 'The list of the recipients user IDs of the Message.', 'buddypress' );
-
-			// Remove unused properties for this transport method.
-			unset( $args['subject']['properties'], $args['message']['properties'] );
-
-		} else {
-			unset( $args['sender_id'], $args['subject'], $args['message'], $args['recipients'] );
-
-			if ( WP_REST_Server::EDITABLE === $method ) {
-				$key = 'update_item';
-
-				$args['message_id'] = array(
-					'description'       => __( 'By default the latest message of the thread will be updated. Specify this message ID to edit another message of the thread.', 'buddypress' ),
-					'required'          => false,
-					'type'              => 'integer',
-					'sanitize_callback' => 'absint',
-					'validate_callback' => 'rest_validate_request_arg',
-				);
-			}
-
-			if ( WP_REST_Server::DELETABLE === $method ) {
-				$key = 'delete_item';
-
-				$args['user_id'] = array(
-					'description'       => __( 'The user ID to remove from the thread', 'buddypress' ),
-					'required'          => true,
-					'type'              => 'integer',
-					'sanitize_callback' => 'absint',
-					'validate_callback' => 'rest_validate_request_arg',
-					'default'           => bp_loggedin_user_id(),
-				);
-			}
-		}
-
-		/**
-		 * Filters the method query arguments.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param array $args Query arguments.
-		 * @param string $method HTTP method of the request.
-		 */
-		return apply_filters( "bp_rest_messages_{$key}_query_arguments", $args, $method );
-	}
-
-	/**
 	 * Retrieve threads.
 	 *
 	 * @since 0.1.0
@@ -418,6 +330,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		// Prepare the message or the reply arguments.
 		$args = array(
 			'sender_id'  => $request['sender_id'],
@@ -540,6 +455,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		// Get the thread.
 		$thread = $this->get_thread_object( $request['id'] );
 		$error  = new WP_Error(
@@ -643,6 +561,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_starred( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		$message = $this->get_message_object( $request['id'] );
 
 		if ( empty( $message->id ) ) {
@@ -750,6 +671,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		// Get the thread before it's deleted.
 		$thread   = $this->get_thread_object( $request['id'] );
 		$previous = $this->prepare_item_for_response( $thread, $request );
@@ -1054,6 +978,94 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_message_object( $message_id ) {
 		return new BP_Messages_Message( $message_id );
+	}
+
+	/**
+	 * Select the item schema arguments needed for the CREATABLE, EDITABLE and DELETABLE methods.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$key                       = 'get_item';
+		$args                      = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$args['id']['description'] = __( 'ID of the Messages Thread.', 'buddypress' );
+
+		if ( WP_REST_Server::CREATABLE === $method ) {
+			$key = 'create_item';
+
+			// Edit the Thread ID description and default properties.
+			$args['id']['description'] = __( 'ID of the Messages Thread. Required when replying to an existing Thread.', 'buddypress' );
+			$args['id']['default']     = 0;
+
+			// Add the sender_id argument.
+			$args['sender_id'] = array(
+				'description'       => __( 'The user ID of the Message sender.', 'buddypress' ),
+				'required'          => false,
+				'default'           => bp_loggedin_user_id(),
+				'type'              => 'integer',
+				'sanitize_callback' => 'absint',
+				'validate_callback' => 'rest_validate_request_arg',
+			);
+
+			// Edit subject's properties.
+			$args['subject']['type']        = 'string';
+			$args['subject']['default']     = false;
+			$args['subject']['description'] = __( 'Subject of the Message initializing the Thread.', 'buddypress' );
+
+			// Edit message's properties.
+			$args['message']['type']        = 'string';
+			$args['message']['description'] = __( 'Content of the Message to add to the Thread.', 'buddypress' );
+
+			// Edit recipients properties.
+			$args['recipients']['items']             = array( 'type' => 'integer' );
+			$args['recipients']['sanitize_callback'] = 'wp_parse_id_list';
+			$args['recipients']['validate_callback'] = 'rest_validate_request_arg';
+			$args['recipients']['description']       = __( 'The list of the recipients user IDs of the Message.', 'buddypress' );
+
+			// Remove unused properties for this transport method.
+			unset( $args['subject']['properties'], $args['message']['properties'] );
+
+		} else {
+			unset( $args['sender_id'], $args['subject'], $args['message'], $args['recipients'] );
+
+			if ( WP_REST_Server::EDITABLE === $method ) {
+				$key = 'update_item';
+
+				$args['message_id'] = array(
+					'description'       => __( 'By default the latest message of the thread will be updated. Specify this message ID to edit another message of the thread.', 'buddypress' ),
+					'required'          => false,
+					'type'              => 'integer',
+					'sanitize_callback' => 'absint',
+					'validate_callback' => 'rest_validate_request_arg',
+				);
+			}
+
+			if ( WP_REST_Server::DELETABLE === $method ) {
+				$key = 'delete_item';
+
+				$args['user_id'] = array(
+					'description'       => __( 'The user ID to remove from the thread', 'buddypress' ),
+					'required'          => true,
+					'type'              => 'integer',
+					'sanitize_callback' => 'absint',
+					'validate_callback' => 'rest_validate_request_arg',
+					'default'           => bp_loggedin_user_id(),
+				);
+			}
+		}
+
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array $args Query arguments.
+		 * @param string $method HTTP method of the request.
+		 */
+		return apply_filters( "bp_rest_messages_{$key}_query_arguments", $args, $method );
 	}
 
 	/**

@@ -192,6 +192,9 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		$field = $this->get_xprofile_field_object( $request['field_id'] );
 
 		if ( empty( $field->id ) ) {
@@ -322,6 +325,9 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		$field = $this->get_xprofile_field_object( $request['field_id'] );
 
 		if ( empty( $field->id ) ) {

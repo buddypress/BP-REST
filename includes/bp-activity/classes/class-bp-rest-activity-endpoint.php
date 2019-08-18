@@ -341,6 +341,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
+		$request->set_param( 'context', 'edit' );
+
 		if ( empty( $request['content'] ) ) {
 			return new WP_Error(
 				'bp_rest_create_activity_empty_content',
@@ -493,6 +495,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
+		$request->set_param( 'context', 'edit' );
+
 		if ( empty( $request['content'] ) ) {
 			return new WP_Error(
 				'bp_rest_update_activity_empty_content',
@@ -599,7 +603,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Delete an activity.
+	 * Delete activity.
 	 *
 	 * @since 0.1.0
 	 *
@@ -607,6 +611,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		// Setting context.
 		$request->set_param( 'context', 'edit' );
 
 		// Get the activity before it's deleted.
@@ -777,6 +782,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
+
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
 
 		// Prepare the response now the user favorites has been updated.
 		$retval = array(

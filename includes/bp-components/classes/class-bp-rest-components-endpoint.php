@@ -256,6 +256,8 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 			$component_info = $this->deactivate_helper( $component );
 		}
 
+		$request->set_param( 'context', 'edit' );
+
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $component_info, $request )

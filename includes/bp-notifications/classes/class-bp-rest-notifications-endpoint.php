@@ -90,41 +90,6 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Select the item schema arguments needed for the EDITABLE method.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $method Optional. HTTP method of the request.
-	 * @return array Endpoint arguments.
-	 */
-	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
-		$key  = 'get_item';
-
-		if ( WP_REST_Server::EDITABLE === $method ) {
-			$key = 'update_item';
-
-			// Only switching the is_new property can be achieved.
-			$args                      = array_intersect_key( $args, array( 'is_new' => true ) );
-			$args['is_new']['default'] = 0;
-		} elseif ( WP_REST_Server::CREATABLE === $method ) {
-			$key = 'create_item';
-		} elseif ( WP_REST_Server::DELETABLE === $method ) {
-			$key = 'delete_item';
-		}
-
-		/**
-		 * Filters the method query arguments.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param array  $args   Query arguments.
-		 * @param string $method HTTP method of the request.
-		 */
-		return apply_filters( "bp_rest_notifications_{$key}_query_arguments", $args, $method );
-	}
-
-	/**
 	 * Retrieve notifications.
 	 *
 	 * @since 0.1.0
@@ -315,9 +280,12 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full data about the request.
-	 * @return WP_REST_Request|WP_Error
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		$notification_id = bp_notifications_add_notification( $this->prepare_item_for_database( $request ) );
 
 		if ( ! is_numeric( $notification_id ) ) {
@@ -390,6 +358,9 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		$notification = $this->get_notification_object( $request );
 
 		if ( $request['is_new'] === $notification->is_new ) {
@@ -480,6 +451,9 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		// Get the notification before it's deleted.
 		$notification = $this->get_notification_object( $request );
 		$previous     = $this->prepare_item_for_response( $notification, $request );
@@ -728,6 +702,41 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		}
 
 		return $notification;
+	}
+
+	/**
+	 * Select the item schema arguments needed for the EDITABLE method.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$key  = 'get_item';
+
+		if ( WP_REST_Server::EDITABLE === $method ) {
+			$key = 'update_item';
+
+			// Only switching the is_new property can be achieved.
+			$args                      = array_intersect_key( $args, array( 'is_new' => true ) );
+			$args['is_new']['default'] = 0;
+		} elseif ( WP_REST_Server::CREATABLE === $method ) {
+			$key = 'create_item';
+		} elseif ( WP_REST_Server::DELETABLE === $method ) {
+			$key = 'delete_item';
+		}
+
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array  $args   Query arguments.
+		 * @param string $method HTTP method of the request.
+		 */
+		return apply_filters( "bp_rest_notifications_{$key}_query_arguments", $args, $method );
 	}
 
 	/**
