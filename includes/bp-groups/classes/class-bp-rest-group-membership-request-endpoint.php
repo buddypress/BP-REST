@@ -256,7 +256,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$group_request = $this->fetch_single_invite( $request['request_id'] );
+		$group_request = $this->fetch_single_membership_request( $request['request_id'] );
 		$retval        = $this->prepare_response_for_collection(
 			$this->prepare_item_for_response( $group_request, $request )
 		);
@@ -288,7 +288,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	public function get_item_permissions_check( $request ) {
 		$retval        = true;
 		$user_id       = bp_loggedin_user_id();
-		$group_request = $this->fetch_single_invite( $request['request_id'] );
+		$group_request = $this->fetch_single_membership_request( $request['request_id'] );
 
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
@@ -486,7 +486,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$group_request = $this->fetch_single_invite( $request['request_id'] );
+		$group_request = $this->fetch_single_membership_request( $request['request_id'] );
 		$success       = groups_accept_membership_request( false, $group_request->user_id, $group_request->item_id );
 		if ( ! $success ) {
 			return new WP_Error(
@@ -538,7 +538,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	public function update_item_permissions_check( $request ) {
 		$retval        = true;
 		$user_id       = bp_loggedin_user_id();
-		$group_request = $this->fetch_single_invite( $request['request_id'] );
+		$group_request = $this->fetch_single_membership_request( $request['request_id'] );
 
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
@@ -597,7 +597,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		// Get invite.
-		$group_request = $this->fetch_single_invite( $request['request_id'] );
+		$group_request = $this->fetch_single_membership_request( $request['request_id'] );
 
 		// Set the invite response before it is deleted.
 		$previous = $this->prepare_item_for_response( $group_request, $request );
@@ -664,7 +664,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	public function delete_item_permissions_check( $request ) {
 		$retval        = true;
 		$user_id       = bp_loggedin_user_id();
-		$group_request = $this->fetch_single_invite( $request['request_id'] );
+		$group_request = $this->fetch_single_membership_request( $request['request_id'] );
 
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
@@ -798,7 +798,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @param int $request_id The ID of the request you wish to fetch.
 	 * @return BP_Invitation|bool $group_request Membership request if found, false otherwise.
 	 */
-	public function fetch_single_invite( $request_id = 0 ) {
+	public function fetch_single_membership_request( $request_id = 0 ) {
 		$group_requests = groups_get_requests( array( 'id' => $request_id ) );
 		if ( $group_requests ) {
 			return current( $group_requests );
