@@ -628,10 +628,10 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 */
 		if ( $user_id === $invite->user_id ) {
 			$deleted = groups_reject_invite( $invite->user_id, $invite->item_id, $invite->inviter_id );
-		/**
-		 * Otherwise, this change is being initiated by a group admin, site admin,
-		 * or the inviter, and we should use the `uninvite` function.
-		 */
+			/**
+			 * Otherwise, this change is being initiated by a group admin, site admin,
+			 * or the inviter, and we should use the `uninvite` function.
+			 */
 		} else {
 			$deleted = groups_uninvite_user( $invite->user_id, $invite->item_id, $invite->inviter_id );
 		}
@@ -847,6 +847,51 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Edit the type of the some properties for the CREATABLE & EDITABLE methods.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$key  = 'get_item';
+
+		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
+			$key                            = 'create_item';
+			$args['message']['type']        = 'string';
+			$args['message']['description'] = __( 'The optional message to send to the invited user.', 'buddypress' );
+			$args['send_invite']            = $args['invite_sent'];
+			$args['inviter_id']['default']  = bp_loggedin_user_id();
+			$args['group_id']['required']   = true;
+			$args['user_id']['required']    = true;
+
+			// Remove arguments not needed for the CREATABLE transport method.
+			unset( $args['message']['properties'], $args['invite_sent'], $args['date_modified'], $args['type'] );
+
+			$args['send_invite']['description'] = __( 'Whether the invite should be sent to the invitee.', 'buddypress' );
+			$args['send_invite']['default']     = true;
+
+			if ( WP_REST_Server::EDITABLE === $method ) {
+				$key = 'update_item';
+			}
+		} elseif ( WP_REST_Server::DELETABLE === $method ) {
+			$key = 'delete_item';
+		}
+
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array  $args   Query arguments.
+		 * @param string $method HTTP method of the request.
+		 */
+		return apply_filters( "bp_rest_group_invites_{$key}_query_arguments", $args, $method );
+	}
+
+	/**
 	 * Get the group invite schema, conforming to JSON Schema.
 	 *
 	 * @since 0.1.0
@@ -861,28 +906,28 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			'properties' => array(
 				'id'            => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'ID for the BP_Invitation object.', 'buddypress' ),
+					'description' => __( 'A unique numeric ID for the BP Invitation object.', 'buddypress' ),
 					'type'        => 'integer',
+					'readonly'    => true,
 				),
 				'user_id'       => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'ID for the user object.', 'buddypress' ),
+					'description' => __( 'The ID of the user who is invited to join the Group.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'invite_sent'   => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Whether the invite has been sent to the invitee.', 'buddypress' ),
-					'type'        => 'string',
-					'format'      => 'boolean',
+					'type'        => 'boolean',
 				),
 				'inviter_id'    => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'ID of the user who made the invite.', 'buddypress' ),
+					'description' => __( 'The ID of the user who made the invite.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'group_id'      => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'ID of the group to which the user has been invited.', 'buddypress' ),
+					'description' => __( 'The ID of the group to which the user has been invited.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'date_modified' => array(
@@ -895,10 +940,12 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Invitation or request.', 'buddypress' ),
 					'type'        => 'string',
+					'enum'        => array( 'invite', 'request' ),
+					'default'     => 'invite',
 				),
 				'message'       => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Content of the object.', 'buddypress' ),
+					'description' => __( 'The raw and rendered versions for the content of the message.', 'buddypress' ),
 					'type'        => 'object',
 					'arg_options' => array(
 						'sanitize_callback' => null,
@@ -940,6 +987,9 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	public function get_collection_params() {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
+
+		// Remove the search param.
+		unset( $params['search'] );
 
 		$params['group_id'] = array(
 			'description'       => __( 'ID of the group to limit results to.', 'buddypress' ),
