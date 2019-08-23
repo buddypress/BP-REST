@@ -608,10 +608,10 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		 */
 		if ( bp_loggedin_user_id() === $group_request->user_id ) {
 			$success = groups_delete_membership_request( false, $group_request->user_id, $group_request->item_id );
-		/**
-		 * Otherwise, this change is being initiated by a group admin or site admin,
-		 * and we should use the `reject` function.
-		 */
+			/**
+			 * Otherwise, this change is being initiated by a group admin or site admin,
+			 * and we should use the `reject` function.
+			 */
 		} else {
 			$success = groups_reject_membership_request( false, $group_request->user_id, $group_request->item_id );
 		}
@@ -821,6 +821,15 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 
 		if ( WP_REST_Server::CREATABLE === $method ) {
 			$key = 'create_item';
+
+			$args['message']['type']        = 'string';
+			$args['message']['description'] = __( 'The optional message to send to the invited user.', 'buddypress' );
+			$args['group_id']['required']   = true;
+			$args['user_id']['default']     = bp_loggedin_user_id();
+
+			// Remove arguments not needed for the CREATABLE transport method.
+			unset( $args['message']['properties'], $args['date_modified'], $args['type'] );
+
 		} elseif ( WP_REST_Server::EDITABLE === $method ) {
 			$key = 'update_item';
 		} elseif ( WP_REST_Server::DELETABLE === $method ) {
@@ -853,6 +862,14 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		// Set title to this endpoint.
 		$schema['title'] = 'bp_group_membership_request';
 
+		// Adapt some item schema property descriptions to this endpoint.
+		$schema['properties']['user_id']['description']  = __( 'The ID of the user who requested a Group membership.', 'buddypress' );
+		$schema['properties']['group_id']['description'] = __( 'The ID of the group the user requested a membership for.', 'buddypress' );
+		$schema['properties']['type']['default']         = 'request';
+
+		// Remove unused properties.
+		unset( $schema['properties']['invite_sent'], $schema['properties']['inviter_id'] );
+
 		/**
 		 * Filters the group membership request schema.
 		 *
@@ -869,34 +886,15 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_collection_params() {
-		$params                       = parent::get_collection_params();
+		$params                       = $this->invites_endpoint->get_collection_params();
 		$params['context']['default'] = 'view';
 
-		$params['group_id'] = array(
-			'description'       => __( 'ID of the group to limit results to.', 'buddypress' ),
-			'required'          => false,
-			'default'           => 0,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
+		// Adapt some item schema property descriptions to this endpoint.
+		$params['user_id']['description']  = __( 'Return only Membership requests made by a specific user.', 'buddypress' );
+		$params['group_id']['description'] = __( 'The ID of the group the user requested a membership for.', 'buddypress' );
 
-		$params['user_id'] = array(
-			'description'       => __( 'Return only requests sent by this user.', 'buddypress' ),
-			'required'          => false,
-			'default'           => 0,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['invite_sent'] = array(
-			'description'       => __( 'Limit result set to invites that have been sent, not sent, or include all.', 'buddypress' ),
-			'default'           => 'sent',
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_text_field',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
+		// Remove unused properties.
+		unset( $params['invite_sent'], $params['inviter_id'] );
 
 		/**
 		 * Filters the collection query params.

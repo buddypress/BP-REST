@@ -42,6 +42,13 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
 		}
+
+		$this->old_current_user = get_current_user_id();
+	}
+
+	public function tearDown() {
+		parent::tearDown();
+		$this->bp->set_current_user( $this->old_current_user );
 	}
 
 	public function test_register_routes() {
@@ -636,10 +643,8 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 8, count( $properties ) );
+		$this->assertEquals( 6, count( $properties ) );
 		$this->assertArrayHasKey( 'user_id', $properties );
-		$this->assertArrayHasKey( 'invite_sent', $properties );
-		$this->assertArrayHasKey( 'inviter_id', $properties );
 	}
 
 	public function test_context_param() {
