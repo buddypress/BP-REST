@@ -171,7 +171,7 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 		$this->group = $this->groups_endpoint->get_group_object( $request );
 
 		if ( true === $retval && ! $this->group ) {
-			return new WP_Error(
+			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
 				__( 'Invalid group id.', 'buddypress' ),
 				array(
@@ -180,22 +180,17 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( true === $retval && current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
-		} else {
-			if ( true === $retval && ! groups_is_user_admin( bp_loggedin_user_id(), $this->group->id ) ) {
-				$retval = new WP_Error(
-					'bp_rest_authorization_required',
-					__( 'Sorry, you cannot access this group avatar.', 'buddypress' ),
-					array(
-						'status' => rest_authorization_required_code(),
-					)
-				);
-			}
-
-			if ( true === $retval ) {
-				$retval = true;
-			}
+		if ( true === $retval
+			&& ! groups_is_user_admin( bp_loggedin_user_id(), $this->group->id )
+			&& ! current_user_can( 'bp_moderate' )
+		) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you cannot access this group avatar.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
 		}
 
 		/**
@@ -220,7 +215,7 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 	public function create_item( $request ) {
 		$request->set_param( 'context', 'edit' );
 
-		// Get the image file via $_FILES.
+		// Get the image file from $_FILES.
 		$files = $request->get_file_params();
 
 		if ( empty( $files ) ) {

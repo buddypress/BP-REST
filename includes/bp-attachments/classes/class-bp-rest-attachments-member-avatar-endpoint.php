@@ -171,22 +171,17 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( true === $retval && current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
-		} else {
-			if ( true === $retval && bp_loggedin_user_id() !== $this->user->ID ) {
-				$retval = new WP_Error(
-					'bp_rest_authorization_required',
-					__( 'Sorry, you cannot get this member avatar.', 'buddypress' ),
-					array(
-						'status' => rest_authorization_required_code(),
-					)
-				);
-			}
-
-			if ( true === $retval ) {
-				$retval = true;
-			}
+		if ( true === $retval
+			&& bp_loggedin_user_id() !== $this->user->ID
+			&& ! current_user_can( 'bp_moderate' )
+		) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you cannot get this member avatar.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
 		}
 
 		/**
@@ -211,7 +206,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	public function create_item( $request ) {
 		$request->set_param( 'context', 'edit' );
 
-		// Get the image file via $_FILES.
+		// Get the image file from  $_FILES.
 		$files = $request->get_file_params();
 
 		if ( empty( $files ) ) {
