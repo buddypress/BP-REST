@@ -66,7 +66,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_invalid_group() {
+	public function test_get_item_invalid_group_id() {
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/cover', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
@@ -102,10 +102,21 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	/**
 	 * @group create_item
 	 */
-	public function test_create_item_invalid_group() {
+	public function test_create_item_unauthorized_user() {
 		$u1 = $this->bp_factory->user->create();
 
 		$this->bp->set_current_user( $u1 );
+
+		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_invalid_group_id() {
+		$this->bp->set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -129,18 +140,6 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	/**
 	 * @group delete_item
 	 */
-	public function test_delete_item_failed() {
-		$this->bp->set_current_user( $this->user_id );
-
-		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
-		$response = $this->server->dispatch( $request );
-
-		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_delete_failed', $response, 500 );
-	}
-
-	/**
-	 * @group delete_item
-	 */
 	public function test_delete_item_user_not_logged_in() {
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
@@ -150,12 +149,37 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	/**
 	 * @group delete_item
 	 */
-	public function test_delete_item_invalid_group() {
+	public function test_delete_item_unauthorized_user() {
+		$u1 = $this->bp_factory->user->create();
+
+		$this->bp->set_current_user( $u1 );
+
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_invalid_group_id() {
 		$this->bp->set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_failed() {
+		$this->bp->set_current_user( $this->user_id );
+
+		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_delete_failed', $response, 500 );
 	}
 
 	/**
