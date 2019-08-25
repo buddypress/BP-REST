@@ -108,7 +108,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 
 		if ( ! $avatar ) {
 			return new WP_Error(
-				'bp_rest_attachments_avatar_no_image',
+				'bp_rest_attachments_member_avatar_no_image',
 				__( 'Sorry, there was a problem fetching the avatar.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -133,7 +133,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_attachments_avatar_get_item', $avatar, $response, $request );
+		do_action( 'bp_rest_attachments_member_avatar_get_item', $avatar, $response, $request );
 
 		return $response;
 	}
@@ -192,7 +192,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_attachments_avatar_get_item_permissions_check', $retval, $request );
+		return apply_filters( 'bp_rest_attachments_member_avatar_get_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -211,7 +211,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 
 		if ( empty( $files ) ) {
 			return new WP_Error(
-				'bp_rest_attachments_avatar_no_image_file',
+				'bp_rest_attachments_member_avatar_no_image_file',
 				__( 'Sorry, you need an image file to upload.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -242,7 +242,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_attachments_avatar_create_item', $avatar, $response, $request );
+		do_action( 'bp_rest_attachments_member_avatar_create_item', $avatar, $response, $request );
 
 		return $response;
 	}
@@ -258,7 +258,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	public function create_item_permissions_check( $request ) {
 		$retval = $this->get_item_permissions_check( $request );
 
-		if ( true === $retval && ( bp_disable_avatar_uploads() || ! buddypress()->avatar->show_avatars ) ) {
+		if ( true === $retval && bp_disable_avatar_uploads() ) {
 			$retval = new WP_Error(
 				'bp_rest_attachments_member_avatar_disabled',
 				__( 'Sorry, member avatar upload is disabled.', 'buddypress' ),
@@ -276,11 +276,11 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_attachments_avatar_create_item_permissions_check', $retval, $request );
+		return apply_filters( 'bp_rest_attachments_member_avatar_create_item_permissions_check', $retval, $request );
 	}
 
 	/**
-	 * Delete an existing avatar of a member.
+	 * Delete an existing member avatar.
 	 *
 	 * @since 0.1.0
 	 *
@@ -289,23 +289,6 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 */
 	public function delete_item( $request ) {
 		$request->set_param( 'context', 'edit' );
-
-		$deleted = bp_core_delete_existing_avatar(
-			array(
-				'object'  => $this->object,
-				'item_id' => (int) $this->user->ID,
-			)
-		);
-
-		if ( ! $deleted ) {
-			return new WP_Error(
-				'bp_rest_attachments_avatar_delete_failed',
-				__( 'Sorry, there was a problem deleting the avatar.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
 
 		$avatar = bp_core_fetch_avatar(
 			array(
@@ -316,24 +299,41 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $avatar, $request )
-			),
+		$deleted = bp_core_delete_existing_avatar(
+			array(
+				'object'  => $this->object,
+				'item_id' => (int) $this->user->ID,
+			)
 		);
 
-		$response = rest_ensure_response( $retval );
+		if ( ! $deleted ) {
+			return new WP_Error(
+				'bp_rest_attachments_member_avatar_delete_failed',
+				__( 'Sorry, there was a problem deleting the avatar.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'deleted'  => true,
+				'previous' => $avatar,
+			)
+		);
 
 		/**
 		 * Fires after a member avatar is deleted via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param string            $avatar   Gravatar url.
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_attachments_avatar_delete_item', $avatar, $response, $request );
+		do_action( 'bp_rest_attachments_member_avatar_delete_item', $response, $request );
 
 		return $response;
 	}
@@ -357,7 +357,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_attachments_avatar_delete_item_permissions_check', $retval, $request );
+		return apply_filters( 'bp_rest_attachments_member_avatar_delete_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -397,7 +397,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request   $request  Request used to generate the response.
 		 * @param stdClass|string   $avatar   Avatar object or string with url or image with html.
 		 */
-		return apply_filters( 'bp_rest_attachments_avatar_prepare_value', $response, $request, $avatar );
+		return apply_filters( 'bp_rest_attachments_member_avatar_prepare_value', $response, $request, $avatar );
 	}
 
 	/**
@@ -433,7 +433,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param string $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_attachments_avatar_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_attachments_member_avatar_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**
@@ -485,6 +485,6 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $params Query params.
 		 */
-		return apply_filters( 'bp_rest_attachments_avatar_collection_params', $params );
+		return apply_filters( 'bp_rest_attachments_member_avatar_collection_params', $params );
 	}
 }

@@ -112,7 +112,7 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_attachments_avatar_no_image_file', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_attachments_member_avatar_no_image_file', $response, 500 );
 	}
 
 	/**
@@ -160,7 +160,7 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$response = rest_get_server()->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_attachments_avatar_delete_failed', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_attachments_member_avatar_delete_failed', $response, 500 );
 	}
 
 	/**
