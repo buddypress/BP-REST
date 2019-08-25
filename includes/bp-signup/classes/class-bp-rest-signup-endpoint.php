@@ -150,7 +150,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		}
 
 		$response = rest_ensure_response( $retval );
-		$response = bp_rest_response_add_total_headers( $response, $signups['total'], $args['per_page'] );
+		$response = bp_rest_response_add_total_headers( $response, $signups['total'], $args['offset'] );
 
 		/**
 		 * Fires after a list of signups is fetched via the REST API.

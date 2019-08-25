@@ -39,25 +39,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			)
 		);
 
-		$signup = BP_Signup::add(
-			array(
-				'domain'         => 'foo',
-				'path'           => 'bar',
-				'title'          => 'Foo bar',
-				'user_login'     => 'admin_user',
-				'user_email'     => 'user1@example.com',
-				'registered'     => bp_core_current_time(),
-				'activation_key' => '12345',
-				'meta'           => array(
-					'field_1'  => 'Foo Bar',
-					'meta1'    => 'meta2',
-					'password' => wp_generate_password( 12, false ),
-				),
-			)
-		);
-
-		$s               = new BP_Signup( $signup );
-		$this->signup_id = $s->id;
+		$this->signup_id = $this->create_signup();
 
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
@@ -77,6 +59,10 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_register_routes() {
 		$routes = $this->server->get_routes();
 
+		// Main.
+		$this->assertArrayHasKey( $this->endpoint_url, $routes );
+		$this->assertCount( 2, $routes[ $this->endpoint_url ] );
+
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\w-]+)', $routes );
 		$this->assertCount( 2, $routes[ $this->endpoint_url . '/(?P<id>[\w-]+)' ] );
@@ -87,7 +73,85 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		return true;
+		$this->bp->set_current_user( $this->user );
+
+		$s1     = $this->create_signup();
+		$signup = $this->endpoint->get_signup_object( $s1 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$request->set_query_params(
+			array(
+				'include' => $s1,
+			)
+		);
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->check_signup_data( $signup, $all_data[0], 'view' );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_paginated_items() {
+		$this->bp->set_current_user( $this->user );
+
+		$s1 = $this->create_signup();
+		$s2 = $this->create_signup();
+		$s3 = $this->create_signup();
+		$s4 = $this->create_signup();
+
+		$signup = $this->endpoint->get_signup_object( $s1 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params(
+			array(
+				'per_page' => 2,
+				'include'  => array( $s1, $s2, $s3, $s4 ),
+			)
+		);
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$headers = $response->get_headers();
+		$this->assertEquals( 4, $headers['X-WP-Total'] );
+		$this->assertEquals( 2, $headers['X-WP-TotalPages'] );
+
+		$all_data = $response->get_data();
+		$this->check_signup_data( $signup, $all_data[0], 'view' );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_user_not_logged_in() {
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_unauthorized_user() {
+		$u = $this->factory->user->create();
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -276,6 +340,29 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 	public function test_prepare_item() {
 		return true;
+	}
+
+	protected function create_signup() {
+		$signup = BP_Signup::add(
+			array(
+				'domain'         => 'foo',
+				'path'           => 'bar',
+				'title'          => 'Foo bar',
+				'user_login'     => 'admin_user',
+				'user_email'     => 'user1@example.com',
+				'registered'     => bp_core_current_time(),
+				'activation_key' => '12345',
+				'meta'           => array(
+					'field_1'  => 'Foo Bar',
+					'meta1'    => 'meta2',
+					'password' => wp_generate_password( 12, false ),
+				),
+			)
+		);
+
+		$s = new BP_Signup( $signup );
+
+		return $s->id;
 	}
 
 	protected function check_signup_data( $signup, $data, $context = 'view' ) {
