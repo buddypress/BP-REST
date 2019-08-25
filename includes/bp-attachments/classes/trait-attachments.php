@@ -16,6 +16,86 @@ defined( 'ABSPATH' ) || exit;
 trait BP_REST_Attachments {
 
 	/**
+	 * Cover upload from file.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $files $_FILES superglobal.
+	 * @return string|WP_Error
+	 */
+	protected function upload_cover_from_file( $files ) {
+		$error_message              = __( 'There was a problem uploading the cover image.', 'buddypress' );
+		$bp_attachments_uploads_dir = bp_attachments_cover_image_upload_dir();
+
+		if ( ! $bp_attachments_uploads_dir ) {
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_cover_upload_fail",
+				$error_message,
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$component    = $this->get_cover_object_component();
+		$cover_subdir = $component . '/' . $this->get_item_id() . '/cover-image';
+		$cover_dir    = trailingslashit( $bp_attachments_uploads_dir['basedir'] ) . $cover_subdir;
+
+		// Upload path doesn't exist.
+		if ( 1 === validate_file( $cover_dir ) || ! is_dir( $cover_dir ) ) {
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_cover_upload_fail",
+				__( 'The cover image directory is not valid.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Upload cover.
+		$cover = bp_attachments_cover_image_generate_file(
+			array(
+				'file'            => $files,
+				'component'       => $component,
+				'cover_image_dir' => $cover_dir,
+			)
+		);
+
+		// Bail if any error happened.
+		if ( false === $cover ) {
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_cover_upload_fail",
+				$error_message,
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Bail with error if too small.
+		if ( true === $cover['is_too_small'] ) {
+
+			// Get cover image advised dimensions.
+			$cover_dimensions = bp_attachments_get_cover_image_dimensions( $component );
+
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_cover_upload_fail",
+				sprintf(
+					/* translators: %$1s and %$2s is replaced with the correct sizes. */
+					__( 'You have selected an image that is smaller than recommended. For better results, make sure to upload an image that is larger than %1$spx wide, and %2$spx tall.', 'buddypress' ),
+					(int) $cover_dimensions['width'],
+					(int) $cover_dimensions['height']
+				),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return trailingslashit( $bp_attachments_uploads_dir['baseurl'] ) . $cover_subdir . '/' . $cover['cover_basename'];
+	}
+
+	/**
 	 * Avatar upload from File.
 	 *
 	 * @since 0.1.0
@@ -271,5 +351,14 @@ trait BP_REST_Attachments {
 	 */
 	protected function get_item_id() {
 		return ( 'group' === $this->object ) ? $this->group->id : $this->user->ID;
+	}
+
+	/**
+	 * Get cover object component.
+	 *
+	 * @return string
+	 */
+	protected function get_cover_object_component() {
+		return ( 'group' === $this->object ) ? 'groups' : 'blogs';
 	}
 }

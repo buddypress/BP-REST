@@ -27,15 +27,6 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 	protected $groups_endpoint;
 
 	/**
-	 * BP_Attachment_Avatar Instance.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @var BP_Attachment_Avatar
-	 */
-	protected $avatar_instance;
-
-	/**
 	 * Hold the group object.
 	 *
 	 * @since 0.1.0
@@ -45,13 +36,13 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 	protected $group;
 
 	/**
-	 * Group cover object type.
+	 * Group object type.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
-	protected $object = 'group-cover';
+	protected $object = 'group';
 
 	/**
 	 * Constructor.
@@ -62,7 +53,6 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 		$this->namespace       = bp_rest_namespace() . '/' . bp_rest_version();
 		$this->rest_base       = buddypress()->groups->id;
 		$this->groups_endpoint = new BP_REST_Groups_Endpoint();
-		$this->avatar_instance = new BP_Attachment_Avatar();
 	}
 
 	/**
@@ -167,6 +157,80 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Upload a group cover.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function create_item( $request ) {
+		$request->set_param( 'context', 'edit' );
+
+		// Get the image file from $_FILES.
+		$files = $request->get_file_params();
+
+		if ( empty( $files ) ) {
+			return new WP_Error(
+				'bp_rest_attachments_group_cover_no_image_file',
+				__( 'Sorry, you need an image file to upload.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Upload the group cover.
+		$cover_url = $this->upload_cover_from_file( $files );
+		if ( is_wp_error( $cover_url ) ) {
+			return $cover_url;
+		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $cover_url, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a group cover is uploaded via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param string            $cover_url  The group cover url.
+		 * @param WP_REST_Response  $response   The response data.
+		 * @param WP_REST_Request   $request    The request sent to the API.
+		 */
+		do_action( 'bp_rest_attachments_group_cover_create_item', $cover_url, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Checks if a given request has access to upload a group cover.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function create_item_permissions_check( $request ) {
+		$retval = $this->delete_item_permissions_check( $request );
+
+		/**
+		 * Filter the group cover `create_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_attachments_group_cover_create_item_permissions_check', $retval, $request );
+	}
+
+	/**
 	 * Delete an existing group cover.
 	 *
 	 * @since 0.1.0
@@ -246,7 +310,7 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! bp_attachments_current_user_can( 'edit_cover_image', $args ) ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
-				__( 'Sorry, you cannot delete this group cover.', 'buddypress' ),
+				__( 'Sorry, you are not authorized to perform this action.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -269,21 +333,14 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass|string $cover   Group cover object or string with url or image with html.
+	 * @param string          $cover   Group cover url.
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $cover, $request ) {
-		if ( is_string( $cover ) ) {
-			$data = array(
-				'image' => $cover,
-			);
-		} else {
-			$data = array(
-				'full'  => $cover->full,
-				'thumb' => $cover->thumb,
-			);
-		}
+		$data = array(
+			'image' => $cover,
+		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 		$data    = $this->add_additional_fields_to_object( $data, $request );
@@ -299,7 +356,7 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param WP_REST_Response  $response Response.
 		 * @param WP_REST_Request   $request  Request used to generate the response.
-		 * @param stdClass|string   $cover    Group cover object or string with url or image with html.
+		 * @param string            $cover    Group cover url.
 		 */
 		return apply_filters( 'bp_rest_attachments_group_cover_prepare_value', $response, $request, $cover );
 	}
@@ -317,15 +374,9 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 			'title'      => 'bp_attachments_group_cover',
 			'type'       => 'object',
 			'properties' => array(
-				'full'  => array(
+				'image' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Full size of the image file.', 'buddypress' ),
-					'type'        => 'string',
-					'readonly'    => true,
-				),
-				'thumb' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Thumb size of the image file.', 'buddypress' ),
 					'type'        => 'string',
 					'readonly'    => true,
 				),
