@@ -318,7 +318,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 
 		if ( ! bp_get_user_has_avatar( $user_id ) ) {
 			return new WP_Error(
-				'bp_rest_attachments_member_avatar_no_uploaded avatar',
+				'bp_rest_attachments_member_avatar_no_uploaded_avatar',
 				__( 'Sorry, there are no uploaded avatars for this user on this site.', 'buddypress' ),
 				array(
 					'status' => 404,
