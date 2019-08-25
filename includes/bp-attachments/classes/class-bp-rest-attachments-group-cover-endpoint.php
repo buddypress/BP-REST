@@ -224,6 +224,16 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 	public function create_item_permissions_check( $request ) {
 		$retval = $this->delete_item_permissions_check( $request );
 
+		if ( true === $retval && bp_disable_group_cover_image_uploads() ) {
+			$retval = new WP_Error(
+				'bp_rest_attachments_group_cover_disabled',
+				__( 'Sorry, group cover upload is disabled.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		/**
 		 * Filter the group cover `create_item` permissions check.
 		 *

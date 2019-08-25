@@ -107,7 +107,7 @@ function bp_rest() {
 		$controller->register_routes();
 
 		// Support to Group Cover.
-		if ( bp_is_active( 'groups', 'cover_image' ) && ! bp_disable_group_cover_image_uploads() ) {
+		if ( bp_is_active( 'groups', 'cover_image' ) ) {
 			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-group-cover-endpoint.php';
 			$controller = new BP_REST_Attachments_Group_Cover_Endpoint();
 			$controller->register_routes();
