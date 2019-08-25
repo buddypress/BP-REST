@@ -12,6 +12,7 @@ defined( 'ABSPATH' ) || exit;
  * Signup endpoints.
  *
  * Use /signup/{id}
+ * Use /signup/activate/{id}
  *
  * @since 0.1.0
  */
@@ -35,7 +36,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	public function register_routes() {
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->rest_base . '/(?P<id>[\d]+)/',
+			'/' . $this->rest_base . '/(?P<id>[\d]+)',
 			array(
 				'args'   => array(
 					'id' => array(
@@ -55,6 +56,32 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_item' ),
 					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+					'args'                => array(
+						'context' => $this->get_context_param( array( 'default' => 'edit' ) ),
+					),
+				),
+				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
+
+		// Register the activate route.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/activate/(?P<id>[\w-]+)',
+			array(
+				'args'   => array(
+					'id' => array(
+						'description' => __( 'Identifier for the signup. Can be a signup ID, an email address, or a user_login.', 'buddypress' ),
+						'type'        => 'string',
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( $this, 'activate_item' ),
+					'permission_callback' => array( $this, 'activate_item_permissions_check' ),
+					'args'                => array(
+						'context' => $this->get_context_param( array( 'default' => 'edit' ) ),
+					),
 				),
 				'schema' => array( $this, 'get_item_schema' ),
 			)
@@ -218,6 +245,87 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_signup_delete_item_permissions_check', $retval, $request );
+	}
+
+	/**
+	 * Activate a signup.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function activate_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
+		// Get the signup.
+		$signup    = $this->get_signup_object( $request['id'] );
+		$activated = bp_core_activate_signup( $signup->activation_key );
+
+		if ( ! $activated ) {
+			return new WP_Error(
+				'bp_rest_signup_activate_fail',
+				__( 'Fail to activate the signup.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $signup, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a signup is activated via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_Signup        $signup   The activated signup.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'bp_rest_signup_activate_item', $signup, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to activate a signup.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function activate_item_permissions_check( $request ) {
+		$retval = true;
+		$signup = $this->get_signup_object( $request['id'] );
+
+		if ( empty( $signup ) ) {
+			$retval = new WP_Error(
+				'bp_rest_invalid_id',
+				__( 'Invalid signup id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		/**
+		 * Filter the signup `activate_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_signup_activate_item_permissions_check', $retval, $request );
 	}
 
 	/**

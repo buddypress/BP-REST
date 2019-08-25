@@ -35,6 +35,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			array(
 				'role'       => 'administrator',
 				'user_email' => 'admin@example.com',
+				'user_login' => 'admin_user',
 			)
 		);
 
@@ -43,13 +44,14 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 				'domain'         => 'foo',
 				'path'           => 'bar',
 				'title'          => 'Foo bar',
-				'user_login'     => 'user1',
+				'user_login'     => 'admin_user',
 				'user_email'     => 'user1@example.com',
 				'registered'     => bp_core_current_time(),
 				'activation_key' => '12345',
 				'meta'           => array(
-					'field_1' => 'Foo Bar',
-					'meta1'   => 'meta2',
+					'field_1'  => 'Foo Bar',
+					'meta1'    => 'meta2',
+					'password' => wp_generate_password( 12, false ),
 				),
 			)
 		);
@@ -78,6 +80,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
 		$this->assertCount( 2, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
+		$this->assertCount( 1, $routes[ $this->endpoint_url . '/activate/(?P<id>[\w-]+)' ] );
 	}
 
 	/**
@@ -110,7 +113,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_invalid_group_id() {
+	public function test_get_item_invalid_signup_id() {
 		$this->bp->set_current_user( $this->user );
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
@@ -160,7 +163,59 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
-	 * @group test_delete_item
+	 * @group activate_item
+	 */
+	public function test_activate_item() {
+		$this->bp->set_current_user( $this->user );
+
+		$signup = $this->endpoint->get_signup_object( $this->signup_id );
+		$this->assertEquals( $this->signup_id, $signup->id );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/activate/%d', $this->signup_id ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->check_signup_data( $signup, $all_data[0], 'view' );
+	}
+
+	/**
+	 * @group activate_item
+	 */
+	public function test_activate_item_with_user_login() {
+		$this->bp->set_current_user( $this->user );
+
+		$signup = $this->endpoint->get_signup_object( $this->signup_id );
+		$this->assertEquals( $this->signup_id, $signup->id );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/activate/%s', $signup->user_login ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->check_signup_data( $signup, $all_data[0], 'edit' );
+	}
+
+	/**
+	 * @group activate_item
+	 */
+	public function test_activate_item_invalid_signup_id() {
+		$this->bp->set_current_user( $this->user );
+
+		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/activate/%s', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group delete_item
 	 */
 	public function test_delete_item() {
 		$this->bp->set_current_user( $this->user );
