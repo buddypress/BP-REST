@@ -64,37 +64,26 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_user_not_logged_in() {
-		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
+	public function test_get_item_publicly() {
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
+		$request->set_param( 'context', 'view' );
 		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$this->assertNotEmpty( $all_data[0]['image'] );
 	}
 
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_invalid_member() {
-		$u1 = $this->bp_factory->user->create();
-
-		$this->bp->set_current_user( $u1 );
-
+	public function test_get_item_invalid_member_id() {
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = rest_get_server()->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
-	}
-
-	/**
-	 * @group get_item
-	 */
-	public function test_get_item_unauthorized_member() {
-		$u1 = $this->bp_factory->user->create();
-		$u2 = $this->bp_factory->user->create();
-
-		$this->bp->set_current_user( $u2 );
-
-		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $u1 ) );
-		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -127,7 +116,7 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 	/**
 	 * @group create_item
 	 */
-	public function test_create_item_invalid_member() {
+	public function test_create_item_invalid_member_id() {
 		$u1 = $this->bp_factory->user->create();
 
 		$this->bp->set_current_user( $u1 );
@@ -175,11 +164,7 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 	/**
 	 * @group delete_item
 	 */
-	public function test_delete_item_invalid_member() {
-		$u1 = $this->bp_factory->user->create();
-
-		$this->bp->set_current_user( $u1 );
-
+	public function test_delete_item_invalid_member_id() {
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = rest_get_server()->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
