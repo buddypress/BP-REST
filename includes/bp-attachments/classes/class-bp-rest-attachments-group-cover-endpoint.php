@@ -246,8 +246,8 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 	public function delete_item( $request ) {
 		$request->set_param( 'context', 'edit' );
 
-		$cover   = bp_get_group_cover_url( $this->group );
-		$deleted = bp_attachments_delete_file(
+		$cover_url = bp_get_group_cover_url( $this->group );
+		$deleted   = bp_attachments_delete_file(
 			array(
 				'item_id'    => (int) $this->group->id,
 				'object_dir' => 'groups',
@@ -270,7 +270,7 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 		$response->set_data(
 			array(
 				'deleted'  => true,
-				'previous' => $cover,
+				'previous' => $cover_url,
 			)
 		);
 
@@ -279,10 +279,11 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param WP_REST_Response  $response The response data.
-		 * @param WP_REST_Request   $request  The request sent to the API.
+		 * @param BP_Groups_Group   $group     The group object.
+		 * @param WP_REST_Response  $response  The response data.
+		 * @param WP_REST_Request   $request   The request sent to the API.
 		 */
-		do_action( 'bp_rest_attachments_group_cover_delete_item', $response, $request );
+		do_action( 'bp_rest_attachments_group_cover_delete_item', $this->group, $response, $request );
 
 		return $response;
 	}
@@ -297,10 +298,14 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 	 */
 	public function delete_item_permissions_check( $request ) {
 		$retval = $this->get_item_permissions_check( $request );
-		$args   = array(
-			'item_id' => (int) $this->group->id,
-			'object'  => 'group',
-		);
+		$args   = array();
+
+		if ( isset( $this->group->id ) ) {
+			$args = array(
+				'item_id' => (int) $this->group->id,
+				'object'  => 'group',
+			);
+		}
 
 		if ( true === $retval && ! is_user_logged_in() ) {
 			$retval = new WP_Error(
@@ -312,7 +317,7 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( true === $retval && ! bp_attachments_current_user_can( 'edit_cover_image', $args ) ) {
+		if ( true === $retval && ! empty( $args ) && ! bp_attachments_current_user_can( 'edit_cover_image', $args ) ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you are not authorized to perform this action.', 'buddypress' ),
@@ -361,9 +366,8 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param WP_REST_Response  $response Response.
 		 * @param WP_REST_Request   $request  Request used to generate the response.
-		 * @param string            $cover    Group cover url.
 		 */
-		return apply_filters( 'bp_rest_attachments_group_cover_prepare_value', $response, $request, $cover );
+		return apply_filters( 'bp_rest_attachments_group_cover_prepare_value', $response, $request );
 	}
 
 	/**
