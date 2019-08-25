@@ -299,6 +299,15 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 	public function delete_item( $request ) {
 		$request->set_param( 'context', 'edit' );
 
+		$avatar = bp_core_fetch_avatar(
+			array(
+				'object'  => $this->object,
+				'item_id' => $this->group->id,
+				'html'    => false,
+				'type'    => 'full',
+			)
+		);
+
 		$deleted = bp_core_delete_existing_avatar(
 			array(
 				'object'  => $this->object,
@@ -316,33 +325,24 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$avatar = bp_core_fetch_avatar(
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
 			array(
-				'object'  => $this->object,
-				'item_id' => $this->group->id,
-				'html'    => false,
-				'type'    => 'full',
+				'deleted'  => true,
+				'previous' => $avatar,
 			)
 		);
-
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $avatar, $request )
-			),
-		);
-
-		$response = rest_ensure_response( $retval );
 
 		/**
 		 * Fires after a group avatar is deleted via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param string            $avatar   The default group avatar.
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_attachments_group_avatar_delete_item', $avatar, $response, $request );
+		do_action( 'bp_rest_attachments_group_avatar_delete_item', $response, $request );
 
 		return $response;
 	}
