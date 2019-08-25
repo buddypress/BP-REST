@@ -68,18 +68,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_user_not_logged_in() {
-		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
-		$response = $this->server->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
-	}
-
-	/**
-	 * @group get_item
-	 */
-	public function test_get_item_invalid_group() {
-		$this->bp->set_current_user( $this->user_id );
-
+	public function test_get_item_invalid_group_id() {
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_group_invalid_id', $response, 404 );
@@ -88,14 +77,15 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_unauthorized_member() {
-		$u1 = $this->bp_factory->user->create();
+	public function test_get_item_with_no_image() {
 
-		$this->bp->set_current_user( $u1 );
+		// Disable default url.
+		add_filter( 'bp_core_fetch_avatar_url', '__return_false' );
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+
+		$this->assertErrorResponse( 'bp_rest_attachments_group_avatar_no_image', $response, 500 );
 	}
 
 	/**

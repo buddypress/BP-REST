@@ -115,7 +115,7 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		if ( ! $avatar ) {
+		if ( empty( $avatar ) ) {
 			return new WP_Error(
 				'bp_rest_attachments_group_avatar_no_image',
 				__( 'Sorry, there was a problem fetching this group avatar.', 'buddypress' ),
@@ -156,39 +156,15 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		$retval = true;
-
-		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to access this group avatar.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
+		$retval      = true;
 		$this->group = $this->groups_endpoint->get_group_object( $request );
 
-		if ( true === $retval && ! $this->group ) {
+		if ( ! $this->group ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
 				__( 'Invalid group id.', 'buddypress' ),
 				array(
 					'status' => 404,
-				)
-			);
-		}
-
-		if ( true === $retval
-			&& ! groups_is_user_admin( bp_loggedin_user_id(), $this->group->id )
-			&& ! current_user_can( 'bp_moderate' )
-		) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you cannot access this group avatar.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -277,6 +253,19 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		if ( true === $retval
+			&& ! groups_is_user_admin( bp_loggedin_user_id(), $this->group->id )
+			&& ! current_user_can( 'bp_moderate' )
+		) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you are unauthorized to perform this action.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
 		/**
 		 * Filter the group avatar `create_item` permissions check.
 		 *
@@ -356,7 +345,7 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
-		$retval = $this->get_item_permissions_check( $request );
+		$retval = $this->create_item_permissions_check( $request );
 
 		/**
 		 * Filter the group avatar `delete_item` permissions check.
@@ -455,6 +444,9 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 	public function get_item_collection_params() {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
+
+		// Removing unused params.
+		unset( $params['search'], $params['page'], $params['per_page'] );
 
 		$params['type'] = array(
 			'description'       => __( 'Whether you would like the `full` or the smaller `thumb`.', 'buddypress' ),

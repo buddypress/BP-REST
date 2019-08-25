@@ -106,7 +106,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		if ( ! $avatar ) {
+		if ( empty( $avatar ) ) {
 			return new WP_Error(
 				'bp_rest_attachments_member_avatar_no_image',
 				__( 'Sorry, there was a problem fetching the avatar.', 'buddypress' ),
@@ -147,18 +147,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		$retval = true;
-
-		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to access this member avatar.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
+		$retval     = true;
 		$this->user = bp_rest_get_user( $request['user_id'] );
 
 		if ( true === $retval && ! $this->user instanceof WP_User ) {
@@ -167,19 +156,6 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 				__( 'Invalid member id.', 'buddypress' ),
 				array(
 					'status' => 404,
-				)
-			);
-		}
-
-		if ( true === $retval
-			&& bp_loggedin_user_id() !== $this->user->ID
-			&& ! current_user_can( 'bp_moderate' )
-		) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you cannot get this member avatar.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -257,6 +233,24 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 */
 	public function create_item_permissions_check( $request ) {
 		$retval = $this->get_item_permissions_check( $request );
+		$args   = array();
+
+		if ( isset( $this->user->ID ) ) {
+			$args = array(
+				'item_id' => (int) $this->user->ID,
+				'object'  => 'user',
+			);
+		}
+
+		if ( true === $retval && ! is_user_logged_in() ) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to perform this action.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
 
 		if ( true === $retval && bp_disable_avatar_uploads() ) {
 			$retval = new WP_Error(
@@ -264,6 +258,16 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 				__( 'Sorry, member avatar upload is disabled.', 'buddypress' ),
 				array(
 					'status' => 500,
+				)
+			);
+		}
+
+		if ( true === $retval && ! empty( $args ) && ! bp_attachments_current_user_can( 'edit_avatar', $args ) ) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you are not authorized to perform this action.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
 				)
 			);
 		}
@@ -347,7 +351,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
-		$retval = $this->get_item_permissions_check( $request );
+		$retval = $this->create_item_permissions_check( $request );
 
 		/**
 		 * Filter the member avatar `delete_item` permissions check.
@@ -410,7 +414,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_attachments_avatar',
+			'title'      => 'bp_attachments_member_avatar',
 			'type'       => 'object',
 			'properties' => array(
 				'full'  => array(
@@ -446,6 +450,9 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	public function get_item_collection_params() {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
+
+		// Removing unused params.
+		unset( $params['search'], $params['page'], $params['per_page'] );
 
 		$params['type'] = array(
 			'description'       => __( 'Whether you would like the `full` or the smaller `thumb`.', 'buddypress' ),
