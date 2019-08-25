@@ -51,6 +51,11 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_item' ),
+					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+				),
 				'schema' => array( $this, 'get_item_schema' ),
 			)
 		);
@@ -141,6 +146,78 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_signup_get_item_permissions_check', $retval, $request );
+	}
+
+	/**
+	 * Delete a signup.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function delete_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
+		// Get the signup before it's deleted.
+		$signup   = $this->get_signup_object( $request['id'] );
+		$previous = $this->prepare_item_for_response( $signup, $request );
+		$deleted  = BP_Signup::delete( array( $signup->id ) );
+
+		if ( ! $deleted ) {
+			return new WP_Error(
+				'bp_rest_signup_cannot_delete',
+				__( 'Could not delete the signup.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Build the response.
+		$response = new WP_REST_Response();
+		$response->set_data(
+			array(
+				'deleted'  => true,
+				'previous' => $previous->get_data(),
+			)
+		);
+
+		/**
+		 * Fires after a signup is deleted via the REST API.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param BP_Signup        $signup   The deleted signup.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'bp_rest_signup_delete_item', $signup, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to delete a signup.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function delete_item_permissions_check( $request ) {
+		$retval = $this->get_item_permissions_check( $request );
+
+		/**
+		 * Filter the signup `delete_item` permissions check.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_signup_delete_item_permissions_check', $retval, $request );
 	}
 
 	/**

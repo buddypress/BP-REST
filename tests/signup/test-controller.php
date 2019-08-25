@@ -77,7 +77,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
-		$this->assertCount( 1, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
+		$this->assertCount( 2, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
 	}
 
 	/**
@@ -160,10 +160,63 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
-	 * @group delete_item
+	 * @group test_delete_item
 	 */
 	public function test_delete_item() {
-		return true;
+		$this->bp->set_current_user( $this->user );
+
+		$signup = $this->endpoint->get_signup_object( $this->signup_id );
+		$this->assertEquals( $this->signup_id, $signup->id );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->signup_id ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$deleted = $response->get_data();
+
+		$this->assertTrue( $deleted['deleted'] );
+		$this->check_signup_data( $signup, $deleted['previous'], 'edit' );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_invalid_signup_id() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_user_not_logged_in() {
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->signup_id ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_unauthorized_user() {
+		$u = $this->factory->user->create();
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->signup_id ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	public function test_prepare_item() {
