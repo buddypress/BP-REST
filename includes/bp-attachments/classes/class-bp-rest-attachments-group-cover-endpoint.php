@@ -71,6 +71,11 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 				),
 				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'create_item' ),
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
+				),
+				array(
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_item' ),
 					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
