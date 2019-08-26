@@ -97,7 +97,6 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 
 	/**
 	 * @group create_item
-	 * @group imath
 	 */
 	public function test_create_item() {
 		$reset_files = $_FILES;
