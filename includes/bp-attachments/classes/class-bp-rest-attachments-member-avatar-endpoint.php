@@ -65,6 +65,12 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			'/' . $this->rest_base . '/(?P<user_id>[\d]+)/avatar',
 			array(
+				'args'   => array(
+					'user_id' => array(
+						'description' => __( 'A unique numeric ID for the Member.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+				),
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
@@ -75,6 +81,14 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'create_item_permissions_check' ),
+					'args'                => array(
+						'action' => array(
+							'description' => __( 'The upload action used when uploading a file.', 'buddypress' ),
+							'type'        => 'string',
+							'required'    => true,
+							'default'     => $this->avatar_instance->action,
+						),
+					),
 				),
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
@@ -95,18 +109,25 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$avatar = bp_core_fetch_avatar(
-			array(
-				'object'  => $this->object,
-				'type'    => $request['type'],
-				'item_id' => (int) $this->user->ID,
-				'html'    => (bool) $request['html'],
-				'alt'     => $request['alt'],
-				'no_grav' => (bool) $request['no_gravatar'],
-			)
-		);
+		$args = array();
 
-		if ( empty( $avatar ) ) {
+		foreach ( array( 'full', 'thumb' ) as $type ) {
+			$args[ $type ] = bp_core_fetch_avatar(
+				array(
+					'object'  => $this->object,
+					'type'    => $type,
+					'item_id' => (int) $this->user->ID,
+					'html'    => (bool) $request['html'],
+					'alt'     => $request['alt'],
+					'no_grav' => (bool) $request['no_gravatar'],
+				)
+			);
+		}
+
+		// Get the avatar object.
+		$avatar = $this->get_avatar_object( $args );
+
+		if ( ! $avatar->full && ! $avatar->thumb ) {
 			return new WP_Error(
 				'bp_rest_attachments_member_avatar_no_image',
 				__( 'Sorry, there was a problem fetching the avatar.', 'buddypress' ),
@@ -293,20 +314,38 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 */
 	public function delete_item( $request ) {
 		$request->set_param( 'context', 'edit' );
+		$user_id = (int) $this->user->ID;
 
-		$avatar = bp_core_fetch_avatar(
-			array(
-				'object'  => $this->object,
-				'item_id' => $this->user->ID,
-				'html'    => false,
-				'type'    => 'full',
-			)
-		);
+		if ( ! bp_get_user_has_avatar( $user_id ) ) {
+			return new WP_Error(
+				'bp_rest_attachments_member_avatar_no_uploaded_avatar',
+				__( 'Sorry, there are no uploaded avatars for this user on this site.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$args = array();
+
+		foreach ( array( 'full', 'thumb' ) as $type ) {
+			$args[ $type ] = bp_core_fetch_avatar(
+				array(
+					'object'  => $this->object,
+					'type'    => $type,
+					'item_id' => $user_id,
+					'html'    => false,
+				)
+			);
+		}
+
+		// Get the avatar object before deleting it.
+		$avatar = $this->get_avatar_object( $args );
 
 		$deleted = bp_core_delete_existing_avatar(
 			array(
 				'object'  => $this->object,
-				'item_id' => (int) $this->user->ID,
+				'item_id' => $user_id,
 			)
 		);
 
@@ -374,16 +413,10 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $avatar, $request ) {
-		if ( is_string( $avatar ) ) {
-			$data = array(
-				'image' => $avatar,
-			);
-		} else {
-			$data = array(
-				'full'  => $avatar->full,
-				'thumb' => $avatar->thumb,
-			);
-		}
+		$data = array(
+			'full'  => $avatar->full,
+			'thumb' => $avatar->thumb,
+		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 		$data    = $this->add_additional_fields_to_object( $data, $request );
@@ -421,12 +454,14 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Full size of the image file.', 'buddypress' ),
 					'type'        => 'string',
+					'format'      => 'uri',
 					'readonly'    => true,
 				),
 				'thumb' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Thumb size of the image file.', 'buddypress' ),
 					'type'        => 'string',
+					'format'      => 'uri',
 					'readonly'    => true,
 				),
 			),
@@ -453,15 +488,6 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 
 		// Removing unused params.
 		unset( $params['search'], $params['page'], $params['per_page'] );
-
-		$params['type'] = array(
-			'description'       => __( 'Whether you would like the `full` or the smaller `thumb`.', 'buddypress' ),
-			'default'           => 'thumb',
-			'type'              => 'string',
-			'enum'              => array( 'thumb', 'full' ),
-			'sanitize_callback' => 'sanitize_key',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
 
 		$params['html'] = array(
 			'description'       => __( 'Whether to return an <img> HTML element, vs a raw URL to an avatar.', 'buddypress' ),
