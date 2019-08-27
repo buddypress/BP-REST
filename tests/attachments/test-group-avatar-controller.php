@@ -119,7 +119,6 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$_POST['action'] = 'bp_avatar_upload';
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
-		$request->set_param( 'action', $_POST['action'] );
 		$request->set_file_params( $_FILES );
 		$response = rest_get_server()->dispatch( $request );
 

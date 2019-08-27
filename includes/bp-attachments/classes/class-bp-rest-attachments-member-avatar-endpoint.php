@@ -81,14 +81,6 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'create_item_permissions_check' ),
-					'args'                => array(
-						'action' => array(
-							'description' => __( 'The upload action used when uploading a file.', 'buddypress' ),
-							'type'        => 'string',
-							'required'    => true,
-							'default'     => $this->avatar_instance->action,
-						),
-					),
 				),
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
