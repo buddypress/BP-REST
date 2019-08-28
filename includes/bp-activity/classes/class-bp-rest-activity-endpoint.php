@@ -917,12 +917,14 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'favorited'         => in_array( $activity->id, $this->get_user_favorites(), true ),
 		);
 
+		// Get item schema.
+		$schema = $this->get_item_schema();
+
 		// Get comments (count).
 		if ( ! empty( $activity->children ) ) {
 			$comment_count         = wp_filter_object_list( $activity->children, array( 'type' => 'activity_comment' ), 'AND', 'id' );
 			$data['comment_count'] = ! empty( $comment_count ) ? count( $comment_count ) : 0;
 
-			$schema = $this->get_item_schema();
 			if ( ! empty( $schema['properties']['comments'] ) && 'threaded' === $request['display_comments'] ) {
 				$data['comments'] = $this->prepare_activity_comments( $activity->children, $request );
 			}
