@@ -373,7 +373,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			}
 
 			// Post an activity comment.
-		} elseif ( ( 'activity_comment' === $type ) && ! is_null( $request['id'] ) && ! is_null( $request['parent'] ) ) {
+		} elseif ( 'activity_comment' === $type ) {
 
 			// ID of the root activity item.
 			if ( isset( $prime ) ) {
@@ -908,7 +908,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'date'              => bp_rest_prepare_date_response( $activity->date_recorded ),
 			'id'                => $activity->id,
 			'link'              => bp_activity_get_permalink( $activity->id ),
-			'parent'            => 'activity_comment' === $activity->type ? $activity->item_id : 0,
 			'primary_item_id'   => $activity->item_id,
 			'secondary_item_id' => $activity->secondary_item_id,
 			'status'            => $activity->is_spam ? 'spam' : 'published',
@@ -1359,11 +1358,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_key',
 					),
-				),
-				'parent'            => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the parent of the activity.', 'buddypress' ),
-					'type'        => 'integer',
 				),
 				'comments'          => array(
 					'context'     => array( 'view', 'edit' ),
