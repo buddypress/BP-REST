@@ -408,13 +408,15 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			}
 		} elseif ( in_array( $action, [ 'demote', 'ban', 'unban' ], true ) ) {
 			if ( ! $group_member->$action() ) {
+				$messages = array(
+					'demote' => __( 'Could not demote member from the group.', 'buddypress' ),
+					'ban'    => __( 'Could not ban member from the group.', 'buddypress' ),
+					'unban'  => __( 'Could not unban member from the group.', 'buddypress' ),
+				);
+
 				return new WP_Error(
 					'bp_rest_group_member_failed_to_' . $action,
-					sprintf(
-						/* translators: %1$s is replaced with the action */
-						__( 'Could not %s member from the group.', 'buddypress' ),
-						esc_attr( $action )
-					),
+					$messages[ $action ],
 					array(
 						'status' => 500,
 					)
