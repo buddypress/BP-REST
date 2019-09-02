@@ -172,8 +172,8 @@ trait BP_REST_Attachments {
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_avatar_upload_error",
 				sprintf(
-					/* translators: %$1s is replaced with error message. */
-					__( 'Upload failed! Error was: %$1s', 'buddypress' ),
+					/* translators: %s is replaced with error message. */
+					__( 'Upload failed! Error was: %s', 'buddypress' ),
 					$img_dir->get_error_message()
 				),
 				array(
@@ -248,7 +248,7 @@ trait BP_REST_Attachments {
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_avatar_crop_error",
 				sprintf(
-					/* translators: %$1s is replaced with object type. */
+					/* translators: %s is replaced with object type. */
 					__( 'There was a problem cropping your %s photo.', 'buddypress' ),
 					$this->object
 				),

@@ -278,7 +278,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		if ( empty( $profile_field_id ) || empty( $field->id ) ) {
 			return new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid field id.', 'buddypress' ),
+				__( 'Invalid field ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -528,7 +528,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		if ( empty( $field->id ) ) {
 			return new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid profile field id.', 'buddypress' ),
+				__( 'Invalid profile field ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -707,7 +707,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && empty( $field->id ) ) {
 			$retval = new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid field id.', 'buddypress' ),
+				__( 'Invalid field ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -1057,7 +1057,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 							'readonly'    => true,
 						),
 						'rendered'     => array(
-							'description' => __( 'HTML value for the field, transformed for display.' ),
+							'description' => __( 'HTML value for the field, transformed for display.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'view', 'edit' ),
 							'readonly'    => true,

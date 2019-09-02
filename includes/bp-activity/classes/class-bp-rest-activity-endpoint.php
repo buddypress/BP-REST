@@ -574,7 +574,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && empty( $activity->id ) ) {
 			$retval = new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid activity id.', 'buddypress' ),
+				__( 'Invalid activity ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -687,7 +687,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && empty( $activity->id ) ) {
 			$retval = new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid activity id.', 'buddypress' ),
+				__( 'Invalid activity ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -749,7 +749,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( empty( $activity->id ) ) {
 			return new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid activity id.', 'buddypress' ),
+				__( 'Invalid activity ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)

@@ -175,7 +175,7 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 		if ( ! $this->group ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
+				__( 'Invalid group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -272,7 +272,7 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 		) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
-				__( 'Sorry, you are unauthorized to perform this action.', 'buddypress' ),
+				__( 'Sorry, you are not authorized to perform this action.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)

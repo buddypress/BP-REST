@@ -310,7 +310,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_group_member_invalid_id',
-				__( 'Invalid group member id.', 'buddypress' ),
+				__( 'Invalid group member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -321,7 +321,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $group instanceof BP_Groups_Group ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
+				__( 'Invalid group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -477,7 +477,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_group_member_invalid_id',
-				__( 'Invalid group member id.', 'buddypress' ),
+				__( 'Invalid group member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -488,7 +488,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $group instanceof BP_Groups_Group ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
+				__( 'Invalid group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -614,7 +614,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $user instanceof WP_User ) {
 			return new WP_Error(
 				'bp_rest_group_member_invalid_id',
-				__( 'Invalid group member id.', 'buddypress' ),
+				__( 'Invalid group member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -625,7 +625,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $group instanceof BP_Groups_Group ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
+				__( 'Invalid group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)

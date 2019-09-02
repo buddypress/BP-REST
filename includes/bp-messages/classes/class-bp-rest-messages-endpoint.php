@@ -197,7 +197,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
+				__( 'Invalid member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -1208,7 +1208,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				),
 				'starred_message_ids' => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'List of starred message ids.', 'buddypress' ),
+					'description' => __( 'List of starred message IDs.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'array',
 					'items'       => array(
