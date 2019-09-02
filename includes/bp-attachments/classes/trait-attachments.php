@@ -172,8 +172,8 @@ trait BP_REST_Attachments {
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_avatar_upload_error",
 				sprintf(
-					/* translators: %1$s is replaced with error message. */
-					__( 'Upload failed! Error was: %1$s', 'buddypress' ),
+					/* translators: %s is replaced with error message. */
+					__( 'Upload failed! Error was: %s', 'buddypress' ),
 					$img_dir->get_error_message()
 				),
 				array(
