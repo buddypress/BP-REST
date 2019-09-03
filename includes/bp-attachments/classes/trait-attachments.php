@@ -20,31 +20,63 @@ trait BP_REST_Attachments {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array $files $_FILES superglobal.
+	 * @param array $file $_FILES superglobal.
 	 * @return string|WP_Error
 	 */
-	protected function upload_cover_from_file( $files ) {
-		$error_message              = __( 'There was a problem uploading the cover image.', 'buddypress' );
-		$bp_attachments_uploads_dir = bp_attachments_cover_image_upload_dir();
+	protected function upload_cover_from_file( $file ) {
 
-		if ( ! $bp_attachments_uploads_dir ) {
+		$bp = buddypress();
+
+		// Set global variables.
+		if ( 'group' === $this->object ) {
+			$bp->groups->current_group = $this->group;
+		}
+
+		// Try to upload image.
+		$uploaded_image = $this->attachment_instance->upload( $file );
+
+		// Bail with error.
+		if ( ! empty( $uploaded_image['error'] ) ) {
 			return new WP_Error(
-				"bp_rest_attachments_{$this->object}_cover_upload_fail",
-				$error_message,
+				"bp_rest_attachments_{$this->object}_cover_upload_error",
+				sprintf(
+					/* translators: Fail upload. Error message. */
+					__( 'Upload Failed! Error was: %s', 'buddypress' ),
+					$uploaded_image['error']
+				),
 				array(
 					'status' => 500,
 				)
 			);
 		}
 
-		$component    = $this->get_cover_object_component();
-		$cover_subdir = $component . '/' . $this->get_item_id() . '/cover-image';
-		$cover_dir    = trailingslashit( $bp_attachments_uploads_dir['basedir'] ) . $cover_subdir;
+		$component                  = $this->get_cover_object_component();
+		$item_id                    = $this->get_item_id();
+		$bp_attachments_uploads_dir = bp_attachments_cover_image_upload_dir(
+			array(
+				'object_directory' => $component,
+				'object_id'        => $item_id,
+			)
+		);
 
-		// Upload path doesn't exist.
+		// The BP Attachments Uploads Dir is not set, stop.
+		if ( ! $bp_attachments_uploads_dir ) {
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_cover_upload_error",
+				__( 'The BuddyPress attachments uploads directory is not set.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$cover_subdir = $bp_attachments_uploads_dir['subdir'];
+		$cover_dir    = $bp_attachments_uploads_dir['basedir'] . $cover_subdir;
+
+		// If upload path doesn't exist, stop.
 		if ( 1 === validate_file( $cover_dir ) || ! is_dir( $cover_dir ) ) {
 			return new WP_Error(
-				"bp_rest_attachments_{$this->object}_cover_upload_fail",
+				"bp_rest_attachments_{$this->object}_cover_upload_error",
 				__( 'The cover image directory is not valid.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -55,7 +87,7 @@ trait BP_REST_Attachments {
 		// Upload cover.
 		$cover = bp_attachments_cover_image_generate_file(
 			array(
-				'file'            => $files,
+				'file'            => $uploaded_image['file'],
 				'component'       => $component,
 				'cover_image_dir' => $cover_dir,
 			)
@@ -64,8 +96,8 @@ trait BP_REST_Attachments {
 		// Bail if any error happened.
 		if ( false === $cover ) {
 			return new WP_Error(
-				"bp_rest_attachments_{$this->object}_cover_upload_fail",
-				$error_message,
+				"bp_rest_attachments_{$this->object}_cover_upload_error",
+				__( 'There was a problem uploading the cover image.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
@@ -79,7 +111,7 @@ trait BP_REST_Attachments {
 			$cover_dimensions = bp_attachments_get_cover_image_dimensions( $component );
 
 			return new WP_Error(
-				"bp_rest_attachments_{$this->object}_cover_upload_fail",
+				"bp_rest_attachments_{$this->object}_cover_upload_error",
 				sprintf(
 					/* translators: %$1s and %$2s is replaced with the correct sizes. */
 					__( 'You have selected an image that is smaller than recommended. For better results, make sure to upload an image that is larger than %1$spx wide, and %2$spx tall.', 'buddypress' ),
@@ -92,7 +124,12 @@ trait BP_REST_Attachments {
 			);
 		}
 
-		return trailingslashit( $bp_attachments_uploads_dir['baseurl'] ) . $cover_subdir . '/' . $cover['cover_basename'];
+		return sprintf(
+			'%1$/%2$/%3$',
+			$bp_attachments_uploads_dir['baseurl'],
+			$cover_subdir,
+			$cover['cover_basename']
+		);
 	}
 
 	/**
@@ -384,6 +421,6 @@ trait BP_REST_Attachments {
 	 * @return string
 	 */
 	protected function get_cover_object_component() {
-		return ( 'group' === $this->object ) ? 'groups' : 'blogs';
+		return ( 'group' === $this->object ) ? 'groups' : 'members';
 	}
 }

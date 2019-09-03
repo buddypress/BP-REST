@@ -18,6 +18,15 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 	use BP_REST_Attachments;
 
 	/**
+	 * BP_Attachment_Cover_Image Instance.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var BP_Attachment_Cover_Image
+	 */
+	protected $attachment_instance;
+
+	/**
 	 * Reuse some parts of the BP_REST_Groups_Endpoint class.
 	 *
 	 * @since 0.1.0
@@ -50,9 +59,10 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function __construct() {
-		$this->namespace       = bp_rest_namespace() . '/' . bp_rest_version();
-		$this->rest_base       = buddypress()->groups->id;
-		$this->groups_endpoint = new BP_REST_Groups_Endpoint();
+		$this->namespace           = bp_rest_namespace() . '/' . bp_rest_version();
+		$this->rest_base           = buddypress()->groups->id;
+		$this->groups_endpoint     = new BP_REST_Groups_Endpoint();
+		$this->attachment_instance = new BP_Attachment_Cover_Image();
 	}
 
 	/**
@@ -65,6 +75,12 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			'/' . $this->rest_base . '/(?P<group_id>[\d]+)/cover',
 			array(
+				'args'   => array(
+					'group_id' => array(
+						'description' => __( 'A unique numeric ID for the Group.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+				),
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
@@ -94,9 +110,9 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$cover = bp_get_group_cover_url( $this->group );
+		$cover_url = bp_get_group_cover_url( $this->group );
 
-		if ( empty( $cover ) ) {
+		if ( empty( $cover_url ) ) {
 			return new WP_Error(
 				'bp_rest_attachments_group_cover_no_image',
 				__( 'Sorry, there was a problem fetching this group cover.', 'buddypress' ),
@@ -108,7 +124,7 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 
 		$retval = array(
 			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $cover, $request )
+				$this->prepare_item_for_response( $cover_url, $request )
 			),
 		);
 
@@ -119,11 +135,11 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param string            $cover    The group cover.
-		 * @param WP_REST_Response  $response The response data.
-		 * @param WP_REST_Request   $request  The request sent to the API.
+		 * @param string            $cover_url  The group cover url.
+		 * @param WP_REST_Response  $response   The response data.
+		 * @param WP_REST_Request   $request    The request sent to the API.
 		 */
-		do_action( 'bp_rest_attachments_group_cover_get_item', $cover, $response, $request );
+		do_action( 'bp_rest_attachments_group_cover_get_item', $cover_url, $response, $request );
 
 		return $response;
 	}
@@ -260,7 +276,7 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 		$deleted   = bp_attachments_delete_file(
 			array(
 				'item_id'    => (int) $this->group->id,
-				'object_dir' => 'groups',
+				'object_dir' => $this->get_cover_object_component(),
 				'type'       => 'cover-image',
 			)
 		);
@@ -313,7 +329,7 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 		if ( isset( $this->group->id ) ) {
 			$args = array(
 				'item_id' => (int) $this->group->id,
-				'object'  => 'group',
+				'object'  => $this->object,
 			);
 		}
 
@@ -353,13 +369,13 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string          $cover   Group cover url.
-	 * @param WP_REST_Request $request Full details about the request.
+	 * @param string          $cover_url Group cover url.
+	 * @param WP_REST_Request $request   Full details about the request.
 	 * @return WP_REST_Response
 	 */
-	public function prepare_item_for_response( $cover, $request ) {
+	public function prepare_item_for_response( $cover_url, $request ) {
 		$data = array(
-			'image' => $cover,
+			'image' => $cover_url,
 		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -374,10 +390,11 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param WP_REST_Response  $response Response.
-		 * @param WP_REST_Request   $request  Request used to generate the response.
+		 * @param WP_REST_Response  $response  Response.
+		 * @param WP_REST_Request   $request   Request used to generate the response.
+		 * @param string            $cover_url Group cover url.
 		 */
-		return apply_filters( 'bp_rest_attachments_group_cover_prepare_value', $response, $request );
+		return apply_filters( 'bp_rest_attachments_group_cover_prepare_value', $response, $request, $cover_url );
 	}
 
 	/**
@@ -397,6 +414,7 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Full size of the image file.', 'buddypress' ),
 					'type'        => 'string',
+					'format'      => 'uri',
 					'readonly'    => true,
 				),
 			),
