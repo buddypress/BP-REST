@@ -141,7 +141,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		if ( empty( $field->id ) ) {
 			$retval = new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid field id.', 'buddypress' ),
+				__( 'Invalid field ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -152,7 +152,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! bp_rest_get_user( $request['user_id'] ) ) {
 			$retval = new WP_Error(
 				'bp_rest_member_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
+				__( 'Invalid member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -200,7 +200,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		if ( empty( $field->id ) ) {
 			return new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid field id.', 'buddypress' ),
+				__( 'Invalid field ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -288,7 +288,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
+				__( 'Invalid member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -333,7 +333,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		if ( empty( $field->id ) ) {
 			return new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid field id.', 'buddypress' ),
+				__( 'Invalid field ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -572,7 +572,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 							'readonly'    => true,
 						),
 						'rendered'     => array(
-							'description' => __( 'HTML value for the field, transformed for display.' ),
+							'description' => __( 'HTML value for the field, transformed for display.', 'buddypress' ),
 							'type'        => 'string',
 							'context'     => array( 'view', 'edit' ),
 							'readonly'    => true,

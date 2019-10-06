@@ -25,6 +25,13 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
 		}
+
+		$this->old_current_user = get_current_user_id();
+	}
+
+	public function tearDown() {
+		parent::tearDown();
+		$this->bp->set_current_user( $this->old_current_user );
 	}
 
 	public function test_register_routes() {
@@ -510,6 +517,164 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group create_item
 	 */
+	public function test_create_item_and_get_comment() {
+		$this->bp->set_current_user( $this->user );
+
+		$a = $this->bp_factory->activity->create( array(
+			'component' => 'activity',
+			'type'      => 'activity_update',
+			'user_id'   => $this->user,
+		) );
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data( array(
+			'type'            => 'activity_comment',
+			'primary_item_id' => $a,
+			'content'         => 'Activity comment content',
+		) );
+
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+
+		$response = $this->server->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertTrue( (int) $u === (int) $data[0]['user_id'], 'The user should be able to comment an activity' );
+
+		// Checks the comment is fetched.
+		$expected = $data[0]['id'];
+
+		$get_request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$get_request->set_param( 'context', 'view' );
+		$get_request->set_query_params( array(
+			'include'          => $a,
+			'display_comments' => 'threaded',
+		) );
+
+		$get_response = $this->server->dispatch( $get_request );
+		$get_data     = $get_response->get_data();
+
+		$this->assertTrue( (int) $expected === (int) $get_data[0]['comments'][0]['id'] );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_and_get_reply() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$a = $this->bp_factory->activity->create( array(
+			'component' => 'activity',
+			'type'      => 'activity_update',
+			'user_id'   => $u,
+		) );
+
+		$c = bp_activity_new_comment( array(
+			'type'        => 'activity_comment',
+			'user_id'     => $this->user,
+			'activity_id' => $a, // Root activity
+			'content'     => 'Activity comment',
+		) );
+
+		$this->bp->set_current_user( $u );
+
+		// Add a reply to c
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data( array(
+			'type'              => 'activity_comment',
+			'primary_item_id'   => $a, // Root activity
+			'secondary_item_id' => $c, // Comment Parent
+			'content'           => 'Activity comment reply',
+		) );
+
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+
+		$response = $this->server->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertTrue( (int) $u === (int) $data[0]['user_id'], 'The user should be able to reply to an activity' );
+
+		// Checks the comment is fetched.
+		$expected = $data[0]['id'];
+
+		$get_request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$get_request->set_param( 'context', 'view' );
+		$get_request->set_query_params( array(
+			'include'          => $a,
+			'display_comments' => 'threaded',
+		) );
+
+		$get_response = $this->server->dispatch( $get_request );
+		$get_data     = $get_response->get_data();
+
+		$this->assertTrue( (int) $expected === (int) $get_data[0]['comments'][0]['comments'][0]['id'] );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_and_get_comment_in_a_group() {
+		$this->bp->set_current_user( $this->user );
+
+		$g = $this->bp_factory->group->create( array(
+			'creator_id' => $this->user,
+		) );
+
+		$a = $this->bp_factory->activity->create( array(
+			'component' => buddypress()->groups->id,
+			'type'      => 'activity_update',
+			'user_id'   => $this->user,
+			'item_id'   => $g,
+		) );
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$this->bp->set_current_user( $u );
+		groups_join_group( $g, $u );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data( array(
+			'type'            => 'activity_comment',
+			'primary_item_id' => $a,
+		) );
+
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$data = $response->get_data();
+		$this->assertTrue( (int) $u === (int) $data[0]['user_id'], 'The user should be able to comment a group activity' );
+
+		// Check the comment is fetched in group's activities.
+		$expected = $data[0]['id'];
+
+		$get_request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$get_request->set_param( 'context', 'view' );
+		$get_request->set_query_params( array(
+			'group_id'         => $g,
+			'type'             => 'activity_update',
+			'display_comments' => 'threaded',
+		) );
+		$get_response = $this->server->dispatch( $get_request );
+
+		$get_data = $get_response->get_data();
+		$this->assertTrue( (int) $expected === (int) $get_data[0]['comments'][0]['id'] );
+	}
+
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item_with_no_content_in_a_group() {
 		$this->bp->set_current_user( $this->user );
 		$g = $this->bp_factory->group->create( array(
@@ -956,9 +1121,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $activity->action, $data['title'] );
 		$this->assertEquals( $activity->type, $data['type'] );
 		$this->assertEquals( $activity->is_spam ? 'spam' : 'published', $data['status'] );
-
-		$parent = 'activity_comment' === $activity->type ? $activity->item_id : 0;
-		$this->assertEquals( $parent, $data['parent'] );
 	}
 
 	protected function check_add_edit_activity( $response, $update = false ) {
@@ -1013,7 +1175,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 17, count( $properties ) );
+		$this->assertEquals( 16, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'primary_item_id', $properties );
 		$this->assertArrayHasKey( 'secondary_item_id', $properties );
@@ -1025,7 +1187,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'content', $properties );
 		$this->assertArrayHasKey( 'date', $properties );
 		$this->assertArrayHasKey( 'status', $properties );
-		$this->assertArrayHasKey( 'parent', $properties );
 		$this->assertArrayHasKey( 'comments', $properties );
 		$this->assertArrayHasKey( 'comment_count', $properties );
 		$this->assertArrayHasKey( 'user_avatar', $properties );

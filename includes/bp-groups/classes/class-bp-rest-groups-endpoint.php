@@ -237,7 +237,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		if ( empty( $group->id ) ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
+				__( 'Invalid group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -441,7 +441,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && empty( $group->id ) ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
+				__( 'Invalid group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -545,7 +545,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && empty( $group->id ) ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
+				__( 'Invalid group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -1001,7 +1001,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				),
 				'enable_forum'       => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the Group has a forum or not.', 'buddypress' ),
+					'description' => __( 'Whether the Group has a forum enabled or not.', 'buddypress' ),
 					'type'        => 'boolean',
 				),
 				'parent_id'          => array(

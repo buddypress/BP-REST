@@ -29,6 +29,13 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
 		}
+
+		$this->old_current_user = get_current_user_id();
+	}
+
+	public function tearDown() {
+		parent::tearDown();
+		$this->bp->set_current_user( $this->old_current_user );
 	}
 
 	public function test_register_routes() {
@@ -62,7 +69,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->assertNotEmpty( $all_data[0]['image'] );
+		$this->assertTrue( isset( $all_data[0]['full'] ) && isset( $all_data[0]['thumb'] ) );
 	}
 
 	/**
@@ -92,7 +99,64 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		return true;
+		$reset_files = $_FILES;
+		$reset_post  = $_POST;
+		$image_file  = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-group.png';
+
+		$this->bp->set_current_user( $this->user_id );
+
+		add_filter( 'pre_move_uploaded_file', array( $this, 'copy_file' ), 10, 3 );
+		add_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
+
+		$_FILES['file'] = array(
+			'tmp_name' => $image_file,
+			'name'     => 'mystery-group.png',
+			'type'     => 'image/jpeg',
+			'error'    => 0,
+			'size'     => filesize( $image_file ),
+		);
+
+		$_POST['action'] = 'bp_avatar_upload';
+
+		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
+		$request->set_file_params( $_FILES );
+		$response = rest_get_server()->dispatch( $request );
+
+		remove_filter( 'pre_move_uploaded_file', array( $this, 'copy_file' ), 10, 3 );
+		remove_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
+
+		$all_data = $response->get_data();
+		$avatar = reset( $all_data );
+
+		$this->assertSame( $avatar, array(
+			'full'  => bp_core_fetch_avatar(
+				array(
+					'object'  => 'group',
+					'type'    => 'full',
+					'item_id' => $this->group_id,
+					'html'    => false,
+				)
+			),
+			'thumb' => bp_core_fetch_avatar(
+				array(
+					'object'  => 'group',
+					'type'    => 'thumb',
+					'item_id' => $this->group_id,
+					'html'    => false,
+				)
+			),
+		) );
+
+		$_FILES = $reset_files;
+		$_POST = $reset_post;
+	}
+
+	public function copy_file( $return = null, $file, $new_file ) {
+		return @copy( $file['tmp_name'], $new_file );
+	}
+
+	public function return_100( $size ) {
+		return 100;
 	}
 
 	/**
@@ -151,7 +215,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_attachments_group_avatar_delete_failed', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_attachments_group_avatar_no_uploaded_avatar', $response, 404 );
 	}
 
 	/**

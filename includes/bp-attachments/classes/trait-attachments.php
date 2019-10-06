@@ -16,6 +16,31 @@ defined( 'ABSPATH' ) || exit;
 trait BP_REST_Attachments {
 
 	/**
+	 * Returns the avatar object.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array $args {
+	 *     An array of arguments to build the Avatar object.
+	 *
+	 *     @type string $full  The url to the full version of the avatar.
+	 *     @type string $thumb The url to the thumb version of the avatar.
+	 * }
+	 * @return object The avatar object.
+	 */
+	protected function get_avatar_object( $args = array() ) {
+		$avatar_object = array_intersect_key(
+			$args,
+			array(
+				'full'  => '',
+				'thumb' => '',
+			)
+		);
+
+		return (object) $avatar_object;
+	}
+
+	/**
 	 * Avatar upload from File.
 	 *
 	 * @since 0.1.0
@@ -37,10 +62,7 @@ trait BP_REST_Attachments {
 		}
 
 		$avatar_attachment = $this->avatar_instance;
-
-		// Needed to avoid 'Invalid form submission' error.
-		$_POST['action'] = $avatar_attachment->action;
-		$avatar_original = $avatar_attachment->upload( $files, $upload_main_dir );
+		$avatar_original   = $avatar_attachment->upload( $files, $upload_main_dir );
 
 		// Bail early in case of an error.
 		if ( ! empty( $avatar_original['error'] ) ) {
@@ -68,8 +90,8 @@ trait BP_REST_Attachments {
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_avatar_error",
 				sprintf(
-					/* translators: %$1s and %$2s is replaced with the correct sizes. */
-					__( 'You have selected an image that is smaller than recommended. For best results, upload a picture larger than %$1s x %$2s pixels.', 'buddypress' ),
+					/* translators: %1$s and %2$s is replaced with the correct sizes. */
+					__( 'You have selected an image that is smaller than recommended. For best results, upload a picture larger than %1$s x %2$s pixels.', 'buddypress' ),
 					bp_core_avatar_full_width(),
 					bp_core_avatar_full_height()
 				),
@@ -88,16 +110,19 @@ trait BP_REST_Attachments {
 			return $cropped;
 		}
 
-		// Build response object.
-		$avatar_object = new stdClass();
+		// Set the arguments for the avatar.
+		$args = array();
 		foreach ( [ 'full', 'thumb' ] as $key_type ) {
 
 			// Update path with an url.
 			$url = str_replace( bp_core_avatar_upload_path(), '', $cropped[ $key_type ] );
 
 			// Set image url to its size/type.
-			$avatar_object->{$key_type} = bp_core_avatar_url() . $url;
+			$args[ $key_type ] = bp_core_avatar_url() . $url;
 		}
+
+		// Build response object.
+		$avatar_object = $this->get_avatar_object( $args );
 
 		if ( file_exists( $avatar_original['file'] ) ) {
 			unlink( $avatar_original['file'] );
@@ -147,8 +172,8 @@ trait BP_REST_Attachments {
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_avatar_upload_error",
 				sprintf(
-					/* translators: %$1s is replaced with error message. */
-					__( 'Upload failed! Error was: %$1s', 'buddypress' ),
+					/* translators: %s is replaced with error message. */
+					__( 'Upload failed! Error was: %s', 'buddypress' ),
 					$img_dir->get_error_message()
 				),
 				array(
@@ -223,7 +248,7 @@ trait BP_REST_Attachments {
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_avatar_crop_error",
 				sprintf(
-					/* translators: %$1s is replaced with object type. */
+					/* translators: %s is replaced with object type. */
 					__( 'There was a problem cropping your %s photo.', 'buddypress' ),
 					$this->object
 				),
