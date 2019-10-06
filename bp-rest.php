@@ -62,6 +62,12 @@ function bp_rest() {
 		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-member-avatar-endpoint.php';
 		$controller = new BP_REST_Attachments_Member_Avatar_Endpoint();
 		$controller->register_routes();
+
+		if ( bp_get_signup_allowed() ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-signup/classes/class-bp-rest-signup-endpoint.php';
+			$controller = new BP_REST_Signup_Endpoint();
+			$controller->register_routes();
+		}
 	}
 
 	if ( bp_is_active( 'activity' ) ) {
@@ -116,12 +122,6 @@ function bp_rest() {
 	if ( bp_is_active( 'notifications' ) ) {
 		require_once dirname( __FILE__ ) . '/includes/bp-notifications/classes/class-bp-rest-notifications-endpoint.php';
 		$controller = new BP_REST_Notifications_Endpoint();
-		$controller->register_routes();
-	}
-
-	if ( bp_get_signup_allowed() ) {
-		require_once dirname( __FILE__ ) . '/includes/bp-signup/classes/class-bp-rest-signup-endpoint.php';
-		$controller = new BP_REST_Signup_Endpoint();
 		$controller->register_routes();
 	}
 }
