@@ -208,7 +208,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && $request['group_id'] && ! $group instanceof BP_Groups_Group ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
+				__( 'Invalid group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -219,7 +219,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && $user_id_arg && ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_member_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
+				__( 'Invalid member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -230,7 +230,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && $request['inviter_id'] && ! $inviter instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_member_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
+				__( 'Invalid member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -328,7 +328,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $invite ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invite_invalid_id',
-				__( 'Invalid group invitation id.', 'buddypress' ),
+				__( 'Invalid group invitation ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -458,7 +458,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && empty( $group->id ) ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
+				__( 'Invalid group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -468,7 +468,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ( empty( $user->ID ) || empty( $inviter->ID ) || $user->ID === $inviter->ID ) ) {
 			$retval = new WP_Error(
 				'bp_rest_member_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
+				__( 'Invalid member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -573,7 +573,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $invite ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invite_invalid_id',
-				__( 'Invalid group invitation id.', 'buddypress' ),
+				__( 'Invalid group invitation ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -699,7 +699,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $invite ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invite_invalid_id',
-				__( 'Invalid group invitation id.', 'buddypress' ),
+				__( 'Invalid group invitation ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)

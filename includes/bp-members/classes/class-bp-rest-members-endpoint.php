@@ -140,7 +140,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to view members', 'buddypress' ),
+				__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -152,7 +152,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_member_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
+				__( 'Invalid member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -229,7 +229,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		if ( ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_member_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
+				__( 'Invalid member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -597,7 +597,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'type'       => 'object',
 			'properties' => array(
 				'id'                 => array(
-					'description' => __( 'Unique identifier for the member.', 'buddypress' ),
+					'description' => __( 'A unique numeric ID for the Member.', 'buddypress' ),
 					'type'        => 'integer',
 					'context'     => array( 'embed', 'view', 'edit' ),
 					'readonly'    => true,
@@ -626,7 +626,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'readonly'    => true,
 				),
 				'user_login'         => array(
-					'description' => __( 'An alphanumeric identifier for the member.', 'buddypress' ),
+					'description' => __( 'An alphanumeric identifier for the Member.', 'buddypress' ),
 					'type'        => 'string',
 					'context'     => array( 'embed', 'view', 'edit' ),
 					'required'    => true,
@@ -767,7 +767,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		);
 
 		$params['include'] = array(
-			'description'       => __( 'Ensure result set include specific IDs.', 'buddypress' ),
+			'description'       => __( 'Ensure result set includes specific IDs.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'items'             => array( 'type' => 'integer' ),

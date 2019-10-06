@@ -57,7 +57,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			array(
 				'args'   => array(
 					'id' => array(
-						'description' => __( 'The unique numeric ID for the notification.', 'buddypress' ),
+						'description' => __( 'A unique numeric ID for the notification.', 'buddypress' ),
 						'type'        => 'integer',
 					),
 				),
@@ -246,7 +246,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && is_null( $notification->item_id ) ) {
 			$retval = new WP_Error(
 				'bp_rest_notification_invalid_id',
-				__( 'Invalid notification id.', 'buddypress' ),
+				__( 'Invalid notification ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -461,7 +461,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		if ( ! BP_Notifications_Notification::delete( array( 'id' => $notification->id ) ) ) {
 			return new WP_Error(
 				'bp_rest_notification_invalid_id',
-				__( 'Invalid notification id.', 'buddypress' ),
+				__( 'Invalid notification ID.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)

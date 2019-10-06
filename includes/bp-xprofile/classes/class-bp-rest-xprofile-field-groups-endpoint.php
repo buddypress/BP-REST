@@ -237,7 +237,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		if ( empty( $field_group->id ) ) {
 			return new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid field group id.', 'buddypress' ),
+				__( 'Invalid field group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -418,7 +418,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		if ( empty( $field_group->id ) ) {
 			return new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid field group id.', 'buddypress' ),
+				__( 'Invalid field group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -520,7 +520,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		if ( empty( $field_group->id ) ) {
 			return new WP_Error(
 				'bp_rest_invalid_id',
-				__( 'Invalid field group id.', 'buddypress' ),
+				__( 'Invalid field group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)

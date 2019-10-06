@@ -81,14 +81,6 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'create_item_permissions_check' ),
-					'args'                => array(
-						'action' => array(
-							'description' => __( 'The upload action used when uploading a file.', 'buddypress' ),
-							'type'        => 'string',
-							'required'    => true,
-							'default'     => $this->avatar_instance->action,
-						),
-					),
 				),
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
@@ -174,7 +166,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $this->user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_member_invalid_id',
-				__( 'Invalid member id.', 'buddypress' ),
+				__( 'Invalid member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)

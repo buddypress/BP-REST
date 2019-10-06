@@ -310,7 +310,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_group_member_invalid_id',
-				__( 'Invalid group member id.', 'buddypress' ),
+				__( 'Invalid group member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -321,7 +321,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $group instanceof BP_Groups_Group ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
+				__( 'Invalid group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -408,13 +408,15 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			}
 		} elseif ( in_array( $action, [ 'demote', 'ban', 'unban' ], true ) ) {
 			if ( ! $group_member->$action() ) {
+				$messages = array(
+					'demote' => __( 'Could not demote member from the group.', 'buddypress' ),
+					'ban'    => __( 'Could not ban member from the group.', 'buddypress' ),
+					'unban'  => __( 'Could not unban member from the group.', 'buddypress' ),
+				);
+
 				return new WP_Error(
 					'bp_rest_group_member_failed_to_' . $action,
-					sprintf(
-						/* translators: %1$s is replaced with the action */
-						__( 'Could not %s member from the group.', 'buddypress' ),
-						esc_attr( $action )
-					),
+					$messages[ $action ],
 					array(
 						'status' => 500,
 					)
@@ -475,7 +477,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_group_member_invalid_id',
-				__( 'Invalid group member id.', 'buddypress' ),
+				__( 'Invalid group member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -486,7 +488,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $group instanceof BP_Groups_Group ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
+				__( 'Invalid group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -501,13 +503,16 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			$loggedin_user_id = bp_loggedin_user_id();
 			if ( true === $retval && in_array( $request['action'], [ 'ban', 'unban', 'promote', 'demote' ], true ) ) {
 				if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
+					$messages = array(
+						'ban'     => __( 'Sorry, you are not allowed to ban this group member.', 'buddypress' ),
+						'unban'   => __( 'Sorry, you are not allowed to unban this group member.', 'buddypress' ),
+						'promote' => __( 'Sorry, you are not allowed to promote this group member.', 'buddypress' ),
+						'demote'  => __( 'Sorry, you are not allowed to demote this group member.', 'buddypress' ),
+					);
+
 					$retval = new WP_Error(
 						'bp_rest_group_member_cannot_' . $request['action'],
-						sprintf(
-							/* translators: %1$s is replaced with the action. */
-							__( 'Sorry, you are not allowed to %s this group member.', 'buddypress' ),
-							esc_attr( $request['action'] )
-						),
+						$messages[ $request['action'] ],
 						array(
 							'status' => rest_authorization_required_code(),
 						)
@@ -609,7 +614,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $user instanceof WP_User ) {
 			return new WP_Error(
 				'bp_rest_group_member_invalid_id',
-				__( 'Invalid group member id.', 'buddypress' ),
+				__( 'Invalid group member ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -620,7 +625,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! $group instanceof BP_Groups_Group ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
-				__( 'Invalid group id.', 'buddypress' ),
+				__( 'Invalid group ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
