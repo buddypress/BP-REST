@@ -16,28 +16,120 @@ defined( 'ABSPATH' ) || exit;
 trait BP_REST_Attachments {
 
 	/**
-	 * Returns the avatar object.
+	 * Cover upload from file.
 	 *
-	 * @since 0.1.0
+	 * @since 6.0.0
 	 *
-	 * @param array $args {
-	 *     An array of arguments to build the Avatar object.
-	 *
-	 *     @type string $full  The url to the full version of the avatar.
-	 *     @type string $thumb The url to the thumb version of the avatar.
-	 * }
-	 * @return object The avatar object.
+	 * @param array $file $_FILES superglobal.
+	 * @return string|WP_Error
 	 */
-	protected function get_avatar_object( $args = array() ) {
-		$avatar_object = array_intersect_key(
-			$args,
+	protected function upload_cover_from_file( $file ) {
+
+		$bp = buddypress();
+
+		// Set global variables.
+		if ( 'group' === $this->object ) {
+			$bp->groups->current_group = $this->group;
+		}
+
+		// Try to upload image.
+		$uploaded_image = $this->attachment_instance->upload( $file );
+
+		// Bail with error.
+		if ( ! empty( $uploaded_image['error'] ) ) {
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_cover_upload_error",
+				sprintf(
+					/* translators: Error message. */
+					__( 'Upload Failed! Error was: %s', 'buddypress' ),
+					$uploaded_image['error']
+				),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$component                  = $this->get_cover_object_component();
+		$item_id                    = $this->get_item_id();
+		$bp_attachments_uploads_dir = bp_attachments_cover_image_upload_dir(
 			array(
-				'full'  => '',
-				'thumb' => '',
+				'object_directory' => $component,
+				'object_id'        => $item_id,
 			)
 		);
 
-		return (object) $avatar_object;
+		// The BP Attachments Uploads Dir is not set, stop.
+		if ( ! $bp_attachments_uploads_dir ) {
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_cover_upload_error",
+				__( 'The BuddyPress attachments uploads directory is not set.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$cover_subdir = $bp_attachments_uploads_dir['subdir'];
+		$cover_dir    = $bp_attachments_uploads_dir['basedir'] . $cover_subdir;
+
+		// If upload path doesn't exist, stop.
+		if ( 0 !== validate_file( $cover_dir ) || ! is_dir( $cover_dir ) ) {
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_cover_upload_error",
+				__( 'The cover image directory is not valid.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Upload cover.
+		$cover = bp_attachments_cover_image_generate_file(
+			array(
+				'file'            => $uploaded_image['file'],
+				'component'       => $component,
+				'cover_image_dir' => $cover_dir,
+			)
+		);
+
+		// Bail if any error happened.
+		if ( false === $cover ) {
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_cover_upload_error",
+				__( 'There was a problem uploading the cover image.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Bail with error if too small.
+		if ( true === $cover['is_too_small'] ) {
+
+			// Get cover image advised dimensions.
+			$cover_dimensions = bp_attachments_get_cover_image_dimensions( $component );
+
+			return new WP_Error(
+				"bp_rest_attachments_{$this->object}_cover_upload_error",
+				sprintf(
+					/* translators: %$1s and %$2s is replaced with the correct sizes. */
+					__( 'You have selected an image that is smaller than recommended. For better results, make sure to upload an image that is larger than %1$spx wide, and %2$spx tall.', 'buddypress' ),
+					(int) $cover_dimensions['width'],
+					(int) $cover_dimensions['height']
+				),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		return sprintf(
+			'%1$/%2$/%3$',
+			$bp_attachments_uploads_dir['baseurl'],
+			$cover_subdir,
+			$cover['cover_basename']
+		);
 	}
 
 	/**
@@ -290,11 +382,49 @@ trait BP_REST_Attachments {
 	}
 
 	/**
+	 * Returns the avatar object.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param array $args {
+	 *    An array of arguments to build the Avatar object.
+	 *
+	 *    @type string $full  The url to the full version of the avatar.
+	 *    @type string $thumb The url to the thumb version of the avatar.
+	 * }
+	 * @return object The avatar object.
+	 */
+	protected function get_avatar_object( $args = array() ) {
+		$avatar_object = array_intersect_key(
+			$args,
+			array(
+				'full'  => '',
+				'thumb' => '',
+			)
+		);
+
+		return (object) $avatar_object;
+	}
+
+	/**
 	 * Get item id.
+	 *
+	 * @since 5.0.0
 	 *
 	 * @return int
 	 */
 	protected function get_item_id() {
 		return ( 'group' === $this->object ) ? $this->group->id : $this->user->ID;
+	}
+
+	/**
+	 * Get cover object component.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @return string
+	 */
+	protected function get_cover_object_component() {
+		return ( 'group' === $this->object ) ? 'groups' : 'members';
 	}
 }

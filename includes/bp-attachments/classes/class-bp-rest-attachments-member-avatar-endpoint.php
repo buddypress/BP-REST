@@ -27,15 +27,6 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	protected $avatar_instance;
 
 	/**
-	 * Member object type.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @var string
-	 */
-	protected $object = 'user';
-
-	/**
 	 * Member object.
 	 *
 	 * @since 0.1.0
@@ -43,6 +34,15 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 * @var WP_User
 	 */
 	protected $user;
+
+	/**
+	 * Member object type.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	protected $object = 'user';
 
 	/**
 	 * Constructor.
@@ -265,7 +265,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( true === $retval && bp_disable_avatar_uploads() ) {
+		if ( true === $retval && 'POST' === $request->get_method() && bp_disable_avatar_uploads() ) {
 			$retval = new WP_Error(
 				'bp_rest_attachments_member_avatar_disabled',
 				__( 'Sorry, member avatar upload is disabled.', 'buddypress' ),
@@ -400,7 +400,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param stdClass|string $avatar  Avatar object or string with url or image with html.
+	 * @param object          $avatar  Avatar object.
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response
 	 */
@@ -424,7 +424,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param WP_REST_Response  $response Response.
 		 * @param WP_REST_Request   $request  Request used to generate the response.
-		 * @param stdClass|string   $avatar   Avatar object or string with url or image with html.
+		 * @param object            $avatar   Avatar object.
 		 */
 		return apply_filters( 'bp_rest_attachments_member_avatar_prepare_value', $response, $request, $avatar );
 	}
