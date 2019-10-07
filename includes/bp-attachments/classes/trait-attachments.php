@@ -18,7 +18,7 @@ trait BP_REST_Attachments {
 	/**
 	 * Cover upload from file.
 	 *
-	 * @since 0.1.0
+	 * @since 6.0.0
 	 *
 	 * @param array $file $_FILES superglobal.
 	 * @return string|WP_Error
@@ -40,7 +40,7 @@ trait BP_REST_Attachments {
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_cover_upload_error",
 				sprintf(
-					/* translators: Fail upload. Error message. */
+					/* translators: Error message. */
 					__( 'Upload Failed! Error was: %s', 'buddypress' ),
 					$uploaded_image['error']
 				),
@@ -74,7 +74,7 @@ trait BP_REST_Attachments {
 		$cover_dir    = $bp_attachments_uploads_dir['basedir'] . $cover_subdir;
 
 		// If upload path doesn't exist, stop.
-		if ( 1 === validate_file( $cover_dir ) || ! is_dir( $cover_dir ) ) {
+		if ( 0 !== validate_file( $cover_dir ) || ! is_dir( $cover_dir ) ) {
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_cover_upload_error",
 				__( 'The cover image directory is not valid.', 'buddypress' ),
@@ -384,7 +384,7 @@ trait BP_REST_Attachments {
 	/**
 	 * Returns the avatar object.
 	 *
-	 * @since 0.1.0
+	 * @since 6.0.0
 	 *
 	 * @param array $args {
 	 *    An array of arguments to build the Avatar object.
@@ -409,6 +409,8 @@ trait BP_REST_Attachments {
 	/**
 	 * Get item id.
 	 *
+	 * @since 5.0.0
+	 *
 	 * @return int
 	 */
 	protected function get_item_id() {
@@ -417,6 +419,8 @@ trait BP_REST_Attachments {
 
 	/**
 	 * Get cover object component.
+	 *
+	 * @since 6.0.0
 	 *
 	 * @return string
 	 */
