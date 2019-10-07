@@ -33,8 +33,6 @@ Please use and provide feedback!
 
 - Friends
 - Signups
-- Settings
-- Emails
 
 ## Installation
 
@@ -47,5 +45,3 @@ WordPress is moving towards becoming a fully-fledged application framework. Budd
 This plugin provides an easy to use REST API Endpoints for BuddyPress, available via HTTP. Grab your
 site's data in simple JSON format, including users, groups, xprofile and more.
 Retrieving or updating data is as simple as sending a HTTP request.
-
-There's no fixed timeline for integration into BuddyPress core at this time, the BP REST API will be available as a feature plugin!
