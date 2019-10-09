@@ -19,6 +19,7 @@ Please use and provide feedback!
 - [x] Group Membership `http://site.com/wp-json/buddypress/v1/groups/<group_id>/members`
 - [x] Group Membership Request(s) `http://site.com/wp-json/buddypress/v1/groups/{group_id}/membership-request/`
 - [x] Group Avatar `http://site.com/wp-json/buddypress/v1/groups/<group_id>/avatar`
+- [x] Group Cover `http://site.com/wp-json/buddypress/v1/groups/<group_id>/cover`
 - [x] Group Invites `http://site.com/wp-json/buddypress/v1/groups/<group_id>/invites`
 - [x] XProfile Fields `http://site.com/wp-json/buddypress/v1/xprofile/fields`
 - [x] XProfile Groups `http://site.com/wp-json/buddypress/v1/xprofile/groups`
@@ -28,11 +29,11 @@ Please use and provide feedback!
 - [x] Notifications `http://site.com/wp-json/buddypress/v1/notifications`
 - [x] Components `http://site.com/wp-json/buddypress/v1/components`
 - [x] Messages `http://site.com/wp-json/buddypress/v1/messages`
+- [x] Signup `http://site.com/wp-json/buddypress/v1/signup`
 
 ## Endpoints (Components) Pending
 
 - Friends
-- Signups
 
 ## Installation
 
