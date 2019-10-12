@@ -77,11 +77,27 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 					),
 				),
 				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( $this, 'update_item' ),
+					'permission_callback' => array( $this, 'update_item_permissions_check' ),
+					'args'                => array(
+						'context' => $this->get_context_param(
+							array(
+								'default' => 'edit',
+							)
+						),
+					),
+				),
+				array(
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_item' ),
 					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
 					'args'                => array(
-						'context' => $this->get_context_param( array( 'default' => 'edit' ) ),
+						'context' => $this->get_context_param(
+							array(
+								'default' => 'edit',
+							)
+						),
 					),
 				),
 				'schema' => array( $this, 'get_item_schema' ),
@@ -210,7 +226,19 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
+
+		// Get friendship object.
 		$friendship = new BP_Friends_Friendship( $request['id'] );
+
+		if ( ! $friendship ) {
+			return new WP_Error(
+				'bp_rest_invalid_id',
+				__( 'Invalid friendship ID.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -229,7 +257,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response      $response    The response data.
 		 * @param WP_REST_Request       $request     The request sent to the API.
 		 */
-		do_action( 'bp_rest_friendship_get_item', $friendship, $response, $request );
+		do_action( 'bp_rest_friends_get_item', $friendship, $response, $request );
 
 		return $response;
 	}
@@ -243,7 +271,17 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_item_permissions_check( $request ) {
-		$retval = $this->create_item_permissions_check( $request );
+		$retval = true;
+
+		if ( ! is_user_logged_in() ) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to perform this action.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
 
 		/**
 		 * Filter the friendship `get_item` permissions check.
@@ -292,6 +330,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Get friendship.
 		$friendship = $this->get_friendship_object( $initiator_id->ID, $friend_id->ID );
 
 		$retval = array(
@@ -325,17 +364,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function create_item_permissions_check( $request ) {
-		$retval = true;
-
-		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to perform this action.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
+		$retval = $this->get_item_permissions_check( $request );
 
 		/**
 		 * Filter the friends `create_item` permissions check.
@@ -349,7 +378,86 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Delete a friendship.
+	 * Update friendship.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function update_item( $request ) {
+		$request->set_param( 'context', 'edit' );
+
+		// Get friendship object.
+		$friendship = new BP_Friends_Friendship( $request['id'] );
+
+		if ( ! $friendship ) {
+			return new WP_Error(
+				'bp_rest_invalid_id',
+				__( 'Invalid friendship ID.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Accept friendship.
+		if ( ! friends_accept_friendship( $friendship->id ) ) {
+			return new WP_Error(
+				'bp_rest_friends_cannot_update_item',
+				__( 'Could not update friendship.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $friendship, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a friendship is updated via the REST API.
+		 *
+		 * @since 6.0.0
+		 *
+		 * @param BP_Friends_Friendship $friendship Friendship object.
+		 * @param WP_REST_Response      $response   The response data.
+		 * @param WP_REST_Request       $request    The request sent to the API.
+		 */
+		do_action( 'bp_rest_friends_update_item', $friendship, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to update a friendship.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_Error|bool
+	 */
+	public function update_item_permissions_check( $request ) {
+		$retval = $this->get_item_permissions_check( $request );
+
+		/**
+		 * Filter the friendship `update_item` permissions check.
+		 *
+		 * @since 6.0.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_friends_update_item_permissions_check', $retval, $request );
+	}
+
+	/**
+	 * Reject/withdraw friendship.
 	 *
 	 * @since 6.0.0
 	 *
@@ -359,14 +467,41 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	public function delete_item( $request ) {
 		$request->set_param( 'context', 'edit' );
 
-		// Get the friendship object before it's deleted.
+		// Get friendship object.
 		$friendship = new BP_Friends_Friendship( $request['id'] );
-		$previous   = $this->prepare_item_for_response( $friendship, $request );
-		$deleted    = friends_remove_friend( $friendship->initiator_user_id, $friendship->friend_user_id );
+
+		if ( ! $friendship ) {
+			return new WP_Error(
+				'bp_rest_invalid_id',
+				__( 'Invalid friendship ID.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$user_id  = bp_loggedin_user_id();
+		$previous = $this->prepare_item_for_response( $friendship, $request );
+
+		/**
+		 * If this change is being initiated by the initiator,
+		 * use the `reject` function.
+		 *
+		 * This is the user who requested the friendship, and is doing the withdrawing.
+		 */
+		if ( $user_id === $friendship->initiator_user_id ) {
+			$deleted = friends_withdraw_friendship( $friendship->initiator_user_id, $friendship->friend_user_id );
+		} else {
+			/**
+			 * Otherwise, this change is being initiated by the user, friend,
+			 * who received the friendship reject.
+			 */
+			$deleted = friends_reject_friendship( $friendship->id );
+		}
 
 		if ( ! $deleted ) {
 			return new WP_Error(
-				'bp_rest_friends_cannot_delete',
+				'bp_rest_friends_cannot_delete_item',
 				__( 'Could not delete friendship.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -406,7 +541,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function delete_item_permissions_check( $request ) {
-		$retval = $this->create_item_permissions_check( $request );
+		$retval = $this->get_item_permissions_check( $request );
 
 		/**
 		 * Filter the friendship `delete_item` permissions check.
