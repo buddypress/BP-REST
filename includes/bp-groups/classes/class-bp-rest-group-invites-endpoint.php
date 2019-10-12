@@ -612,7 +612,6 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		// Setting context.
 		$request->set_param( 'context', 'edit' );
 
 		$user_id = bp_loggedin_user_id();

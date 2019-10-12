@@ -196,16 +196,6 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
 		/**
 		 * Filter the friends `get_items` permissions check.
 		 *
@@ -228,14 +218,14 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	public function get_item( $request ) {
 
 		// Get friendship object.
-		$friendship = new BP_Friends_Friendship( $request['id'] );
+		$friendship = $this->get_friendship_object( $request['id'] );
 
-		if ( ! $friendship ) {
+		if ( ! $friendship || empty( $friendship->id ) ) {
 			return new WP_Error(
 				'bp_rest_invalid_id',
 				__( 'Invalid friendship ID.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => 404,
 				)
 			);
 		}
@@ -331,7 +321,9 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		}
 
 		// Get friendship.
-		$friendship = $this->get_friendship_object( $initiator_id->ID, $friend_id->ID );
+		$friendship = $this->get_friendship_object(
+			BP_Friends_Friendship::get_friendship_id( $initiator_id->ID, $friend_id->ID )
+		);
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -389,14 +381,14 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		// Get friendship object.
-		$friendship = new BP_Friends_Friendship( $request['id'] );
+		$friendship = $this->get_friendship_object( $request['id'] );
 
-		if ( ! $friendship ) {
+		if ( ! $friendship || empty( $friendship->id ) ) {
 			return new WP_Error(
 				'bp_rest_invalid_id',
 				__( 'Invalid friendship ID.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => 404,
 				)
 			);
 		}
@@ -468,14 +460,14 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		// Get friendship object.
-		$friendship = new BP_Friends_Friendship( $request['id'] );
+		$friendship = $this->get_friendship_object( $request['id'] );
 
-		if ( ! $friendship ) {
+		if ( ! $friendship || empty( $friendship->id ) ) {
 			return new WP_Error(
 				'bp_rest_invalid_id',
 				__( 'Invalid friendship ID.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => 404,
 				)
 			);
 		}
@@ -594,17 +586,11 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 6.0.0
 	 *
-	 * @param int $initiator_id User initiating friendship.
-	 * @param int $friend_id    Friend for the friendship.
+	 * @param int $friendship_id Friendship ID.
 	 *
 	 * @return BP_Friends_Friendship
 	 */
-	private function get_friendship_object( $initiator_id, $friend_id ) {
-		$friendship_id = BP_Friends_Friendship::get_friendship_id(
-			$initiator_id,
-			$friend_id
-		);
-
+	public function get_friendship_object( $friendship_id ) {
 		return new BP_Friends_Friendship( $friendship_id );
 	}
 
@@ -720,7 +706,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 
 		$params['order_by'] = array(
 			'description'       => __( 'Column name to order the results by.', 'buddypress' ),
-			'default'           => 'all',
+			'default'           => 'date_created',
 			'type'              => 'string',
 			'enum'              => array( 'date_created', 'initiator_user_id', 'friend_user_id', 'id' ),
 			'sanitize_callback' => 'sanitize_key',
