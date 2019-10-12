@@ -115,7 +115,6 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'user_id'           => $request['user_id'],
 			'id'                => $request['id'],
 			'initiator_user_id' => $request['initiator_id'],
 			'friend_user_id'    => $request['friend_id'],
@@ -137,8 +136,8 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		$args = apply_filters( 'bp_rest_friends_get_items_query_args', $args, $request );
 
 		// Check if user is valid.
-		$user = get_user_by( 'id', $args['user_id'] );
-		if ( ! $user ) {
+		$user = get_user_by( 'id', $request['user_id'] );
+		if ( ! $user instanceof WP_User ) {
 			return new WP_Error(
 				'bp_rest_friends_get_items_user_failed',
 				__( 'There was a problem confirming if user is a valid one.', 'buddypress' ),
@@ -152,9 +151,9 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		$friendships = BP_Friends_Friendship::get_friendships( $user->ID, $args );
 
 		$retval = array();
-		foreach ( (array) $friendships as $friend ) {
+		foreach ( (array) $friendships as $friendship ) {
 			$retval[] = $this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $friend, $request )
+				$this->prepare_item_for_response( $friendship, $request )
 			);
 		}
 
@@ -397,12 +396,15 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		if ( ! friends_accept_friendship( $friendship->id ) ) {
 			return new WP_Error(
 				'bp_rest_friends_cannot_update_item',
-				__( 'Could not update friendship.', 'buddypress' ),
+				__( 'Could not accept friendship.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
 			);
 		}
+
+		// Getting new friendship object.
+		$friendship = $this->get_friendship_object( $friendship->id );
 
 		$retval = array(
 			$this->prepare_response_for_collection(
