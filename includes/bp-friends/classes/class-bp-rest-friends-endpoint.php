@@ -120,7 +120,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			'friend_user_id'    => $request['friend_id'],
 			'is_confirmed'      => $request['is_confirmed'],
 			'order_by'          => $request['order_by'],
-			'sort_order'        => $request['order'],
+			'sort_order'        => strtoupper( $request['order'] ),
 			'page'              => $request['page'],
 			'per_page'          => $request['per_page'],
 		);
@@ -134,6 +134,13 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		$args = apply_filters( 'bp_rest_friends_get_items_query_args', $args, $request );
+
+		// null is the default values.
+		foreach ( $args as $key => $value ) {
+			if ( empty( $value ) ) {
+				$args[ $key ] = null;
+			}
+		}
 
 		// Check if user is valid.
 		$user = get_user_by( 'id', $request['user_id'] );

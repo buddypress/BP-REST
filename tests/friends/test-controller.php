@@ -50,40 +50,21 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		$this->bp->set_current_user( $this->user );
+		$u = $this->factory->user->create();
 
-		$s1 = $this->create_friendship();
+		$s1 = $this->create_friendship( $u );
+		$s2 = $this->create_friendship( $u );
+		$s3 = $this->create_friendship( $u );
+		$s4 = $this->create_friendship( $u );
+
+		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params(
 			array(
-				'user_id' => $this->user,
-			)
-		);
-		$request->set_param( 'context', 'view' );
-		$response = $this->server->dispatch( $request );
-
-		$this->assertEquals( 200, $response->get_status() );
-
-		$all_data = $response->get_data();
-	}
-
-	/**
-	 * @group get_items
-	 */
-	public function test_get_paginated_items() {
-		$this->bp->set_current_user( $this->user );
-
-		$s1 = $this->create_friendship();
-		$s2 = $this->create_friendship();
-		$s3 = $this->create_friendship();
-		$s4 = $this->create_friendship();
-
-		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
-		$request->set_query_params(
-			array(
-				'user_id'  => $this->user,
-				'per_page' => 2,
+				'user_id'      => $u,
+				'per_page'     => 2,
+				'is_confirmed' => 0,
 			)
 		);
 		$request->set_param( 'context', 'view' );
@@ -93,8 +74,8 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$headers = $response->get_headers();
 
-		// $this->assertEquals( 4, $headers['X-WP-Total'] );
-		// $this->assertEquals( 2, $headers['X-WP-TotalPages'] );
+		$this->assertEquals( 2, $headers['X-WP-Total'] );
+		$this->assertEquals( 1, $headers['X-WP-TotalPages'] );
 	}
 
 	/**
