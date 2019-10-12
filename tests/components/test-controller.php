@@ -50,10 +50,8 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 
 		$this->assertTrue( 10 === count( $all_data ) );
 
-		foreach ( $all_data as $component ) {
-			$component = $this->endpoint->get_component_info( $component['name'] );
-			$this->check_component_data( $component, $component );
-		}
+		$component = $this->endpoint->get_component_info( $all_data[0]['name'] );
+		$this->check_component_data( $component, $all_data[0] );
 	}
 
 	/**
@@ -63,9 +61,11 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
-		$request->set_query_params( array(
-			'per_page' => 5,
-		) );
+		$request->set_query_params(
+			array(
+				'per_page' => 5,
+			)
+		);
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
@@ -80,10 +80,8 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 
 		$this->assertTrue( 10 === count( $all_data ) );
 
-		foreach ( $all_data as $component ) {
-			$component = $this->endpoint->get_component_info( $component['name'] );
-			$this->check_component_data( $component, $component );
-		}
+		$component = $this->endpoint->get_component_info( $all_data[0]['name'] );
+		$this->check_component_data( $component, $all_data[0] );
 	}
 
 	/**
@@ -93,9 +91,11 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
-		$request->set_query_params( array(
-			'status' => 'another',
-		) );
+		$request->set_query_params(
+			array(
+				'status' => 'another',
+			)
+		);
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
