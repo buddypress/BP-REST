@@ -263,7 +263,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to perfom this action.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to perform this action.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)

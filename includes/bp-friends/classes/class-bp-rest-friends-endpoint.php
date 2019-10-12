@@ -12,6 +12,7 @@ defined( 'ABSPATH' ) || exit;
  * Friendship endpoints.
  *
  * /friends/
+ * /friends/{id}
  *
  * @since 6.0.0
  */
@@ -48,6 +49,40 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'create_item_permissions_check' ),
 					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+				),
+				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<id>[\w-]+)',
+			array(
+				'args'   => array(
+					'id' => array(
+						'description' => __( 'Identifier for the friendship.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_item' ),
+					'permission_callback' => array( $this, 'get_item_permissions_check' ),
+					'args'                => array(
+						'context' => $this->get_context_param(
+							array(
+								'default' => 'view',
+							)
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'delete_item' ),
+					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+					'args'                => array(
+						'context' => $this->get_context_param( array( 'default' => 'edit' ) ),
+					),
 				),
 				'schema' => array( $this, 'get_item_schema' ),
 			)
@@ -167,6 +202,61 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Retrieve single friendship.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_item( $request ) {
+		$friendship = new BP_Friends_Friendship( $request['id'] );
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $friendship, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires before a friendship is retrieved via the REST API.
+		 *
+		 * @since 6.0.0
+		 *
+		 * @param BP_Friends_Friendship $friendship  The friendship object.
+		 * @param WP_REST_Response      $response    The response data.
+		 * @param WP_REST_Request       $request     The request sent to the API.
+		 */
+		do_action( 'bp_rest_friendship_get_item', $friendship, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to get a friendship.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return WP_Error|bool
+	 */
+	public function get_item_permissions_check( $request ) {
+		$retval = $this->create_item_permissions_check( $request );
+
+		/**
+		 * Filter the friendship `get_item` permissions check.
+		 *
+		 * @since 6.0.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_friends_get_item_permissions_check', $retval, $request );
+	}
+
+	/**
 	 * Create a new friendship.
 	 *
 	 * @since 6.0.0
@@ -191,7 +281,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Try to add friendship.
+		// Adding friendship.
 		if ( ! friends_add_friend( $initiator_id->ID, $friend_id->ID, $request['force'] ) ) {
 			return new WP_Error(
 				'bp_rest_friends_create_item_failed',
@@ -240,7 +330,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to perfom this action.', 'buddypress' ),
+				__( 'Sorry, you need to be logged in to perform this action.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -269,37 +359,15 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	public function delete_item( $request ) {
 		$request->set_param( 'context', 'edit' );
 
-		$initiator_id = get_user_by( 'id', $request['initiator_id'] );
-		$friend_id    = get_user_by( 'id', $request['friend_id'] );
-
-		// Check if users are valid.
-		if ( ! $initiator_id || ! $friend_id ) {
-			return new WP_Error(
-				'bp_rest_friends_delete_item_failed',
-				__( 'There was a problem confirming if user is a valid one.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
-		if ( ! friends_check_friendship( $initiator_id, $friend_id ) ) {
-			return new WP_Error(
-				'bp_rest_friends_delete_item_failed',
-				__( 'These users are not friends.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
-		$friendship = $this->get_friendship_object( $initiator_id->ID, $friend_id->ID );
+		// Get the friendship object before it's deleted.
+		$friendship = new BP_Friends_Friendship( $request['id'] );
 		$previous   = $this->prepare_item_for_response( $friendship, $request );
+		$deleted    = friends_remove_friend( $friendship->initiator_user_id, $friendship->friend_user_id );
 
-		if ( ! friends_remove_friend( $initiator_id->ID, $friend_id->ID ) ) {
+		if ( ! $deleted ) {
 			return new WP_Error(
-				'bp_rest_friends_delete_item_failed',
-				__( 'There was an error trying to delete the friendship.', 'buddypress' ),
+				'bp_rest_friends_cannot_delete',
+				__( 'Could not delete friendship.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
@@ -320,7 +388,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param BP_Friends_Friendship $friendship Friends object.
+		 * @param BP_Friends_Friendship $friendship Friendship object.
 		 * @param WP_REST_Response      $response   The response data.
 		 * @param WP_REST_Request       $request    The request sent to the API.
 		 */
