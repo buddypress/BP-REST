@@ -141,12 +141,20 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
 
-		$params = $this->set_friendship_data();
+		$params = $this->set_friendship_data(
+			[
+				'initiator_id' => $this->user,
+			]
+		);
 		$request->set_body_params( $params );
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
+
+		$friendship = $response->get_data();
+
+		$this->assertSame( $friendship[0]['initiator_id'], $this->user );
 	}
 
 	/**
