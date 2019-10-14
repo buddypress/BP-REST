@@ -131,6 +131,12 @@ function bp_rest() {
 		$controller = new BP_REST_Notifications_Endpoint();
 		$controller->register_routes();
 	}
+
+	if ( bp_is_active( 'friends' ) ) {
+		require_once dirname( __FILE__ ) . '/includes/bp-friends/classes/class-bp-rest-friends-endpoint.php';
+		$controller = new BP_REST_Friends_Endpoint();
+		$controller->register_routes();
+	}
 }
 add_action( 'bp_rest_api_init', 'bp_rest', 5 );
 

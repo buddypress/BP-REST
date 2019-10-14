@@ -506,6 +506,8 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
+		$request->set_param( 'context', 'edit' );
+
 		$invite = $this->fetch_single_invite( $request['invite_id'] );
 		$accept = groups_accept_invite( $invite->user_id, $invite->item_id );
 		if ( ! $accept ) {
@@ -517,9 +519,6 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
-
-		// Setting context.
-		$request->set_param( 'context', 'edit' );
 
 		$accepted_member = new BP_Groups_Member( $invite->user_id, $invite->item_id );
 
@@ -613,7 +612,6 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		// Setting context.
 		$request->set_param( 'context', 'edit' );
 
 		$user_id = bp_loggedin_user_id();

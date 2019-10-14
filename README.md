@@ -30,10 +30,7 @@ Please use and provide feedback!
 - [x] Components `http://site.com/wp-json/buddypress/v1/components`
 - [x] Messages `http://site.com/wp-json/buddypress/v1/messages`
 - [x] Signup `http://site.com/wp-json/buddypress/v1/signup`
-
-## Endpoints (Components) Pending
-
-- Friends
+- [x] Friends `http://site.com/wp-json/buddypress/v1/friends`
 
 ## Installation
 
