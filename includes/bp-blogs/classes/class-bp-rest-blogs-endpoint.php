@@ -173,7 +173,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 			'domain'        => $blog->domain,
 			'path'          => $blog->path,
 			'description'   => $blog->description,
-			'last_activity' => $blog->last_activity,
+			'last_activity' => bp_rest_prepare_date_response( $blog->last_activity ),
 		);
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -259,7 +259,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 				),
 				'name' => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Name of the blog.', 'buddypress' ),
+					'description' => __( 'The name of the blog.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'string',
 					'arg_options' => array(
@@ -268,19 +268,19 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 				),
 				'description' => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Description of the blog.', 'buddypress' ),
+					'description' => __( 'The Description of the blog.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'string',
 				),
 				'path' => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Path of the blog.', 'buddypress' ),
+					'description' => __( 'The path of the blog.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'string',
 				),
 				'domain' => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Domain of the blog.', 'buddypress' ),
+					'description' => __( 'the domain of the blog.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'string',
 				),
