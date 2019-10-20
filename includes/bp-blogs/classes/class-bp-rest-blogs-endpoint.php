@@ -133,17 +133,6 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		$retval = true;
-
-		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to perform this action.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
 
 		/**
 		 * Filter the blogs `get_items` permissions check.
@@ -153,7 +142,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_blogs_get_items_permissions_check', $retval, $request );
+		return apply_filters( 'bp_rest_blogs_get_items_permissions_check', true, $request );
 	}
 
 	/**
@@ -269,19 +258,19 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 			'title'      => 'bp_blogs',
 			'type'       => 'object',
 			'properties' => array(
-				'id'           => array(
+				'id'            => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A unique numeric ID for the blog.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-				'user_id' => array(
+				'user_id'       => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'A unique numeric ID for blog admin.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
-				'name' => array(
+				'name'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The name of the blog.', 'buddypress' ),
 					'readonly'    => true,
@@ -290,26 +279,26 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
-				'permalink' => array(
+				'permalink'     => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The permalink of the blog.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'string',
 					'format'      => 'uri',
 				),
-				'description' => array(
+				'description'   => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The Description of the blog.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'string',
 				),
-				'path' => array(
+				'path'          => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The path of the blog.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'string',
 				),
-				'domain' => array(
+				'domain'        => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'the domain of the blog.', 'buddypress' ),
 					'readonly'    => true,
