@@ -172,6 +172,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 			'name'          => $blog->name,
 			'domain'        => $blog->domain,
 			'path'          => $blog->path,
+			'permalink'     => $this->get_blog_domain( $blog ),
 			'description'   => $blog->description,
 			'last_activity' => bp_rest_prepare_date_response( $blog->last_activity ),
 		);
@@ -233,6 +234,29 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Get blog permalink.
+	 *
+	 * @param BP_Blogs_Blog $blog Blog object.
+	 * @return string
+	 */
+	protected function get_blog_domain( $blog ) {
+
+		// Bail early.
+		if ( empty( $blog->domain ) && empty( $blog->path ) ) {
+			return '';
+		}
+
+		if ( empty( $blog->domain ) && ! empty( $blog->path ) ) {
+			return bp_get_root_domain() . $blog->path;
+		}
+
+		$protocol  = is_ssl() ? 'https://' : 'http://';
+		$permalink = $protocol . $blog->domain . $blog->path;
+
+		return apply_filters( 'bp_get_blog_permalink', $permalink );
+	}
+
+	/**
 	 * Get the blogs schema, conforming to JSON Schema.
 	 *
 	 * @since 6.0.0
@@ -265,6 +289,13 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_text_field',
 					),
+				),
+				'permalink' => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'The permalink of the blog.', 'buddypress' ),
+					'readonly'    => true,
+					'type'        => 'string',
+					'format'      => 'uri',
 				),
 				'description' => array(
 					'context'     => array( 'view', 'edit' ),

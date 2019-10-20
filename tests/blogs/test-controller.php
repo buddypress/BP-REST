@@ -117,6 +117,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $blog->name, $data['name'] );
 		$this->assertEquals( $blog->domain, $data['domain'] );
 		$this->assertEquals( $blog->path, $data['path'] );
+		$this->assertEquals( $blog->permalink, $data['permalink'] );
 		$this->assertEquals( $blog->description, $data['description'] );
 		$this->assertEquals( bp_rest_prepare_date_response( $blog->last_activity ), $data['last_activity'] );
 	}
@@ -127,12 +128,13 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 7, count( $properties ) );
+		$this->assertEquals( 8, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'user_id', $properties );
 		$this->assertArrayHasKey( 'name', $properties );
 		$this->assertArrayHasKey( 'path', $properties );
 		$this->assertArrayHasKey( 'domain', $properties );
+		$this->assertArrayHasKey( 'permalink', $properties );
 		$this->assertArrayHasKey( 'description', $properties );
 		$this->assertArrayHasKey( 'last_activity', $properties );
 	}
