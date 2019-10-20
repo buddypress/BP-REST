@@ -31,6 +31,7 @@ Please use and provide feedback!
 - [x] Messages `http://site.com/wp-json/buddypress/v1/messages`
 - [x] Signup `http://site.com/wp-json/buddypress/v1/signup`
 - [x] Friends `http://site.com/wp-json/buddypress/v1/friends`
+- [x] Blogs `http://site.com/wp-json/buddypress/v1/blogs`
 
 ## Installation
 

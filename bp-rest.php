@@ -76,6 +76,12 @@ function bp_rest() {
 		$controller->register_routes();
 	}
 
+	if ( bp_is_active( 'blogs' ) ) {
+		require_once dirname( __FILE__ ) . '/includes/bp-blogs/classes/class-bp-rest-blogs-endpoint.php';
+		$controller = new BP_REST_Blogs_Endpoint();
+		$controller->register_routes();
+	}
+
 	if ( bp_is_active( 'xprofile' ) ) {
 		require_once dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-fields-endpoint.php';
 		$controller = new BP_REST_XProfile_Fields_Endpoint();
