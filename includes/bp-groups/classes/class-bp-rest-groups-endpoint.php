@@ -597,31 +597,36 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'name'               => bp_get_group_name( $item ),
 			'slug'               => bp_get_group_slug( $item ),
 			'status'             => bp_get_group_status( $item ),
-			'avatar_urls'        => array(),
 			'admins'             => array(),
 			'mods'               => array(),
 			'total_member_count' => null,
 			'last_activity'      => null,
 		);
 
-		// Avatars.
-		$data['avatar_urls']['thumb'] = bp_core_fetch_avatar(
-			array(
-				'html'    => false,
-				'object'  => 'group',
-				'item_id' => $item->id,
-				'type'    => 'thumb',
-			)
-		);
+		// Get item schema.
+		$schema = $this->get_item_schema();
 
-		$data['avatar_urls']['full'] = bp_core_fetch_avatar(
-			array(
-				'html'    => false,
-				'object'  => 'group',
-				'item_id' => $item->id,
-				'type'    => 'full',
-			)
-		);
+		// Avatars.
+		if ( ! empty( $schema['properties']['avatar_urls'] ) ) {
+			$data['avatar_urls'] = array(
+				'thumb' => bp_core_fetch_avatar(
+					array(
+						'html'    => false,
+						'object'  => 'group',
+						'item_id' => $item->id,
+						'type'    => 'thumb',
+					)
+				),
+				'full'  => bp_core_fetch_avatar(
+					array(
+						'html'    => false,
+						'object'  => 'group',
+						'item_id' => $item->id,
+						'type'    => 'full',
+					)
+				),
+			);
+		}
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
@@ -1051,7 +1056,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		// Avatars.
-		if ( true === buddypress()->avatar->show_avatars ) {
+		if ( ! bp_disable_group_avatar_uploads() ) {
 			$avatar_properties = array();
 
 			$avatar_properties['full'] = array(

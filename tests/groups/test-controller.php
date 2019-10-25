@@ -253,6 +253,49 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_item
+	 * @group avatar
+	 */
+	public function test_get_item_with_avatar() {
+		$u = $this->factory->user->create();
+		$this->bp->set_current_user( $u );
+
+		$group = $this->endpoint->get_group_object( $this->group_id );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$all_data = $response->get_data();
+
+		$this->assertArrayHasKey( 'thumb', $all_data[0]['avatar_urls'] );
+		$this->assertArrayHasKey( 'full', $all_data[0]['avatar_urls'] );
+	}
+
+	/**
+	 * @group get_item
+	 * @group avatar
+	 */
+	public function test_get_item_without_avatar() {
+		$u = $this->factory->user->create();
+		$this->bp->set_current_user( $u );
+
+		$group = $this->endpoint->get_group_object( $this->group_id );
+
+		add_filter( 'bp_disable_group_avatar_uploads', '__return_true' );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$all_data = $response->get_data();
+
+		remove_filter( 'bp_disable_group_avatar_uploads', '__return_true' );
+
+		$this->assertArrayNotHasKey( 'avatar_urls', $all_data[0] );
+	}
+
+	/**
 	 * @group render_item
 	 */
 	public function test_render_item() {
