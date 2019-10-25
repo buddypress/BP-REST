@@ -58,11 +58,6 @@ function bp_rest() {
 		$controller = new BP_REST_Members_Endpoint();
 		$controller->register_routes();
 
-		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
-		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-member-avatar-endpoint.php';
-		$controller = new BP_REST_Attachments_Member_Avatar_Endpoint();
-		$controller->register_routes();
-
 		if ( bp_get_signup_allowed() ) {
 			require_once dirname( __FILE__ ) . '/includes/bp-signup/classes/class-bp-rest-signup-endpoint.php';
 			$controller = new BP_REST_Signup_Endpoint();
@@ -94,6 +89,21 @@ function bp_rest() {
 		require_once dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-data-endpoint.php';
 		$controller = new BP_REST_XProfile_Data_Endpoint();
 		$controller->register_routes();
+
+		$is_xprofile_uploads_enabled = array(
+			'avatar'      => ! bp_disable_avatar_uploads(),
+			'cover_image' => bp_is_active( 'xprofile', 'cover_image' ) && ! bp_disable_cover_image_uploads(),
+		);
+
+		if ( array_filter( $is_xprofile_uploads_enabled ) ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
+		}
+
+		if ( true === $is_xprofile_uploads_enabled['avatar'] ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-member-avatar-endpoint.php';
+			$controller = new BP_REST_Attachments_Member_Avatar_Endpoint();
+			$controller->register_routes();
+		}
 	}
 
 	if ( bp_is_active( 'groups' ) ) {
@@ -113,13 +123,23 @@ function bp_rest() {
 		$controller = new BP_REST_Group_Membership_Request_Endpoint();
 		$controller->register_routes();
 
-		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
-		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-group-avatar-endpoint.php';
-		$controller = new BP_REST_Attachments_Group_Avatar_Endpoint();
-		$controller->register_routes();
+		$is_group_uploads_enabled = array(
+			'avatar'      => ! bp_disable_group_avatar_uploads(),
+			'cover_image' => bp_is_active( 'groups', 'cover_image' ) && ! bp_disable_group_cover_image_uploads(),
+		);
+
+		if ( array_filter( $is_group_uploads_enabled ) ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
+		}
+
+		if ( true === $is_group_uploads_enabled['avatar'] ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-group-avatar-endpoint.php';
+			$controller = new BP_REST_Attachments_Group_Avatar_Endpoint();
+			$controller->register_routes();
+		}
 
 		// Support to Group Cover.
-		if ( bp_is_active( 'groups', 'cover_image' ) ) {
+		if ( true === $is_group_uploads_enabled['cover_image'] ) {
 			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-group-cover-endpoint.php';
 			$controller = new BP_REST_Attachments_Group_Cover_Endpoint();
 			$controller->register_routes();

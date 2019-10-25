@@ -51,7 +51,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	 */
 	public function __construct() {
 		$this->namespace       = bp_rest_namespace() . '/' . bp_rest_version();
-		$this->rest_base       = 'members';
+		$this->rest_base       = buddypress()->profile->id;
 		$this->avatar_instance = new BP_Attachment_Avatar();
 	}
 
