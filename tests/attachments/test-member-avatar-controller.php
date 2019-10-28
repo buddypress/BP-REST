@@ -14,7 +14,7 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Attachments_Member_Avatar_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
-		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/xprofile/';
+		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/members/';
 
 		$this->user_id = $this->bp_factory->user->create( array(
 			'role' => 'administrator',
