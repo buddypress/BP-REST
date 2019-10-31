@@ -57,11 +57,6 @@ function bp_rest() {
 		require_once dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-members-endpoint.php';
 		$controller = new BP_REST_Members_Endpoint();
 		$controller->register_routes();
-
-		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
-		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-member-avatar-endpoint.php';
-		$controller = new BP_REST_Attachments_Member_Avatar_Endpoint();
-		$controller->register_routes();
 	}
 
 	if ( bp_is_active( 'activity' ) ) {
@@ -81,6 +76,11 @@ function bp_rest() {
 
 		require_once dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-data-endpoint.php';
 		$controller = new BP_REST_XProfile_Data_Endpoint();
+		$controller->register_routes();
+
+		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
+		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-member-avatar-endpoint.php';
+		$controller = new BP_REST_Attachments_Member_Avatar_Endpoint();
 		$controller->register_routes();
 	}
 
