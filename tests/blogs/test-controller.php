@@ -137,4 +137,51 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
 		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 	}
+
+	public function get_additional_field( $data, $attribute )  {
+		return bp_blogs_get_blogmeta( $data['id'], '_' . $attribute );
+	}
+
+	/**
+	 * @group additional_fields
+	 */
+	public function test_get_additional_fields() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		if ( function_exists( 'wp_initialize_site' ) ) {
+			$this->setExpectedDeprecated( 'wpmu_new_blog' );
+		}
+
+		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
+
+		bp_rest_register_field( 'blogs', 'foo_field', array(
+			'get_callback'    => array( $this, 'get_additional_field' ),
+			'schema'          => array(
+				'description' => 'Blogs single item Meta Field',
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+			),
+		) );
+
+		$u = $this->bp_factory->user->create();
+		$this->bp->set_current_user( $u );
+		$blog_id  = $this->bp_factory->blog->create();
+		$expected = 'bar_value';
+
+		bp_blogs_update_blogmeta( $blog_id, '_foo_field', $expected );
+
+		// GET
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$request->set_param( 'include', array( $blog_id ) );
+		$response = $this->server->dispatch( $request );
+
+		$get_data = $response->get_data();
+
+		$this->assertTrue( $expected === $get_data[0]['foo_field'] );
+
+		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
+	}
 }
