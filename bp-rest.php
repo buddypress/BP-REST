@@ -79,8 +79,8 @@ function bp_rest() {
 		// Support to Blog Avatar.
 		if ( bp_is_active( 'blogs', 'site-icon' ) ) {
 			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
-			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-blogs-avatar-endpoint.php';
-			$controller = new BP_REST_Attachments_Blogs_Avatar_Endpoint();
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-blog-avatar-endpoint.php';
+			$controller = new BP_REST_Attachments_Blog_Avatar_Endpoint();
 			$controller->register_routes();
 		}
 	}

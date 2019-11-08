@@ -1,6 +1,6 @@
 <?php
 /**
- * BP REST: BP_REST_Attachments_Blogs_Avatar_Endpoint class
+ * BP REST: BP_REST_Attachments_Blog_Avatar_Endpoint class
  *
  * @package BuddyPress
  * @since 6.0.0
@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 6.0.0
  */
-class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
+class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 
 	use BP_REST_Attachments;
 
@@ -81,7 +81,7 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 
 		if ( ! $avatar->full && ! $avatar->thumb ) {
 			return new WP_Error(
-				'bp_rest_attachments_blogs_avatar_no_image',
+				'bp_rest_attachments_blog_avatar_no_image',
 				__( 'Sorry, there was a problem fetching the blog avatar.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -106,7 +106,7 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_attachments_blogs_avatar_get_item', $avatar, $response, $request );
+		do_action( 'bp_rest_attachments_blog_avatar_get_item', $avatar, $response, $request );
 
 		return $response;
 	}
@@ -121,15 +121,9 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 		$retval = true;
-		$blogs  = bp_blogs_get_blogs(
-			array(
-				'include_blog_ids'  => $request['blog_id'],
-				'per_page'          => 1,
-				'update_meta_cache' => false,
-			)
-		);
+		$blog   = $this->get_blog_object( $request['blog_id'] );
 
-		if ( true === $retval && ! $blogs['blogs'][0] instanceof BP_Blogs_Blog ) {
+		if ( true === $retval && ! $blog instanceof BP_Blogs_Blog ) {
 			$retval = new WP_Error(
 				'bp_rest_blog_invalid_id',
 				__( 'Invalid group ID.', 'buddypress' ),
@@ -141,7 +135,7 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 		
 		if ( true === $retval && ! buddypress()->avatar->show_avatars ) {
 			$retval = new WP_Error(
-				'bp_rest_attachments_blogs_avatar_disabled',
+				'bp_rest_attachments_blog_avatar_disabled',
 				__( 'Sorry, blog avatar is disabled.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -157,7 +151,7 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_attachments_blogs_avatar_get_item_permissions_check', $retval, $request );
+		return apply_filters( 'bp_rest_attachments_blog_avatar_get_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -191,7 +185,29 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request   $request  Request used to generate the response.
 		 * @param object            $avatar   Avatar object.
 		 */
-		return apply_filters( 'bp_rest_attachments_blogs_avatar_prepare_value', $response, $request, $avatar );
+		return apply_filters( 'bp_rest_attachments_blog_avatar_prepare_value', $response, $request, $avatar );
+	}
+
+	/**
+	 * Get object from blog_id.
+	 *
+	 * @param int $blog_id Blog ID.
+	 * @return BP_Blogs_Blog
+	 */
+	protected function get_blog_object( $blog_id ) {
+		$blogs = bp_blogs_get_blogs(
+			array(
+				'include_blog_ids'  => (int) $blog_id,
+				'per_page'          => 1,
+				'update_meta_cache' => false,
+			)
+		);
+
+		if ( empty( $blogs['blogs'][0] ) ) {
+			return false;
+		}
+
+		return $blogs['blogs'][0];
 	}
 
 	/**
@@ -229,7 +245,7 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param string $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_attachments_blogs_avatar_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_attachments_blog_avatar_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 
 	/**
@@ -267,6 +283,6 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $params Query params.
 		 */
-		return apply_filters( 'bp_rest_attachments_blogs_avatar_collection_params', $params );
+		return apply_filters( 'bp_rest_attachments_blog_avatar_collection_params', $params );
 	}
 }

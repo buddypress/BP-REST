@@ -12,7 +12,7 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 		parent::setUp();
 
 		$this->bp_factory   = new BP_UnitTest_Factory();
-		$this->endpoint     = new BP_REST_Attachments_Blogs_Avatar_Endpoint();
+		$this->endpoint     = new BP_REST_Attachments_Blog_Avatar_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
         $this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->blogs->id . '/';
 
