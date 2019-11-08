@@ -9,13 +9,13 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * blog avatar endpoints.
+ * Blog avatar endpoints.
  *
  * @since 6.0.0
  */
 class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 
-    use BP_REST_Attachments;
+	use BP_REST_Attachments;
 
 	/**
 	 * Constructor.
@@ -63,20 +63,20 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-        $args = array();
+		$args = array();
 
-        foreach ( array( 'full', 'thumb' ) as $type ) {
+		foreach ( array( 'full', 'thumb' ) as $type ) {
 			$args[ $type ] = bp_get_blog_avatar(
 				array(
 					'type'    => $type,
-                    'blog_id' => $request['blog_id'],
-                    'alt'     => $request['alt'],
-                    'no_grav' => (bool) $request['no_grav'],
+					'blog_id' => $request['blog_id'],
+					'alt'     => $request['alt'],
+					'no_grav' => (bool) $request['no_grav'],
 				)
 			);
-        }
-        
-        // Get the avatar object.
+		}
+		
+		// Get the avatar object.
 		$avatar = $this->get_avatar_object( $args );
 
 		if ( ! $avatar->full && ! $avatar->thumb ) {
@@ -122,14 +122,14 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 	public function get_item_permissions_check( $request ) {
 		$retval = true;
 		$blogs  = bp_blogs_get_blogs(
-            array(
-                'include_blog_ids'  => $request['blog_id'],
-                'per_page'          => 1,
-                'update_meta_cache' => false,
-            )
-        );
+			array(
+				'include_blog_ids'  => $request['blog_id'],
+				'per_page'          => 1,
+				'update_meta_cache' => false,
+			)
+		);
 
-        $blog = (array) $blogs['blogs'][0];
+		$blog = (array) $blogs['blogs'][0];
 
 		if ( true === $retval && ! $blog instanceof BP_Blogs_Blog ) {
 			$retval = new WP_Error(
@@ -139,9 +139,9 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 					'status' => 404,
 				)
 			);
-        }
-        
-        if ( true === $retval && ! buddypress()->avatar->show_avatars ) {
+		}
+		
+		if ( true === $retval && ! buddypress()->avatar->show_avatars ) {
 			$retval = new WP_Error(
 				'bp_rest_attachments_blogs_avatar_disabled',
 				__( 'Sorry, blog avatar upload is disabled.', 'buddypress' ),
@@ -206,7 +206,7 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_attachments_blog_avatar',
+			'title'      => 'bp_attachments_blogs_avatar',
 			'type'       => 'object',
 			'properties' => array(
 				'full'  => array(
