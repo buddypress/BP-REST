@@ -129,9 +129,7 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		$blog = (array) $blogs['blogs'][0];
-
-		if ( true === $retval && ! $blog instanceof BP_Blogs_Blog ) {
+		if ( true === $retval && ! $blogs['blogs'][0] instanceof BP_Blogs_Blog ) {
 			$retval = new WP_Error(
 				'bp_rest_blog_invalid_id',
 				__( 'Invalid group ID.', 'buddypress' ),
@@ -144,7 +142,7 @@ class BP_REST_Attachments_Blogs_Avatar_Endpoint extends WP_REST_Controller {
 		if ( true === $retval && ! buddypress()->avatar->show_avatars ) {
 			$retval = new WP_Error(
 				'bp_rest_attachments_blogs_avatar_disabled',
-				__( 'Sorry, blog avatar upload is disabled.', 'buddypress' ),
+				__( 'Sorry, blog avatar is disabled.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
