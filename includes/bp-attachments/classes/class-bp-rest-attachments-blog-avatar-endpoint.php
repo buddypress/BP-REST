@@ -120,7 +120,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param string            $avatar   The avatar.
+		 * @param object            $avatar   The avatar object.
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
@@ -240,7 +240,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_attachments_blogs_avatar',
+			'title'      => 'bp_attachments_blog_avatar',
 			'type'       => 'object',
 			'properties' => array(
 				'full'  => array(
