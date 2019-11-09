@@ -12,6 +12,7 @@
 	<testsuites>
 		<testsuite>
 			<directory suffix=".php">./blogs/</directory>
+			<directory suffix=".php">./attachments/</directory>
 		</testsuite>
 	</testsuites>
 </phpunit>

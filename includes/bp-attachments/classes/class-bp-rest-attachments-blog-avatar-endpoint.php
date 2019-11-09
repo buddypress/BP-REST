@@ -63,19 +63,37 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$args = array();
 
+		// Check if user exists and it is valid.
+		$admin_user_admin = $request['user_id'];
+		if ( ! empty( $admin_user_admin ) ) {
+			$user = get_user_by( 'id', $admin_user_admin );
+			if ( ! $user instanceof WP_User ) {
+				return new WP_Error(
+					'bp_rest_blog_avatar_get_item_user_failed',
+					__( 'There was a problem confirming if user ID provided is a valid one.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
+
+			$admin_user_admin = $user->ID;
+		}
+
+		$args = array();
 		foreach ( array( 'full', 'thumb' ) as $type ) {
 			$args[ $type ] = bp_get_blog_avatar(
 				array(
-					'type'    => $type,
-					'blog_id' => $request['blog_id'],
-					'alt'     => $request['alt'],
-					'no_grav' => (bool) $request['no_grav'],
+					'type'          => $type,
+					'blog_id'       => $request['blog_id'],
+					'admin_user_id' => $admin_user_admin,
+					'alt'           => $request['alt'],
+					'no_grav'       => (bool) $request['no_grav'],
 				)
 			);
 		}
-		
+
 		// Get the avatar object.
 		$avatar = $this->get_avatar_object( $args );
 
@@ -132,7 +150,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
-		
+
 		if ( true === $retval && ! buddypress()->avatar->show_avatars ) {
 			$retval = new WP_Error(
 				'bp_rest_attachments_blog_avatar_disabled',
@@ -189,7 +207,9 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get object from blog_id.
+	 * Get BP_Blogs_Blog object from blog_id.
+	 *
+	 * @since 6.0.0
 	 *
 	 * @param int $blog_id Blog ID.
 	 * @return BP_Blogs_Blog
@@ -267,6 +287,14 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 			'default'           => '',
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_text_field',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['user_id'] = array(
+			'description'       => __( 'The Blog admin user ID to avatar fallback.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
