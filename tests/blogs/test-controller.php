@@ -31,6 +31,10 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		// Main.
 		$this->assertArrayHasKey( $this->endpoint_url, $routes );
 		$this->assertCount( 1, $routes[ $this->endpoint_url ] );
+
+		// Single.
+		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
+		$this->assertCount( 1, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
 	}
 
 	/**
@@ -73,7 +77,35 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		$this->markTestSkipped();
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		if ( function_exists( 'wp_initialize_site' ) ) {
+			$this->setExpectedDeprecated( 'wpmu_new_blog' );
+		}
+
+		$blog = $this->bp_factory->blog->create();
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $blog ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$blogs = $response->get_data();
+
+		$this->assertSame( $blogs[0]['id'], $blog );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_invalid_group_id() {
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_blog_invalid_id', $response, 404 );
 	}
 
 	/**

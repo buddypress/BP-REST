@@ -70,6 +70,30 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 	/**
 	 * @group get_item
 	 */
+	public function test_get_item_invalid_user_id() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		if ( function_exists( 'wp_initialize_site' ) ) {
+			$this->setExpectedDeprecated( 'wpmu_new_blog' );
+		}
+
+		$blog_id = $this->bp_factory->blog->create();
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $blog_id ) );
+
+		$request->set_file_params(
+			[
+				'user_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER,
+			]
+		);
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_blog_avatar_get_item_user_failed', $response, 500 );
+	}
+
+	/**
+	 * @group get_item
+	 */
 	public function test_get_item_invalid_blog_id() {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped();

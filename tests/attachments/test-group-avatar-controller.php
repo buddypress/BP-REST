@@ -100,7 +100,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 */
 	public function test_create_item() {
 		$reset_files = $_FILES;
-		$reset_post  = $_POST;
+		$reset_post = $_POST;
 		$image_file  = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-group.png';
 
 		$this->bp->set_current_user( $this->user_id );
@@ -118,7 +118,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 
 		$_POST['action'] = 'bp_avatar_upload';
 
-		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
 		$request->set_file_params( $_FILES );
 		$response = rest_get_server()->dispatch( $request );
 
@@ -126,7 +126,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		remove_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
 
 		$all_data = $response->get_data();
-		$avatar = reset( $all_data );
+		$avatar   = reset( $all_data );
 
 		$this->assertSame( $avatar, array(
 			'full'  => bp_core_fetch_avatar(
@@ -148,7 +148,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		) );
 
 		$_FILES = $reset_files;
-		$_POST = $reset_post;
+		$_POST  = $reset_post;
 	}
 
 	public function copy_file( $return = null, $file, $new_file ) {

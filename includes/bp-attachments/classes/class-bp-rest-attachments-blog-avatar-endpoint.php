@@ -18,13 +18,23 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	use BP_REST_Attachments;
 
 	/**
+	 * Reuse some parts of the BP_REST_Blogs_Endpoint class.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @var BP_REST_Blogs_Endpoint
+	 */
+	protected $blogs_endpoint;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 6.0.0
 	 */
 	public function __construct() {
-		$this->namespace = bp_rest_namespace() . '/' . bp_rest_version();
-		$this->rest_base = buddypress()->blogs->id;
+		$this->namespace      = bp_rest_namespace() . '/' . bp_rest_version();
+		$this->rest_base      = buddypress()->blogs->id;
+		$this->blogs_endpoint = new BP_REST_Blogs_Endpoint();
 	}
 
 	/**
@@ -66,7 +76,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 
 		// Check if user exists and it is valid.
 		$admin_user_admin = $request['user_id'];
-		if ( ! empty( $admin_user_admin ) ) {
+		if ( 0 !== $admin_user_admin ) {
 			$user = get_user_by( 'id', $admin_user_admin );
 			if ( ! $user instanceof WP_User ) {
 				return new WP_Error(
@@ -139,7 +149,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 		$retval = true;
-		$blog   = $this->get_blog_object( $request['blog_id'] );
+		$blog   = $this->blogs_endpoint->get_blog_object( $request['blog_id'] );
 
 		if ( true === $retval && ! $blog instanceof BP_Blogs_Blog ) {
 			$retval = new WP_Error(
@@ -187,11 +197,9 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 			'thumb' => $avatar->thumb,
 		);
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
-
-		// @todo add prepare_links
+		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data     = $this->add_additional_fields_to_object( $data, $request );
+		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
 		/**
@@ -204,30 +212,6 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 		 * @param object            $avatar   Avatar object.
 		 */
 		return apply_filters( 'bp_rest_attachments_blog_avatar_prepare_value', $response, $request, $avatar );
-	}
-
-	/**
-	 * Get BP_Blogs_Blog object from blog_id.
-	 *
-	 * @since 6.0.0
-	 *
-	 * @param int $blog_id Blog ID.
-	 * @return BP_Blogs_Blog
-	 */
-	protected function get_blog_object( $blog_id ) {
-		$blogs = bp_blogs_get_blogs(
-			array(
-				'include_blog_ids'  => (int) $blog_id,
-				'per_page'          => 1,
-				'update_meta_cache' => false,
-			)
-		);
-
-		if ( empty( $blogs['blogs'][0] ) ) {
-			return false;
-		}
-
-		return $blogs['blogs'][0];
 	}
 
 	/**
