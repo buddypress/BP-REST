@@ -11,7 +11,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Member Cover endpoints.
  *
- * /member/<user_id>/cover
+ * /members/<user_id>/cover
  *
  * @since 6.0.0
  */
