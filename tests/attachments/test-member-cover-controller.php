@@ -76,29 +76,6 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	/**
 	 * @group create_item
 	 */
-	public function test_create_item_no_valid_image_directory() {
-		$this->bp->set_current_user( $this->user_id );
-
-		$image_file = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-man.jpg';
-
-		$_FILES['file'] = array(
-			'tmp_name' => $image_file,
-			'name'     => 'mystery-man.jpg',
-			'type'     => 'image/jpeg',
-			'error'    => 0,
-			'size'     => filesize( $image_file ),
-		);
-
-		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->user_id ) );
-		$request->set_file_params( $_FILES );
-		$response = rest_get_server()->dispatch( $request );
-
-		$this->assertErrorResponse( 'bp_rest_attachments_user_cover_upload_error', $response, 500 );
-	}
-
-	/**
-	 * @group create_item
-	 */
 	public function test_create_item_empty_image() {
 		$this->bp->set_current_user( $this->user_id );
 
