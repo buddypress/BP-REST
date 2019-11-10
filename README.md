@@ -26,6 +26,7 @@ Please use and provide feedback!
 - [x] XProfile Data `http://site.com/wp-json/buddypress/v1/xprofile/<field_id>/data/<user_id>`
 - [x] Members `http://site.com/wp-json/buddypress/v1/members`
 - [x] Members Profile Photo (aka Avatar) `http://site.com/wp-json/buddypress/v1/members/<user_id>/avatar`
+- [x] Members Cover `http://site.com/wp-json/buddypress/v1/members/<user_id>/cover`
 - [x] Notifications `http://site.com/wp-json/buddypress/v1/notifications`
 - [x] Components `http://site.com/wp-json/buddypress/v1/components`
 - [x] Messages `http://site.com/wp-json/buddypress/v1/messages`
