@@ -18,13 +18,23 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	use BP_REST_Attachments;
 
 	/**
+	 * Reuse some parts of the BP_REST_Blogs_Endpoint class.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @var BP_REST_Blogs_Endpoint
+	 */
+	protected $blogs_endpoint;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 6.0.0
 	 */
 	public function __construct() {
-		$this->namespace = bp_rest_namespace() . '/' . bp_rest_version();
-		$this->rest_base = buddypress()->blogs->id;
+		$this->namespace      = bp_rest_namespace() . '/' . bp_rest_version();
+		$this->rest_base      = buddypress()->blogs->id;
+		$this->blogs_endpoint = new BP_REST_Blogs_Endpoint();
 	}
 
 	/**
@@ -63,19 +73,37 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$args = array();
 
+		// Check if user exists and it is valid.
+		$admin_user_admin = $request['user_id'];
+		if ( 0 !== $admin_user_admin ) {
+			$user = get_user_by( 'id', $admin_user_admin );
+			if ( ! $user instanceof WP_User ) {
+				return new WP_Error(
+					'bp_rest_blog_avatar_get_item_user_failed',
+					__( 'There was a problem confirming if user ID provided is a valid one.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
+
+			$admin_user_admin = $user->ID;
+		}
+
+		$args = array();
 		foreach ( array( 'full', 'thumb' ) as $type ) {
 			$args[ $type ] = bp_get_blog_avatar(
 				array(
-					'type'    => $type,
-					'blog_id' => $request['blog_id'],
-					'alt'     => $request['alt'],
-					'no_grav' => (bool) $request['no_grav'],
+					'type'          => $type,
+					'blog_id'       => $request['blog_id'],
+					'admin_user_id' => $admin_user_admin,
+					'alt'           => $request['alt'],
+					'no_grav'       => (bool) $request['no_grav'],
 				)
 			);
 		}
-		
+
 		// Get the avatar object.
 		$avatar = $this->get_avatar_object( $args );
 
@@ -102,7 +130,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param string            $avatar   The avatar.
+		 * @param object            $avatar   The avatar object.
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
@@ -121,7 +149,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 		$retval = true;
-		$blog   = $this->get_blog_object( $request['blog_id'] );
+		$blog   = $this->blogs_endpoint->get_blog_object( $request['blog_id'] );
 
 		if ( true === $retval && ! $blog instanceof BP_Blogs_Blog ) {
 			$retval = new WP_Error(
@@ -132,7 +160,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 				)
 			);
 		}
-		
+
 		if ( true === $retval && ! buddypress()->avatar->show_avatars ) {
 			$retval = new WP_Error(
 				'bp_rest_attachments_blog_avatar_disabled',
@@ -169,11 +197,9 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 			'thumb' => $avatar->thumb,
 		);
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
-
-		// @todo add prepare_links
+		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data     = $this->add_additional_fields_to_object( $data, $request );
+		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
 		/**
@@ -189,28 +215,6 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get object from blog_id.
-	 *
-	 * @param int $blog_id Blog ID.
-	 * @return BP_Blogs_Blog
-	 */
-	protected function get_blog_object( $blog_id ) {
-		$blogs = bp_blogs_get_blogs(
-			array(
-				'include_blog_ids'  => (int) $blog_id,
-				'per_page'          => 1,
-				'update_meta_cache' => false,
-			)
-		);
-
-		if ( empty( $blogs['blogs'][0] ) ) {
-			return false;
-		}
-
-		return $blogs['blogs'][0];
-	}
-
-	/**
 	 * Get the blog avatar schema, conforming to JSON Schema.
 	 *
 	 * @since 6.0.0
@@ -220,7 +224,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_attachments_blogs_avatar',
+			'title'      => 'bp_attachments_blog_avatar',
 			'type'       => 'object',
 			'properties' => array(
 				'full'  => array(
@@ -267,6 +271,14 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 			'default'           => '',
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_text_field',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['user_id'] = array(
+			'description'       => __( 'The Blog admin user ID to avatar fallback.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
