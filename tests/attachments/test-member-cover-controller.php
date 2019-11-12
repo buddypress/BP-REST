@@ -54,7 +54,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	public function test_get_item_with_no_image() {
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/cover', $this->user_id ) );
 		$response = $this->server->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_attachments_user_cover_no_image', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_attachments_member_cover_no_image', $response, 500 );
 	}
 
 	/**
@@ -81,7 +81,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->user_id ) );
 		$response = $this->server->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_attachments_user_cover_no_image_file', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_attachments_member_cover_no_image_file', $response, 500 );
 	}
 
 	/**
@@ -173,7 +173,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', $this->user_id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_attachments_user_cover_delete_failed', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_attachments_member_cover_delete_failed', $response, 500 );
 	}
 
 	/**

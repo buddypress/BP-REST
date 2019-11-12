@@ -504,6 +504,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 */
 	protected function can_manage_member( $user, $action = 'delete' ) {
 		$capability = 'delete_user';
+
 		if ( 'update' === $action ) {
 			$capability = 'edit_user';
 		}
@@ -525,7 +526,10 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 */
 	protected function update_additional_fields_for_object( $object, $request ) {
 		if ( ! isset( $object->data ) ) {
-			return new WP_Error( 'invalid_user', __( 'The data for the user was not found.', 'buddypress' ) );
+			return new WP_Error(
+				'invalid_user',
+				__( 'The data for the user was not found.', 'buddypress' )
+			);
 		}
 
 		$member     = $object->data;

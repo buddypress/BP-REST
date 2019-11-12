@@ -111,7 +111,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 
 		if ( empty( $cover_url ) ) {
 			return new WP_Error(
-				'bp_rest_attachments_user_cover_no_image',
+				'bp_rest_attachments_member_cover_no_image',
 				__( 'Sorry, there was a problem fetching this user cover.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -136,7 +136,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response   The response data.
 		 * @param WP_REST_Request   $request    The request sent to the API.
 		 */
-		do_action( 'bp_rest_attachments_user_cover_get_item', $cover_url, $response, $request );
+		do_action( 'bp_rest_attachments_member_cover_get_item', $cover_url, $response, $request );
 
 		return $response;
 	}
@@ -153,7 +153,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 		$retval     = true;
 		$this->user = bp_rest_get_user( $request['user_id'] );
 
-		if ( true === $retval && ! $this->user instanceof WP_User ) {
+		if ( ! $this->user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_member_invalid_id',
 				__( 'Invalid member ID.', 'buddypress' ),
@@ -171,7 +171,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_attachments_user_cover_get_item_permissions_check', $retval, $request );
+		return apply_filters( 'bp_rest_attachments_member_cover_get_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -190,7 +190,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 
 		if ( empty( $files ) ) {
 			return new WP_Error(
-				'bp_rest_attachments_user_cover_no_image_file',
+				'bp_rest_attachments_member_cover_no_image_file',
 				__( 'Sorry, you need an image file to upload.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -221,7 +221,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response   The response data.
 		 * @param WP_REST_Request   $request    The request sent to the API.
 		 */
-		do_action( 'bp_rest_attachments_user_cover_create_item', $cover_url, $response, $request );
+		do_action( 'bp_rest_attachments_member_cover_create_item', $cover_url, $response, $request );
 
 		return $response;
 	}
@@ -239,7 +239,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 
 		if ( true === $retval && bp_disable_cover_image_uploads() ) {
 			$retval = new WP_Error(
-				'bp_rest_attachments_user_cover_disabled',
+				'bp_rest_attachments_member_cover_disabled',
 				__( 'Sorry, user cover upload is disabled.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -255,7 +255,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_attachments_user_cover_create_item_permissions_check', $retval, $request );
+		return apply_filters( 'bp_rest_attachments_member_cover_create_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -284,7 +284,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 
 		if ( ! $deleted ) {
 			return new WP_Error(
-				'bp_rest_attachments_user_cover_delete_failed',
+				'bp_rest_attachments_member_cover_delete_failed',
 				__( 'Sorry, there was a problem deleting this user cover.', 'buddypress' ),
 				array(
 					'status' => 500,
@@ -310,7 +310,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response  $response  The response data.
 		 * @param WP_REST_Request   $request   The request sent to the API.
 		 */
-		do_action( 'bp_rest_attachments_user_cover_delete_item', $this->user, $response, $request );
+		do_action( 'bp_rest_attachments_member_cover_delete_item', $this->user, $response, $request );
 
 		return $response;
 	}
@@ -329,7 +329,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 
 		if ( isset( $this->user->ID ) ) {
 			$args = array(
-				'item_id' => (int) $this->user->ID,
+				'item_id' => $this->user->ID,
 				'object'  => $this->object,
 			);
 		}
@@ -362,7 +362,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_attachments_user_cover_delete_item_permissions_check', $retval, $request );
+		return apply_filters( 'bp_rest_attachments_member_cover_delete_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -394,7 +394,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request   $request   Request used to generate the response.
 		 * @param string            $cover_url Group cover url.
 		 */
-		return apply_filters( 'bp_rest_attachments_user_cover_prepare_value', $response, $request, $cover_url );
+		return apply_filters( 'bp_rest_attachments_member_cover_prepare_value', $response, $request, $cover_url );
 	}
 
 	/**
@@ -425,6 +425,6 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param string $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_attachments_user_cover_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_attachments_member_cover_schema', $this->add_additional_fields_schema( $schema ) );
 	}
 }
