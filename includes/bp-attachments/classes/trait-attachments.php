@@ -25,11 +25,17 @@ trait BP_REST_Attachments {
 	 */
 	protected function upload_cover_from_file( $file ) {
 
-		$bp = buddypress();
-
 		// Set global variables.
-		if ( 'group' === $this->object ) {
-			$bp->groups->current_group = $this->group;
+		$bp = buddypress();
+		switch ( $this->object ) {
+			case 'group':
+				$bp->groups->current_group = $this->group;
+				break;
+			case 'user':
+			default:
+				$bp->displayed_user     = new stdClass();
+				$bp->displayed_user->id = (int) $this->user->ID;
+				break;
 		}
 
 		// Try to upload image.
@@ -141,16 +147,20 @@ trait BP_REST_Attachments {
 	 * @return stdClass|WP_Error
 	 */
 	protected function upload_avatar_from_file( $files ) {
-		$bp = buddypress();
 
 		// Set global variables.
-		if ( 'group' === $this->object ) {
-			$bp->groups->current_group = $this->group;
-			$upload_main_dir           = 'groups_avatar_upload_dir';
-		} else {
-			$upload_main_dir        = 'xprofile_avatar_upload_dir';
-			$bp->displayed_user     = new stdClass();
-			$bp->displayed_user->id = (int) $this->user->ID;
+		$bp = buddypress();
+		switch ( $this->object ) {
+			case 'group':
+				$bp->groups->current_group = $this->group;
+				$upload_main_dir           = 'groups_avatar_upload_dir';
+				break;
+			case 'user':
+			default:
+				$upload_main_dir        = 'xprofile_avatar_upload_dir';
+				$bp->displayed_user     = new stdClass();
+				$bp->displayed_user->id = (int) $this->user->ID;
+				break;
 		}
 
 		$avatar_attachment = $this->avatar_instance;

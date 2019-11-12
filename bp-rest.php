@@ -102,6 +102,13 @@ function bp_rest() {
 		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-member-avatar-endpoint.php';
 		$controller = new BP_REST_Attachments_Member_Avatar_Endpoint();
 		$controller->register_routes();
+
+		// Support to Members Cover.
+		if ( bp_is_active( 'xprofile', 'cover_image' ) ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-member-cover-endpoint.php';
+			$controller = new BP_REST_Attachments_Member_Cover_Endpoint();
+			$controller->register_routes();
+		}
 	}
 
 	if ( bp_is_active( 'groups' ) ) {
