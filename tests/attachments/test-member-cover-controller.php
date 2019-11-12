@@ -60,7 +60,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_invalid_group_id() {
+	public function test_get_item_invalid_member_id() {
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/cover', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_member_invalid_id', $response, 404 );
@@ -109,7 +109,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	/**
 	 * @group create_item
 	 */
-	public function test_create_item_invalid_group_id() {
+	public function test_create_item_invalid_member_id() {
 		$this->bp->set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
@@ -156,7 +156,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	/**
 	 * @group delete_item
 	 */
-	public function test_delete_item_invalid_group_id() {
+	public function test_delete_item_invalid_member_id() {
 		$this->bp->set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
@@ -184,7 +184,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	}
 
 	public function test_get_item_schema() {
-		$request    = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
+		$request    = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '%d/cover', $this->user_id ) );
 		$response   = $this->server->dispatch( $request );
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
@@ -196,7 +196,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	public function test_context_param() {
 
 		// Single.
-		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
+		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '%d/cover', $this->user_id ) );
 		$response = $this->server->dispatch( $request );
 		$data     = $response->get_data();
 
