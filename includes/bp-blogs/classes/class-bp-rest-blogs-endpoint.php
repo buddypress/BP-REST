@@ -367,7 +367,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 * @param int $blog_id Blog ID.
 	 * @return BP_Blogs_Blog|bool
 	 */
-	protected function get_blog_object( $blog_id ) {
+	public function get_blog_object( $blog_id ) {
 		$blogs = bp_blogs_get_blogs(
 			array(
 				'include_blog_ids'  => array( $blog_id ),
