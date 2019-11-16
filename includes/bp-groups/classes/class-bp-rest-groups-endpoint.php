@@ -135,6 +135,12 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		$retval = array();
 		foreach ( $groups['groups'] as $group ) {
+
+			// Remove hidden groups if the user can't see it.
+			if ( true === $request['show_hidden'] && ! $this->can_see_hidden_groups( $group ) ) {
+				continue;
+			}
+
 			$retval[] = $this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $group, $request )
 			);
@@ -166,17 +172,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
-		$retval = true;
-
-		if ( ! $this->can_see_hidden_groups( $request ) ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you cannot view hidden groups.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
 
 		/**
 		 * Filter the groups `get_items` permissions check.
@@ -186,7 +181,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_groups_get_items_permissions_check', $retval, $request );
+		return apply_filters( 'bp_rest_groups_get_items_permissions_check', true, $request );
 	}
 
 	/**
@@ -841,24 +836,25 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Full details about the request.
+	 * @param BP_Groups_Groupt $group Group object.
+	 *
 	 * @return bool
 	 */
-	protected function can_see_hidden_groups( $request ) {
-		if ( $request['show_hidden'] ) {
+	protected function can_see_hidden_groups( $group ) {
 
-			if ( bp_current_user_can( 'bp_moderate' ) ) {
-				return true;
-			}
-
-			if ( is_user_logged_in() && isset( $request['user_id'] ) && absint( $request['user_id'] ) === bp_loggedin_user_id() ) {
-				return true;
-			}
-
-			return false;
+		if ( 'hidden' !== $group->status ) {
+			return true;
 		}
 
-		return true;
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			return true;
+		}
+
+		if ( groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**

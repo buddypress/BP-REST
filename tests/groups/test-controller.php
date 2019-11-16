@@ -103,6 +103,46 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_hidden_groups() {
+		$u = $this->factory->user->create();
+
+		$a1 = $this->bp_factory->group->create(
+			array(
+				'status'     => 'hidden',
+				'creator_id' => $u,
+			)
+		);
+
+		$a2 = $this->bp_factory->group->create(
+			array(
+				'status'     => 'hidden',
+				'creator_id' => $this->user,
+			)
+		);
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+
+		$request->set_query_params(
+			array(
+				'show_hidden' => true,
+			)
+		);
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->assertTrue( count( $all_data ) === 2 );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
