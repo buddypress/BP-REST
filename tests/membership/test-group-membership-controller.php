@@ -194,7 +194,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	/**
@@ -825,7 +825,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	 * @group get_item
 	 */
 	public function test_prepare_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	/**

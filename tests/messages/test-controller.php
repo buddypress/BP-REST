@@ -300,7 +300,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group update_item
 	 */
 	public function test_update_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	/**
@@ -417,7 +417,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_prepare_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	protected function check_thread_data( $thread, $data ) {

@@ -754,7 +754,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_item
 	 */
 	public function test_prepare_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	protected function check_invited_user_data( $user, $data ) {

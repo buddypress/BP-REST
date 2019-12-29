@@ -42,7 +42,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	/**
@@ -162,7 +162,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	/**
@@ -279,7 +279,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group prepare_item
 	 */
 	public function test_prepare_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	protected function check_create_field_response( $response ) {
@@ -322,7 +322,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	public function test_context_param() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	public function update_additional_field( $value, $data, $attribute ) {

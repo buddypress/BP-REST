@@ -38,14 +38,14 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	/**
@@ -70,7 +70,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	/**
@@ -121,14 +121,14 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	 * @group update_item
 	 */
 	public function test_update_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	/**
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	/**
@@ -180,7 +180,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	 * @group prepare_item
 	 */
 	public function test_prepare_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	public function test_get_item_schema() {
