@@ -103,6 +103,59 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_items_edit_context() {
+		$a1 = $this->bp_factory->group->create();
+		$a2 = $this->bp_factory->group->create();
+		$a3 = $this->bp_factory->group->create();
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$admins = array();
+		$groups = $response->get_data();
+		foreach ( $groups as $group ) {
+			if ( isset( $group['admins'] ) ) {
+				$admins = array_merge( $admins, $group['admins'] );
+			}
+		}
+
+		$this->assertEmpty( $admins, 'Listing Admins should not be possible for unauthenticated users' );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_edit_context_users_private_data() {
+		$this->bp->set_current_user( $this->user );
+
+		$a1 = $this->bp_factory->group->create();
+		$a2 = $this->bp_factory->group->create();
+		$a3 = $this->bp_factory->group->create();
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$has_private_datas = false;
+		$admins = wp_list_pluck( $response->get_data(), 'admins' );
+
+		foreach ( $admins as $admin ) {
+			if ( isset( $admin['user_pass'] ) || isset( $admin['user_email'] ) || isset( $admin['user_activation_key'] ) ) {
+				$has_private_datas = true;
+			}
+		}
+
+		$this->assertFalse( $has_private_datas, 'Listing private data should not be possible for any user' );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
