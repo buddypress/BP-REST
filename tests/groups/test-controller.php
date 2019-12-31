@@ -124,7 +124,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 			}
 		}
 
-		$this->assertEmpty( $admins, 'Listing Admins should not be possible for regular users' );
+		$this->assertEmpty( $admins, 'Listing Admins should not be possible for unauthenticated users' );
 	}
 
 	/**

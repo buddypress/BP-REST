@@ -133,6 +133,11 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// Actually, query it.
 		$groups = groups_get_groups( $args );
 
+		// Users need (at least, should we be more restrictive ?) to be logged in to use the edit context.
+		if ( 'edit' === $request->get_param( 'context' ) && ! is_user_logged_in() ) {
+			$request->set_param( 'context', 'view' );
+		}
+
 		$retval = array();
 		foreach ( $groups['groups'] as $group ) {
 			$retval[] = $this->prepare_response_for_collection(
@@ -176,11 +181,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
-
-		// Users need (at least, should we be more restrictive ?) to be logged in to use the edit context.
-		if ( 'edit' === $request->get_param( 'context' ) && ! is_user_logged_in() ) {
-			$request->set_param( 'context', 'view' );
 		}
 
 		/**
