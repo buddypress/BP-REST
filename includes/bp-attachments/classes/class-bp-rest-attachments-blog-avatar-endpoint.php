@@ -130,7 +130,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param object            $avatar   The avatar object.
+		 * @param stdClass          $avatar   The avatar object.
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
@@ -187,7 +187,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 6.0.0
 	 *
-	 * @param object          $avatar  Avatar object.
+	 * @param stdClass        $avatar  Avatar object.
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response
 	 */

@@ -45,13 +45,7 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
-		if ( function_exists( 'wp_initialize_site' ) ) {
-			$this->setExpectedDeprecated( 'wpmu_new_blog' );
-		}
+		$this->markTestSkipped();
 
 		$u = $this->bp_factory->user->create();
 
@@ -71,13 +65,7 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 	 * @group get_item
 	 */
 	public function test_get_item_invalid_user_id() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
-		if ( function_exists( 'wp_initialize_site' ) ) {
-			$this->setExpectedDeprecated( 'wpmu_new_blog' );
-		}
+		$this->markTestSkipped();
 
 		$blog_id = $this->bp_factory->blog->create();
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $blog_id ) );
@@ -95,13 +83,7 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 	 * @group get_item
 	 */
 	public function test_get_item_invalid_blog_id() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
-		if ( function_exists( 'wp_initialize_site' ) ) {
-			$this->setExpectedDeprecated( 'wpmu_new_blog' );
-		}
+		$this->markTestSkipped();
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = rest_get_server()->dispatch( $request );
