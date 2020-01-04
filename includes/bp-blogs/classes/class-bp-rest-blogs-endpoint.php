@@ -368,7 +368,15 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 * @return stdClass|int
 	 */
 	public function get_blog_object( $blog_id ) {
-		$blogs = current( bp_blogs_get_blogs( [ 'include_blog_ids' => $blog_id ] ) );
+		$blogs = current(
+			bp_blogs_get_blogs(
+				array(
+					'include_blog_ids'  => $blog_id,
+					'per_page'          => 1,
+					'update_meta_cache' => false,
+				)
+			)
+		);
 
 		return $blogs[0] ?? 0;
 	}
