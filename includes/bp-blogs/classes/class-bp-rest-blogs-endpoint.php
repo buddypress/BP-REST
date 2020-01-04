@@ -183,7 +183,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	public function get_item( $request ) {
 		$blog = $this->get_blog_object( $request['id'] );
 
-		if ( ! $blog instanceof BP_Blogs_Blog ) {
+		if ( empty( $blog ) || ! is_object( $blog ) ) {
 			return new WP_Error(
 				'bp_rest_blog_invalid_id',
 				__( 'Invalid blog ID.', 'buddypress' ),
@@ -365,22 +365,12 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param int $blog_id Blog ID.
-	 * @return BP_Blogs_Blog|bool
+	 * @return stdClass|int
 	 */
-	protected function get_blog_object( $blog_id ) {
-		$blogs = bp_blogs_get_blogs(
-			array(
-				'include_blog_ids'  => array( $blog_id ),
-				'per_page'          => 1,
-				'update_meta_cache' => false,
-			)
-		);
+	public function get_blog_object( $blog_id ) {
+		$blogs = current( bp_blogs_get_blogs( [ 'include_blog_ids' => $blog_id ] ) );
 
-		if ( empty( $blogs['blogs'][0] ) ) {
-			return false;
-		}
-
-		return $blogs['blogs'][0];
+		return $blogs[0] ?? 0;
 	}
 
 	/**

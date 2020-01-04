@@ -27,7 +27,7 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 
 	public function test_register_routes() {
 		$routes   = $this->server->get_routes();
-		$endpoint = $this->endpoint_url . '(?P<blog_id>[\d]+)/avatar';
+		$endpoint = $this->endpoint_url . '(?P<id>[\d]+)/avatar';
 
 		// Single.
 		$this->assertArrayHasKey( $endpoint, $routes );
@@ -53,18 +53,18 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 			$this->setExpectedDeprecated( 'wpmu_new_blog' );
 		}
 
+		$u = $this->bp_factory->user->create();
+
+		$this->bp->set_current_user( $u );
+
 		$blog_id = $this->bp_factory->blog->create();
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $blog_id ) );
 		$request->set_param( 'context', 'view' );
+
 		$response = rest_get_server()->dispatch( $request );
 
-		$this->assertEquals( 200, $response->get_status() );
-
-		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
-
-		$this->assertTrue( isset( $all_data[0]['full'] ) && isset( $all_data[0]['thumb'] ) );
+		$this->assertErrorResponse( 'bp_rest_attachments_blog_avatar_no_image', $response, 500 );
 	}
 
 	/**
