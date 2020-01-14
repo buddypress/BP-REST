@@ -45,10 +45,10 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	public function register_routes() {
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->rest_base . '/(?P<blog_id>[\d]+)/avatar',
+			'/' . $this->rest_base . '/(?P<id>[\d]+)/avatar',
 			array(
 				'args'   => array(
-					'blog_id' => array(
+					'id' => array(
 						'description' => __( 'A unique numeric ID for the blog.', 'buddypress' ),
 						'type'        => 'integer',
 					),
@@ -96,7 +96,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 			$args[ $type ] = bp_get_blog_avatar(
 				array(
 					'type'          => $type,
-					'blog_id'       => $request['blog_id'],
+					'blog_id'       => $request['id'],
 					'admin_user_id' => $admin_user_admin,
 					'alt'           => $request['alt'],
 					'no_grav'       => (bool) $request['no_grav'],
@@ -130,7 +130,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param object            $avatar   The avatar object.
+		 * @param stdClass          $avatar   The avatar object.
 		 * @param WP_REST_Response  $response The response data.
 		 * @param WP_REST_Request   $request  The request sent to the API.
 		 */
@@ -149,9 +149,9 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 		$retval = true;
-		$blog   = $this->blogs_endpoint->get_blog_object( $request['blog_id'] );
+		$blog   = $this->blogs_endpoint->get_blog_object( $request['id'] );
 
-		if ( true === $retval && ! $blog instanceof BP_Blogs_Blog ) {
+		if ( true === $retval && ! is_object( $blog ) ) {
 			$retval = new WP_Error(
 				'bp_rest_blog_invalid_id',
 				__( 'Invalid group ID.', 'buddypress' ),
@@ -187,7 +187,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 6.0.0
 	 *
-	 * @param object          $avatar  Avatar object.
+	 * @param stdClass        $avatar  Avatar object.
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response
 	 */

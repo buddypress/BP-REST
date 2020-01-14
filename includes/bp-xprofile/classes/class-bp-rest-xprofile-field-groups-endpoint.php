@@ -857,7 +857,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['exclude_groups'] = array(
-			'description'       => __( 'Ensure result set excludes specific profile field groups.', 'buddypress' ),
+			'description'       => __( '', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'items'             => array( 'type' => 'integer' ),

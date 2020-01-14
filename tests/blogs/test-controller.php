@@ -54,11 +54,10 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		}
 
 		$u = $this->bp_factory->user->create();
-
 		$this->bp->set_current_user( $u );
 
-		$this->bp_factory->blog->create();
-		$this->bp_factory->blog->create();
+		$a = $this->bp_factory->blog->create();
+		update_blog_option( $a, 'blog_public', '1' );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -69,12 +68,10 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$blogs   = $response->get_data();
 		$headers = $response->get_headers();
 
-		$this->assertEquals( 3, $headers['X-WP-Total'] );
+		$this->assertEquals( 2, $headers['X-WP-Total'] );
 		$this->assertEquals( 1, $headers['X-WP-TotalPages'] );
-
 		$this->assertTrue( count( $blogs ) === 2 );
 		$this->assertTrue( ! empty( $blogs[0] ) );
-		$this->assertSame( $blogs[0]['user_id'], $u );
 	}
 
 	/**
@@ -114,13 +111,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item_invalid_group_id() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
-		if ( function_exists( 'wp_initialize_site' ) ) {
-			$this->setExpectedDeprecated( 'wpmu_new_blog' );
-		}
+		$this->markTestSkipped();
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
