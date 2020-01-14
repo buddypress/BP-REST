@@ -183,7 +183,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	public function get_item( $request ) {
 		$blog = $this->get_blog_object( $request['id'] );
 
-		if ( ! $blog instanceof BP_Blogs_Blog ) {
+		if ( empty( $blog->blog_id ) || empty( $blog->user_id ) ) {
 			return new WP_Error(
 				'bp_rest_blog_invalid_id',
 				__( 'Invalid blog ID.', 'buddypress' ),
@@ -371,8 +371,6 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		$blogs = bp_blogs_get_blogs(
 			array(
 				'include_blog_ids'  => array( $blog_id ),
-				'per_page'          => 1,
-				'update_meta_cache' => false,
 			)
 		);
 

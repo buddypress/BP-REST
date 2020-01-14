@@ -15,6 +15,10 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->endpoint     = new BP_REST_Blogs_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->blogs->id;
+		$this->admin        = $this->factory->user->create( array(
+			'role'       => 'administrator',
+			'user_email' => 'admin@example.com',
+		) );
 
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
@@ -65,7 +69,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$blogs   = $response->get_data();
 		$headers = $response->get_headers();
 
-		$this->assertEquals( 2, $headers['X-WP-Total'] );
+		$this->assertEquals( 3, $headers['X-WP-Total'] );
 		$this->assertEquals( 1, $headers['X-WP-TotalPages'] );
 
 		$this->assertTrue( count( $blogs ) === 2 );
@@ -85,7 +89,15 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$this->setExpectedDeprecated( 'wpmu_new_blog' );
 		}
 
-		$blog = $this->bp_factory->blog->create();
+		$blog = $this->bp_factory->blog->create(
+			array(
+				'title'   => 'The Foo Bar Blog',
+				'user_id' => $this->admin,
+			)
+		);
+
+		bp_blogs_record_existing_blogs();
+		update_blog_option( $blog, 'blog_public', '1' );
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $blog ) );
 		$request->set_param( 'context', 'view' );
@@ -207,7 +219,17 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$u = $this->bp_factory->user->create();
 		$this->bp->set_current_user( $u );
-		$blog_id  = $this->bp_factory->blog->create();
+
+		$blog_id = $this->bp_factory->blog->create(
+			array(
+				'title'   => 'The Foo Bar Blog',
+				'user_id' => $u,
+			)
+		);
+
+		bp_blogs_record_existing_blogs();
+		update_blog_option( $blog_id, 'blog_public', '1' );
+
 		$expected = 'bar_value';
 
 		bp_blogs_update_blogmeta( $blog_id, '_foo_field', $expected );
