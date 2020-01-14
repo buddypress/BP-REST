@@ -848,7 +848,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		$schema['properties']['is_banned'] = array(
 			'context'     => array( 'view', 'edit' ),
-			'description' => __( 'Whether the member has been banned from the G=group.', 'buddypress' ),
+			'description' => __( 'Whether the member has been banned from the group.', 'buddypress' ),
 			'type'        => 'boolean',
 		);
 
@@ -905,7 +905,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['roles'] = array(
-			'description'       => __( 'Ensure result set includes specific Group roles.', 'buddypress' ),
+			'description'       => __( 'Ensure result set includes specific group roles.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'items'             => array(
