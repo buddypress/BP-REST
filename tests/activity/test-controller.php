@@ -265,6 +265,51 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_items
 	 */
+	public function test_get_items_with_the_groups_scope() {
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$this->bp->set_current_user( $u );
+
+		$component = buddypress()->groups->id;
+
+		// Current user is $this->user.
+		$g1 = $this->bp_factory->group->create( array(
+			'status' => 'public',
+		) );
+
+		$a2 = $this->bp_factory->activity->create( array(
+			'component' => $component,
+			'type'      => 'created_group',
+			'user_id'   => $u,
+			'item_id'   => $g1,
+		) );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'activity_update',
+			'user_id'       => $u,
+			'item_id'       => $g1,
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'user_id' => $u,
+			'scope'   => 'groups',
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
+		
+		$this->assertContains( $a1, $a_ids );
+		$this->assertContains( $a2, $a_ids );
+	}
+
+	/**
+	 * @group get_items
+	 */
 	public function test_get_items_with_favorite() {
 		$this->bp->set_current_user( $this->user );
 
