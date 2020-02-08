@@ -132,14 +132,14 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	/**
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	/**
@@ -250,11 +250,11 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	public function test_prepare_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	protected function check_component_data( $component, $data ) {

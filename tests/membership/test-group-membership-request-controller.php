@@ -608,7 +608,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 	 * @group get_item
 	 */
 	public function test_prepare_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	protected function check_user_data( $user, $data, $member_object ) {

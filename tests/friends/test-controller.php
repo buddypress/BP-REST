@@ -189,7 +189,7 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$all_data = $response->get_data();
 
-		$this->assertTrue( 1 === $all_data[0]['is_confirmed'] );
+		$this->assertTrue( $all_data[0]['is_confirmed'] );
 	}
 
 	/**

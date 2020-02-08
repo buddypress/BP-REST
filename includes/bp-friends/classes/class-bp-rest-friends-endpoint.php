@@ -556,7 +556,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Prepares friendship data for return as an object.
+	 * Prepares friendship data to return as an object.
 	 *
 	 * @since 6.0.0
 	 *
@@ -569,7 +569,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			'id'           => $friendship->id,
 			'initiator_id' => $friendship->initiator_user_id,
 			'friend_id'    => $friendship->friend_user_id,
-			'is_confirmed' => $friendship->is_confirmed,
+			'is_confirmed' => (bool) $friendship->is_confirmed,
 			'date_created' => bp_rest_prepare_date_response( $friendship->date_created ),
 		);
 
@@ -604,6 +604,54 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Edit some arguments for the endpoint's CREATABLE and EDITABLE methods.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$key  = 'get_item';
+
+		if ( WP_REST_Server::EDITABLE === $method ) {
+			$key = 'update_item';
+		} elseif ( WP_REST_Server::CREATABLE === $method ) {
+			$key = 'create_item';
+
+			// Remothe the ID for POST requests.
+			unset( $args['id'] );
+
+			// Those fields are required.
+			$args['initiator_id']['required'] = true;
+			$args['friend_id']['required']    = true;
+
+			// This one is optional.
+			$args['force'] = array(
+				'description'       => __( 'Whether to force friendship acceptance.', 'buddypress' ),
+				'default'           => false,
+				'type'              => 'boolean',
+				'sanitize_callback' => 'rest_sanitize_boolean',
+				'validate_callback' => 'rest_validate_request_arg',
+			);
+
+		} elseif ( WP_REST_Server::DELETABLE === $method ) {
+			$key = 'delete_item';
+		}
+
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 6.0.0
+		 *
+		 * @param array  $args   Query arguments.
+		 * @param string $method HTTP method of the request.
+		 */
+		return apply_filters( "bp_rest_friends_{$key}_query_arguments", $args, $method );
+	}
+
+	/**
 	 * Get the friends schema, conforming to JSON Schema.
 	 *
 	 * @since 6.0.0
@@ -624,20 +672,18 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 				'initiator_id' => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'User ID of the friendship initiator.', 'buddypress' ),
-					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'friend_id'    => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'User ID of the `friend` - the one invited to the friendship', 'buddypress' ),
-					'readonly'    => true,
+					'description' => __( 'User ID of the `friend` - the one invited to the friendship.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'is_confirmed' => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Has the friendship been confirmed/accepted', 'buddypress' ),
-					'type'        => 'integer',
+					'description' => __( 'Whether the friendship been confirmed/accepted.', 'buddypress' ),
 					'readonly'    => true,
+					'type'        => 'boolean',
 				),
 				'date_created' => array(
 					'context'     => array( 'view', 'edit' ),
@@ -690,7 +736,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['id'] = array(
-			'description'       => __( 'ID of specific friendship to retrieve.', 'buddypress' ),
+			'description'       => __( 'ID of a specific friendship to retrieve.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
@@ -698,7 +744,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['initiator_id'] = array(
-			'description'       => __( 'ID of friendship initiator.', 'buddypress' ),
+			'description'       => __( 'ID of the friendship initiator.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
@@ -706,7 +752,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['friend_id'] = array(
-			'description'       => __( 'ID of specific friendship to retrieve.', 'buddypress' ),
+			'description'       => __( 'ID of a specific friendship to retrieve.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
@@ -723,7 +769,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['order'] = array(
-			'description'       => __( 'Order sort attribute ascending or descending.', 'buddypress' ),
+			'description'       => __( 'Order results ascending or descending.', 'buddypress' ),
 			'default'           => 'desc',
 			'type'              => 'string',
 			'enum'              => array( 'asc', 'desc' ),

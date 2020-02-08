@@ -133,6 +133,11 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// Actually, query it.
 		$groups = groups_get_groups( $args );
 
+		// Users need (at least, should we be more restrictive ?) to be logged in to use the edit context.
+		if ( 'edit' === $request->get_param( 'context' ) && ! is_user_logged_in() ) {
+			$request->set_param( 'context', 'view' );
+		}
+
 		$retval = array();
 		foreach ( $groups['groups'] as $group ) {
 			$retval[] = $this->prepare_response_for_collection(
@@ -647,6 +652,20 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 
 			foreach ( (array) $admin_mods['members'] as $user ) {
+				// Make sure to unset private data.
+				$private_keys = array_intersect(
+					array_keys( get_object_vars( $user ) ),
+					array(
+						'user_pass',
+						'user_email',
+						'user_activation_key',
+					)
+				);
+
+				foreach ( $private_keys as $private_key ) {
+					unset( $user->{$private_key} );
+				}
+
 				if ( ! empty( $user->is_admin ) ) {
 					$data['admins'][] = $user;
 				} else {

@@ -223,7 +223,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 				);
 			}
 
-			// Set the group member.
+			// Get the group member.
 			$group_member = new BP_Groups_Member( $user->ID, $group->id );
 		} else {
 			$role         = $request['role'];
@@ -334,28 +334,21 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		} else {
 
 			$loggedin_user_id = bp_loggedin_user_id();
-			if ( $loggedin_user_id === $user->ID && 'view' === $request['context'] ) {
 
-				// Users may only freely join public groups.
-				if ( true === $retval && (
-					! bp_current_user_can( 'groups_join_group', array( 'group_id' => $group->id ) )
-					|| groups_is_user_member( $loggedin_user_id, $group->id ) // As soon as they are not already members.
-					|| groups_is_user_banned( $loggedin_user_id, $group->id ) // And as soon as they are not banned from it.
-				) ) {
-					$retval = new WP_Error(
-						'bp_rest_group_member_failed_to_join',
-						__( 'Could not join the group.', 'buddypress' ),
-						array(
-							'status' => 500,
-						)
-					);
-				}
-
-				if ( true === $retval ) {
-					$retval = true;
-				}
-			} else {
-				$retval = false;
+			// Users may only freely join public groups.
+			if ( true === $retval && (
+				! bp_current_user_can( 'groups_join_group', array( 'group_id' => $group->id ) )
+				|| groups_is_user_member( $loggedin_user_id, $group->id ) // As soon as they are not already members.
+				|| groups_is_user_banned( $loggedin_user_id, $group->id ) // And as soon as they are not banned from it.
+				|| $loggedin_user_id !== $user->ID // You can only add yourself to a group.
+			) ) {
+				$retval = new WP_Error(
+					'bp_rest_group_member_failed_to_join',
+					__( 'Could not join the group.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
 			}
 		}
 
@@ -794,6 +787,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 					array(
 						'description' => __( 'A unique numeric ID for the Member to add to the Group.', 'buddypress' ),
 						'default'     => bp_loggedin_user_id(),
+						'required'    => true,
 						'readonly'    => false,
 					)
 				);
@@ -842,30 +836,26 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 		$schema['properties']['is_mod'] = array(
 			'context'     => array( 'view', 'edit' ),
-			'description' => __( '`1` if this member is a Group moderator, `0` otherwise.', 'buddypress' ),
-			'type'        => 'integer',
-			'enum'        => array( 0, 1 ),
+			'description' => __( 'Whether the member is a group moderator.', 'buddypress' ),
+			'type'        => 'boolean',
 		);
 
 		$schema['properties']['is_banned'] = array(
 			'context'     => array( 'view', 'edit' ),
-			'description' => __( '`1` if this member has been banned from the Group, `0` otherwise.', 'buddypress' ),
-			'type'        => 'integer',
-			'enum'        => array( 0, 1 ),
+			'description' => __( 'Whether the member has been banned from the group.', 'buddypress' ),
+			'type'        => 'boolean',
 		);
 
 		$schema['properties']['is_admin'] = array(
 			'context'     => array( 'view', 'edit' ),
-			'description' => __( '`1` if this member is a Group administrator, `0` otherwise.', 'buddypress' ),
-			'type'        => 'integer',
-			'enum'        => array( 0, 1 ),
+			'description' => __( 'Whether the member is a group administrator.', 'buddypress' ),
+			'type'        => 'boolean',
 		);
 
 		$schema['properties']['is_confirmed'] = array(
 			'context'     => array( 'view', 'edit' ),
-			'description' => __( '`1` if the membership of this user has been confirmed, `0` otherwise.', 'buddypress' ),
-			'type'        => 'integer',
-			'enum'        => array( 0, 1 ),
+			'description' => __( 'Whether the membership of this user has been confirmed.', 'buddypress' ),
+			'type'        => 'boolean',
 		);
 
 		$schema['properties']['date_modified'] = array(
@@ -909,7 +899,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['roles'] = array(
-			'description'       => __( 'Ensure result set includes specific Group roles.', 'buddypress' ),
+			'description'       => __( 'Ensure result set includes specific group roles.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'items'             => array(

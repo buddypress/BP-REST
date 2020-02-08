@@ -209,7 +209,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 * @group prepare_item
 	 */
 	public function test_prepare_item() {
-		return true;
+		$this->markTestSkipped();
 	}
 
 	public function test_get_item_schema() {
