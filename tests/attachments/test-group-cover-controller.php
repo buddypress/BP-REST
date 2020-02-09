@@ -85,7 +85,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	public function test_create_item_no_valid_image_directory() {
 		$this->bp->set_current_user( $this->user_id );
 
-		$image_file = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-man.jpg';
+		$image_file = __DIR__ . '/../assets/test-image.jpg';
 
 		$_FILES['file'] = array(
 			'tmp_name' => $image_file,

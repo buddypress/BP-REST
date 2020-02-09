@@ -101,7 +101,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	public function test_create_item() {
 		$reset_files = $_FILES;
 		$reset_post = $_POST;
-		$image_file  = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-group.png';
+		$image_file = __DIR__ . '/../assets/test-image.jpg';
 
 		$this->bp->set_current_user( $this->user_id );
 

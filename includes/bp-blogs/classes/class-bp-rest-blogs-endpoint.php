@@ -376,7 +376,11 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		return $blogs[0] ?? 0;
+		if ( ! empty( $blogs[0] ) ) {
+			return $blogs[0];
+		}
+
+		return 0;
 	}
 
 	/**
