@@ -108,10 +108,10 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 
 		$_FILES['file'] = array(
 			'tmp_name' => $image_file,
-			'name'     => 'mystery-man.jpg',
+			'name'     => 'test-image.jpg',
 			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => filesize( $image_file ),
+			'size'     => 1000,
 		);
 
 		$_POST['action'] = 'bp_avatar_upload';

@@ -89,10 +89,10 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 
 		$_FILES['file'] = array(
 			'tmp_name' => $image_file,
-			'name'     => 'mystery-man.jpg',
+			'name'     => 'test-image.jpg',
 			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => filesize( $image_file ),
+			'size'     => 1000,
 		);
 
 		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );

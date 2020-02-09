@@ -110,10 +110,10 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 
 		$_FILES['file'] = array(
 			'tmp_name' => $image_file,
-			'name'     => 'mystery-group.png',
+			'name'     => 'test-image.jpg',
 			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => filesize( $image_file ),
+			'size'     => 1000,
 		);
 
 		$_POST['action'] = 'bp_avatar_upload';
