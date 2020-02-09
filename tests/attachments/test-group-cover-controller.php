@@ -82,29 +82,6 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	/**
 	 * @group create_item
 	 */
-	public function test_create_item_no_valid_image_directory() {
-		$this->bp->set_current_user( $this->user_id );
-
-		$image_file = __DIR__ . '/assets/test-image.jpg';
-
-		$_FILES['file'] = array(
-			'tmp_name' => $image_file,
-			'name'     => 'test-image.jpg',
-			'type'     => 'image/jpeg',
-			'error'    => 0,
-			'size'     => 1000,
-		);
-
-		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
-		$request->set_file_params( $_FILES );
-		$response = rest_get_server()->dispatch( $request );
-
-		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_upload_error', $response, 500 );
-	}
-
-	/**
-	 * @group create_item
-	 */
 	public function test_create_item_empty_image() {
 		$this->bp->set_current_user( $this->user_id );
 

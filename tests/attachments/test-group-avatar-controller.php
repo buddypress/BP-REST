@@ -111,16 +111,16 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$_FILES['file'] = array(
 			'tmp_name' => $image_file,
 			'name'     => 'test-image.jpg',
-			'type'     => 'image/jpeg',
+			'type'     => 'image/jpg',
 			'error'    => 0,
-			'size'     => 1000,
+			'size'     => 2000,
 		);
 
 		$_POST['action'] = 'bp_avatar_upload';
 
 		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
 		$request->set_file_params( $_FILES );
-		$response = rest_get_server()->dispatch( $request );
+		$response = $this->server->dispatch( $request );
 
 		remove_filter( 'pre_move_uploaded_file', array( $this, 'copy_file' ), 10, 3 );
 		remove_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
