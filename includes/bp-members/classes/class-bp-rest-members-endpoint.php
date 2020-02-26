@@ -379,7 +379,13 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'extra_capabilities' => array(),
 			'registered_date'    => '',
 			'xprofile'           => $this->xprofile_data( $user->ID ),
+			'friendship_status' => false,
 		);
+
+		// Check if user is friends with current logged in user.
+		if ( bp_is_active( 'friends' ) && get_current_user_id() !== $user->ID ) {
+			$data['friendship_status'] = ( 'is_friend' === friends_check_friendship_status( get_current_user_id(), $user->ID ) );
+		}
 
 		if ( 'edit' === $context ) {
 			$data['registered_date']    = bp_rest_prepare_date_response( $user->data->user_registered );
@@ -683,6 +689,12 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				'xprofile'           => array(
 					'description' => __( 'Member XProfile groups and its fields.', 'buddypress' ),
 					'type'        => 'array',
+					'context'     => array( 'view', 'edit' ),
+					'readonly'    => true,
+				),
+				'friendship_status'  => array(
+					'description' => __( 'Friendship relation with, current, logged in user.', 'buddypress' ),
+					'type'        => 'bool',
 					'context'     => array( 'view', 'edit' ),
 					'readonly'    => true,
 				),
