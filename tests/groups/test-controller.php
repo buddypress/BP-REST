@@ -414,16 +414,12 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
 
-		$params = $this->set_group_data(
-			array(
-				'group_types' => 'foo',
-			)
-		);
+		$params = $this->set_group_data( array( 'types' => 'foo' ) );
 		$request->set_body( wp_json_encode( $params ) );
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertEquals( bp_groups_get_group_type( $response->get_data()[0]['id'] ), 'foo' );
+		$this->assertEquals( $response->get_data()[0]['types'], array( 'foo' ) );
 	}
 
 	/**
@@ -516,12 +512,12 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
 		$request->add_header( 'content-type', 'application/json' );
 
-		$params = $this->set_group_data( array( 'group_types' => 'foo' ) );
+		$params = $this->set_group_data( array( 'types' => 'foo' ) );
 		$request->set_body( wp_json_encode( $params ) );
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertEquals( bp_groups_get_group_type( $response->get_data()[0]['id'], false ), array( 'foo', 'bar' ) );
+		$this->assertEquals( $response->get_data()[0]['types'], array( 'foo' ) );
 	}
 
 	/**
@@ -753,6 +749,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $group->slug, $data['slug'] );
 		$this->assertEquals( $group->status, $data['status'] );
 		$this->assertEquals( $group->parent_id, $data['parent_id'] );
+		$this->assertEquals( [], $data['types'] );
 
 		if ( 'view' === $context ) {
 			$this->assertEquals( wpautop( $group->description ), $data['description']['rendered'] );
@@ -817,7 +814,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 15, count( $properties ) );
+		$this->assertEquals( 16, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'creator_id', $properties );
 		$this->assertArrayHasKey( 'name', $properties );
@@ -829,6 +826,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'date_created', $properties );
 		$this->assertArrayHasKey( 'admins', $properties );
 		$this->assertArrayHasKey( 'mods', $properties );
+		$this->assertArrayHasKey( 'types', $properties );
 		$this->assertArrayHasKey( 'parent_id', $properties );
 		$this->assertArrayHasKey( 'total_member_count', $properties );
 		$this->assertArrayHasKey( 'last_activity', $properties );

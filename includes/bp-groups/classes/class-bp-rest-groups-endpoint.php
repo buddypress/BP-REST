@@ -314,8 +314,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		// Set group type(s).
-		if ( ! empty( $request['group_types'] ) ) {
-			bp_groups_set_group_type( $group_id, $request['group_types'] );
+		if ( ! empty( $request['types'] ) ) {
+			bp_groups_set_group_type( $group_id, $request['types'] );
 		}
 
 		$retval = array(
@@ -607,11 +607,18 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'name'               => bp_get_group_name( $item ),
 			'slug'               => bp_get_group_slug( $item ),
 			'status'             => bp_get_group_status( $item ),
+			'types'              => array(),
 			'admins'             => array(),
 			'mods'               => array(),
 			'total_member_count' => null,
 			'last_activity'      => null,
 		);
+
+		// Get group type(s).
+		$types = bp_groups_get_group_type( $item->id, false );
+		if ( ! empty( $types ) ) {
+			$data['types'] = (array) $types;
+		}
 
 		// Get item schema.
 		$schema = $this->get_item_schema();
@@ -773,14 +780,14 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			$prepared_group->parent_id = $request['parent_id'];
 		}
 
-		// Set group type(s).
-		if ( isset( $prepared_group->group_id ) && isset( $request['group_types'] ) ) {
+		// Update group type(s).
+		if ( isset( $prepared_group->group_id ) && isset( $request['types'] ) ) {
 
 			// Append on update. Add on creation.
 			$append = WP_REST_Server::EDITABLE === $request->get_method();
 
 			// Add/Append group type(s).
-			bp_groups_set_group_type( $prepared_group->group_id, $request['group_types'], $append );
+			bp_groups_set_group_type( $prepared_group->group_id, $request['types'], $append );
 		}
 
 		/**
@@ -938,7 +945,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			$args['description']['type'] = 'string';
 
 			// Add group types.
-			$args['group_types'] = array(
+			$args['types'] = array(
 				'description'       => __( 'Set type(s) for a group.', 'buddypress' ),
 				'type'              => 'array',
 				'enum'              => bp_groups_get_group_types(),
@@ -1066,6 +1073,16 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'readonly'    => true,
 					'type'        => 'string',
 					'format'      => 'date-time',
+				),
+				'types'              => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'The type(s) of the Group.', 'buddypress' ),
+					'readonly'    => true,
+					'enum'        => bp_groups_get_group_types(),
+					'type'        => 'array',
+					'items'       => array(
+						'type' => 'string',
+					),
 				),
 				'admins'             => array(
 					'context'     => array( 'edit' ),
