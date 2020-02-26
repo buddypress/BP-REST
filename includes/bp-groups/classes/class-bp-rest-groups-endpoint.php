@@ -313,6 +313,11 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			return $fields_update;
 		}
 
+		// Set group type(s).
+		if ( ! empty( $request['group_types'] ) ) {
+			bp_groups_set_group_type( $group_id, $request['group_types'] );
+		}
+
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $group, $request )
