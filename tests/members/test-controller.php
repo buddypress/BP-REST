@@ -438,6 +438,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'registered_date', $properties );
 		$this->assertArrayHasKey( 'password', $properties );
 		$this->assertArrayHasKey( 'roles', $properties );
+		$this->assertArrayHasKey( 'member_types', $properties );
 		$this->assertArrayHasKey( 'xprofile', $properties );
 		$this->assertArrayHasKey( 'friendship_status', $properties );
 	}
