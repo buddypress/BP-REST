@@ -283,6 +283,16 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	public function get_item( $request ) {
 		$activity = $this->get_activity_object( $request );
 
+		if ( empty( $activity->id ) ) {
+			return new WP_Error(
+				'bp_rest_invalid_id',
+				__( 'Invalid activity ID.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $activity, $request )
