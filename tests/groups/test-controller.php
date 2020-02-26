@@ -416,7 +416,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$params = $this->set_group_data(
 			array(
-				'group_types' => array( 'foo' ),
+				'group_types' => 'foo',
 			)
 		);
 		$request->set_body( wp_json_encode( $params ) );
