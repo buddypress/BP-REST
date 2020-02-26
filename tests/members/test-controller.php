@@ -395,6 +395,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'full', $data['avatar_urls'] );
 		$this->assertArrayHasKey( 'member_types', $data );
 		$this->assertArrayHasKey( 'xprofile', $data );
+		$this->assertArrayHasKey( 'friendship_status', $data );
 		$this->assertEquals(
 			bp_core_get_user_domain( $data['id'], $user->user_nicename, $user->user_login ),
 			$data['link']
@@ -426,7 +427,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 13, count( $properties ) );
+		$this->assertEquals( 14, count( $properties ) );
 		$this->assertArrayHasKey( 'avatar_urls', $properties );
 		$this->assertArrayHasKey( 'capabilities', $properties );
 		$this->assertArrayHasKey( 'extra_capabilities', $properties );
@@ -438,6 +439,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'password', $properties );
 		$this->assertArrayHasKey( 'roles', $properties );
 		$this->assertArrayHasKey( 'xprofile', $properties );
+		$this->assertArrayHasKey( 'friendship_status', $properties );
 	}
 
 	public function test_context_param() {
