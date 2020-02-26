@@ -607,18 +607,12 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'name'               => bp_get_group_name( $item ),
 			'slug'               => bp_get_group_slug( $item ),
 			'status'             => bp_get_group_status( $item ),
-			'types'              => array(),
+			'types'              => bp_groups_get_group_type( $item->id, false ),
 			'admins'             => array(),
 			'mods'               => array(),
 			'total_member_count' => null,
 			'last_activity'      => null,
 		);
-
-		// Get group type(s).
-		$types = bp_groups_get_group_type( $item->id, false );
-		if ( ! empty( $types ) ) {
-			$data['types'] = (array) $types;
-		}
 
 		// Get item schema.
 		$schema = $this->get_item_schema();
@@ -626,14 +620,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// Avatars.
 		if ( ! empty( $schema['properties']['avatar_urls'] ) ) {
 			$data['avatar_urls'] = array(
-				'thumb' => bp_core_fetch_avatar(
-					array(
-						'html'    => false,
-						'object'  => 'group',
-						'item_id' => $item->id,
-						'type'    => 'thumb',
-					)
-				),
 				'full'  => bp_core_fetch_avatar(
 					array(
 						'html'    => false,
@@ -642,7 +628,20 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 						'type'    => 'full',
 					)
 				),
+				'thumb' => bp_core_fetch_avatar(
+					array(
+						'html'    => false,
+						'object'  => 'group',
+						'item_id' => $item->id,
+						'type'    => 'thumb',
+					)
+				),
 			);
+		}
+
+		// Get group type(s).
+		if ( false === $data['types'] ) {
+			$data['types'] = array();
 		}
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
@@ -710,7 +709,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return stdClass|WP_Error Object or WP_Error.
+	 * @return stdClass|WP_Error
 	 */
 	protected function prepare_item_for_database( $request ) {
 		$prepared_group = new stdClass();

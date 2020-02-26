@@ -393,22 +393,28 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$data['mention_name'] = bp_activity_get_user_mentionname( $user->ID );
 		}
 
+		// Get item schema.
+		$schema = $this->get_item_schema();
+
 		// Avatars.
-		$data['avatar_urls'] = array(
-			'full'  => bp_core_fetch_avatar(
-				array(
-					'item_id' => $user->ID,
-					'html'    => false,
-					'type'    => 'full',
-				)
-			),
-			'thumb' => bp_core_fetch_avatar(
-				array(
-					'item_id' => $user->ID,
-					'html'    => false,
-				)
-			),
-		);
+		if ( ! empty( $schema['properties']['avatar_urls'] ) ) {
+			$data['avatar_urls'] = array(
+				'full'  => bp_core_fetch_avatar(
+					array(
+						'item_id' => $user->ID,
+						'html'    => false,
+						'type'    => 'full',
+					)
+				),
+				'thumb' => bp_core_fetch_avatar(
+					array(
+						'item_id' => $user->ID,
+						'html'    => false,
+						'type'    => 'thumb',
+					)
+				),
+			);
+		}
 
 		// Fallback.
 		if ( false === $data['member_types'] ) {
@@ -564,6 +570,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'description'       => __( 'Set type(s) for a member.', 'buddypress' ),
 			'type'              => 'string',
 			'enum'              => bp_get_member_types(),
+			'context'           => array( 'edit' ),
 			'sanitize_callback' => 'bp_rest_sanitize_member_types',
 			'validate_callback' => 'bp_rest_sanitize_member_types',
 		);
@@ -575,7 +582,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			unset( $args['mention_name'] );
 
 			// Add member type args.
-			$args['member_type'] = $member_type_args;
+			$args['types'] = $member_type_args;
 
 			// But we absolutely need the email.
 			$args['email'] = array(
@@ -595,7 +602,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			unset( $args['mention_name'], $args['user_login'], $args['password'] );
 
 			// Add member type args.
-			$args['member_type'] = $member_type_args;
+			$args['types'] = $member_type_args;
 		} elseif ( WP_REST_Server::DELETABLE === $method ) {
 			$key = 'delete_item';
 		}
