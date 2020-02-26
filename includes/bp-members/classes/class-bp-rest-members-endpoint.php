@@ -436,6 +436,15 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$prepared_user->user_login = $request['user_login'];
 		}
 
+		// Set member type.
+		if ( isset( $prepared_user->ID ) && isset( $request['member_type'] ) ) {
+
+			// Append on update. Add on creation.
+			$append = WP_REST_Server::EDITABLE === $request->get_method();
+
+			bp_set_member_type( $prepared_user->ID, $request['member_type'], $append );
+		}
+
 		/**
 		 * Filters an user object before it is inserted or updated via the REST API.
 		 *
@@ -550,11 +559,23 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
 		$key  = 'get_item';
 
+		// Add member type args.
+		$member_type_args = array(
+			'description'       => __( 'Set type(s) for a member.', 'buddypress' ),
+			'type'              => 'string',
+			'enum'              => bp_get_member_types(),
+			'sanitize_callback' => 'bp_rest_sanitize_member_types',
+			'validate_callback' => 'bp_rest_sanitize_member_types',
+		);
+
 		if ( WP_REST_Server::CREATABLE === $method ) {
 			$key = 'create_item';
 
 			// We don't need the mention name to create a user.
 			unset( $args['mention_name'] );
+
+			// Add member type args.
+			$args['member_type'] = $member_type_args;
 
 			// But we absolutely need the email.
 			$args['email'] = array(
@@ -572,6 +593,9 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			 * 2. The password belongs to the Settings endpoint parameter.
 			 */
 			unset( $args['mention_name'], $args['user_login'], $args['password'] );
+
+			// Add member type args.
+			$args['member_type'] = $member_type_args;
 		} elseif ( WP_REST_Server::DELETABLE === $method ) {
 			$key = 'delete_item';
 		}

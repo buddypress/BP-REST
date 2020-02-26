@@ -768,6 +768,16 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			$prepared_group->parent_id = $request['parent_id'];
 		}
 
+		// Set group type(s).
+		if ( isset( $prepared_group->group_id ) && isset( $request['group_types'] ) ) {
+
+			// Append on update. Add on creation.
+			$append = WP_REST_Server::EDITABLE === $request->get_method();
+
+			// Add/Append group type(s).
+			bp_groups_set_group_type( $prepared_group->group_id, $request['group_types'], $append );
+		}
+
 		/**
 		 * Filters a group before it is inserted or updated via the REST API.
 		 *
@@ -921,6 +931,18 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
 			$key                         = 'create_item';
 			$args['description']['type'] = 'string';
+
+			// Add group types.
+			$args['group_types'] = array(
+				'description'       => __( 'Set type(s) for a group.', 'buddypress' ),
+				'type'              => 'array',
+				'enum'              => bp_groups_get_group_types(),
+				'sanitize_callback' => 'bp_rest_sanitize_group_types',
+				'validate_callback' => 'bp_rest_validate_group_types',
+				'items'             => array(
+					'type' => 'string',
+				),
+			);
 
 			if ( WP_REST_Server::EDITABLE === $method ) {
 				$key = 'update_item';
