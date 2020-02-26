@@ -382,8 +382,9 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'friendship_status' => false,
 		);
 
-		if ( bp_is_active( 'friends' ) ) {
-			$data['friendship_status'] = friends_check_friendship_status( get_current_user_id(), $user->ID );
+		// Check if user is friends with current logged in user.
+		if ( bp_is_active( 'friends' ) && get_current_user_id() !== $user->ID ) {
+			$data['friendship_status'] = ( 'is_friend' === friends_check_friendship_status( get_current_user_id(), $user->ID ) );
 		}
 
 		if ( 'edit' === $context ) {
