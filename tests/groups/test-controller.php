@@ -423,7 +423,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertEquals( bp_groups_get_group_type( $response->get_data()[0]['id'] ?? 0 ), 'foo' );
+		$this->assertEquals( bp_groups_get_group_type( $response->get_data()[0]['id'] ), 'foo' );
 	}
 
 	/**
@@ -500,6 +500,28 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$group = $this->endpoint->get_group_object( $new_data['id'] );
 		$this->assertEquals( $params['description'], $group->description );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_group_type() {
+		bp_groups_register_group_type( 'foo' );
+		bp_groups_register_group_type( 'bar' );
+
+		bp_groups_set_group_type( $this->group_id, 'bar' );
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_group_data( array( 'group_types' => 'foo' ) );
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( bp_groups_get_group_type( $response->get_data()[0]['id'], false ), array( 'foo', 'bar' ) );
 	}
 
 	/**
