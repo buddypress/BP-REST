@@ -406,6 +406,29 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group create_item
 	 */
+	public function test_create_item_with_group_type() {
+		bp_groups_register_group_type( 'foo' );
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_group_data(
+			array(
+				'group_types' => array( 'foo' ),
+			)
+		);
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( bp_groups_get_group_type( $response->get_data()[0]['id'] ?? 0 ), 'foo' );
+	}
+
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item_with_no_name() {
 		$this->bp->set_current_user( $this->user );
 
