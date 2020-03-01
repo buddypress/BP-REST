@@ -24,6 +24,8 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 			$this->server = rest_get_server();
 		}
 
+		$this->image_file = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-man.jpg';
+
 		$this->old_current_user = get_current_user_id();
 	}
 
@@ -99,7 +101,6 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 	public function test_create_item() {
 		$reset_files = $_FILES;
 		$reset_post = $_POST;
-		$image_file  = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-man.jpg';
 
 		$this->bp->set_current_user( $this->user_id );
 
@@ -107,11 +108,11 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 		add_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
 
 		$_FILES['file'] = array(
-			'tmp_name' => $image_file,
+			'tmp_name' => $this->image_file,
 			'name'     => 'mystery-man.jpg',
 			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => filesize( $image_file ),
+			'size'     => filesize( $this->image_file ),
 		);
 
 		$_POST['action'] = 'bp_avatar_upload';
@@ -156,7 +157,7 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 		return @copy( $file['tmp_name'], $new_file );
 	}
 
-	public function return_100( $size ) {
+	public function return_100() {
 		return 100;
 	}
 
