@@ -1,35 +1,35 @@
 {
-    "name": "bp-rest",
-    "title": "BP-REST",
-    "version": "0.1.0",
-    "description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
-    "devDependencies": {
-        "grunt": "^1.0.4",
-        "grunt-check-dependencies": "^1.0.0",
-        "grunt-checktextdomain": "~1.0.1",
-        "grunt-legacy-util": "^1.1.1",
-        "matchdep": "^2.0.0"
-    },
-    "keywords": [
-        "API",
-        "BuddyPress",
-        "REST API",
-        "bp",
-        "WordPress"
-    ],
-    "homepage": "https://github.com/buddypress/BP-REST",
-    "bugs": "https://github.com/buddypress/BP-REST/issues",
-    "license": "GPL-2.0+",
-    "authors": {
-        "name": "The BuddyPress Community",
-        "homepage": "https://buddypress.org/"
-    },
-    "support": {
-        "issues": "https://github.com/buddypress/BP-REST/issues",
-        "source": "https://github.com/buddypress/BP-REST"
-    },
-    "repository": {
-        "type": "git",
-        "url": "buddypress/BP-REST"
-    }
+  "name": "bp-rest",
+  "title": "BP-REST",
+  "version": "0.1.0",
+  "description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
+  "devDependencies": {
+    "grunt": "^1.0.4",
+    "grunt-check-dependencies": "^1.0.0",
+    "grunt-checktextdomain": "~1.0.1",
+    "grunt-legacy-util": "^1.1.1",
+    "matchdep": "^2.0.0"
+  },
+  "keywords": [
+    "API",
+    "BuddyPress",
+    "REST API",
+    "bp",
+    "WordPress"
+  ],
+  "homepage": "https://github.com/buddypress/BP-REST",
+  "bugs": "https://github.com/buddypress/BP-REST/issues",
+  "license": "GPL-2.0+",
+  "authors": {
+    "name": "The BuddyPress Community",
+    "homepage": "https://buddypress.org/"
+  },
+  "support": {
+    "issues": "https://github.com/buddypress/BP-REST/issues",
+    "source": "https://github.com/buddypress/BP-REST"
+  },
+  "repository": {
+    "type": "git",
+    "url": "buddypress/BP-REST"
+  }
 }
