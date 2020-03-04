@@ -105,6 +105,31 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	/**
 	 * @group create_item
 	 */
+	public function test_create_item_image_upload_disabled() {
+		$this->bp->set_current_user( $this->user_id );
+
+		// Disabling group cover upload.
+		add_filter( 'bp_disable_group_cover_image_uploads', '__return_true' );
+
+		$image_file = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-man.jpg';
+
+		$_FILES['file'] = array(
+			'tmp_name' => $image_file,
+			'name'     => 'mystery-man.jpg',
+			'type'     => 'image/jpeg',
+			'error'    => 0,
+			'size'     => filesize( $image_file ),
+		);
+
+		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
+		$request->set_file_params( $_FILES );
+		$response = $this->server->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_disabled', $response, 500 );
+	}
+
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item_empty_image() {
 		$this->bp->set_current_user( $this->user_id );
 
