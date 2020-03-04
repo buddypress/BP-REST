@@ -7,7 +7,6 @@
  * Author URI: https://buddypress.org/
  * Version: 0.1.0
  * Text Domain: buddypress
- * Domain Path: languages/
  * Requires at least: 4.7
  * Tested up to: 5.1
  * Requires PHP: 5.6
@@ -19,7 +18,7 @@
  */
 
 /**
- * Copyright (c) 2019 BuddyPress (email: contact@buddypress.org)
+ * Copyright (c) 2020 BuddyPress (email: contact@buddypress.org)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2 or, at
