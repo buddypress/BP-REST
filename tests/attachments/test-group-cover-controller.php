@@ -105,6 +105,23 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	/**
 	 * @group create_item
 	 */
+	public function test_create_item_image_upload_disabled() {
+		$this->bp->set_current_user( $this->user_id );
+
+		// Disabling group cover upload.
+		add_filter( 'bp_rest_attachments_group_cover_disabled', '__return_true' );
+
+		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
+		$response = $this->server->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_no_image_file', $response, 500 );
+
+		// Enabling it again.
+		add_filter( 'bp_rest_attachments_group_cover_disabled', '__return_false' );
+	}
+
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item_empty_image() {
 		$this->bp->set_current_user( $this->user_id );
 
