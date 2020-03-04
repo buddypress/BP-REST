@@ -15,6 +15,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 		$this->endpoint     = new BP_REST_Attachments_Group_Cover_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->groups->id . '/';
+		$this->image_file    = __DIR__ . '/assets/test-image.jpg';
 
 		$this->user_id = $this->bp_factory->user->create( array(
 			'role' => 'administrator',
@@ -77,6 +78,54 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 */
 	public function test_create_item() {
 		$this->markTestSkipped();
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_no_valid_image_directory() {
+		$image_file = $this->image_file;
+
+		$this->bp->set_current_user( $this->user_id );
+
+		$_FILES['file'] = array(
+			'tmp_name' => $image_file,
+			'name'     => 'test-image.jpg',
+			'type'     => 'image/jpg',
+			'error'    => 0,
+			'size'     => filesize( $image_file ),
+		);
+
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
+		$request->set_file_params( $_FILES );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_upload_error', $response, 500 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_image_upload_disabled() {
+		$this->bp->set_current_user( $this->user_id );
+
+		// Disabling group cover upload.
+		add_filter( 'bp_disable_group_cover_image_uploads', '__return_true' );
+
+		$image_file = $this->image_file;
+
+		$_FILES['file'] = array(
+			'tmp_name' => $image_file,
+			'name'     => 'test-image.jpg',
+			'type'     => 'image/jpg',
+			'error'    => 0,
+			'size'     => filesize( $image_file ),
+		);
+
+		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
+		$request->set_file_params( $_FILES );
+		$response = $this->server->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_disabled', $response, 500 );
 	}
 
 	/**

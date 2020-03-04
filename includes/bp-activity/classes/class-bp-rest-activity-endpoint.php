@@ -140,6 +140,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'display_comments'  => $request['display_comments'],
 			'site_id'           => $request['site_id'],
 			'group_id'          => $request['group_id'],
+			'scope'             => $request['scope'],
 			'count_total'       => true,
 			'fields'            => 'all',
 			'show_hidden'       => false,
@@ -191,6 +192,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				$item_id                      = $request['primary_id'];
 				$args['filter']['primary_id'] = $item_id;
 			}
+		}
+
+		if ( empty( $request['scope'] ) ) {
+			$args['scope'] = false;
 		}
 
 		if ( isset( $request['type'] ) ) {
@@ -277,6 +282,16 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item( $request ) {
 		$activity = $this->get_activity_object( $request );
+
+		if ( empty( $activity->id ) ) {
+			return new WP_Error(
+				'bp_rest_invalid_id',
+				__( 'Invalid activity ID.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -1481,6 +1496,14 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'type'              => 'string',
 			'enum'              => array( 'ham_only', 'spam_only', 'all' ),
 			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['scope'] = array(
+			'description'       => __( 'Limit result set to items with a specific scope.', 'buddypress' ),
+			'type'              => 'string',
+			'enum'              => array( 'just-me', 'friends', 'groups', 'favorites', 'mentions' ),
+			'sanitize_callback' => 'sanitize_text_field',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

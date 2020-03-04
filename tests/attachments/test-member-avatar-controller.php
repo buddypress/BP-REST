@@ -15,6 +15,7 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 		$this->endpoint     = new BP_REST_Attachments_Member_Avatar_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/members/';
+		$this->image_file    = __DIR__ . '/assets/test-image.jpg';
 
 		$this->user_id = $this->bp_factory->user->create( array(
 			'role' => 'administrator',
@@ -99,7 +100,6 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 	public function test_create_item() {
 		$reset_files = $_FILES;
 		$reset_post = $_POST;
-		$image_file = __DIR__ . '/assets/test-image.jpg';
 
 		$this->bp->set_current_user( $this->user_id );
 
@@ -107,11 +107,11 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 		add_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
 
 		$_FILES['file'] = array(
-			'tmp_name' => $image_file,
+			'tmp_name' => $this->image_file,
 			'name'     => 'test-image.jpg',
 			'type'     => 'image/jpg',
 			'error'    => 0,
-			'size'     => 2000,
+			'size'     => filesize( $this->image_file ),
 		);
 
 		$_POST['action'] = 'bp_avatar_upload';
@@ -156,8 +156,22 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 		return @copy( $file['tmp_name'], $new_file );
 	}
 
-	public function return_100( $size ) {
+	public function return_100() {
 		return 100;
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_with_upload_disabled() {
+		$this->bp->set_current_user( $this->user_id );
+
+		// Disabling member avatar upload.
+		add_filter( 'bp_disable_avatar_uploads', '__return_true' );
+
+		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertErrorResponse( 'bp_rest_attachments_member_avatar_disabled', $response, 500 );
 	}
 
 	/**
