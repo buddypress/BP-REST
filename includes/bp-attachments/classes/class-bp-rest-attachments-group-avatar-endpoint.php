@@ -256,7 +256,7 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 	public function create_item_permissions_check( $request ) {
 		$retval = $this->get_item_permissions_check( $request );
 
-		if ( true === $retval && ( bp_disable_group_avatar_uploads() || ! buddypress()->avatar->show_avatars ) ) {
+		if ( true === $retval && ( bp_disable_group_avatar_uploads() || false === buddypress()->avatar->show_avatars ) ) {
 			$retval = new WP_Error(
 				'bp_rest_attachments_group_avatar_disabled',
 				__( 'Sorry, group avatar upload is disabled.', 'buddypress' ),

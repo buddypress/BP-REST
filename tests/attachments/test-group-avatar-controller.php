@@ -163,17 +163,35 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item_with_image_upload_disabled() {
+		$reset_files = $_FILES;
+		$reset_post  = $_POST;
+		$image_file  = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-group.png';
+
 		$this->bp->set_current_user( $this->user_id );
 
 		// Disabling group avatar upload.
-		add_filter( 'bp_rest_attachments_group_avatar_disabled', '__return_true' );
+		add_filter( 'bp_disable_group_avatar_uploads', '__return_true' );
+
+		$_FILES['file'] = array(
+			'tmp_name' => $image_file,
+			'name'     => 'mystery-group.png',
+			'type'     => 'image/jpeg',
+			'error'    => 0,
+			'size'     => filesize( $image_file ),
+		);
+
+		$_POST['action'] = 'bp_avatar_upload';
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
+		$request->set_file_params( $_FILES );
 		$response = $this->server->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_attachments_group_avatar_no_image_file', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_attachments_group_avatar_disabled', $response, 500 );
 
 		// Enabling it again.
-		add_filter( 'bp_rest_attachments_group_avatar_disabled', '__return_true' );
+		add_filter( 'bp_disable_group_avatar_uploads', '__return_true' );
+
+		$_FILES = $reset_files;
+		$_POST = $reset_post;
 	}
 
 	/**
