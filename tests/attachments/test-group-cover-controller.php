@@ -84,16 +84,14 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 * @group create_item
 	 */
 	public function test_create_item_no_valid_image_directory() {
-		$image_file = $this->image_file;
-
 		$this->bp->set_current_user( $this->user_id );
 
 		$_FILES['file'] = array(
-			'tmp_name' => $image_file,
+			'tmp_name' => $this->image_file,
 			'name'     => 'test-image.jpg',
-			'type'     => 'image/jpg',
+			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => filesize( $image_file ),
+			'size'     => filesize( $this->image_file ),
 		);
 
 		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
@@ -112,14 +110,12 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 		// Disabling group cover upload.
 		add_filter( 'bp_disable_group_cover_image_uploads', '__return_true' );
 
-		$image_file = $this->image_file;
-
 		$_FILES['file'] = array(
-			'tmp_name' => $image_file,
+			'tmp_name' => $this->image_file,
 			'name'     => 'test-image.jpg',
-			'type'     => 'image/jpg',
+			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => filesize( $image_file ),
+			'size'     => filesize( $this->image_file ),
 		);
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
