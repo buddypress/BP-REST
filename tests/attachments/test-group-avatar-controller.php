@@ -164,9 +164,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item_with_image_upload_disabled() {
-		$reset_files = $_FILES;
-		$reset_post  = $_POST;
-		$image_file  = $this->image_file;
+		$image_file = $this->image_file;
 
 		$this->bp->set_current_user( $this->user_id );
 
@@ -187,12 +185,6 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$request->set_file_params( $_FILES );
 		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_attachments_group_avatar_disabled', $response, 500 );
-
-		// Enabling it again.
-		add_filter( 'bp_disable_group_avatar_uploads', '__return_true' );
-
-		$_FILES = $reset_files;
-		$_POST = $reset_post;
 	}
 
 	/**

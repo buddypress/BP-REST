@@ -85,9 +85,6 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->user_id ) );
 		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_attachments_member_cover_disabled', $response, 500 );
-
-		// Enabling it again.
-		add_filter( 'bp_disable_cover_image_uploads', '__return_false' );
 	}
 
 	/**

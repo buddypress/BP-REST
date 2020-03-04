@@ -173,9 +173,6 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$response = rest_get_server()->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_attachments_member_avatar_disabled', $response, 500 );
-
-		// Enabling it again.
-		add_filter( 'bp_disable_avatar_uploads', '__return_false' );
 	}
 
 	/**

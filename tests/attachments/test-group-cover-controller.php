@@ -125,9 +125,6 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 		$request->set_file_params( $_FILES );
 		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_disabled', $response, 500 );
-
-		// Enabling it again.
-		add_filter( 'bp_disable_group_cover_image_uploads', '__return_false' );
 	}
 
 	/**
