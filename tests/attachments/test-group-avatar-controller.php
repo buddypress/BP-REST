@@ -198,37 +198,6 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	/**
 	 * @group create_item
 	 */
-	public function test_create_item_with_smaller_image_size() {
-		$image_file = $this->image_file;
-
-		$this->bp->set_current_user( $this->user_id );
-
-		add_filter( 'pre_move_uploaded_file', array( $this, 'copy_file' ), 10, 3 );
-		add_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
-
-		$_FILES['file'] = array(
-			'tmp_name' => $image_file,
-			'name'     => 'mystery-group.png',
-			'type'     => 'image/png',
-			'error'    => 0,
-			'size'     => filesize( $image_file ),
-		);
-
-		$_POST['action'] = 'bp_avatar_upload';
-
-		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
-		$request->set_file_params( $_FILES );
-		$response = rest_get_server()->dispatch( $request );
-		$this->assertNotEmpty( $response );
-
-		remove_filter( 'pre_move_uploaded_file', array( $this, 'copy_file' ), 10, 3 );
-		remove_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
-		$this->assertErrorResponse( 'bp_rest_attachments_group_avatar_error', $response, 500 );
-	}
-
-	/**
-	 * @group create_item
-	 */
 	public function test_create_item_empty_image() {
 		$this->bp->set_current_user( $this->user_id );
 
