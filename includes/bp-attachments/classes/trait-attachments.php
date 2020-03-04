@@ -157,7 +157,7 @@ trait BP_REST_Attachments {
 				break;
 			case 'user':
 			default:
-				$upload_main_dir        = 'xprofile_avatar_upload_dir';
+				$upload_main_dir        = 'bp_members_avatar_upload_dir';
 				$bp->displayed_user     = new stdClass();
 				$bp->displayed_user->id = (int) $this->user->ID;
 				break;

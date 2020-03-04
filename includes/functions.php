@@ -22,7 +22,7 @@ function bp_rest_namespace() {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $namespace BuddyPress core namespace.
+	 * @param string $namespace BuddyPress REST API namespace.
 	 */
 	return apply_filters( 'bp_rest_namespace', 'buddypress' );
 }
@@ -41,15 +41,13 @@ function bp_rest_version() {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $version BuddyPress core version.
+	 * @param string $version BuddyPress REST API version.
 	 */
 	return apply_filters( 'bp_rest_version', 'v1' );
 }
 
 /**
  * Get user URL.
- *
- * @todo Update members path to the filterable one.
  *
  * @since 0.1.0
  *
@@ -61,7 +59,7 @@ function bp_rest_get_user_url( $user_id ) {
 		'/%s/%s/members/%d',
 		bp_rest_namespace(),
 		bp_rest_version(),
-		$user_id
+		absint( $user_id )
 	);
 }
 
@@ -128,7 +126,11 @@ function bp_rest_sanitize_member_types( $value ) {
 	$registered_types[] = 'any';
 	$valid_types        = array_intersect( $types, $registered_types );
 
-	return ( ! empty( $valid_types ) ) ? $valid_types : null;
+	if ( ! empty( $valid_types ) ) {
+		return $valid_types;
+	}
+
+	return null;
 }
 
 /**
@@ -180,7 +182,11 @@ function bp_rest_sanitize_group_types( $value ) {
 	$types       = explode( ',', $value );
 	$valid_types = array_intersect( $types, bp_groups_get_group_types() );
 
-	return empty( $valid_types ) ? null : $valid_types;
+	if ( ! empty( $valid_types ) ) {
+		return $valid_types;
+	}
+
+	return null;
 }
 
 /**
