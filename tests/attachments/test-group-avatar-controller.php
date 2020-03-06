@@ -16,7 +16,6 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->groups->id . '/';
 		$this->image_file    = __DIR__ . '/assets/test-image.jpg';
-		$this->image_size    = filesize( $this->image_file );
 
 		$this->user_id = $this->bp_factory->user->create( array(
 			'role' => 'administrator',
@@ -110,14 +109,14 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 
 		$tmp_name = wp_tempnam( $this->image_file );
 
-		copy( $this->image_file, $tmp_name );
+		@copy( $this->image_file, $tmp_name );
 
 		$_FILES['file'] = array(
 			'tmp_name' => $tmp_name,
 			'name'     => 'test-image.jpg',
 			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => filesize( $tmp_name ),
+			'size'     => @filesize( $tmp_name ),
 		);
 
 		$_POST['action'] = 'bp_avatar_upload';
@@ -175,7 +174,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 			'name'     => 'test-image.jpg',
 			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => $this->image_size,
+			'size'     => @filesize( $this->image_file ),
 		);
 
 		$_POST['action'] = 'bp_avatar_upload';
@@ -185,6 +184,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_attachments_group_avatar_disabled', $response, 500 );
 
+		remove_filter( 'bp_disable_group_avatar_uploads', '__return_true' );
 		$_FILES = $reset_files;
 		$_POST  = $reset_post;
 	}
