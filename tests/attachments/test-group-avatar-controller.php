@@ -15,7 +15,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$this->endpoint     = new BP_REST_Attachments_Group_Avatar_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->groups->id . '/';
-		$this->image_file    = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-group.png';
+		$this->image_file    = __DIR__ . '/assets/test-image.jpg';
 
 		$this->user_id = $this->bp_factory->user->create( array(
 			'role' => 'administrator',
@@ -100,9 +100,12 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item() {
+		if ( 4.9 > (float) $GLOBALS['wp_version'] ) {
+			$this->markTestSkipped();
+		}
+
 		$reset_files = $_FILES;
-		$reset_post  = $_POST;
-		$image_file  = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/manage-members-interface.png';
+		$reset_post = $_POST;
 
 		$this->bp->set_current_user( $this->user_id );
 
@@ -110,24 +113,24 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		add_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
 
 		$_FILES['file'] = array(
-			'tmp_name' => $image_file,
-			'name'     => 'mystery-group.png',
-			'type'     => 'image/png',
+			'tmp_name' => $this->image_file,
+			'name'     => 'test-image.jpg',
+			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => filesize( $image_file ),
+			'size'     => filesize( $this->image_file ),
 		);
 
 		$_POST['action'] = 'bp_avatar_upload';
 
-		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
 		$request->set_file_params( $_FILES );
-		$response = rest_get_server()->dispatch( $request );
+		$response = $this->server->dispatch( $request );
 
 		remove_filter( 'pre_move_uploaded_file', array( $this, 'copy_file' ), 10, 3 );
 		remove_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
 
 		$all_data = $response->get_data();
-		$avatar = reset( $all_data );
+		$avatar   = reset( $all_data );
 
 		$this->assertSame( $avatar, array(
 			'full'  => bp_core_fetch_avatar(
@@ -149,7 +152,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		) );
 
 		$_FILES = $reset_files;
-		$_POST = $reset_post;
+		$_POST  = $reset_post;
 	}
 
 	public function copy_file( $return = null, $file, $new_file ) {
@@ -164,7 +167,12 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item_with_image_upload_disabled() {
-		$image_file = $this->image_file;
+		if ( 4.9 > (float) $GLOBALS['wp_version'] ) {
+			$this->markTestSkipped();
+		}
+
+		$reset_files = $_FILES;
+		$reset_post  = $_POST;
 
 		$this->bp->set_current_user( $this->user_id );
 
@@ -172,11 +180,11 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		add_filter( 'bp_disable_group_avatar_uploads', '__return_true' );
 
 		$_FILES['file'] = array(
-			'tmp_name' => $image_file,
-			'name'     => 'mystery-group.png',
-			'type'     => 'image/png',
+			'tmp_name' => $this->image_file,
+			'name'     => 'test-image.jpg',
+			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => filesize( $image_file ),
+			'size'     => filesize( $this->image_file ),
 		);
 
 		$_POST['action'] = 'bp_avatar_upload';
@@ -185,6 +193,10 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$request->set_file_params( $_FILES );
 		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_attachments_group_avatar_disabled', $response, 500 );
+
+		remove_filter( 'bp_disable_group_avatar_uploads', '__return_true' );
+		$_FILES = $reset_files;
+		$_POST  = $reset_post;
 	}
 
 	/**

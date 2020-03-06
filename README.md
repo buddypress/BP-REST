@@ -33,6 +33,7 @@ Please use and provide feedback!
 - [x] Signup `http://site.com/wp-json/buddypress/v1/signup`
 - [x] Friends `http://site.com/wp-json/buddypress/v1/friends`
 - [x] Blogs `http://site.com/wp-json/buddypress/v1/blogs`
+- [x] Blog Avatar `http://site.com/wp-json/buddypress/v1/blogs/<id>/avatar`
 
 ## Installation
 

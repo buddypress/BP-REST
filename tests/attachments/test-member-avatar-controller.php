@@ -15,6 +15,7 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 		$this->endpoint     = new BP_REST_Attachments_Member_Avatar_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/members/';
+		$this->image_file    = __DIR__ . '/assets/test-image.jpg';
 
 		$this->user_id = $this->bp_factory->user->create( array(
 			'role' => 'administrator',
@@ -23,8 +24,6 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
 		}
-
-		$this->image_file = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-man.jpg';
 
 		$this->old_current_user = get_current_user_id();
 	}
@@ -99,6 +98,10 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 	 * @group create_item
 	 */
 	public function test_create_item() {
+		if ( 4.9 > (float) $GLOBALS['wp_version'] ) {
+			$this->markTestSkipped();
+		}
+
 		$reset_files = $_FILES;
 		$reset_post = $_POST;
 
@@ -109,8 +112,8 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 
 		$_FILES['file'] = array(
 			'tmp_name' => $this->image_file,
-			'name'     => 'mystery-man.jpg',
-			'type'     => 'image/jpeg',
+			'name'     => 'test-image.jpg',
+			'type'     => 'image/jpg',
 			'error'    => 0,
 			'size'     => filesize( $this->image_file ),
 		);

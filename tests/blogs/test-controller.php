@@ -15,6 +15,10 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->endpoint     = new BP_REST_Blogs_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->blogs->id;
+		$this->admin        = $this->factory->user->create( array(
+			'role'       => 'administrator',
+			'user_email' => 'admin@example.com',
+		) );
 
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
@@ -31,6 +35,10 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		// Main.
 		$this->assertArrayHasKey( $this->endpoint_url, $routes );
 		$this->assertCount( 1, $routes[ $this->endpoint_url ] );
+
+		// Single.
+		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
+		$this->assertCount( 1, $routes[ $this->endpoint_url . '/(?P<id>[\d]+)' ] );
 	}
 
 	/**
@@ -46,11 +54,10 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		}
 
 		$u = $this->bp_factory->user->create();
-
 		$this->bp->set_current_user( $u );
 
-		$this->bp_factory->blog->create();
-		$this->bp_factory->blog->create();
+		$a = $this->bp_factory->blog->create();
+		update_blog_option( $a, 'blog_public', '1' );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -63,17 +70,53 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 2, $headers['X-WP-Total'] );
 		$this->assertEquals( 1, $headers['X-WP-TotalPages'] );
-
 		$this->assertTrue( count( $blogs ) === 2 );
 		$this->assertTrue( ! empty( $blogs[0] ) );
-		$this->assertSame( $blogs[0]['user_id'], $u );
 	}
 
 	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		if ( function_exists( 'wp_initialize_site' ) ) {
+			$this->setExpectedDeprecated( 'wpmu_new_blog' );
+		}
+
+		$blog = $this->bp_factory->blog->create(
+			array(
+				'title'   => 'The Foo Bar Blog',
+				'user_id' => $this->admin,
+			)
+		);
+
+		bp_blogs_record_existing_blogs();
+		update_blog_option( $blog, 'blog_public', '1' );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $blog ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$blogs = $response->get_data();
+
+		$this->assertSame( $blogs[0]['id'], $blog );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_invalid_group_id() {
 		$this->markTestSkipped();
+
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_blog_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -167,7 +210,17 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$u = $this->bp_factory->user->create();
 		$this->bp->set_current_user( $u );
-		$blog_id  = $this->bp_factory->blog->create();
+
+		$blog_id = $this->bp_factory->blog->create(
+			array(
+				'title'   => 'The Foo Bar Blog',
+				'user_id' => $u,
+			)
+		);
+
+		bp_blogs_record_existing_blogs();
+		update_blog_option( $blog_id, 'blog_public', '1' );
+
 		$expected = 'bar_value';
 
 		bp_blogs_update_blogmeta( $blog_id, '_foo_field', $expected );

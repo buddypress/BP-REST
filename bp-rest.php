@@ -88,6 +88,14 @@ function bp_rest() {
 		require_once dirname( __FILE__ ) . '/includes/bp-blogs/classes/class-bp-rest-blogs-endpoint.php';
 		$controller = new BP_REST_Blogs_Endpoint();
 		$controller->register_routes();
+
+		// Support to Blog Avatar.
+		if ( bp_is_active( 'blogs', 'site-icon' ) ) {
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
+			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-blog-avatar-endpoint.php';
+			$controller = new BP_REST_Attachments_Blog_Avatar_Endpoint();
+			$controller->register_routes();
+		}
 	}
 
 	if ( bp_is_active( 'xprofile' ) ) {

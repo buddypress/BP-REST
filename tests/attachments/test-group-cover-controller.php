@@ -15,6 +15,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 		$this->endpoint     = new BP_REST_Attachments_Group_Cover_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->groups->id . '/';
+		$this->image_file    = __DIR__ . '/assets/test-image.jpg';
 
 		$this->user_id = $this->bp_factory->user->create( array(
 			'role' => 'administrator',
@@ -83,16 +84,19 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 * @group create_item
 	 */
 	public function test_create_item_no_valid_image_directory() {
-		$this->bp->set_current_user( $this->user_id );
+		if ( 4.9 > (float) $GLOBALS['wp_version'] ) {
+			$this->markTestSkipped();
+		}
 
-		$image_file = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-man.jpg';
+		$this->bp->set_current_user( $this->user_id );
+		$reset_files = $_FILES;
 
 		$_FILES['file'] = array(
-			'tmp_name' => $image_file,
-			'name'     => 'mystery-man.jpg',
+			'tmp_name' => $this->image_file,
+			'name'     => 'test-image.jpg',
 			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => filesize( $image_file ),
+			'size'     => filesize( $this->image_file ),
 		);
 
 		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
@@ -100,31 +104,39 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_upload_error', $response, 500 );
+
+		$_FILES = $reset_files;
 	}
 
 	/**
 	 * @group create_item
 	 */
 	public function test_create_item_image_upload_disabled() {
+		if ( 4.9 > (float) $GLOBALS['wp_version'] ) {
+			$this->markTestSkipped();
+		}
+
 		$this->bp->set_current_user( $this->user_id );
+		$reset_files = $_FILES;
 
 		// Disabling group cover upload.
 		add_filter( 'bp_disable_group_cover_image_uploads', '__return_true' );
 
-		$image_file = trailingslashit( buddypress()->plugin_dir ) . 'bp-core/images/mystery-man.jpg';
-
 		$_FILES['file'] = array(
-			'tmp_name' => $image_file,
-			'name'     => 'mystery-man.jpg',
+			'tmp_name' => $this->image_file,
+			'name'     => 'test-image.jpg',
 			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => filesize( $image_file ),
+			'size'     => filesize( $this->image_file ),
 		);
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
 		$request->set_file_params( $_FILES );
 		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_disabled', $response, 500 );
+
+		remove_filter( 'bp_disable_group_cover_image_uploads', '__return_true' );
+		$_FILES = $reset_files;
 	}
 
 	/**
