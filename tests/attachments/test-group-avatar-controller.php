@@ -100,23 +100,24 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item() {
+		if ( 4.9 > (float) $GLOBALS['wp_version'] && is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
 		$reset_files = $_FILES;
 		$reset_post = $_POST;
 
 		$this->bp->set_current_user( $this->user_id );
 
+		add_filter( 'pre_move_uploaded_file', array( $this, 'copy_file' ), 10, 3 );
 		add_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
 
-		$tmp_name = wp_tempnam( $this->image_file );
-
-		@copy( $this->image_file, $tmp_name );
-
 		$_FILES['file'] = array(
-			'tmp_name' => $tmp_name,
+			'tmp_name' => $this->image_file,
 			'name'     => 'test-image.jpg',
 			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => @filesize( $tmp_name ),
+			'size'     => filesize( $this->image_file ),
 		);
 
 		$_POST['action'] = 'bp_avatar_upload';
@@ -125,6 +126,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$request->set_file_params( $_FILES );
 		$response = $this->server->dispatch( $request );
 
+		remove_filter( 'pre_move_uploaded_file', array( $this, 'copy_file' ), 10, 3 );
 		remove_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
 
 		$all_data = $response->get_data();
@@ -153,6 +155,10 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$_POST  = $reset_post;
 	}
 
+	public function copy_file( $return = null, $file, $new_file ) {
+		return @copy( $file['tmp_name'], $new_file );
+	}
+
 	public function return_100() {
 		return 100;
 	}
@@ -161,6 +167,10 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item_with_image_upload_disabled() {
+		if ( 4.9 > (float) $GLOBALS['wp_version'] && is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
 		$reset_files = $_FILES;
 		$reset_post  = $_POST;
 
@@ -174,7 +184,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 			'name'     => 'test-image.jpg',
 			'type'     => 'image/jpeg',
 			'error'    => 0,
-			'size'     => @filesize( $this->image_file ),
+			'size'     => filesize( $this->image_file ),
 		);
 
 		$_POST['action'] = 'bp_avatar_upload';

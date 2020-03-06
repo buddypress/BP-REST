@@ -84,7 +84,12 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 * @group create_item
 	 */
 	public function test_create_item_no_valid_image_directory() {
+		if ( 4.9 > (float) $GLOBALS['wp_version'] && is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
 		$this->bp->set_current_user( $this->user_id );
+		$reset_files = $_FILES;
 
 		$_FILES['file'] = array(
 			'tmp_name' => $this->image_file,
@@ -99,13 +104,20 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_upload_error', $response, 500 );
+
+		$_FILES = $reset_files;
 	}
 
 	/**
 	 * @group create_item
 	 */
 	public function test_create_item_image_upload_disabled() {
+		if ( 4.9 > (float) $GLOBALS['wp_version'] && is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
 		$this->bp->set_current_user( $this->user_id );
+		$reset_files = $_FILES;
 
 		// Disabling group cover upload.
 		add_filter( 'bp_disable_group_cover_image_uploads', '__return_true' );
@@ -122,6 +134,9 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 		$request->set_file_params( $_FILES );
 		$response = $this->server->dispatch( $request );
 		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_disabled', $response, 500 );
+
+		remove_filter( 'bp_disable_group_cover_image_uploads', '__return_true' );
+		$_FILES = $reset_files;
 	}
 
 	/**
