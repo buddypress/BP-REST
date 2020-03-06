@@ -100,7 +100,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		if ( 4.9 > (float) $GLOBALS['wp_version'] && is_multisite() ) {
+		if ( 4.9 > (float) $GLOBALS['wp_version'] ) {
 			$this->markTestSkipped();
 		}
 
@@ -167,7 +167,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item_with_image_upload_disabled() {
-		if ( 4.9 > (float) $GLOBALS['wp_version'] && is_multisite() ) {
+		if ( 4.9 > (float) $GLOBALS['wp_version'] ) {
 			$this->markTestSkipped();
 		}
 

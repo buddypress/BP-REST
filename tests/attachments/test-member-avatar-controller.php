@@ -98,7 +98,7 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		if ( 4.9 > (float) $GLOBALS['wp_version'] && is_multisite() ) {
+		if ( 4.9 > (float) $GLOBALS['wp_version'] ) {
 			$this->markTestSkipped();
 		}
 

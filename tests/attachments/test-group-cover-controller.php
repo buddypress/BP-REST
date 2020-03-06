@@ -84,7 +84,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 * @group create_item
 	 */
 	public function test_create_item_no_valid_image_directory() {
-		if ( 4.9 > (float) $GLOBALS['wp_version'] && is_multisite() ) {
+		if ( 4.9 > (float) $GLOBALS['wp_version'] ) {
 			$this->markTestSkipped();
 		}
 
@@ -112,7 +112,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 * @group create_item
 	 */
 	public function test_create_item_image_upload_disabled() {
-		if ( 4.9 > (float) $GLOBALS['wp_version'] && is_multisite() ) {
+		if ( 4.9 > (float) $GLOBALS['wp_version'] ) {
 			$this->markTestSkipped();
 		}
 
