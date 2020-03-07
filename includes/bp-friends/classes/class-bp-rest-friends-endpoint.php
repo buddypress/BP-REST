@@ -458,7 +458,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Reject/withdraw friendship.
+	 * Reject/withdraw/remove friendship.
 	 *
 	 * @since 6.0.0
 	 *
@@ -484,20 +484,26 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		$user_id  = bp_loggedin_user_id();
 		$previous = $this->prepare_item_for_response( $friendship, $request );
 
-		/**
-		 * If this change is being initiated by the initiator,
-		 * use the `reject` function.
-		 *
-		 * This is the user who requested the friendship, and is doing the withdrawing.
-		 */
-		if ( $user_id === $friendship->initiator_user_id ) {
-			$deleted = friends_withdraw_friendship( $friendship->initiator_user_id, $friendship->friend_user_id );
+		// Remove a friendship.
+		if ( true === $request['force'] ) {
+			$deleted = friends_remove_friend( $friendship->initiator_user_id, $friendship->friend_user_id );
 		} else {
+
 			/**
-			 * Otherwise, this change is being initiated by the user, friend,
-			 * who received the friendship reject.
+			 * If this change is being initiated by the initiator,
+			 * use the `reject` function.
+			 *
+			 * This is the user who requested the friendship, and is doing the withdrawing.
 			 */
-			$deleted = friends_reject_friendship( $friendship->id );
+			if ( $user_id === $friendship->initiator_user_id ) {
+				$deleted = friends_withdraw_friendship( $friendship->initiator_user_id, $friendship->friend_user_id );
+			} else {
+				/**
+				 * Otherwise, this change is being initiated by the user, friend,
+				 * who received the friendship reject.
+				 */
+				$deleted = friends_reject_friendship( $friendship->id );
+			}
 		}
 
 		if ( ! $deleted ) {
@@ -578,6 +584,8 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
+		$response->add_links( $this->prepare_links( $friendship ) );
+
 		/**
 		 * Filter a friendship value returned from the API.
 		 *
@@ -591,12 +599,51 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Prepare links for the request.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param BP_Friends_Friendship $friendship Friendship item.
+	 * @return array Links for the given plugin.
+	 */
+	protected function prepare_links( $friendship ) {
+		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
+
+		// Entity meta.
+		$links = array(
+			'self'       => array(
+				'href' => rest_url( $base . $friendship->id ),
+			),
+			'collection' => array(
+				'href' => rest_url( $base ),
+			),
+			'initiator'       => array(
+				'href'       => rest_url( bp_rest_get_user_url( $friendship->initiator_user_id ) ),
+				'embeddable' => true,
+			),
+			'friend'       => array(
+				'href'       => rest_url( bp_rest_get_user_url( $friendship->friend_user_id ) ),
+				'embeddable' => true,
+			),
+		);
+
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array                 $links      The prepared links of the REST response.
+		 * @param BP_Friends_Friendship $friendship Friendship object.
+		 */
+		return apply_filters( 'bp_rest_friends_prepare_links', $links, $friendship );
+	}
+
+	/**
 	 * Get friendship object.
 	 *
 	 * @since 6.0.0
 	 *
 	 * @param int $friendship_id Friendship ID.
-	 *
 	 * @return BP_Friends_Friendship
 	 */
 	public function get_friendship_object( $friendship_id ) {
@@ -638,6 +685,14 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 
 		} elseif ( WP_REST_Server::DELETABLE === $method ) {
 			$key = 'delete_item';
+
+			$args['force'] = array(
+				'description'       => __( 'Whether to force friendship removal.', 'buddypress' ),
+				'default'           => false,
+				'type'              => 'boolean',
+				'sanitize_callback' => 'rest_sanitize_boolean',
+				'validate_callback' => 'rest_validate_request_arg',
+			);
 		}
 
 		/**

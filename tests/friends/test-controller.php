@@ -52,10 +52,10 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_items() {
 		$u = $this->factory->user->create();
 
-		$s1 = $this->create_friendship( $u );
-		$s2 = $this->create_friendship( $u );
-		$s3 = $this->create_friendship( $u );
-		$s4 = $this->create_friendship( $u );
+		$this->create_friendship( $u );
+		$this->create_friendship( $u );
+		$this->create_friendship( $u );
+		$this->create_friendship( $u );
 
 		$this->bp->set_current_user( $this->user );
 
@@ -82,8 +82,6 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items_user_not_logged_in() {
-		$s1 = $this->create_friendship();
-
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -105,6 +103,8 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$friendship = $this->endpoint->get_friendship_object( $this->friendship_id );
 		$all_data   = $response->get_data();
+
+		$this->assertNotEmpty( $all_data );
 
 		$this->check_friendship_data( $friendship, $all_data[0], 'view' );
 	}
@@ -153,6 +153,7 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$friendship = $response->get_data();
+		$this->assertNotEmpty( $friendship );
 
 		$this->assertSame( $friendship[0]['initiator_id'], $this->user );
 	}
@@ -188,6 +189,7 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->assertTrue( $all_data[0]['is_confirmed'] );
 	}
@@ -244,6 +246,26 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$deleted = $response->get_data();
+		$this->assertNotEmpty( $deleted );
+
+		$this->assertTrue( $deleted['deleted'] );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_remove_item() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->friendship_id ) );
+		$request->set_param( 'context', 'edit' );
+		$request->set_body_params( [ 'force' => true ] );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$deleted = $response->get_data();
+		$this->assertNotEmpty( $deleted );
 
 		$this->assertTrue( $deleted['deleted'] );
 	}
@@ -264,6 +286,7 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$deleted = $response->get_data();
+		$this->assertNotEmpty( $deleted );
 
 		$this->assertTrue( $deleted['deleted'] );
 	}
@@ -304,19 +327,17 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
 
 		$this->check_friendship_data( $friendship, $all_data[0], 'view' );
 	}
 
 	protected function set_friendship_data( $args = array() ) {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
-
 		return wp_parse_args(
 			$args,
 			array(
-				'initiator_id' => $u1,
-				'friend_id'    => $u2,
+				'initiator_id' => $this->factory->user->create(),
+				'friend_id'    => $this->factory->user->create(),
 			)
 		);
 	}
