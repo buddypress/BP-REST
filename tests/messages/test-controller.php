@@ -67,9 +67,9 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 
 		$this->bp_factory->message->create( array(
-			'sender_id'  => $u1,
-			'recipients' => array( $u2 ),
-			'subject'    => 'Foo',
+			'sender_id'  => $u2,
+			'recipients' => array( $u1 ),
+			'subject'    => 'Fooo',
 		) );
 
 		$this->bp->set_current_user( $this->user );
