@@ -60,7 +60,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			array(
 				'args'   => array(
 					'id' => array(
-						'description' => __( 'Identifier for the friendship.', 'buddypress' ),
+						'description' => __( 'Identifier for a user ID.', 'buddypress' ),
 						'type'        => 'integer',
 					),
 				),
@@ -97,14 +97,14 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'id'                => $request['id'],
-			'initiator_user_id' => $request['initiator_id'],
-			'friend_user_id'    => $request['friend_id'],
-			'is_confirmed'      => $request['is_confirmed'],
-			'order_by'          => $request['order_by'],
-			'sort_order'        => strtoupper( $request['order'] ),
-			'page'              => $request['page'],
-			'per_page'          => $request['per_page'],
+			'id'                => $request->get_param( 'id' ),
+			'initiator_user_id' => $request->get_param( 'initiator_id' ),
+			'friend_user_id'    => $request->get_param( 'friend_id' ),
+			'is_confirmed'      => $request->get_param( 'is_confirmed' ),
+			'order_by'          => $request->get_param( 'order_by' ),
+			'sort_order'        => strtoupper( $request->get_param( 'order' ) ),
+			'page'              => $request->get_param( 'page' ),
+			'per_page'          => $request->get_param( 'per_page' ),
 		);
 
 		/**
@@ -125,7 +125,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		}
 
 		// Check if user is valid.
-		$user = get_user_by( 'id', $request['user_id'] );
+		$user = get_user_by( 'id', $request->get_param( 'user_id' ) );
 		if ( ! $user instanceof WP_User ) {
 			return new WP_Error(
 				'bp_rest_friends_get_items_user_failed',
@@ -204,7 +204,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$friend = get_user_by( 'id', $request['id'] );
+		$friend = get_user_by( 'id', $request->get_param( 'id' ) );
 		$error  = new WP_Error(
 			'bp_rest_invalid_id',
 			__( 'There was a problem confirming if user is a valid one.', 'buddypress' ),
@@ -290,8 +290,8 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
-		$initiator_id = get_user_by( 'id', $request['initiator_id'] );
-		$friend_id    = get_user_by( 'id', $request['friend_id'] );
+		$initiator_id = get_user_by( 'id', $request->get_param( 'initiator_id' ) );
+		$friend_id    = get_user_by( 'id', $request->get_param( 'friend_id' ) );
 
 		// Check if users are valid.
 		if ( ! $initiator_id || ! $friend_id ) {
@@ -305,7 +305,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		}
 
 		// Adding friendship.
-		if ( ! friends_add_friend( $initiator_id->ID, $friend_id->ID, $request['force'] ) ) {
+		if ( ! friends_add_friend( $initiator_id->ID, $friend_id->ID, $request->get_param( 'force' ) ) ) {
 			return new WP_Error(
 				'bp_rest_friends_create_item_failed',
 				__( 'There was an error trying to create the friendship.', 'buddypress' ),
