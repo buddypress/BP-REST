@@ -53,7 +53,6 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		xprofile_set_field_data( $this->field_id, $this->user, 'foo' );
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
-		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 		$this->assertNotInstanceOf( 'WP_Error', $response );
 
@@ -180,8 +179,6 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$response = $this->server->dispatch( $request );
 
 		$this->assertNotInstanceOf( 'WP_Error', $response );
-		$response = rest_ensure_response( $response );
-
 		$this->assertEquals( 200, $response->get_status() );
 
 		$data = $response->get_data();
@@ -211,9 +208,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/data/%d', $f, $u ) );
 		$response = $this->server->dispatch( $request );
-
 		$this->assertNotInstanceOf( 'WP_Error', $response );
-		$response = rest_ensure_response( $response );
 
 		$this->assertEquals( 200, $response->get_status() );
 
@@ -279,12 +274,63 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group prepare_item
 	 */
 	public function test_prepare_item() {
-		$this->markTestSkipped();
+		$this->bp->set_current_user( $this->user );
+		xprofile_set_field_data( $this->field_id, $this->user, 'foo' );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
+		$response = $this->server->dispatch( $request );
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$this->assertEquals( $all_data[0]['value']['unserialized'], array( 'foo' ) );
+	}
+
+	/**
+	 * @group additional_fields
+	 */
+	public function test_additional_fields() {
+		bp_rest_register_field( 'xprofile', 'foo_metadata_key', array(
+			'get_callback'    => array( $this, 'get_additional_field' ),
+			'update_callback' => array( $this, 'update_additional_field' ),
+			'schema'          => array(
+				'description' => 'xProfile data Meta Field',
+				'type'        => 'string',
+				'context'     => array( 'view', 'edit' ),
+			),
+		), 'data' );
+
+		$this->bp->set_current_user( $this->user );
+		$expected = 'bar_metadata_value';
+
+		// POST
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data( array(
+			'foo_metadata_key' => $expected,
+		) );
+
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$create_data = $response->get_data();
+		$this->assertTrue( $expected === $create_data[0]['foo_metadata_key'] );
+	}
+
+	public function update_additional_field( $value, $data, $attribute ) {
+		return bp_xprofile_update_meta( $data->id, 'data', '_' . $attribute, $value );
+	}
+
+	public function get_additional_field( $data, $attribute )  {
+		return bp_xprofile_get_meta( $data['id'], 'data', '_' . $attribute );
 	}
 
 	protected function check_create_field_response( $response ) {
 		$this->assertNotInstanceOf( 'WP_Error', $response );
-		$response = rest_ensure_response( $response );
 
 		$this->assertEquals( 200, $response->get_status() );
 
@@ -314,7 +360,8 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 5, count( $properties ) );
+		$this->assertEquals( 6, count( $properties ) );
+		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'field_id', $properties );
 		$this->assertArrayHasKey( 'user_id', $properties );
 		$this->assertArrayHasKey( 'value', $properties );
@@ -323,47 +370,5 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 
 	public function test_context_param() {
 		$this->markTestSkipped();
-	}
-
-	public function update_additional_field( $value, $data, $attribute ) {
-		return bp_xprofile_update_meta( $data->id, 'data', '_' . $attribute, $value );
-	}
-
-	public function get_additional_field( $data, $attribute )  {
-		return bp_xprofile_get_meta( $data['id'], 'data', '_' . $attribute );
-	}
-
-	/**
-	 * @group additional_fields
-	 */
-	public function test_additional_fields() {
-		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
-
-		$test = bp_rest_register_field( 'xprofile', 'foo_metadata_key', array(
-			'get_callback'    => array( $this, 'get_additional_field' ),
-			'update_callback' => array( $this, 'update_additional_field' ),
-			'schema'          => array(
-				'description' => 'xProfile data Meta Field',
-				'type'        => 'string',
-				'context'     => array( 'view', 'edit' ),
-			),
-		), 'data' );
-
-		$this->bp->set_current_user( $this->user );
-		$expected = 'bar_metadata_value';
-
-		// POST
-		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
-		$request->add_header( 'content-type', 'application/json' );
-
-		$params = $this->set_field_data( array(
-			'foo_metadata_key' => $expected,
-		) );
-
-		$request->set_body( wp_json_encode( $params ) );
-		$response = $this->server->dispatch( $request );
-
-		$create_data = $response->get_data();
-		$this->assertTrue( $expected === $create_data[0]['foo_metadata_key'] );
 	}
 }
