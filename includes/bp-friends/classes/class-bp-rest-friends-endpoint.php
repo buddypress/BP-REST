@@ -530,7 +530,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			}
 		}
 
-		if ( ! $deleted ) {
+		if ( false === $deleted ) {
 			return new WP_Error(
 				'bp_rest_friends_cannot_delete_item',
 				__( 'Could not delete friendship.', 'buddypress' ),
