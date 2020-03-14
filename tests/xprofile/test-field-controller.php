@@ -506,7 +506,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$this->assertEquals( $field->can_delete, $data['can_delete'] );
 		$this->assertEquals( $field->field_order, $data['field_order'] );
 		$this->assertEquals( $field->option_order, $data['option_order'] );
-		$this->assertEquals( $field->order_by, $data['order_by'] );
+		$this->assertEquals( strtoupper( $field->order_by ), $data['order_by'] );
 		$this->assertEquals( $field->is_default_option, $data['is_default_option'] );
 
 		if ( ! empty( $data['visibility_level'] ) ) {
@@ -520,7 +520,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 14, count( $properties ) );
+		$this->assertEquals( 15, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'group_id', $properties );
 		$this->assertArrayHasKey( 'parent_id', $properties );
@@ -532,6 +532,7 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 		$this->assertArrayHasKey( 'field_order', $properties );
 		$this->assertArrayHasKey( 'option_order', $properties );
 		$this->assertArrayHasKey( 'order_by', $properties );
+		$this->assertArrayHasKey( 'options', $properties );
 		$this->assertArrayHasKey( 'is_default_option', $properties );
 		$this->assertArrayHasKey( 'visibility_level', $properties );
 		$this->assertArrayHasKey( 'data', $properties );
