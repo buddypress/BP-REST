@@ -204,27 +204,32 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$friend = get_user_by( 'id', $request->get_param( 'id' ) );
-		$error  = new WP_Error(
-			'bp_rest_invalid_id',
-			__( 'There was a problem confirming if user is a valid one.', 'buddypress' ),
-			array(
-				'status' => 404,
-			)
-		);
+		$user = get_user_by( 'id', $request->get_param( 'id' ) );
 
-		// Check if friend is valid.
-		if ( false === $friend ) {
-			return $error;
+		// Check if user is valid.
+		if ( false === $user ) {
+			return new WP_Error(
+				'bp_rest_friends_create_item_failed',
+				__( 'There was a problem confirming if user is a valid one.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
 		}
 
 		// Get friendship.
 		$friendship = $this->get_friendship_object(
-			BP_Friends_Friendship::get_friendship_id( bp_loggedin_user_id(), $friend->ID )
+			BP_Friends_Friendship::get_friendship_id( bp_loggedin_user_id(), $user->ID )
 		);
 
 		if ( ! $friendship || empty( $friendship->id ) ) {
-			return $error;
+			return new WP_Error(
+				'bp_rest_invalid_id',
+				__( 'Invalid friendship ID.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
 		}
 
 		$retval = array(
@@ -383,10 +388,10 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$friend = get_user_by( 'id', $request->get_param( 'id' ) );
+		$user = get_user_by( 'id', $request->get_param( 'id' ) );
 
 		// Check if user is valid.
-		if ( ! $friend ) {
+		if ( false === $user ) {
 			return new WP_Error(
 				'bp_rest_friends_update_item_failed',
 				__( 'There was a problem confirming if user is valid.', 'buddypress' ),
@@ -398,7 +403,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 
 		// Get friendship.
 		$friendship = $this->get_friendship_object(
-			BP_Friends_Friendship::get_friendship_id( bp_loggedin_user_id(), $friend->ID )
+			BP_Friends_Friendship::get_friendship_id( bp_loggedin_user_id(), $user->ID )
 		);
 
 		if ( ! $friendship || empty( $friendship->id ) ) {
@@ -478,10 +483,10 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		$friend = get_user_by( 'id', $request->get_param( 'id' ) );
+		$user = get_user_by( 'id', $request->get_param( 'id' ) );
 
 		// Check if user is valid.
-		if ( ! $friend ) {
+		if ( false === $user ) {
 			return new WP_Error(
 				'bp_rest_friends_delete_item_failed',
 				__( 'There was a problem confirming if user is valid.', 'buddypress' ),
@@ -493,7 +498,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 
 		// Get friendship.
 		$friendship = $this->get_friendship_object(
-			BP_Friends_Friendship::get_friendship_id( bp_loggedin_user_id(), $friend->ID )
+			BP_Friends_Friendship::get_friendship_id( bp_loggedin_user_id(), $user->ID )
 		);
 
 		if ( ! $friendship || empty( $friendship->id ) ) {
