@@ -185,7 +185,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to see the messages.', 'buddypress' ),
+				__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -333,53 +333,18 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		// Setting context.
 		$request->set_param( 'context', 'edit' );
 
-		// Prepare the message or the reply arguments.
-		$args = array(
-			'sender_id'  => $request['sender_id'],
-			'thread_id'  => 0,
-			'subject'    => $request['subject'],
-			'content'    => $request['message'],
-			'recipients' => $request['recipients'],
-		);
-
-		$error = new WP_Error(
-			'bp_rest_messages_create_failed',
-			__( 'There was an error trying to create the message.', 'buddypress' ),
-			array(
-				'status' => 500,
-			)
-		);
-
-		// Replying to an existing Thread ?
-		if ( $request['id'] ) {
-			// Try to get the thread.
-			$thread = $this->get_thread_object( $request['id'] );
-
-			// Validate the Thread exists.
-			if ( ! $thread->thread_id ) {
-				return $error;
-			}
-
-			$args['thread_id']  = (int) $thread->thread_id;
-			$args['recipients'] = wp_parse_id_list( wp_list_pluck( $thread->recipients, 'user_id' ) );
-		}
-
-		if ( ! $args['recipients'] ) {
-			return new WP_Error(
-				'bp_rest_messages_missing_recipients',
-				__( 'Please provide some recipients for your message or reply.', 'buddypress' ),
-				array(
-					'status' => 400,
-				)
-			);
-		}
-
 		// Create the message or the reply.
-		$thread_id = messages_new_message( $args );
+		$thread_id = messages_new_message( $this->prepare_item_for_database( $request ) );
 
 		// Validate it created a Thread or was added to it.
-		if ( ! $thread_id ) {
-			return $error;
+		if ( false === $thread_id ) {
+			return new WP_Error(
+				'bp_rest_messages_create_failed',
+				__( 'There was an error trying to create the message.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
 		}
 
 		// Make sure to get the newest message to update REST Additional fields.
@@ -634,7 +599,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  WP_REST_Request $request Full details about the request.
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return bool|WP_Error
 	 */
 	public function update_starred_permissions_check( $request ) {
@@ -690,7 +655,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		if ( ! in_array( $user_id, $recipient_ids, true ) || ! messages_delete_thread( $thread->thread_id, $user_id ) ) {
 			return new WP_Error(
 				'bp_rest_messages_delete_thread_failed',
-				__( 'There was an error trying to delete a thread.', 'buddypress' ),
+				__( 'There was an error trying to delete the thread.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)
@@ -740,6 +705,62 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_messages_delete_item_permissions_check', $retval, $request );
+	}
+
+	/**
+	 * Prepare a message for create.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param WP_REST_Request $request The request sent to the API.
+	 * @return stdClass
+	 */
+	protected function prepare_item_for_database( $request ) {
+		$prepared_thread = new stdClass();
+		$schema          = $this->get_item_schema();
+		$thread          = $this->get_thread_object( $request['id'] );
+
+		if ( ! empty( $schema['properties']['id'] ) && ! empty( $request['id'] ) ) {
+			$prepared_thread->thread_id = $request['id'];
+		} elseif ( ! empty( $thread->thread_id ) ) {
+			$prepared_thread->thread_id = $thread->thread_id;
+		}
+
+		if ( ! empty( $schema['properties']['sender_id'] ) && ! empty( $request['sender_id'] ) ) {
+			$prepared_thread->sender_id = $thread->sender_id;
+		} elseif ( ! empty( $thread->sender_id ) ) {
+			$prepared_thread->sender_id = $thread->sender_id;
+		} else {
+			$prepared_thread->sender_id = bp_loggedin_user_id();
+		}
+
+		if ( ! empty( $schema['properties']['message'] ) && ! empty( $request['message'] ) ) {
+			$prepared_thread->content = $request['message'];
+		} elseif ( ! empty( $thread->message ) ) {
+			$prepared_thread->message = $thread->message;
+		}
+
+		if ( ! empty( $schema['properties']['subject'] ) && ! empty( $request['subject'] ) ) {
+			$prepared_thread->subject = $request['subject'];
+		} elseif ( ! empty( $thread->subject ) ) {
+			$prepared_thread->subject = $thread->subject;
+		}
+
+		if ( ! empty( $schema['properties']['recipients'] ) && ! empty( $request['recipients'] ) ) {
+			$prepared_thread->recipients = $request['recipients'];
+		} elseif ( ! empty( $thread->recipients ) ) {
+			$prepared_thread->recipients = wp_parse_id_list( wp_list_pluck( $thread->recipients, 'user_id' ) );
+		}
+
+		/**
+		 * Filters a message before it is inserted via the REST API.
+		 *
+		 * @since 6.0.0
+		 *
+		 * @param stdClass        $prepared_thread An object prepared for inserting into the database.
+		 * @param WP_REST_Request $request Request object.
+		 */
+		return apply_filters( 'bp_rest_message_pre_insert_value', $prepared_thread, $request );
 	}
 
 	/**
@@ -844,49 +865,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Prepare links for the request.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param BP_Messages_Thread $thread  Thread object.
-	 * @return array Links for the given thread.
-	 */
-	protected function prepare_links( $thread ) {
-		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-
-		// Entity meta.
-		$links = array(
-			'self'       => array(
-				'href' => rest_url( $base . $thread->thread_id ),
-			),
-			'collection' => array(
-				'href' => rest_url( $base ),
-			),
-		);
-
-		// Add star links for each message of the thread.
-		if ( bp_is_active( 'messages', 'star' ) ) {
-			$starred_base = $base . bp_get_messages_starred_slug() . '/';
-
-			foreach ( $thread->messages as $message ) {
-				$links[ $message->id ] = array(
-					'href' => rest_url( $starred_base . $message->id ),
-				);
-			}
-		}
-
-		/**
-		 * Filter links prepared for the REST response.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param array              $links   The prepared links of the REST response.
-		 * @param BP_Messages_Thread $thread  Thread object.
-		 */
-		return apply_filters( 'bp_rest_messages_prepare_links', $links, $thread );
-	}
-
-	/**
 	 * Prepares thread data for return as an object.
 	 *
 	 * @since 0.1.0
@@ -957,6 +935,49 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Prepare links for the request.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param BP_Messages_Thread $thread  Thread object.
+	 * @return array Links for the given thread.
+	 */
+	protected function prepare_links( $thread ) {
+		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
+
+		// Entity meta.
+		$links = array(
+			'self'       => array(
+				'href' => rest_url( $base . $thread->thread_id ),
+			),
+			'collection' => array(
+				'href' => rest_url( $base ),
+			),
+		);
+
+		// Add star links for each message of the thread.
+		if ( bp_is_active( 'messages', 'star' ) ) {
+			$starred_base = $base . bp_get_messages_starred_slug() . '/';
+
+			foreach ( $thread->messages as $message ) {
+				$links[ $message->id ] = array(
+					'href' => rest_url( $starred_base . $message->id ),
+				);
+			}
+		}
+
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array              $links   The prepared links of the REST response.
+		 * @param BP_Messages_Thread $thread  Thread object.
+		 */
+		return apply_filters( 'bp_rest_messages_prepare_links', $links, $thread );
+	}
+
+	/**
 	 * Get thread object.
 	 *
 	 * @since 0.1.0
@@ -1020,6 +1041,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			$args['message']['description'] = __( 'Content of the Message to add to the Thread.', 'buddypress' );
 
 			// Edit recipients properties.
+			$args['recipients']['required']          = true;
 			$args['recipients']['items']             = array( 'type' => 'integer' );
 			$args['recipients']['sanitize_callback'] = 'wp_parse_id_list';
 			$args['recipients']['validate_callback'] = 'rest_validate_request_arg';
