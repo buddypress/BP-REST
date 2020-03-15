@@ -209,8 +209,8 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		// Check if user is valid.
 		if ( false === $user ) {
 			return new WP_Error(
-				'bp_rest_friends_create_item_failed',
-				__( 'There was a problem confirming if user is a valid one.', 'buddypress' ),
+				'bp_rest_invalid_id',
+				__( 'Invalid user ID.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
@@ -224,8 +224,8 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 
 		if ( ! $friendship || empty( $friendship->id ) ) {
 			return new WP_Error(
-				'bp_rest_invalid_id',
-				__( 'Invalid friendship ID.', 'buddypress' ),
+				'bp_rest_not_found',
+				__( 'Friendship does not exist.', 'buddypress' ),
 				array(
 					'status' => 404,
 				)
