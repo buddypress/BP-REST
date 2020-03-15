@@ -295,11 +295,10 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
-		$initiator_id = get_user_by( 'id', $request->get_param( 'initiator_id' ) );
-		$friend_id    = get_user_by( 'id', $request->get_param( 'friend_id' ) );
+		$friend = get_user_by( 'id', $request->get_param( 'id' ) );
 
-		// Check if users are valid.
-		if ( ! $initiator_id || ! $friend_id ) {
+		// Check if friend is valid.
+		if ( ! $friend ) {
 			return new WP_Error(
 				'bp_rest_friends_create_item_failed',
 				__( 'There was a problem confirming if user is a valid one.', 'buddypress' ),
@@ -309,8 +308,10 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		$initiator_id = bp_loggedin_user_id();
+
 		// Adding friendship.
-		if ( ! friends_add_friend( $initiator_id->ID, $friend_id->ID, $request->get_param( 'force' ) ) ) {
+		if ( ! friends_add_friend( $initiator_id, $friend->ID, $request->get_param( 'force' ) ) ) {
 			return new WP_Error(
 				'bp_rest_friends_create_item_failed',
 				__( 'There was an error trying to create the friendship.', 'buddypress' ),
@@ -322,7 +323,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 
 		// Get friendship.
 		$friendship = $this->get_friendship_object(
-			BP_Friends_Friendship::get_friendship_id( $initiator_id->ID, $friend_id->ID )
+			BP_Friends_Friendship::get_friendship_id( $initiator_id, $friend->ID )
 		);
 
 		if ( ! $friendship || empty( $friendship->id ) ) {
@@ -700,13 +701,6 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		} elseif ( WP_REST_Server::CREATABLE === $method ) {
 			$key = 'create_item';
 
-			// Remove the ID for POST requests since it is not available.
-			unset( $args['id'] );
-
-			// Those fields are required.
-			$args['initiator_id']['required'] = true;
-			$args['friend_id']['required']    = true;
-
 			// This one is optional.
 			$args['force'] = array(
 				'description'       => __( 'Whether to force friendship acceptance.', 'buddypress' ),
@@ -716,6 +710,9 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 				'validate_callback' => 'rest_validate_request_arg',
 			);
 
+			// Removing those args from the POST request.
+			unset( $args['initiator_id'] );
+			unset( $args['friend_id'] );
 		} elseif ( WP_REST_Server::DELETABLE === $method ) {
 			$key = 'delete_item';
 
