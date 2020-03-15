@@ -697,6 +697,9 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 
 		if ( WP_REST_Server::EDITABLE === $method ) {
 			$key = 'update_item';
+
+			unset( $args['initiator_id'] );
+			unset( $args['friend_id'] );
 		} elseif ( WP_REST_Server::CREATABLE === $method ) {
 			$key = 'create_item';
 
