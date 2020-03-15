@@ -60,7 +60,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			array(
 				'args'   => array(
 					'id' => array(
-						'description' => __( 'Identifier for the friendship.', 'buddypress' ),
+						'description' => __( 'Identifier for a user ID.', 'buddypress' ),
 						'type'        => 'integer',
 					),
 				),
@@ -68,37 +68,19 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
-					'args'                => array(
-						'context' => $this->get_context_param(
-							array(
-								'default' => 'view',
-							)
-						),
-					),
+					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::READABLE ),
 				),
 				array(
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'update_item' ),
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
-					'args'                => array(
-						'context' => $this->get_context_param(
-							array(
-								'default' => 'edit',
-							)
-						),
-					),
+					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
 				),
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_item' ),
 					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
-					'args'                => array(
-						'context' => $this->get_context_param(
-							array(
-								'default' => 'edit',
-							)
-						),
-					),
+					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::DELETABLE ),
 				),
 				'schema' => array( $this, 'get_item_schema' ),
 			)
@@ -115,14 +97,14 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'id'                => $request['id'],
-			'initiator_user_id' => $request['initiator_id'],
-			'friend_user_id'    => $request['friend_id'],
-			'is_confirmed'      => $request['is_confirmed'],
-			'order_by'          => $request['order_by'],
-			'sort_order'        => strtoupper( $request['order'] ),
-			'page'              => $request['page'],
-			'per_page'          => $request['per_page'],
+			'id'                => $request->get_param( 'id' ),
+			'initiator_user_id' => $request->get_param( 'initiator_id' ),
+			'friend_user_id'    => $request->get_param( 'friend_id' ),
+			'is_confirmed'      => $request->get_param( 'is_confirmed' ),
+			'order_by'          => $request->get_param( 'order_by' ),
+			'sort_order'        => strtoupper( $request->get_param( 'order' ) ),
+			'page'              => $request->get_param( 'page' ),
+			'per_page'          => $request->get_param( 'per_page' ),
 		);
 
 		/**
@@ -143,7 +125,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		}
 
 		// Check if user is valid.
-		$user = get_user_by( 'id', $request['user_id'] );
+		$user = get_user_by( 'id', $request->get_param( 'user_id' ) );
 		if ( ! $user instanceof WP_User ) {
 			return new WP_Error(
 				'bp_rest_friends_get_items_user_failed',
@@ -222,9 +204,23 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
+		$user = get_user_by( 'id', $request->get_param( 'id' ) );
 
-		// Get friendship object.
-		$friendship = $this->get_friendship_object( $request['id'] );
+		// Check if user is valid.
+		if ( false === $user ) {
+			return new WP_Error(
+				'bp_rest_friends_create_item_failed',
+				__( 'There was a problem confirming if user is a valid one.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		// Get friendship.
+		$friendship = $this->get_friendship_object(
+			BP_Friends_Friendship::get_friendship_id( bp_loggedin_user_id(), $user->ID )
+		);
 
 		if ( ! $friendship || empty( $friendship->id ) ) {
 			return new WP_Error(
@@ -299,10 +295,8 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
-		$request->set_param( 'context', 'edit' );
-
-		$initiator_id = get_user_by( 'id', $request['initiator_id'] );
-		$friend_id    = get_user_by( 'id', $request['friend_id'] );
+		$initiator_id = get_user_by( 'id', $request->get_param( 'initiator_id' ) );
+		$friend_id    = get_user_by( 'id', $request->get_param( 'friend_id' ) );
 
 		// Check if users are valid.
 		if ( ! $initiator_id || ! $friend_id ) {
@@ -316,7 +310,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		}
 
 		// Adding friendship.
-		if ( ! friends_add_friend( $initiator_id->ID, $friend_id->ID, $request['force'] ) ) {
+		if ( ! friends_add_friend( $initiator_id->ID, $friend_id->ID, $request->get_param( 'force' ) ) ) {
 			return new WP_Error(
 				'bp_rest_friends_create_item_failed',
 				__( 'There was an error trying to create the friendship.', 'buddypress' ),
@@ -330,6 +324,16 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		$friendship = $this->get_friendship_object(
 			BP_Friends_Friendship::get_friendship_id( $initiator_id->ID, $friend_id->ID )
 		);
+
+		if ( ! $friendship || empty( $friendship->id ) ) {
+			return new WP_Error(
+				'bp_rest_invalid_id',
+				__( 'Invalid friendship ID.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -376,7 +380,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Update friendship.
+	 * Update, accept, friendship.
 	 *
 	 * @since 6.0.0
 	 *
@@ -384,10 +388,23 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$request->set_param( 'context', 'edit' );
+		$user = get_user_by( 'id', $request->get_param( 'id' ) );
 
-		// Get friendship object.
-		$friendship = $this->get_friendship_object( $request['id'] );
+		// Check if user is valid.
+		if ( false === $user ) {
+			return new WP_Error(
+				'bp_rest_friends_update_item_failed',
+				__( 'There was a problem confirming if user is valid.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Get friendship.
+		$friendship = $this->get_friendship_object(
+			BP_Friends_Friendship::get_friendship_id( bp_loggedin_user_id(), $user->ID )
+		);
 
 		if ( ! $friendship || empty( $friendship->id ) ) {
 			return new WP_Error(
@@ -400,7 +417,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		}
 
 		// Accept friendship.
-		if ( ! friends_accept_friendship( $friendship->id ) ) {
+		if ( false === friends_accept_friendship( $friendship->id ) ) {
 			return new WP_Error(
 				'bp_rest_friends_cannot_update_item',
 				__( 'Could not accept friendship.', 'buddypress' ),
@@ -410,7 +427,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Getting new friendship object.
+		// Getting new, updated, friendship object.
 		$friendship = $this->get_friendship_object( $friendship->id );
 
 		$retval = array(
@@ -458,7 +475,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Reject/withdraw friendship.
+	 * Reject/withdraw/remove friendship.
 	 *
 	 * @since 6.0.0
 	 *
@@ -466,10 +483,23 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
-		$request->set_param( 'context', 'edit' );
+		$user = get_user_by( 'id', $request->get_param( 'id' ) );
 
-		// Get friendship object.
-		$friendship = $this->get_friendship_object( $request['id'] );
+		// Check if user is valid.
+		if ( false === $user ) {
+			return new WP_Error(
+				'bp_rest_friends_delete_item_failed',
+				__( 'There was a problem confirming if user is valid.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Get friendship.
+		$friendship = $this->get_friendship_object(
+			BP_Friends_Friendship::get_friendship_id( bp_loggedin_user_id(), $user->ID )
+		);
 
 		if ( ! $friendship || empty( $friendship->id ) ) {
 			return new WP_Error(
@@ -481,26 +511,31 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$user_id  = bp_loggedin_user_id();
 		$previous = $this->prepare_item_for_response( $friendship, $request );
 
-		/**
-		 * If this change is being initiated by the initiator,
-		 * use the `reject` function.
-		 *
-		 * This is the user who requested the friendship, and is doing the withdrawing.
-		 */
-		if ( $user_id === $friendship->initiator_user_id ) {
-			$deleted = friends_withdraw_friendship( $friendship->initiator_user_id, $friendship->friend_user_id );
+		// Remove a friendship.
+		if ( true === $request->get_param( 'force' ) ) {
+			$deleted = friends_remove_friend( $friendship->initiator_user_id, $friendship->friend_user_id );
 		} else {
+
 			/**
-			 * Otherwise, this change is being initiated by the user, friend,
-			 * who received the friendship reject.
+			 * If this change is being initiated by the initiator,
+			 * use the `reject` function.
+			 *
+			 * This is the user who requested the friendship, and is doing the withdrawing.
 			 */
-			$deleted = friends_reject_friendship( $friendship->id );
+			if ( bp_loggedin_user_id() === $friendship->initiator_user_id ) {
+				$deleted = friends_withdraw_friendship( $friendship->initiator_user_id, $friendship->friend_user_id );
+			} else {
+				/**
+				 * Otherwise, this change is being initiated by the user, friend,
+				 * who received the friendship reject.
+				 */
+				$deleted = friends_reject_friendship( $friendship->id );
+			}
 		}
 
-		if ( ! $deleted ) {
+		if ( false === $deleted ) {
 			return new WP_Error(
 				'bp_rest_friends_cannot_delete_item',
 				__( 'Could not delete friendship.', 'buddypress' ),
@@ -578,6 +613,9 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
+		// Add prepare links.
+		$response->add_links( $this->prepare_links( $friendship ) );
+
 		/**
 		 * Filter a friendship value returned from the API.
 		 *
@@ -591,12 +629,51 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Prepare links for the request.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param BP_Friends_Friendship $friendship Friendship item.
+	 * @return array Links for the given plugin.
+	 */
+	protected function prepare_links( $friendship ) {
+		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
+
+		// Entity meta.
+		$links = array(
+			'self'       => array(
+				'href' => rest_url( $base . $friendship->id ),
+			),
+			'collection' => array(
+				'href' => rest_url( $base ),
+			),
+			'initiator'       => array(
+				'href'       => rest_url( bp_rest_get_user_url( $friendship->initiator_user_id ) ),
+				'embeddable' => true,
+			),
+			'friend'       => array(
+				'href'       => rest_url( bp_rest_get_user_url( $friendship->friend_user_id ) ),
+				'embeddable' => true,
+			),
+		);
+
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array                 $links      The prepared links of the REST response.
+		 * @param BP_Friends_Friendship $friendship Friendship object.
+		 */
+		return apply_filters( 'bp_rest_friends_prepare_links', $links, $friendship );
+	}
+
+	/**
 	 * Get friendship object.
 	 *
 	 * @since 6.0.0
 	 *
 	 * @param int $friendship_id Friendship ID.
-	 *
 	 * @return BP_Friends_Friendship
 	 */
 	public function get_friendship_object( $friendship_id ) {
@@ -604,7 +681,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Edit some arguments for the endpoint's CREATABLE and EDITABLE methods.
+	 * Edit some arguments for the endpoint's methods.
 	 *
 	 * @since 6.0.0
 	 *
@@ -612,15 +689,18 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return array Endpoint arguments.
 	 */
 	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
-		$key  = 'get_item';
+		$args    = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$context = 'view';
+
+		$args['id']['required']    = true;
+		$args['id']['description'] = __( 'A unique numeric ID of a user.', 'buddypress' );
 
 		if ( WP_REST_Server::EDITABLE === $method ) {
 			$key = 'update_item';
 		} elseif ( WP_REST_Server::CREATABLE === $method ) {
 			$key = 'create_item';
 
-			// Remothe the ID for POST requests.
+			// Remove the ID for POST requests since it is not available.
 			unset( $args['id'] );
 
 			// Those fields are required.
@@ -638,7 +718,42 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 
 		} elseif ( WP_REST_Server::DELETABLE === $method ) {
 			$key = 'delete_item';
+
+			// This one is optional.
+			$args['force'] = array(
+				'description'       => __( 'Whether to force friendship removal.', 'buddypress' ),
+				'default'           => false,
+				'type'              => 'boolean',
+				'sanitize_callback' => 'rest_sanitize_boolean',
+				'validate_callback' => 'rest_validate_request_arg',
+			);
+
+			unset( $args['initiator_id'] );
+			unset( $args['friend_id'] );
+		} elseif ( WP_REST_Server::READABLE === $method ) {
+			$key = 'get_item';
+
+			$args['id']['required'] = true;
+
+			// Removing those args from the GET request.
+			unset( $args['initiator_id'] );
+			unset( $args['friend_id'] );
 		}
+
+		if ( 'get_item' !== $key ) {
+			$context = 'edit';
+		}
+
+		$args = array_merge(
+			array(
+				'context' => $this->get_context_param(
+					array(
+						'default' => $context,
+					)
+				),
+			),
+			$args
+		);
 
 		/**
 		 * Filters the method query arguments.
