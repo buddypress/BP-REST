@@ -745,7 +745,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 				function( $item ) use ( $request ) {
 					return $this->assemble_response_data( $item, $request );
 				},
-				$field->get_children(),
+				$field->get_children()
 			);
 		}
 
