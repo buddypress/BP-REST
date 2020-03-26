@@ -5,10 +5,10 @@
  * Description: BuddyPress extension for WordPress' JSON-based REST API.
  * Author: The BuddyPress Community
  * Author URI: https://buddypress.org/
- * Version: 0.1.0
+ * Version: 0.2.0
  * Text Domain: buddypress
- * Requires at least: 4.7
- * Tested up to: 5.1
+ * Requires at least: 4.8
+ * Tested up to: 5.4
  * Requires PHP: 5.6
  * License: GPLv2
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -60,19 +60,19 @@ function bp_rest() {
 		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
 
 		// Support Member's Avatar.
-		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-member-avatar-endpoint.php';
+		require_once dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-attachments-member-avatar-endpoint.php';
 		$controller = new BP_REST_Attachments_Member_Avatar_Endpoint();
 		$controller->register_routes();
 
 		// Support Member's Cover.
 		if ( bp_is_active( 'members', 'cover_image' ) ) {
-			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-member-cover-endpoint.php';
+			require_once dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-attachments-member-cover-endpoint.php';
 			$controller = new BP_REST_Attachments_Member_Cover_Endpoint();
 			$controller->register_routes();
 		}
 
 		if ( bp_get_signup_allowed() ) {
-			require_once dirname( __FILE__ ) . '/includes/bp-signup/classes/class-bp-rest-signup-endpoint.php';
+			require_once dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-signup-endpoint.php';
 			$controller = new BP_REST_Signup_Endpoint();
 			$controller->register_routes();
 		}
@@ -92,7 +92,7 @@ function bp_rest() {
 		// Support to Blog Avatar.
 		if ( bp_is_active( 'blogs', 'site-icon' ) ) {
 			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
-			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-blog-avatar-endpoint.php';
+			require_once dirname( __FILE__ ) . '/includes/bp-blogs/classes/class-bp-rest-attachments-blog-avatar-endpoint.php';
 			$controller = new BP_REST_Attachments_Blog_Avatar_Endpoint();
 			$controller->register_routes();
 		}
@@ -130,13 +130,13 @@ function bp_rest() {
 		$controller->register_routes();
 
 		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
-		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-group-avatar-endpoint.php';
+		require_once dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-attachments-group-avatar-endpoint.php';
 		$controller = new BP_REST_Attachments_Group_Avatar_Endpoint();
 		$controller->register_routes();
 
 		// Support to Group Cover.
 		if ( bp_is_active( 'groups', 'cover_image' ) ) {
-			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/class-bp-rest-attachments-group-cover-endpoint.php';
+			require_once dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-attachments-group-cover-endpoint.php';
 			$controller = new BP_REST_Attachments_Group_Cover_Endpoint();
 			$controller->register_routes();
 		}

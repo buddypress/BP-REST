@@ -9,7 +9,7 @@ Please use and provide feedback!
 ## System Requirements
 
 * PHP >= 5.6
-* WP >= 4.7
+* WP >= 4.8
 * BuddyPress = trunk
 
 ## Endpoints (Components) Supported
@@ -37,7 +37,7 @@ Please use and provide feedback!
 
 ## Installation
 
-Drop this plugin in the wp-content/plugins directory and activate it. You need at least [WordPress 4.7](https://wordpress.org/download/) and [BuddyPress](https://buddypress.org/download/) to use the plugin.
+Drop this plugin in the wp-content/plugins directory and activate it. You need at least [WordPress 4.8](https://wordpress.org/download/) and [BuddyPress](https://buddypress.org/download/) to use the plugin.
 
 ## About
 
