@@ -1415,7 +1415,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$avatar_properties['thumb'] = array(
 				'context'     => array( 'view', 'edit' ),
 				/* translators: 1: Thumb avatar width in pixels. 2: Thumb avatar height in pixels */
-				'description' => sprintf( _( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
+				'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
 				'type'        => 'string',
 				'format'      => 'uri',
 			);
