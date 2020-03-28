@@ -737,7 +737,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$avatar_properties = array();
 
 			$avatar_properties['full'] = array(
-				/* translators: Full image size for the member Avatar */
+				/* translators: 1: Full avatar width in pixels. 2: Full avatar height in pixels */
 				'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_full_width() ), number_format_i18n( bp_core_avatar_full_height() ) ),
 				'type'        => 'string',
 				'format'      => 'uri',
@@ -745,7 +745,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 
 			$avatar_properties['thumb'] = array(
-				/* translators: Thumb imaze size for the member Avatar */
+				/* translators: 1: Thumb avatar width in pixels. 2: Thumb avatar height in pixels */
 				'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
 				'type'        => 'string',
 				'format'      => 'uri',

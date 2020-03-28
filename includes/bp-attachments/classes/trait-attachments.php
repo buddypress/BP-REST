@@ -46,7 +46,7 @@ trait BP_REST_Attachments {
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_cover_upload_error",
 				sprintf(
-					/* translators: Error message. */
+					/* translators: %s: the upload error message */
 					__( 'Upload Failed! Error was: %s', 'buddypress' ),
 					$uploaded_image['error']
 				),
@@ -171,7 +171,7 @@ trait BP_REST_Attachments {
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_avatar_upload_error",
 				sprintf(
-					/* translators: %s is replaced with the error */
+					/* translators: %s: the upload error message */
 					__( 'Upload failed! Error was: %s.', 'buddypress' ),
 					$avatar_original['error']
 				),
@@ -274,7 +274,7 @@ trait BP_REST_Attachments {
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_avatar_upload_error",
 				sprintf(
-					/* translators: %s is replaced with error message. */
+					/* translators: %s: the upload error message */
 					__( 'Upload failed! Error was: %s', 'buddypress' ),
 					$img_dir->get_error_message()
 				),
