@@ -172,6 +172,91 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group create_item
 	 */
+	public function test_regular_user_can_not_create_friendship_to_others() {
+		$this->bp->set_current_user( $this->factory->user->create() );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+
+		$params = $this->set_friendship_data();
+		$request->set_body_params( $params );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_friends_create_item_failed', $response, 500 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_admins_can_create_friendship_to_others() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+
+		$params = $this->set_friendship_data();
+		$request->set_body_params( $params );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$friendship = $response->get_data();
+		$this->assertNotEmpty( $friendship );
+		$this->assertNotEmpty( $friendship[0]['initiator_id'] );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_admins_can_force_friendship_creation() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+
+		$params = $this->set_friendship_data();
+		$params = array_merge( $params, [ 'force' => true ] );
+		$request->set_body_params( $params );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$friendship = $response->get_data();
+
+		$this->assertNotEmpty( $friendship );
+		$this->assertTrue( $friendship[0]['is_confirmed'] );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_regular_users_can_not_force_friendship_creation() {
+		$u = $this->factory->user->create();
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+
+		$params = $this->set_friendship_data(
+			[
+				'initiator_id' => $u,
+				'force'        => true,
+			]
+		);
+		$request->set_body_params( $params );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$friendship = $response->get_data();
+		$this->assertNotEmpty( $friendship );
+
+		$this->assertFalse( $friendship[0]['is_confirmed'] );
+	}
+
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item_without_initiator_id() {
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
