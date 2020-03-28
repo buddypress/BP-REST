@@ -309,8 +309,10 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		$is_moderator = bp_current_user_can( 'bp_moderate' );
+
 		// Only admins can create friendship requests for other people.
-		if ( ! in_array( bp_loggedin_user_id(), [ $initiator_id->ID, $friend_id->ID ], true ) && ! bp_current_user_can( 'bp_moderate' ) ) {
+		if ( ! in_array( bp_loggedin_user_id(), [ $initiator_id->ID, $friend_id->ID ], true ) && ! $is_moderator ) {
 			return new WP_Error(
 				'bp_rest_friends_create_item_failed',
 				__( 'You are not allowed to perform this action.', 'buddypress' ),
@@ -320,8 +322,14 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Only admins can force a friendship request.
+		$force = false;
+		if ( true === $request->get_param( 'force' ) && $is_moderator ) {
+			$force = true;
+		}
+
 		// Adding friendship.
-		if ( ! friends_add_friend( $initiator_id->ID, $friend_id->ID, $request->get_param( 'force' ) ) ) {
+		if ( ! friends_add_friend( $initiator_id->ID, $friend_id->ID, $force ) ) {
 			return new WP_Error(
 				'bp_rest_friends_create_item_failed',
 				__( 'There was an error trying to create the friendship.', 'buddypress' ),
