@@ -495,7 +495,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 			$loggedin_user_id = bp_loggedin_user_id();
 			if ( true === $retval && in_array( $request['action'], [ 'ban', 'unban', 'promote', 'demote' ], true ) ) {
-				if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
+				if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) ) {
 					$messages = array(
 						'ban'     => __( 'Sorry, you are not allowed to ban this group member.', 'buddypress' ),
 						'unban'   => __( 'Sorry, you are not allowed to unban this group member.', 'buddypress' ),
