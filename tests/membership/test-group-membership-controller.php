@@ -543,6 +543,33 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	/**
 	 * @group update_item
 	 */
+	public function test_group_mods_can_not_promote_members() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator_id' => $u1,
+		) );
+
+		$this->bp->add_user_to_group( $u2, $g1, array(
+			'is_mod' => true,
+		) );
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u1 );
+		$request->set_query_params( array(
+			'action' => 'promote',
+			'role'   => 'mod',
+		) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_promote', $response, 403 );
+	}
+
+	/**
+	 * @group update_item
+	 */
 	public function test_admin_can_demote_group_admin_to_member() {
 		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -560,8 +587,6 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$request->set_query_params( array(
 			'action' => 'demote',
 		) );
-
-		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -569,20 +594,19 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		foreach ( $all_data as $data ) {
-			$user          = bp_rest_get_user( $data['id'] );
-			$member_object = new BP_Groups_Member( $user->ID, $g1 );
+		$data          = $all_data[0];
+		$user          = bp_rest_get_user( $data['id'] );
+		$member_object = new BP_Groups_Member( $user->ID, $g1 );
 
-			$this->assertTrue( $u2 === $user->ID );
-			$this->assertFalse( (bool) $member_object->is_mod );
-			$this->assertFalse( (bool) $member_object->is_admin );
-			$this->assertTrue( (bool) $member_object::check_is_member( $u2, $g1 ) );
-			$this->check_user_data( $user, $data, $member_object, 'edit' );
-		}
+		$this->assertTrue( $u2 === $user->ID );
+		$this->assertFalse( (bool) $member_object->is_mod );
+		$this->assertFalse( (bool) $member_object->is_admin );
+		$this->assertTrue( (bool) $member_object::check_is_member( $u2, $g1 ) );
+		$this->check_user_data( $user, $data, $member_object, 'edit' );
 	}
 
 	/**
-	 * @group create_item
+	 * @group update_item
 	 */
 	public function test_group_admin_can_demote_another_group_admin_to_mod() {
 		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
