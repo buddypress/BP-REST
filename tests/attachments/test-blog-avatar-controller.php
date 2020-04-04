@@ -123,10 +123,6 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 			$this->markTestSkipped();
 		}
 
-		if ( function_exists( 'wp_initialize_site' ) ) {
-			$this->setExpectedDeprecated( 'wpmu_new_blog' );
-		}
-
 		$blog_id = $this->bp_factory->blog->create();
 
 		// Single.
@@ -143,10 +139,6 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 	public function test_context_param() {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped();
-		}
-
-		if ( function_exists( 'wp_initialize_site' ) ) {
-			$this->setExpectedDeprecated( 'wpmu_new_blog' );
 		}
 
 		$blog_id = $this->bp_factory->blog->create();
