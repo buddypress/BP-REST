@@ -93,7 +93,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_items( $request ) {
 		$args = array(
@@ -129,7 +129,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		if ( ! $user instanceof WP_User ) {
 			return new WP_Error(
 				'bp_rest_friends_get_items_user_failed',
-				__( 'There was a problem confirming if user is a valid one.', 'buddypress' ),
+				__( 'There was a problem confirming if user is valid.', 'buddypress' ),
 				array(
 					'status' => 500,
 				)

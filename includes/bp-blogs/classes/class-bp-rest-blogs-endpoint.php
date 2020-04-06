@@ -81,7 +81,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_items( $request ) {
 		$args = array(
@@ -178,7 +178,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
 		$blog = $this->get_blog_object( $request['id'] );
@@ -371,7 +371,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		$blogs = current(
 			bp_blogs_get_blogs(
 				array(
-					'include_blog_ids'  => array( $blog_id ),
+					'include_blog_ids' => array( $blog_id ),
 				)
 			)
 		);

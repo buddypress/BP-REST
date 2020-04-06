@@ -90,8 +90,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-
-		$this->check_signup_data( $signup, $all_data[0], 'view' );
+		$this->check_signup_data( $signup, $all_data[0] );
 	}
 
 	/**
@@ -123,9 +122,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$headers = $response->get_headers();
 		$this->assertEquals( 4, $headers['X-WP-Total'] );
 		$this->assertEquals( 2, $headers['X-WP-TotalPages'] );
-
-		$all_data = $response->get_data();
-		$this->check_signup_data( $signup, $all_data[0], 'view' );
 	}
 
 	/**
@@ -171,7 +167,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$all_data = $response->get_data();
 
-		$this->check_signup_data( $signup, $all_data[0], 'view' );
+		$this->check_signup_data( $signup, $all_data[0] );
 	}
 
 	/**
@@ -284,7 +280,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$all_data = $response->get_data();
 
-		$this->check_signup_data( $signup, $all_data[0], 'view' );
+		$this->check_signup_data( $signup, $all_data[0] );
 	}
 
 	/**
@@ -391,7 +387,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$all_data = $response->get_data();
 
-		$this->check_signup_data( $signup, $all_data[0], 'view' );
+		$this->check_signup_data( $signup, $all_data[0] );
 	}
 
 	protected function set_signup_data( $args = array() ) {
@@ -429,16 +425,11 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		return $s->id;
 	}
 
-	protected function check_signup_data( $signup, $data, $context = 'view' ) {
+	protected function check_signup_data( $signup, $data ) {
 		$this->assertEquals( $signup->id, $data['id'] );
 		$this->assertEquals( $signup->user_login, $data['user_login'] );
 		$this->assertEquals( $signup->user_name, $data['user_name'] );
 		$this->assertEquals( bp_rest_prepare_date_response( $signup->registered ), $data['registered'] );
-
-		if ( 'edit' === $context ) {
-			$this->assertEquals( $signup->activation_key, $data['activation_key'] );
-			$this->assertEquals( $signup->user_email, $data['user_email'] );
-		}
 	}
 
 	public function test_get_item_schema() {

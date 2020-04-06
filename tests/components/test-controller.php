@@ -66,7 +66,6 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 				'per_page' => 5,
 			)
 		);
-		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -79,9 +78,6 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 		$this->assertNotEmpty( $all_data );
 
 		$this->assertTrue( 10 === count( $all_data ) );
-
-		$component = $this->endpoint->get_component_info( $all_data[0]['name'] );
-		$this->check_component_data( $component, $all_data[0] );
 	}
 
 	/**
@@ -96,7 +92,6 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 				'status' => 'another',
 			)
 		);
-		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'rest_invalid_param', $response, 400 );
@@ -107,7 +102,6 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 	 */
 	public function test_get_items_user_is_not_logged_in() {
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
-		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
@@ -161,9 +155,6 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 		$this->assertNotEmpty( $all_data );
 
 		$this->assertTrue( 'inactive' === $all_data[0]['status'] );
-
-		$component = $this->endpoint->get_component_info( 'blogs' );
-		$this->check_component_data( $component, $all_data[0] );
 	}
 
 	/**
