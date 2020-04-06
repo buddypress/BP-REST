@@ -514,7 +514,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Prepares notification data for return as an object.
+	 * Prepares notification data tp return as an object.
 	 *
 	 * @since 0.1.0
 	 *
@@ -534,12 +534,12 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'is_new'            => $notification->is_new,
 		);
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
-
-		// @todo add prepare_links
+		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data     = $this->add_additional_fields_to_object( $data, $request );
+		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
+
+		$response->add_links( $this->prepare_links( $notification ) );
 
 		/**
 		 * Filter a notification value returned from the API.
