@@ -1,13 +1,11 @@
 {
-    "name": "buddypress/bp-rest",
-    "description": "WP REST API endpoints for BuddyPress",
-    "type": "library",
-    "require": {
-        "squizlabs/php_codesniffer" : "^3.3.1"
-    },
-    "require-dev": {
-        "dealerdirect/phpcodesniffer-composer-installer": "*",
-        "phpcompatibility/phpcompatibility-wp" : "*",
-        "wp-coding-standards/wpcs": "*"
-    }
+  "name": "buddypress/bp-rest",
+  "description": "REST API endpoints for BuddyPress",
+  "type": "library",
+  "require": {
+    "squizlabs/php_codesniffer" : "^3.5.4",
+    "dealerdirect/phpcodesniffer-composer-installer": "*",
+    "phpcompatibility/phpcompatibility-wp" : "*",
+    "wp-coding-standards/wpcs": "*"
+  }
 }

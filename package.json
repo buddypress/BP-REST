@@ -4,18 +4,19 @@
   "version": "0.2.0",
   "description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
   "devDependencies": {
-    "grunt": "^1.0.4",
+    "grunt": "^1.1.0",
     "grunt-check-dependencies": "^1.0.0",
     "grunt-checktextdomain": "~1.0.1",
     "grunt-legacy-util": "^1.1.1",
     "matchdep": "^2.0.0"
   },
   "keywords": [
-    "API",
     "BuddyPress",
+    "buddypress",
+    "WordPress",
+    "API",
     "REST API",
-    "bp",
-    "WordPress"
+    "bp"
   ],
   "homepage": "https://github.com/buddypress/BP-REST",
   "bugs": "https://github.com/buddypress/BP-REST/issues",
