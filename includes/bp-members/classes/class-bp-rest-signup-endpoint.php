@@ -590,10 +590,8 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			$data['user_email']     = $signup->user_email;
 		}
 
-		$data = $this->add_additional_fields_to_object( $data, $request );
-		$data = $this->filter_response_by_context( $data, $context );
-
-		// @todo add prepare_links
+		$data     = $this->add_additional_fields_to_object( $data, $request );
+		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
 		/**

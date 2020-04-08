@@ -81,7 +81,7 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 			if ( ! $user instanceof WP_User ) {
 				return new WP_Error(
 					'bp_rest_blog_avatar_get_item_user_failed',
-					__( 'There was a problem confirming if the user ID provided is valid.', 'buddypress' ),
+					__( 'There was a problem confirming if user is valid.', 'buddypress' ),
 					array(
 						'status' => 500,
 					)
