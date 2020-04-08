@@ -514,7 +514,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Prepares notification data tp return as an object.
+	 * Prepares notification data to return as an object.
 	 *
 	 * @since 0.1.0
 	 *
