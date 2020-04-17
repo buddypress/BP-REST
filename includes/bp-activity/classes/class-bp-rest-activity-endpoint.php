@@ -798,9 +798,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Setting context.
-		$request->set_param( 'context', 'edit' );
-
 		// Prepare the response now the user favorites has been updated.
 		$retval = array(
 			$this->prepare_response_for_collection(
