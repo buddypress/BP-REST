@@ -633,7 +633,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			$loggedin_user_id = bp_loggedin_user_id();
 
 			if ( $user->ID !== $loggedin_user_id ) {
-				if ( true === $retval && ! groups_is_user_admin( $loggedin_user_id, $group->id ) && ! groups_is_user_mod( $loggedin_user_id, $group->id ) ) {
+				if ( true === $retval && ! groups_is_user_admin( $loggedin_user_id, $group->id ) ) {
 					$retval = new WP_Error(
 						'bp_rest_authorization_required',
 						__( 'Sorry, you need to be logged in to view a group membership.', 'buddypress' ),
