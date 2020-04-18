@@ -526,9 +526,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_starred( $request ) {
-		// Setting context.
-		$request->set_param( 'context', 'edit' );
-
 		$message = $this->get_message_object( $request['id'] );
 
 		if ( empty( $message->id ) ) {
