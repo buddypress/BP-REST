@@ -127,8 +127,8 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			'order'      => $request['order'],
 			'orderby'    => $request['orderby'],
 			'user_login' => $request['user_login'],
-			'page'       => $request['number'],
-			'offset'     => $request['per_page'],
+			'number'     => $request['number'],
+			'offset'     => $request['offset'],
 		);
 
 		if ( empty( $request['include'] ) ) {
@@ -156,7 +156,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		}
 
 		$response = rest_ensure_response( $retval );
-		$response = bp_rest_response_add_total_headers( $response, $signups['total'], $args['offset'] );
+		$response = bp_rest_response_add_total_headers( $response, $signups['total'], $args['number'] );
 
 		/**
 		 * Fires after a list of signups is fetched via the REST API.
@@ -762,7 +762,23 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$params                       = parent::get_collection_params();
 		$params['context']['default'] = 'view';
 
-		unset( $params['page'], $params['search'] );
+		unset( $params['page'], $params['per_page'], $params['search'] );
+
+		$params['number'] = array(
+			'description'       => __( 'Total number of signups to return.', 'buddypress' ),
+			'default'           => 1,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['offset'] = array(
+			'description'       => __( 'Offset the result set by a specific number of items.', 'buddypress' ),
+			'default'           => 0,
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
 
 		$params['include'] = array(
 			'description'       => __( 'Ensure result set includes specific IDs.', 'buddypress' ),
@@ -779,14 +795,6 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			'type'              => 'string',
 			'enum'              => array( 'asc', 'desc' ),
 			'sanitize_callback' => 'sanitize_key',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['number'] = array(
-			'description'       => __( 'Total number of signups to return.', 'buddypress' ),
-			'default'           => 1,
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 

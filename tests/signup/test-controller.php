@@ -104,13 +104,11 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$s3 = $this->create_signup();
 		$s4 = $this->create_signup();
 
-		$signup = $this->endpoint->get_signup_object( $s1 );
-
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params(
 			array(
-				'per_page' => 2,
-				'include'  => array( $s1, $s2, $s3, $s4 ),
+				'include' => array( $s1, $s2, $s3, $s4 ),
+				'number'  => 2,
 			)
 		);
 
@@ -120,6 +118,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$headers = $response->get_headers();
+
 		$this->assertEquals( 4, $headers['X-WP-Total'] );
 		$this->assertEquals( 2, $headers['X-WP-TotalPages'] );
 	}
