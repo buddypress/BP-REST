@@ -888,7 +888,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			// Set up activity oEmbed cache.
 			bp_activity_embed();
 
-			$rendered = apply_filters( 'bp_get_activity_content_body', $activity->content );
+			$rendered = apply_filters( 'bp_get_activity_content_body', $activity->content, $activity );
 
 			// Restore the `activities_template` global.
 			$GLOBALS['activities_template'] = $activities_template;
