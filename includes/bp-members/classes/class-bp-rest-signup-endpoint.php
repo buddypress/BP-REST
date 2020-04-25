@@ -789,19 +789,20 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		$params['orderby'] = array(
+			'description'       => __( 'Order by a specific parameter (default: signup_id).', 'buddypress' ),
+			'default'           => 'signup_id',
+			'type'              => 'string',
+			'enum'              => array( 'signup_id', 'login', 'email', 'registered', 'activated' ),
+			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		$params['order'] = array(
 			'description'       => __( 'Order sort attribute ascending or descending.', 'buddypress' ),
 			'default'           => 'desc',
 			'type'              => 'string',
 			'enum'              => array( 'asc', 'desc' ),
-			'sanitize_callback' => 'sanitize_key',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['orderby'] = array(
-			'description'       => __( 'Order by a specific parameter (default: signup_id).', 'buddypress' ),
-			'default'           => 'signup_id',
-			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
