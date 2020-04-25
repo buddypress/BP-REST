@@ -727,6 +727,12 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 				'required'    => true,
 			);
 
+			/**
+			 * We do not need the meta for the create item method
+			 * as we are building it inside this method.
+			 */
+			unset( $args['meta'] );
+
 			$args['domain'] = array(
 				'context'     => array( 'edit' ),
 				'description' => __( 'Domain for the new user\'s child blog.', 'buddypress' ),
