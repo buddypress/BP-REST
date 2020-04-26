@@ -322,6 +322,34 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			$user_email = sanitize_email( $user_email );
 		}
 
+		$password       = $request->get_param( 'password' );
+		$check_password = $this->check_user_password( $password );
+
+		if ( is_wp_error( $check_password ) ) {
+			return $check_password;
+		}
+
+		$meta = array(
+			// Hash and store the password.
+			'password' => wp_hash_password( $password ),
+		);
+
+		$user_name = $request->get_param( 'user_name' );
+		if ( $user_name ) {
+			$meta['field_1']           = $user_name;
+			$meta['profile_field_ids'] = 1;
+		}
+
+		/**
+		 * Allow plugins to add their own signup meta.
+		 *
+		 * @since 6.0.0
+		 *
+		 * @param array           $meta    The signup meta.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$meta = apply_filters( 'bp_rest_signup_create_item_meta', $meta, $request );
+
 		$signup_args = array(
 			'user_login'     => $user_login,
 			'user_email'     => $user_email,
@@ -329,6 +357,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			'domain'         => $request['domain'],
 			'path'           => $request['path'],
 			'title'          => $request['title'],
+			'meta'           => $meta,
 		);
 
 		// Add signup.
@@ -579,15 +608,28 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$data = array(
 			'id'         => $signup->id,
 			'user_login' => $signup->user_login,
-			'user_name'  => $signup->user_name,
 			'registered' => bp_rest_prepare_date_response( $signup->registered ),
 		);
+
+		// The user name is only available when the xProfile component is active.
+		if ( isset( $signup->user_name ) ) {
+			$data['user_name'] = $signup->user_name;
+		}
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
 		if ( 'edit' === $context ) {
 			$data['activation_key'] = $signup->activation_key;
 			$data['user_email']     = $signup->user_email;
+			$data['date_sent']      = bp_rest_prepare_date_response( $signup->date_sent );
+			$data['count_sent']     = (int) $signup->count_sent;
+
+			// Remove the password from meta.
+			if ( isset( $signup->meta['password'] ) ) {
+				unset( $signup->meta['password'] );
+			}
+
+			$data['meta'] = $signup->meta;
 		}
 
 		$data     = $this->add_additional_fields_to_object( $data, $request );
@@ -634,6 +676,28 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Check a user password for the REST API.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param string $value The password submitted in the request.
+	 * @return string|WP_Error The sanitized password, if valid, otherwise an error.
+	 */
+	public function check_user_password( $value ) {
+		$password = (string) $value;
+
+		if ( empty( $password ) || false !== strpos( $password, '\\' ) ) {
+			return new WP_Error(
+				'rest_user_invalid_password',
+				__( 'Passwords cannot be empty or contain the "\\" character.', 'buddypress' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		return $password;
+	}
+
+	/**
 	 * Edit the type of the some properties for the CREATABLE & EDITABLE methods.
 	 *
 	 * @since 6.0.0
@@ -646,28 +710,48 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$key  = 'get_item';
 
 		if ( WP_REST_Server::CREATABLE === $method ) {
-			$key                               = 'create_item';
-			$args['activation_key']['default'] = wp_generate_password( 32, false );
-			$args['domain']                    = array(
+			$key                    = 'create_item';
+			$args['activation_key'] = array(
 				'context'     => array( 'edit' ),
-				'description' => __( 'New user domain.', 'buddypress' ),
+				'description' => __( 'Activation key of the signup.', 'buddypress' ),
+				'type'        => 'string',
+				'readonly'    => true,
+				'default'     => wp_generate_password( 32, false ),
+			);
+
+			// The password is required when creating a signup.
+			$args['password'] = array(
+				'description' => __( 'Password for the new user (never included).', 'buddypress' ),
+				'type'        => 'string',
+				'context'     => array(), // Password is never displayed.
+				'required'    => true,
+			);
+
+			/**
+			 * We do not need the meta for the create item method
+			 * as we are building it inside this method.
+			 */
+			unset( $args['meta'] );
+
+			$args['domain'] = array(
+				'context'     => array( 'edit' ),
+				'description' => __( 'Domain for the new user\'s child blog.', 'buddypress' ),
 				'type'        => 'string',
 				'default'     => '',
 				'readonly'    => true,
 			);
-			$args['path']                      = array(
+			$args['path']   = array(
 				'context'     => array( 'edit' ),
-				'description' => __( 'New user title.', 'buddypress' ),
+				'description' => __( 'Relative path for the new user\'s child blog.', 'buddypress' ),
 				'type'        => 'string',
 				'default'     => '',
 				'readonly'    => true,
 			);
-			$args['title']                     = array(
+			$args['title']  = array(
 				'context'     => array( 'edit' ),
-				'description' => __( 'New user path.', 'buddypress' ),
+				'description' => __( 'Title of the new user\'s child blog.', 'buddypress' ),
 				'type'        => 'string',
 				'default'     => '',
-				'readonly'    => true,
 			);
 		} elseif ( WP_REST_Server::EDITABLE === $method ) {
 			$key = 'update_item';
@@ -710,22 +794,12 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 					'description' => __( 'The username of the user the signup is for.', 'buddypress' ),
 					'required'    => true,
 					'type'        => 'string',
-					'readonly'    => true,
-				),
-				'user_name'      => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The full name of the user the signup is for.', 'buddypress' ),
-					'type'        => 'string',
-					'readonly'    => true,
-					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_text_field',
-					),
 				),
 				'user_email'     => array(
 					'context'     => array( 'edit' ),
 					'description' => __( 'The email for the user the signup is for.', 'buddypress' ),
 					'type'        => 'string',
-					'readonly'    => true,
+					'required'    => true,
 				),
 				'activation_key' => array(
 					'context'     => array( 'edit' ),
@@ -740,8 +814,45 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 					'readonly'    => true,
 					'format'      => 'date-time',
 				),
+				'date_sent'      => array(
+					'context'     => array( 'edit' ),
+					'description' => __( 'The date the activation email was sent to the user, in the site\'s timezone.', 'buddypress' ),
+					'type'        => 'string',
+					'readonly'    => true,
+					'format'      => 'date-time',
+				),
+				'count_sent'     => array(
+					'description' => __( 'The number of times the activation email was sent to the user.', 'buddypress' ),
+					'type'        => 'integer',
+					'context'     => array( 'edit' ),
+					'readonly'    => true,
+				),
+				'meta'           => array(
+					'context'     => array( 'edit' ),
+					'description' => __( 'The signup meta information', 'buddypress' ),
+					'type'        => 'object',
+					'properties'  => array(
+						'password' => array(
+							'description' => __( 'Password for the new user (never included).', 'buddypress' ),
+							'type'        => 'string',
+							'context'     => array(), // Password is never displayed.
+						),
+					),
+				),
 			),
 		);
+
+		if ( bp_is_active( 'xprofile' ) ) {
+			$schema['properties']['user_name'] = array(
+				'context'     => array( 'view', 'edit' ),
+				'description' => __( 'The new user\'s full name.', 'buddypress' ),
+				'type'        => 'string',
+				'required'    => true,
+				'arg_options' => array(
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+			);
+		}
 
 		/**
 		 * Filters the signup schema.
@@ -789,19 +900,20 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
+		$params['orderby'] = array(
+			'description'       => __( 'Order by a specific parameter (default: signup_id).', 'buddypress' ),
+			'default'           => 'signup_id',
+			'type'              => 'string',
+			'enum'              => array( 'signup_id', 'login', 'email', 'registered', 'activated' ),
+			'sanitize_callback' => 'sanitize_key',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		$params['order'] = array(
 			'description'       => __( 'Order sort attribute ascending or descending.', 'buddypress' ),
 			'default'           => 'desc',
 			'type'              => 'string',
 			'enum'              => array( 'asc', 'desc' ),
-			'sanitize_callback' => 'sanitize_key',
-			'validate_callback' => 'rest_validate_request_arg',
-		);
-
-		$params['orderby'] = array(
-			'description'       => __( 'Order by a specific parameter (default: signup_id).', 'buddypress' ),
-			'default'           => 'signup_id',
-			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_key',
 			'validate_callback' => 'rest_validate_request_arg',
 		);

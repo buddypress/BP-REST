@@ -226,6 +226,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$signup = $response->get_data();
 
 		$this->assertTrue( 'user1@example.com' === $signup[0]['user_email'] );
+		$this->assertSame( $signup[0]['user_name'], $params['user_name'] );
 	}
 
 	/**
@@ -259,6 +260,23 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_unauthorized_password() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+
+		$params = $this->set_signup_data( array( 'password' => '\\Antislash' ) );
+		$request->set_body_params( $params );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_invalid_password', $response, 400 );
 	}
 
 	/**
@@ -394,9 +412,10 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$args,
 			array(
 				'user_login'     => 'admin_user',
+				'user_name'      => 'Admin User',
 				'user_email'     => 'user1@example.com',
-				'title'          => 'Foo bar',
 				'activation_key' => wp_generate_password( 12, false ),
+				'password'       => 'password',
 			)
 		);
 	}
@@ -437,7 +456,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 6, count( $properties ) );
+		$this->assertEquals( 9, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'user_login', $properties );
 		$this->assertArrayHasKey( 'user_name', $properties );
