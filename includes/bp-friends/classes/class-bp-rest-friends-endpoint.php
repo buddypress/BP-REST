@@ -731,7 +731,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 
 			// This one is optional.
 			$args['force'] = array(
-				'description'       => __( 'Whether to force friendship acceptance.', 'buddypress' ),
+				'description'       => __( 'Whether to force the friendship agreement.', 'buddypress' ),
 				'default'           => false,
 				'type'              => 'boolean',
 				'sanitize_callback' => 'rest_sanitize_boolean',
