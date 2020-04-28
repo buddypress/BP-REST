@@ -803,17 +803,17 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			'properties' => array(
 				'id'           => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique numeric ID for the friendship.', 'buddypress' ),
+					'description' => __( 'Unique numeric identifier of the friendship.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'initiator_id' => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'User ID of the friendship initiator.', 'buddypress' ),
+					'description' => __( 'The ID of the user who is requesting the Friendship.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'friend_id'    => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'User ID of the `friend` - the one invited to the friendship.', 'buddypress' ),
+					'description' => __( 'The ID of the user who is invited to agree to the Friendship request.', 'buddypress' ),
 					'type'        => 'integer',
 				),
 				'is_confirmed' => array(
@@ -856,7 +856,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		unset( $params['search'] );
 
 		$params['user_id'] = array(
-			'description'       => __( 'ID of the user whose friends are being retrieved.', 'buddypress' ),
+			'description'       => __( 'ID of the member whose friendships are being retrieved.', 'buddypress' ),
 			'default'           => bp_loggedin_user_id(),
 			'type'              => 'integer',
 			'required'          => true,
@@ -873,7 +873,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['id'] = array(
-			'description'       => __( 'ID of a specific friendship to retrieve.', 'buddypress' ),
+			'description'       => __( 'Unique numeric identifier of the friendship.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
@@ -881,7 +881,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['initiator_id'] = array(
-			'description'       => __( 'ID of the friendship initiator.', 'buddypress' ),
+			'description'       => __( 'The ID of the user who is requesting the Friendship.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
@@ -889,7 +889,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['friend_id'] = array(
-			'description'       => __( 'ID of a specific friendship to retrieve.', 'buddypress' ),
+			'description'       => __( 'The ID of the user who is invited to agree to the Friendship request.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
