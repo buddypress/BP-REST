@@ -60,7 +60,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			array(
 				'args'   => array(
 					'id' => array(
-						'description' => __( 'Identifier for a user ID.', 'buddypress' ),
+						'description' => __( 'Numeric identifier of a user ID.', 'buddypress' ),
 						'type'        => 'integer',
 					),
 				),
