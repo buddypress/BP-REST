@@ -407,7 +407,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 	public function get_item_schema() {
 		$schema = array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_attachments_user_cover',
+			'title'      => 'bp_attachments_member_cover',
 			'type'       => 'object',
 			'properties' => array(
 				'image' => array(
