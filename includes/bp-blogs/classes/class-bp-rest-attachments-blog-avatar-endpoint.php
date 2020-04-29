@@ -102,8 +102,9 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 					'type'          => $type,
 					'blog_id'       => $request['id'],
 					'admin_user_id' => $admin_user_admin,
+					'html'          => (bool) $request['html'],
 					'alt'           => $request['alt'],
-					'no_grav'       => (bool) $request['no_grav'],
+					'no_grav'       => (bool) $request['no_user_gravatar'],
 				)
 			);
 		}
@@ -270,6 +271,14 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 		// Removing unused params.
 		unset( $params['search'], $params['page'], $params['per_page'] );
 
+		$params['html'] = array(
+			'description'       => __( 'Whether to return an <img> HTML element, vs a raw URL to an avatar.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
 		$params['alt'] = array(
 			'description'       => __( 'The alt attribute for the <img> element.', 'buddypress' ),
 			'default'           => '',
@@ -278,8 +287,8 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['no_grav'] = array(
-			'description'       => __( 'Whether to disable the default Gravatar fallback.', 'buddypress' ),
+		$params['no_user_gravatar'] = array(
+			'description'       => __( 'Whether to disable the default Gravatar Admin user fallback.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',
