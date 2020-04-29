@@ -452,7 +452,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		);
 
 		// Blog Avatars.
-		if ( ! buddypress()->avatar->show_avatars ) {
+		if ( buddypress()->avatar->show_avatars ) {
 			$avatar_properties = array();
 
 			$avatar_properties['full'] = array(
