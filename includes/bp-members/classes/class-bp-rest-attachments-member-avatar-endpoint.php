@@ -495,7 +495,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['no_grav'] = array(
+		$params['no_gravatar'] = array(
 			'description'       => __( 'Whether to disable the default Gravatar fallback.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
