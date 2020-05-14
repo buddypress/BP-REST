@@ -49,9 +49,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_items() {
 		$this->bp->set_current_user( $this->user );
 
-		$a1 = $this->bp_factory->group->create();
-		$a2 = $this->bp_factory->group->create();
-		$a3 = $this->bp_factory->group->create();
+		$this->bp_factory->group->create_many( 3 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -106,9 +104,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items_edit_context() {
-		$a1 = $this->bp_factory->group->create();
-		$a2 = $this->bp_factory->group->create();
-		$a3 = $this->bp_factory->group->create();
+		$this->bp_factory->group->create_many( 3 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'edit' );
@@ -133,9 +129,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_items_edit_context_users_private_data() {
 		$this->bp->set_current_user( $this->user );
 
-		$a1 = $this->bp_factory->group->create();
-		$a2 = $this->bp_factory->group->create();
-		$a3 = $this->bp_factory->group->create();
+		$this->bp_factory->group->create_many( 3 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'edit' );
@@ -153,6 +147,100 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		}
 
 		$this->assertFalse( $has_private_datas, 'Listing private data should not be possible for any user' );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_unauthenticated_users_can_not_list_private_groups() {
+		$a1 = $this->bp_factory->group->create();
+		$a2 = $this->bp_factory->group->create();
+		$a3 = $this->bp_factory->group->create( array(
+			'status' => 'private',
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertEquals( [ $this->group_id, $a1, $a2 ], $ids );
+		$this->assertTrue( false === in_array( $a3, $ids, true ) );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_unauthenticated_users_can_not_list_private_groups_even_if_forced() {
+		$a1 = $this->bp_factory->group->create();
+		$a2 = $this->bp_factory->group->create();
+		$a3 = $this->bp_factory->group->create( array(
+			'status' => 'private',
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'status' => 'private',
+		) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertEquals( [ $this->group_id, $a1, $a2 ], $ids );
+		$this->assertTrue( false === in_array( $a3, $ids, true ) );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_unauthenticated_users_can_not_list_hidden_groups() {
+		$a1 = $this->bp_factory->group->create();
+		$a2 = $this->bp_factory->group->create();
+		$a3 = $this->bp_factory->group->create( array(
+			'status' => 'hidden',
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertEquals( [ $this->group_id, $a1, $a2 ], $ids );
+		$this->assertTrue( false === in_array( $a3, $ids, true ) );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_unauthenticated_users_can_not_list_hidden_groups_even_if_forced() {
+		$a1 = $this->bp_factory->group->create();
+		$a2 = $this->bp_factory->group->create();
+		$a3 = $this->bp_factory->group->create( array(
+			'status' => 'hidden',
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'status' => 'hidden',
+		) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertEquals( [ $this->group_id, $a1, $a2 ], $ids );
+		$this->assertTrue( false === in_array( $a3, $ids, true ) );
 	}
 
 	/**

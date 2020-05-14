@@ -108,7 +108,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'parent_id'    => $request['parent_id'],
 			'exclude'      => $request['exclude'],
 			'search_terms' => $request['search'],
-			'meta_query'   => $request['meta'], // phpcs:ignore
+			'meta_query'   => $request['meta'], // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 			'group_type'   => $request['group_type'],
 			'show_hidden'  => $request['show_hidden'],
 			'per_page'     => $request['per_page'],
@@ -116,8 +116,21 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'page'         => $request['page'],
 		);
 
+		$is_user_logged_id = is_user_logged_in();
+
 		if ( empty( $request['parent_id'] ) ) {
 			$args['parent_id'] = null;
+		}
+
+		if (
+			false === $is_user_logged_id &&
+			(
+				empty( $request['status'] )
+				|| in_array( 'private', $args['status'], true )
+				|| in_array( 'hidden', $args['status'], true )
+			)
+		) {
+			$args['status'] = 'public';
 		}
 
 		/**
@@ -134,7 +147,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		$groups = groups_get_groups( $args );
 
 		// Users need (at least, should we be more restrictive ?) to be logged in to use the edit context.
-		if ( 'edit' === $request->get_param( 'context' ) && ! is_user_logged_in() ) {
+		if ( 'edit' === $request->get_param( 'context' ) && false === $is_user_logged_id ) {
 			$request->set_param( 'context', 'view' );
 		}
 
