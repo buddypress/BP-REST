@@ -138,6 +138,10 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 			$args['exclude'] = false;
 		}
 
+		if ( is_null( $args['search_terms'] ) ) {
+			$args['search_terms'] = false;
+		}
+
 		/**
 		 * Filter the query arguments for the request.
 		 *
