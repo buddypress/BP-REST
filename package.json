@@ -1,7 +1,7 @@
 {
   "name": "bp-rest",
   "title": "BP-REST",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
   "devDependencies": {
     "grunt": "^1.1.0",

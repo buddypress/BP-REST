@@ -5,7 +5,7 @@
  * Description: BuddyPress extension for WordPress' JSON-based REST API.
  * Author: The BuddyPress Community
  * Author URI: https://buddypress.org/
- * Version: 0.2.0
+ * Version: 0.3.0
  * Text Domain: buddypress
  * Requires at least: 4.8
  * Tested up to: 5.4
