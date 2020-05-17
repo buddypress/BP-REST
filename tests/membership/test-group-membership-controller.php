@@ -7,6 +7,7 @@
  * @group group-membership
  */
 class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Testcase {
+	protected $search_terms;
 
 	public function setUp() {
 		parent::setUp();
@@ -188,6 +189,83 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 			$this->check_user_data( $user, $data, $member_object );
 		}
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_no_search_terms() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		$g1 = $this->bp_factory->group->create( array(
+			'status' => 'public',
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
+		groups_promote_member( $u1, $g1, 'admin' );
+
+		$this->bp->set_current_user( $u1 );
+
+		add_filter( 'bp_rest_group_members_get_items_query_args', array( $this, 'group_members_query_args' ) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . $g1 . '/members' );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		remove_filter( 'bp_rest_group_members_get_items_query_args', array( $this, 'group_members_query_args' ) );
+
+		$this->assertFalse( $this->search_terms );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_has_search_terms() {
+		$u1 = $this->factory->user->create( array(
+			'user_nicename' => 'foo',
+		) );
+
+		$u2 = $this->factory->user->create( array(
+			'user_nicename' => 'foo bar',
+		) );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'status' => 'public',
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
+		groups_promote_member( $u1, $g1, 'admin' );
+
+		$this->bp->set_current_user( $u1 );
+
+		add_filter( 'bp_rest_group_members_get_items_query_args', array( $this, 'group_members_query_args' ) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . $g1 . '/members' );
+
+		$request->set_param( 'context', 'view' );
+		$request->set_param( 'search', 'bar' );
+		$response = $this->server->dispatch( $request );
+
+		remove_filter( 'bp_rest_group_members_get_items_query_args', array( $this, 'group_members_query_args' ) );
+
+		$this->assertTrue( 'bar' === $this->search_terms );
+
+		$all_data = $response->get_data();
+		$results = wp_list_pluck( $all_data, 'id' );
+
+		$this->assertTrue( 1 === count( $results ) );
+		$this->assertSame( $u2, $results[0] );
+	}
+
+	// Filter used to catch the search_terms query argument.
+	public function group_members_query_args( $args ) {
+		if ( isset( $args['search_terms'] ) ) {
+			$this->search_terms = $args['search_terms'];
+		}
+
+		return $args;
 	}
 
 	/**
