@@ -53,6 +53,7 @@ trait BP_REST_Attachments {
 				),
 				array(
 					'status' => 500,
+					'reason' => 'upload_error',
 				)
 			);
 		}
@@ -73,6 +74,7 @@ trait BP_REST_Attachments {
 				__( 'The BuddyPress attachments uploads directory is not set.', 'buddypress' ),
 				array(
 					'status' => 500,
+					'reason' => 'attachments_upload_dir',
 				)
 			);
 		}
@@ -87,6 +89,7 @@ trait BP_REST_Attachments {
 				__( 'The cover image directory is not valid.', 'buddypress' ),
 				array(
 					'status' => 500,
+					'reason' => 'cover_image_dir',
 				)
 			);
 		}
@@ -107,6 +110,7 @@ trait BP_REST_Attachments {
 				__( 'There was a problem uploading the cover image.', 'buddypress' ),
 				array(
 					'status' => 500,
+					'reason' => 'unknown',
 				)
 			);
 		}
@@ -126,7 +130,10 @@ trait BP_REST_Attachments {
 					(int) $cover_dimensions['height']
 				),
 				array(
-					'status' => 500,
+					'status'     => 500,
+					'reason'     => 'image_too_small',
+					'min_width'  => (int) $cover_dimensions['width'],
+					'min_height' => (int) $cover_dimensions['height'],
 				)
 			);
 		}
@@ -178,6 +185,7 @@ trait BP_REST_Attachments {
 				),
 				array(
 					'status' => 500,
+					'reason' => 'upload_error',
 				)
 			);
 		}
@@ -190,16 +198,22 @@ trait BP_REST_Attachments {
 
 		// If the uploaded image is smaller than the "full" dimensions, throw a warning.
 		if ( $avatar_attachment->is_too_small( $image_file ) ) {
+			$full_width  = bp_core_avatar_full_width();
+			$full_height = bp_core_avatar_full_height();
+
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_avatar_error",
 				sprintf(
 					/* translators: %1$s and %2$s is replaced with the correct sizes. */
 					__( 'You have selected an image that is smaller than recommended. For best results, upload a picture larger than %1$s x %2$s pixels.', 'buddypress' ),
-					bp_core_avatar_full_width(),
-					bp_core_avatar_full_height()
+					$full_width,
+					$full_height
 				),
 				array(
-					'status' => 500,
+					'status'     => 500,
+					'reason'     => 'image_too_small',
+					'min_width'  => $full_width,
+					'min_height' => $full_height,
 				)
 			);
 		}
@@ -281,6 +295,7 @@ trait BP_REST_Attachments {
 				),
 				array(
 					'status' => 500,
+					'reason' => 'resize_error',
 				)
 			);
 		}
