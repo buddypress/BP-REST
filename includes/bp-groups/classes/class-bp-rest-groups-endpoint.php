@@ -100,9 +100,10 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					),
 				),
 				array(
-					'methods'  => WP_REST_Server::READABLE,
-					'callback' => array( $this, 'get_current_user_groups' ),
-					'args'     => array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_current_user_groups' ),
+					'permission_callback' => array( $this, 'get_current_user_groups_permissions_check' ),
+					'args'                => array(
 						'context' => $this->get_context_param( array( 'default' => 'view' ) ),
 					),
 				),
@@ -619,10 +620,10 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		if ( empty( $current_user_id ) ) {
 			return new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to view your groups.', 'buddypress' ),
+				'bp_rest_group_invalid_user_id',
+				__( 'Invalid user ID.', 'buddypress' ),
 				array(
-					'status' => rest_authorization_required_code(),
+					'status' => 404,
 				)
 			);
 		}
@@ -677,6 +678,38 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		do_action( 'bp_rest_groups_get_current_user_groups', $groups, $response, $request );
 
 		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to fetch the user's groups.
+	 *
+	 * @since 7.0.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function get_current_user_groups_permissions_check( $request ) {
+		$retval = true;
+
+		if ( ! is_user_logged_in() ) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to view your groups.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		/**
+		 * Filter the groups `get_current_user_groups` permissions check.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_groups_get_current_user_groups_permissions_check', $retval, $request );
 	}
 
 	/**
