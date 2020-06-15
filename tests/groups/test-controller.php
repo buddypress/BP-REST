@@ -722,6 +722,71 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 'Deleted group', $data['previous']['description']['raw'] );
 	}
 
+	/**
+	 * @group get_current_user_groups
+	 */
+	public function test_get_current_user_groups() {
+		$u = $this->factory->user->create();
+		$this->bp->set_current_user( $u );
+
+		$groups = array();
+		foreach ( array( 'public', 'private', 'hidden' ) as $status ) {
+			$groups[ $status ] = $this->bp_factory->group->create( array(
+				'status'      => $status,
+				'creator_id'  => $u,
+			) );
+		}
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/me' );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertEquals( $groups, wp_list_pluck( $all_data, 'id', 'status' ) );
+	}
+
+	/**
+	 * @group get_current_user_groups
+	 */
+	public function test_get_current_user_groups_max_one() {
+		$u = $this->factory->user->create();
+		$this->bp->set_current_user( $u );
+
+		$groups = array();
+		foreach ( array( 'public', 'private', 'hidden' ) as $status ) {
+			$groups[ $status ] = $this->bp_factory->group->create( array(
+				'status'      => $status,
+				'creator_id'  => $u,
+			) );
+		}
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/me' );
+		$request->set_param( 'context', 'view' );
+		$request->set_param( 'max', 1 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$found_groups = wp_list_pluck( $all_data, 'id' );
+
+		$this->assertEquals( 1, count( $found_groups ) );
+		$this->assertTrue( in_array( $found_groups[0], $groups, true ) );
+	}
+
+	/**
+	 * @group get_current_user_groups
+	 */
+	public function test_get_current_user_groups_not_loggedin() {
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/me' );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
 	public function test_prepare_item() {
 		$this->bp->set_current_user( $this->user );
 

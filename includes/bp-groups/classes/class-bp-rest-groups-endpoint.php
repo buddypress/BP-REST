@@ -87,6 +87,29 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'schema' => array( $this, 'get_item_schema' ),
 			)
 		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/me',
+			array(
+				'args'   => array(
+					'max' => array(
+						'description' => __( 'The maximum amount of groups the user is member of to return. Defaults to all groups.', 'buddypress' ),
+						'type'        => 'integer',
+						'default'     => 0,
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_current_user_groups' ),
+					'permission_callback' => array( $this, 'get_current_user_groups_permissions_check' ),
+					'args'                => array(
+						'context' => $this->get_context_param( array( 'default' => 'view' ) ),
+					),
+				),
+				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
 	}
 
 	/**
@@ -581,6 +604,112 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_groups_delete_item_permissions_check', $retval, $request );
+	}
+
+	/**
+	 * Retrieves the current user groups.
+	 *
+	 * @since 7.0.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
+	 */
+	public function get_current_user_groups( $request ) {
+		$current_user_id = get_current_user_id();
+		$max             = $request->get_param( 'max' );
+
+		if ( empty( $current_user_id ) ) {
+			return new WP_Error(
+				'bp_rest_group_invalid_user_id',
+				__( 'Invalid user ID.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$per_page = -1;
+		if ( $max ) {
+			$per_page = (int) $max;
+		}
+
+		/**
+		 * Filter the query arguments for the request.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array           $args    Key value array of query var to query value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$args = apply_filters(
+			'bp_rest_groups_get_current_user_groups_query_args',
+			array(
+				'user_id'            => $current_user_id,
+				'per_page'           => $per_page,
+				'page'               => 1,
+				'show_hidden'        => true,
+				'update_admin_cache' => false,
+				'update_meta_cache'  => false,
+			),
+			$request
+		);
+
+		// Actually, query it.
+		$groups = groups_get_groups( $args );
+
+		$retval = array();
+		foreach ( $groups['groups'] as $group ) {
+			$retval[] = $this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $group, $request )
+			);
+		}
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after the user's list of groups is fetched via the REST API.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array            $groups   Fetched groups.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'bp_rest_groups_get_current_user_groups', $groups, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to fetch the user's groups.
+	 *
+	 * @since 7.0.0
+	 *
+	 * @param  WP_REST_Request $request Full details about the request.
+	 * @return bool|WP_Error
+	 */
+	public function get_current_user_groups_permissions_check( $request ) {
+		$retval = true;
+
+		if ( ! is_user_logged_in() ) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to view your groups.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		/**
+		 * Filter the groups `get_current_user_groups` permissions check.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_groups_get_current_user_groups_permissions_check', $retval, $request );
 	}
 
 	/**
