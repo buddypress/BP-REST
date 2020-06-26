@@ -309,6 +309,17 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Check if users are friends or if there is a friendship request.
+		if ( 'not_friends' !== friends_check_friendship_status( $initiator_id->ID, $friend_id->ID ) ) {
+			return new WP_Error(
+				'bp_rest_friends_create_item_failed',
+				__( 'Those users are already friends or have sent friendship request(s) recently.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		$is_moderator = bp_current_user_can( 'bp_moderate' );
 
 		// Only admins can create friendship requests for other people.

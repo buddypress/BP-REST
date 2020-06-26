@@ -158,6 +158,29 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group create_item
 	 */
+	public function test_create_item_already_friends() {
+		$user = $this->factory->user->create();
+
+		$this->create_friendship( $user );
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$params = $this->set_friendship_data(
+			[
+				'initiator_id' => $this->user,
+				'friend_id'    => $user
+			]
+		);
+		$request->set_body_params( $params );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_friends_create_item_failed', $response, 500 );
+	}
+
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item_user_not_logged_in() {
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
@@ -294,8 +317,8 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
 
+		$this->assertNotEmpty( $all_data );
 		$this->assertTrue( $all_data[0]['is_confirmed'] );
 	}
 
@@ -349,8 +372,8 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$deleted = $response->get_data();
-		$this->assertNotEmpty( $deleted );
 
+		$this->assertNotEmpty( $deleted );
 		$this->assertTrue( $deleted['deleted'] );
 	}
 
@@ -368,8 +391,8 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$deleted = $response->get_data();
-		$this->assertNotEmpty( $deleted );
 
+		$this->assertNotEmpty( $deleted );
 		$this->assertTrue( $deleted['deleted'] );
 	}
 
@@ -388,8 +411,8 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$deleted = $response->get_data();
-		$this->assertNotEmpty( $deleted );
 
+		$this->assertNotEmpty( $deleted );
 		$this->assertTrue( $deleted['deleted'] );
 	}
 
@@ -408,8 +431,8 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$deleted = $response->get_data();
-		$this->assertNotEmpty( $deleted );
 
+		$this->assertNotEmpty( $deleted );
 		$this->assertTrue( $deleted['deleted'] );
 	}
 
@@ -428,8 +451,8 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$deleted = $response->get_data();
-		$this->assertNotEmpty( $deleted );
 
+		$this->assertNotEmpty( $deleted );
 		$this->assertTrue( $deleted['deleted'] );
 	}
 
@@ -447,8 +470,8 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$deleted = $response->get_data();
-		$this->assertNotEmpty( $deleted );
 
+		$this->assertNotEmpty( $deleted );
 		$this->assertTrue( $deleted['deleted'] );
 	}
 
