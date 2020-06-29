@@ -369,22 +369,26 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 */
 	public function user_data( $user, $context = 'view' ) {
 		$data = array(
-			'id'                 => $user->ID,
-			'name'               => $user->display_name,
-			'user_login'         => $user->user_login,
-			'link'               => bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login ),
-			'member_types'       => bp_get_member_type( $user->ID, false ),
-			'roles'              => array(),
-			'capabilities'       => array(),
-			'extra_capabilities' => array(),
-			'registered_date'    => '',
-			'xprofile'           => $this->xprofile_data( $user->ID ),
-			'friendship_status' => false,
+			'id'                     => $user->ID,
+			'name'                   => $user->display_name,
+			'user_login'             => $user->user_login,
+			'link'                   => bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login ),
+			'member_types'           => bp_get_member_type( $user->ID, false ),
+			'roles'                  => array(),
+			'capabilities'           => array(),
+			'extra_capabilities'     => array(),
+			'registered_date'        => '',
+			'xprofile'               => $this->xprofile_data( $user->ID ),
+			'friendship_status'      => false,
+			'friendship_status_slug' => '',
 		);
 
-		// Check if user is friends with current logged in user.
+		// Friends related fields.
 		if ( bp_is_active( 'friends' ) && get_current_user_id() !== $user->ID ) {
-			$data['friendship_status'] = ( 'is_friend' === friends_check_friendship_status( get_current_user_id(), $user->ID ) );
+			$friendship_status = friends_check_friendship_status( get_current_user_id(), $user->ID );
+
+			$data['friendship_status_slug'] = $friendship_status;
+			$data['friendship_status']      = ( 'is_friend' === $friendship_status );
 		}
 
 		if ( 'edit' === $context ) {
@@ -717,16 +721,22 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'context'     => array( 'edit' ),
 					'readonly'    => true,
 				),
-				'xprofile'           => array(
+				'xprofile'             => array(
 					'description' => __( 'Member XProfile groups and its fields.', 'buddypress' ),
 					'type'        => 'array',
 					'context'     => array( 'view', 'edit' ),
 					'readonly'    => true,
 				),
-				'friendship_status'  => array(
+				'friendship_status'    => array(
 					'description' => __( 'Friendship relation with, current, logged in user.', 'buddypress' ),
 					'type'        => 'bool',
 					'context'     => array( 'view', 'edit' ),
+					'readonly'    => true,
+				),
+				'friendship_status_slug' => array(
+					'description' => __( 'Slug of the friendship status with current logged in user.', 'buddypress' ),
+					'enum'        => array( 'is_friend', 'not_friends', 'pending', 'awaiting_response' ),
+					'type'        => 'string',
 					'readonly'    => true,
 				),
 			),
