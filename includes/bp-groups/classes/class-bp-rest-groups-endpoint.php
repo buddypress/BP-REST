@@ -866,11 +866,15 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// Group Slug.
 		if ( ! empty( $schema['properties']['slug'] ) && isset( $request['slug'] ) ) {
 			$prepared_group->slug = $request['slug'];
+		} elseif ( isset( $group->slug ) ) {
+			$prepared_group->slug = $group->slug;
 		}
 
 		// Group Name.
 		if ( ! empty( $schema['properties']['name'] ) && isset( $request['name'] ) ) {
 			$prepared_group->name = $request['name'];
+		} elseif ( isset( $group->name ) ) {
+			$prepared_group->name = $group->name;
 		}
 
 		// Do additional checks for the Group's slug.
@@ -896,16 +900,22 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// Group status.
 		if ( ! empty( $schema['properties']['status'] ) && isset( $request['status'] ) ) {
 			$prepared_group->status = $request['status'];
+		} elseif ( isset( $group->status ) ) {
+			$prepared_group->status = $group->status;
 		}
 
 		// Group Forum Enabled.
 		if ( ! empty( $schema['properties']['enable_forum'] ) && isset( $request['enable_forum'] ) ) {
 			$prepared_group->enable_forum = (bool) $request['enable_forum'];
+		} elseif ( isset( $group->enable_forum ) ) {
+			$prepared_group->enable_forum = $group->enable_forum;
 		}
 
 		// Group Parent ID.
 		if ( ! empty( $schema['properties']['parent_id'] ) && isset( $request['parent_id'] ) ) {
 			$prepared_group->parent_id = $request['parent_id'];
+		} elseif ( isset( $group->parent_id ) ) {
+			$prepared_group->parent_id = $group->parent_id;
 		}
 
 		// Update group type(s).
