@@ -966,34 +966,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Can a user see a group?
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param  BP_Groups_Group $group Group object.
-	 * @return bool
-	 */
-	protected function can_see( $group ) {
-
-		// If it is not a hidden/private group, user can see it.
-		if ( 'public' === $group->status ) {
-			return true;
-		}
-
-		// Moderators.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
-		}
-
-		// User is a member of the group.
-		if ( groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) {
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
 	 * See if user can delete or update a group.
 	 *
 	 * @since 0.1.0
@@ -1003,6 +975,25 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	protected function can_user_delete_or_update( $group ) {
 		return ( bp_current_user_can( 'bp_moderate' ) || bp_loggedin_user_id() === $group->creator_id );
+	}
+
+	/**
+	 * Can a user see a group?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  BP_Groups_Group $group Group object.
+	 * @return bool
+	 */
+	protected function can_see( $group ) {
+
+		// If it is not a hidden group, user can see it.
+		if ( 'hidden' !== $group->status ) {
+			return true;
+		}
+
+		// Check for moderators or if user is a member of the group.
+		return ( bp_current_user_can( 'bp_moderate' ) || groups_is_user_member( bp_loggedin_user_id(), $group->id ) );
 	}
 
 	/**
@@ -1020,11 +1011,11 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				return true;
 			}
 
-			if ( is_user_logged_in() && isset( $request['user_id'] ) && absint( $request['user_id'] ) === bp_loggedin_user_id() ) {
-				return true;
-			}
-
-			return false;
+			return (
+				is_user_logged_in()
+				&& isset( $request['user_id'] )
+				&& absint( $request['user_id'] ) === bp_loggedin_user_id()
+			);
 		}
 
 		return true;
