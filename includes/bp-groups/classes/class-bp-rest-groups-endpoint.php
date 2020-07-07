@@ -913,6 +913,16 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			bp_groups_set_group_type( $prepared_group->group_id, $request['types'], false );
 		}
 
+		// Remove group type(s).
+		if ( isset( $prepared_group->group_id ) && isset( $request['remove_types'] ) ) {
+			array_map(
+				function( $type ) use ( $prepared_group ) {
+					bp_groups_remove_group_type( $prepared_group->group_id, $type );
+				},
+				$request['remove_types']
+			);
+		}
+
 		// Append group type(s).
 		if ( isset( $prepared_group->group_id ) && isset( $request['append_types'] ) ) {
 			bp_groups_set_group_type( $prepared_group->group_id, $request['append_types'], true );
@@ -1091,6 +1101,18 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				// Append group types.
 				$args['append_types'] = array(
 					'description'       => __( 'Append type(s) for a group.', 'buddypress' ),
+					'type'              => 'array',
+					'enum'              => bp_groups_get_group_types(),
+					'sanitize_callback' => 'bp_rest_sanitize_group_types',
+					'validate_callback' => 'bp_rest_validate_group_types',
+					'items'             => array(
+						'type' => 'string',
+					),
+				);
+
+				// Remove group types.
+				$args['remove_types'] = array(
+					'description'       => __( 'Remove type(s) for a group.', 'buddypress' ),
 					'type'              => 'array',
 					'enum'              => bp_groups_get_group_types(),
 					'sanitize_callback' => 'bp_rest_sanitize_group_types',
