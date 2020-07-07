@@ -272,6 +272,16 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		if ( true === $retval && ! $this->can_see( $group ) ) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you cannot view the group.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
 		/**
 		 * Filter the groups `get_item` permissions check.
 		 *
@@ -965,6 +975,25 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	protected function can_user_delete_or_update( $group ) {
 		return ( bp_current_user_can( 'bp_moderate' ) || bp_loggedin_user_id() === $group->creator_id );
+	}
+
+	/**
+	 * Can a user see a group?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  BP_Groups_Group $group Group object.
+	 * @return bool
+	 */
+	protected function can_see( $group ) {
+
+		// If it is not a hidden group, user can see it.
+		if ( 'hidden' !== $group->status ) {
+			return true;
+		}
+
+		// Check for moderators or if user is a member of the group.
+		return ( bp_current_user_can( 'bp_moderate' ) || groups_is_user_member( bp_loggedin_user_id(), $group->id ) );
 	}
 
 	/**
