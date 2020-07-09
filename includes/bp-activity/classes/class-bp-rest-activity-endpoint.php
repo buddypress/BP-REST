@@ -421,7 +421,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			array(
 				'in'               => $activity_id,
 				'display_comments' => 'stream',
-				'show_hidden'      => $request['hidden'],
+				'show_hidden'      => true,
 			)
 		);
 
