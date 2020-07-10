@@ -76,7 +76,7 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 			]
 		);
 		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_blog_avatar_get_item_user_failed', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_blog_avatar_get_item_user_failed', $response, 404 );
 	}
 
 	/**
