@@ -363,7 +363,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'bp_rest_create_activity_empty_content',
 				__( 'Please, enter some content.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => 400,
 				)
 			);
 		}
@@ -517,7 +517,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'bp_rest_update_activity_empty_content',
 				__( 'Please, enter some content.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => 400,
 				)
 			);
 		}
