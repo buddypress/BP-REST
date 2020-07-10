@@ -130,7 +130,7 @@ trait BP_REST_Attachments {
 					(int) $cover_dimensions['height']
 				),
 				array(
-					'status'     => 500,
+					'status'     => 400,
 					'reason'     => 'image_too_small',
 					'min_width'  => (int) $cover_dimensions['width'],
 					'min_height' => (int) $cover_dimensions['height'],
@@ -210,7 +210,7 @@ trait BP_REST_Attachments {
 					$full_height
 				),
 				array(
-					'status'     => 500,
+					'status'     => 400,
 					'reason'     => 'image_too_small',
 					'min_width'  => $full_width,
 					'min_height' => $full_height,
