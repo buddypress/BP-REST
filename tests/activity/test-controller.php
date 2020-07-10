@@ -302,7 +302,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
-		
+
 		$this->assertContains( $a1, $a_ids );
 		$this->assertContains( $a2, $a_ids );
 	}
@@ -866,7 +866,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
