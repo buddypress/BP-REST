@@ -173,7 +173,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_membership_requests_cannot_get_items', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_membership_requests_cannot_get_items', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -193,7 +193,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_membership_requests_cannot_get_items', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_membership_requests_cannot_get_items', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -279,7 +279,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_membership_requests_cannot_get_item', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_membership_requests_cannot_get_item', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -492,7 +492,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_request_cannot_update_item', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_member_request_cannot_update_item', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -601,7 +601,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_membership_requests_cannot_delete_item', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_membership_requests_cannot_delete_item', $response, rest_authorization_required_code() );
 	}
 
 	/**
