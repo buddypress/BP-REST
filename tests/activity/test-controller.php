@@ -302,7 +302,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
-		
+
 		$this->assertContains( $a1, $a_ids );
 		$this->assertContains( $a2, $a_ids );
 	}
@@ -542,6 +542,56 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->bp->set_current_user( $this->user );
 		$g = $this->bp_factory->group->create( array(
 			'creator_id' => $this->user,
+		) );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data( array(
+			'component'       => buddypress()->groups->id,
+			'primary_item_id' => $g,
+		) );
+
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_create_activity_response( $response );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_in_a_private_group() {
+		$this->bp->set_current_user( $this->user );
+		$g = $this->bp_factory->group->create( array(
+			'creator_id' => $this->user,
+			'status'     => 'private',
+		) );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data( array(
+			'component'       => buddypress()->groups->id,
+			'primary_item_id' => $g,
+		) );
+
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_create_activity_response( $response );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_in_an_hidden_group() {
+		$this->bp->set_current_user( $this->user );
+		$g = $this->bp_factory->group->create( array(
+			'creator_id' => $this->user,
+			'status'     => 'hidden',
 		) );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
@@ -811,6 +861,50 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$activity = $this->endpoint->get_activity_object( $this->activity_id );
 		$this->assertEquals( $params['content'], $activity->content );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_posted_in_a_group() {
+		$this->bp->set_current_user( $this->user );
+
+		$g = $this->bp_factory->group->create(
+			array(
+				'creator_id' => $this->user,
+				'status'     => 'hidden',
+			)
+		);
+
+		$a = $this->bp_factory->activity->create(
+			array(
+				'user_id'   => $this->user,
+				'component' => buddypress()->groups->id,
+				'type'      => 'activity_update',
+				'item_id'   => $g,
+				'content'   => 'Random content',
+			)
+		);
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $a ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data(
+			array(
+				'content' => 'Updated random content',
+			)
+		);
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->check_update_activity_response( $response );
+
+		$new_data = $response->get_data();
+		$new_data = $new_data[0];
+
+		$this->assertEquals( $a, $new_data['id'] );
+		$this->assertEquals( $params['content'], $new_data['content']['raw'] );
 	}
 
 	/**

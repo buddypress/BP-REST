@@ -905,12 +905,22 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		// Update group type(s).
 		if ( isset( $prepared_group->group_id ) && isset( $request['types'] ) ) {
+			bp_groups_set_group_type( $prepared_group->group_id, $request['types'], false );
+		}
 
-			// Append on update. Add on creation.
-			$append = WP_REST_Server::EDITABLE === $request->get_method();
+		// Remove group type(s).
+		if ( isset( $prepared_group->group_id ) && isset( $request['remove_types'] ) ) {
+			array_map(
+				function( $type ) use ( $prepared_group ) {
+					bp_groups_remove_group_type( $prepared_group->group_id, $type );
+				},
+				$request['remove_types']
+			);
+		}
 
-			// Add/Append group type(s).
-			bp_groups_set_group_type( $prepared_group->group_id, $request['types'], $append );
+		// Append group type(s).
+		if ( isset( $prepared_group->group_id ) && isset( $request['append_types'] ) ) {
+			bp_groups_set_group_type( $prepared_group->group_id, $request['append_types'], true );
 		}
 
 		/**
@@ -961,34 +971,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Can a user see a group?
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param  BP_Groups_Group $group Group object.
-	 * @return bool
-	 */
-	protected function can_see( $group ) {
-
-		// If it is not a hidden/private group, user can see it.
-		if ( 'public' === $group->status ) {
-			return true;
-		}
-
-		// Moderators.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
-		}
-
-		// User is a member of the group.
-		if ( groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) {
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
 	 * See if user can delete or update a group.
 	 *
 	 * @since 0.1.0
@@ -1001,6 +983,25 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Can a user see a group?
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param  BP_Groups_Group $group Group object.
+	 * @return bool
+	 */
+	protected function can_see( $group ) {
+
+		// If it is not a hidden group, user can see it.
+		if ( 'hidden' !== $group->status ) {
+			return true;
+		}
+
+		// Check for moderators or if user is a member of the group.
+		return ( bp_current_user_can( 'bp_moderate' ) || groups_is_user_member( bp_loggedin_user_id(), $group->id ) );
+	}
+
+	/**
 	 * Can this user see hidden groups?
 	 *
 	 * @since 0.1.0
@@ -1009,11 +1010,15 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	protected function can_see_hidden_groups( $request ) {
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
-		}
+			if ( bp_current_user_can( 'bp_moderate' ) ) {
+				return true;
+			}
 
-		return ( is_user_logged_in() && isset( $request['user_id'] ) && absint( $request['user_id'] ) === bp_loggedin_user_id() );
+			return (
+				is_user_logged_in()
+				&& isset( $request['user_id'] )
+				&& absint( $request['user_id'] ) === bp_loggedin_user_id()
+			);
 	}
 
 	/**
@@ -1073,6 +1078,30 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			if ( WP_REST_Server::EDITABLE === $method ) {
 				$key = 'update_item';
 				unset( $args['slug'] );
+
+				// Append group types.
+				$args['append_types'] = array(
+					'description'       => __( 'Append type(s) for a group.', 'buddypress' ),
+					'type'              => 'array',
+					'enum'              => bp_groups_get_group_types(),
+					'sanitize_callback' => 'bp_rest_sanitize_group_types',
+					'validate_callback' => 'bp_rest_validate_group_types',
+					'items'             => array(
+						'type' => 'string',
+					),
+				);
+
+				// Remove group types.
+				$args['remove_types'] = array(
+					'description'       => __( 'Remove type(s) for a group.', 'buddypress' ),
+					'type'              => 'array',
+					'enum'              => bp_groups_get_group_types(),
+					'sanitize_callback' => 'bp_rest_sanitize_group_types',
+					'validate_callback' => 'bp_rest_validate_group_types',
+					'items'             => array(
+						'type' => 'string',
+					),
+				);
 			}
 		} elseif ( WP_REST_Server::DELETABLE === $method ) {
 			$key = 'delete_item';
