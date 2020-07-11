@@ -1010,15 +1010,15 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	protected function can_see_hidden_groups( $request ) {
-			if ( bp_current_user_can( 'bp_moderate' ) ) {
-				return true;
-			}
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			return true;
+		}
 
-			return (
-				is_user_logged_in()
-				&& isset( $request['user_id'] )
-				&& absint( $request['user_id'] ) === bp_loggedin_user_id()
-			);
+		return (
+			is_user_logged_in()
+			&& isset( $request['user_id'] )
+			&& absint( $request['user_id'] ) === bp_loggedin_user_id()
+		);
 	}
 
 	/**
