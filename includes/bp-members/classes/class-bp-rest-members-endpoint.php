@@ -136,20 +136,9 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 		$retval = true;
+		$user   = bp_rest_get_user( $request['id'] );
 
-		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		$user = bp_rest_get_user( $request['id'] );
-
-		if ( true === $retval && ! $user instanceof WP_User ) {
+		if ( ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_member_invalid_id',
 				__( 'Invalid member ID.', 'buddypress' ),
@@ -164,7 +153,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		} elseif ( true === $retval && 'edit' === $request['context'] && ! current_user_can( 'list_users' ) ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
+				__( 'Sorry, you are not allowed to view members with the edit context.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
@@ -391,7 +380,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$data['friendship_status']      = ( 'is_friend' === $friendship_status );
 		}
 
-		if ( 'edit' === $context ) {
+		if ( 'edit' === $context && current_user_can( 'list_users' ) ) {
 			$data['registered_date']    = bp_rest_prepare_date_response( $user->data->user_registered );
 			$data['roles']              = (array) array_values( $user->roles );
 			$data['capabilities']       = (array) array_keys( $user->allcaps );
