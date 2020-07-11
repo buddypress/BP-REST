@@ -144,7 +144,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		// See if the user can see hidden groups.
-		if ( isset( $request['show_hidden'] ) && true === (bool) $request['show_hidden']  && ! $this->can_see_hidden_groups( $request ) ) {
+		if ( isset( $request['show_hidden'] ) && true === (bool) $request['show_hidden'] && ! $this->can_see_hidden_groups( $request ) ) {
 			$args['show_hidden'] = false;
 		}
 
