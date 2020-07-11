@@ -841,22 +841,23 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return stdClass|WP_Error
 	 */
 	protected function prepare_item_for_database( $request ) {
-		$prepared_group = new stdClass();
-		$schema         = $this->get_item_schema();
-		$group          = $this->get_group_object( $request );
+		$schema = $this->get_item_schema();
+		$group  = $this->get_group_object( $request );
+
+		if ( isset( $group->id ) && $group->id ) {
+			$prepared_group = $group;
+		} else {
+			$prepared_group = new stdClass();
+		}
 
 		// Group ID.
-		if ( ! empty( $schema['properties']['id'] ) && ! empty( $group->id ) ) {
+		if ( ! empty( $group->id ) ) {
 			$prepared_group->group_id = $group->id;
 		}
 
 		// Group Creator ID.
 		if ( ! empty( $schema['properties']['creator_id'] ) && isset( $request['creator_id'] ) ) {
 			$prepared_group->creator_id = (int) $request['creator_id'];
-
-			// Fallback on the existing creator id in case of an update.
-		} elseif ( isset( $group->creator_id ) && $group->creator_id ) {
-			$prepared_group->creator_id = (int) $group->creator_id;
 
 			// Fallback on the current user otherwise.
 		} else {
@@ -866,15 +867,11 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// Group Slug.
 		if ( ! empty( $schema['properties']['slug'] ) && isset( $request['slug'] ) ) {
 			$prepared_group->slug = $request['slug'];
-		} elseif ( isset( $group->slug ) ) {
-			$prepared_group->slug = $group->slug;
 		}
 
 		// Group Name.
 		if ( ! empty( $schema['properties']['name'] ) && isset( $request['name'] ) ) {
 			$prepared_group->name = $request['name'];
-		} elseif ( isset( $group->name ) ) {
-			$prepared_group->name = $group->name;
 		}
 
 		// Do additional checks for the Group's slug.
@@ -900,22 +897,16 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// Group status.
 		if ( ! empty( $schema['properties']['status'] ) && isset( $request['status'] ) ) {
 			$prepared_group->status = $request['status'];
-		} elseif ( isset( $group->status ) ) {
-			$prepared_group->status = $group->status;
 		}
 
 		// Group Forum Enabled.
 		if ( ! empty( $schema['properties']['enable_forum'] ) && isset( $request['enable_forum'] ) ) {
 			$prepared_group->enable_forum = (bool) $request['enable_forum'];
-		} elseif ( isset( $group->enable_forum ) ) {
-			$prepared_group->enable_forum = $group->enable_forum;
 		}
 
 		// Group Parent ID.
 		if ( ! empty( $schema['properties']['parent_id'] ) && isset( $request['parent_id'] ) ) {
 			$prepared_group->parent_id = $request['parent_id'];
-		} elseif ( isset( $group->parent_id ) ) {
-			$prepared_group->parent_id = $group->parent_id;
 		}
 
 		// Update group type(s).
