@@ -841,22 +841,23 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return stdClass|WP_Error
 	 */
 	protected function prepare_item_for_database( $request ) {
-		$prepared_group = new stdClass();
-		$schema         = $this->get_item_schema();
-		$group          = $this->get_group_object( $request );
+		$schema = $this->get_item_schema();
+		$group  = $this->get_group_object( $request );
+
+		if ( isset( $group->id ) && $group->id ) {
+			$prepared_group = $group;
+		} else {
+			$prepared_group = new stdClass();
+		}
 
 		// Group ID.
-		if ( ! empty( $schema['properties']['id'] ) && ! empty( $group->id ) ) {
+		if ( ! empty( $group->id ) ) {
 			$prepared_group->group_id = $group->id;
 		}
 
 		// Group Creator ID.
 		if ( ! empty( $schema['properties']['creator_id'] ) && isset( $request['creator_id'] ) ) {
 			$prepared_group->creator_id = (int) $request['creator_id'];
-
-			// Fallback on the existing creator id in case of an update.
-		} elseif ( isset( $group->creator_id ) && $group->creator_id ) {
-			$prepared_group->creator_id = (int) $group->creator_id;
 
 			// Fallback on the current user otherwise.
 		} else {
