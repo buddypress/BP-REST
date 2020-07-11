@@ -143,6 +143,11 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			$args['parent_id'] = null;
 		}
 
+		// See if the user can see hidden groups.
+		if ( isset( $request['show_hidden'] ) && true === (bool) $request['show_hidden'] && ! $this->can_see_hidden_groups( $request ) ) {
+			$args['show_hidden'] = false;
+		}
+
 		/**
 		 * Filter the query arguments for the request.
 		 *
@@ -195,16 +200,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 		$retval = true;
-
-		if ( ! $this->can_see_hidden_groups( $request ) ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you cannot view hidden groups.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
 
 		/**
 		 * Filter the groups `get_items` permissions check.
@@ -1016,20 +1011,15 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	protected function can_see_hidden_groups( $request ) {
-		if ( $request['show_hidden'] ) {
-
-			if ( bp_current_user_can( 'bp_moderate' ) ) {
-				return true;
-			}
-
-			return (
-				is_user_logged_in()
-				&& isset( $request['user_id'] )
-				&& absint( $request['user_id'] ) === bp_loggedin_user_id()
-			);
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			return true;
 		}
 
-		return true;
+		return (
+			is_user_logged_in()
+			&& isset( $request['user_id'] )
+			&& absint( $request['user_id'] ) === bp_loggedin_user_id()
+		);
 	}
 
 	/**
