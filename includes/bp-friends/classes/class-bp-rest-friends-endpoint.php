@@ -328,7 +328,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 				'bp_rest_friends_create_item_failed',
 				__( 'You are not allowed to perform this action.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => 403,
 				)
 			);
 		}

@@ -205,7 +205,7 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_body_params( $params );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_friends_create_item_failed', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_friends_create_item_failed', $response, 403 );
 	}
 
 	/**
