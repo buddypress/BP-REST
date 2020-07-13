@@ -198,7 +198,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 				'bp_rest_component_nonexistent',
 				__( 'Sorry, this component does not exist.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => 404,
 				)
 			);
 		}
