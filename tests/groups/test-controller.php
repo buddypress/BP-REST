@@ -380,7 +380,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_create_group_empty_name', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_create_group_empty_name', $response, 400 );
 	}
 
 	/**

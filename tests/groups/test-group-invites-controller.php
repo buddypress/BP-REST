@@ -246,7 +246,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_invites_cannot_get_items', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_invites_cannot_get_items', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -478,7 +478,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_invite_cannot_create_item', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_invite_cannot_create_item', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -580,7 +580,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$request  = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $invite_id );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_invite_cannot_update_item', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_invite_cannot_update_item', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -735,7 +735,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_invite_cannot_delete_item', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_group_invite_cannot_delete_item', $response, rest_authorization_required_code() );
 	}
 
 	/**

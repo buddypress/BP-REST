@@ -517,7 +517,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_create_activity_empty_content', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_create_activity_empty_content', $response, 400 );
 	}
 
 	/**
@@ -789,7 +789,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_create_activity_empty_content', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_create_activity_empty_content', $response, 400 );
 	}
 
 	/**
@@ -960,7 +960,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -982,7 +982,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_update_activity_empty_content', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_update_activity_empty_content', $response, 400 );
 	}
 
 	/**

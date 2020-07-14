@@ -118,7 +118,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 					'bp_rest_blogs_get_items_user_failed',
 					__( 'There was a problem confirming if user ID provided is a valid one.', 'buddypress' ),
 					array(
-						'status' => 500,
+						'status' => 404,
 					)
 				);
 			}

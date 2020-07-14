@@ -170,7 +170,7 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 		) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_component_nonexistent', $response, 500 );
+		$this->assertErrorResponse( 'bp_rest_component_nonexistent', $response, 404 );
 	}
 
 	/**

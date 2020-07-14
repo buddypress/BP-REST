@@ -307,7 +307,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'bp_rest_create_group_empty_name',
 				__( 'Please, enter the name of group.', 'buddypress' ),
 				array(
-					'status' => 500,
+					'status' => 400,
 				)
 			);
 		}
