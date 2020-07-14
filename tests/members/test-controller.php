@@ -136,9 +136,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		bp_set_member_type( $u, 'foo' );
 		bp_set_member_type( $u, 'bar', true );
 
-		$u_2 = $this->factory->user->create();
-		$this->bp->set_current_user( $u_2 );
-
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $u ) );
 		$response = $this->server->dispatch( $request );
 
@@ -151,8 +148,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item_invalid_id() {
-		$this->bp->set_current_user( self::$user );
-
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
