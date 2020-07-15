@@ -9,7 +9,7 @@ Please use and provide feedback!
 ## System Requirements
 
 * PHP >= 5.6
-* WP >= 4.8
+* WP >= 4.9
 * BuddyPress = trunk
 
 ## Endpoints (Components) Supported
