@@ -37,7 +37,7 @@ Please use and provide feedback!
 
 ## Installation
 
-Drop this plugin in the wp-content/plugins directory and activate it. You need at least [WordPress 4.8](https://wordpress.org/download/) and [BuddyPress](https://buddypress.org/download/) to use the plugin.
+Drop this plugin in the wp-content/plugins directory and activate it. You need at least [WordPress 4.9](https://wordpress.org/download/) and [BuddyPress](https://buddypress.org/download/) to use the plugin.
 
 ## About
 
