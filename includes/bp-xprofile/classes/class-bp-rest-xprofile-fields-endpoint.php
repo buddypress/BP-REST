@@ -871,7 +871,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  string $value The raw value of the field.
-	 * @return array         The unserialized field value.
+	 * @return array The unserialized field value.
 	 */
 	public function get_profile_field_unserialized_value( $value = '' ) {
 		if ( empty( $value ) ) {
@@ -895,7 +895,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @return array Endpoint arguments.
 	 */
 	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$args = parent::get_endpoint_args_for_item_schema( $method );
 		$key  = 'get_item';
 
 		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {

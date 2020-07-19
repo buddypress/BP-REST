@@ -1008,7 +1008,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
 		$key                       = 'get_item';
-		$args                      = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$args                      = parent::get_endpoint_args_for_item_schema( $method );
 		$args['id']['description'] = __( 'ID of the Messages Thread.', 'buddypress' );
 
 		if ( WP_REST_Server::CREATABLE === $method ) {
