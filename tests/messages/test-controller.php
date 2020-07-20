@@ -309,11 +309,11 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
+		$data = $response->get_data();
 
-		$data = current( $all_data );
-		$this->check_thread_data( $this->endpoint->get_thread_object( $data['id'] ), $data );
+		$this->assertNotEmpty( $data );
+		$this->assertTrue( $data['deleted'] );
+		$this->assertTrue( $data['previous']['subject']['rendered'] === 'Foo' );
 	}
 
 	/**
@@ -337,16 +337,15 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 				'user_id' => $u2,
 			)
 		);
-
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
+		$data = $response->get_data();
 
-		$data = current( $all_data );
-		$this->check_thread_data( $this->endpoint->get_thread_object( $data['id'] ), $data );
+		$this->assertNotEmpty( $data );
+		$this->assertTrue( $data['deleted'] );
+		$this->assertTrue( $data['previous']['subject']['rendered'] === 'Foo' );
 	}
 
 	/**

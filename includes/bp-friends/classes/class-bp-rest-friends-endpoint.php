@@ -707,7 +707,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return BP_Friends_Friendship
 	 */
 	public function get_friendship_object( $friendship_id ) {
-		return new BP_Friends_Friendship( $friendship_id );
+		return new BP_Friends_Friendship( (int) $friendship_id );
 	}
 
 	/**
@@ -719,7 +719,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return array Endpoint arguments.
 	 */
 	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$args    = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$args    = parent::get_endpoint_args_for_item_schema( $method );
 		$context = 'view';
 
 		$args['id']['required']    = true;

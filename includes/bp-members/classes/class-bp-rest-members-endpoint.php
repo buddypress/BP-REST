@@ -549,7 +549,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$member     = $object->data;
 		$member->id = $member->ID;
 
-		return WP_REST_Controller::update_additional_fields_for_object( $member, $request );
+		return parent::update_additional_fields_for_object( $member, $request );
 	}
 
 	/**
@@ -561,7 +561,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return array Endpoint arguments.
 	 */
 	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$args = parent::get_endpoint_args_for_item_schema( $method );
 		$key  = 'get_item';
 
 		// Add member type args.

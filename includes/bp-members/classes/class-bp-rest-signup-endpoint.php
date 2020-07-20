@@ -809,7 +809,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	public function is_blog_signup_allowed() {
 		$active_signup = get_network_option( get_main_network_id(), 'registration' );
 
-		return 'blog' === $active_signup || 'all' === $active_signup;
+		return ( 'blog' === $active_signup || 'all' === $active_signup );
 	}
 
 	/**
@@ -834,7 +834,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 * @return array Endpoint arguments.
 	 */
 	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$args = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$args = parent::get_endpoint_args_for_item_schema( $method );
 		$key  = 'get_item';
 
 		if ( WP_REST_Server::CREATABLE === $method ) {
