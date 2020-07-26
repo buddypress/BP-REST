@@ -63,6 +63,7 @@ jobs:
       env: WP_VERSION=4.9
   allow_failures:
     - php: 7.4
+    - env: WP_VERSION=master
 
 before_install:
   - |
