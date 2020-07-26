@@ -52,9 +52,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_items() {
 		$this->bp->set_current_user( $this->user );
 
-		$a1 = $this->bp_factory->activity->create();
-		$a2 = $this->bp_factory->activity->create();
-		$a3 = $this->bp_factory->activity->create();
+		$this->bp_factory->activity->create_many( 3 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -62,13 +60,59 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
 
-		foreach ( $all_data as $data ) {
-			$activity = $this->endpoint->get_activity_object( $data['id'] );
-			$this->check_activity_data( $activity, $data, 'view', $response->get_links() );
-		}
+		$this->assertTrue( count( $a_ids ) === 4 );
+		$this->assertContains( $this->activity_id, $a_ids );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_multiple_types() {
+		$g1 = $this->bp_factory->group->create( array(
+			'status' => 'public',
+		) );
+
+		$this->bp_factory->activity->create( array(
+			'component'     => buddypress()->groups->id,
+			'type'          => 'created_group',
+			'user_id'       => $this->user,
+			'item_id'       => $g1,
+			'hide_sitewide' => true,
+		) );
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'type' => array( 'activity_update', 'created_group' )
+		) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_type = wp_list_pluck( $response->get_data(), 'type' );
+
+		$this->assertTrue( count( $all_type ) === 2 );
+		$this->assertContains( 'created_group', $all_type );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_with_invalid_type() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'type' => array( 'invalid_type' )
+		) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_invalid_param', $response, 400 );
 	}
 
 	/**
@@ -108,7 +152,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_query_params( array(
 			'component' => $component,
 		) );
-
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
@@ -250,15 +293,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 6, $headers['X-WP-Total'] );
 		$this->assertEquals( 2, $headers['X-WP-TotalPages'] );
 
-		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
-
-		foreach ( $all_data as $data ) {
-			$activity = $this->endpoint->get_activity_object( $data['id'] );
-			$this->check_activity_data( $activity, $data, 'view', $response->get_links() );
-		}
-
-		$a_ids = wp_list_pluck( $all_data, 'id' );
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
 		$this->assertContains( $a, $a_ids );
 	}
 
@@ -313,14 +348,13 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_items_with_favorite() {
 		$this->bp->set_current_user( $this->user );
 
+		$this->bp_factory->activity->create_many( 2 );
 		$a1 = $this->bp_factory->activity->create();
-		$a2 = $this->bp_factory->activity->create();
-		$a3 = $this->bp_factory->activity->create();
 
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$this->bp->set_current_user( $u );
 
-		bp_activity_add_user_favorite( $a2, $u );
+		bp_activity_add_user_favorite( $a1, $u );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -330,7 +364,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$f_ids = wp_filter_object_list( $response->get_data(), array( 'favorited' => true ), 'AND', 'id' );
 		$f_id  = reset( $f_ids );
-		$this->assertEquals( $a2, $f_id );
+		$this->assertEquals( $a1, $f_id );
 	}
 
 	/**
