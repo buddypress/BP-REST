@@ -1546,9 +1546,12 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		$params['type'] = array(
 			'description'       => __( 'Limit result set to items with a specific activity type.', 'buddypress' ),
-			'type'              => 'string',
-			'enum'              => array_keys( bp_activity_get_types() ),
-			'sanitize_callback' => 'sanitize_key',
+			'type'              => 'array',
+			'items'             => array(
+				'enum' => array_keys( bp_activity_get_types() ),
+				'type' => 'string',
+			),
+			'sanitize_callback' => 'wp_parse_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
