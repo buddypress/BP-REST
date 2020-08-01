@@ -83,7 +83,7 @@ trait BP_REST_Attachments {
 		$cover_dir    = $bp_attachments_uploads_dir['basedir'] . $cover_subdir;
 
 		// If upload path doesn't exist, stop.
-		if ( 0 !== validate_file( $cover_dir ) || ! is_dir( $cover_dir ) ) {
+		if ( 1 === validate_file( $cover_dir ) || ! is_dir( $cover_dir ) ) {
 			return new WP_Error(
 				"bp_rest_attachments_{$this->object}_cover_upload_error",
 				__( 'The cover image directory is not valid.', 'buddypress' ),
