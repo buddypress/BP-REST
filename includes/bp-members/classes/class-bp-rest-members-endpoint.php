@@ -333,6 +333,11 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		$response->add_links( $this->prepare_links( $user ) );
 
+		// Update current user's last activity.
+		if ( strpos( $request->get_route(), 'members/me' ) !== false && get_current_user_id() === $user->ID ) {
+			bp_update_user_last_activity();
+		}
+
 		/**
 		 * Filters user data returned from the API.
 		 *
