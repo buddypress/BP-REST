@@ -432,6 +432,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			return $fields_update;
 		}
 
+		// Update current user's last activity.
+		bp_update_user_last_activity();
+
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $activity, $request )
@@ -475,8 +478,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$item_id   = $request['primary_item_id'];
-		$component = $request['component'];
+		$item_id   = $request->get_param( 'primary_item_id' );
+		$component = $request->get_param( 'component' );
 
 		if ( true === $retval && bp_is_active( 'groups' ) && buddypress()->groups->id === $component && ! is_null( $item_id ) ) {
 			if ( ! $this->show_hidden( $component, $item_id ) ) {
