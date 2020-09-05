@@ -42,4 +42,8 @@
 		<exclude name="Generic.Arrays.DisallowShortArraySyntax.Found"/>
 	</rule>
 
+	<rule ref="WordPress">
+		<exclude name="WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned"/>
+	</rule>
+
 </ruleset>

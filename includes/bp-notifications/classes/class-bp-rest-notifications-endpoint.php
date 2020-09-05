@@ -655,7 +655,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array                       $links       The prepared links of the REST response.
+		 * @param array                         $links        The prepared links of the REST response.
 		 * @param BP_Notifications_Notification $notification Notification object.
 		 */
 		return apply_filters( 'bp_rest_notifications_prepare_links', $links, $notification );
@@ -690,7 +690,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return BP_Notifications_Notification|string A notification object.
+	 * @return BP_Notifications_Notification|string A notification object|Empty string.
 	 */
 	public function get_notification_object( $request ) {
 		$notification_id = is_numeric( $request ) ? $request : (int) $request['id'];
