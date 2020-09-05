@@ -1,12 +1,19 @@
 # Travis CI (MIT License) configuration file for the BP-REST
 # @link https://travis-ci.org/
 
-# Tell Travis to use new container-based infrastructure
-sudo: false
+# Setting dist.
+dist: xenial
+
+# Setting OS.
+os: linux
 
 # Declare project language.
 # @link http://about.travis-ci.org/docs/user/languages/php/
 language: php
+
+# Setting services.
+services:
+  - mysql
 
 branches:
   only:
@@ -26,7 +33,7 @@ git:
 env:
   global: PATH="$TRAVIS_BUILD_DIR/vendor/bin:$PATH"
 
-matrix:
+jobs:
   fast_finish: true
   include:
     - php: 7.4
@@ -75,6 +82,32 @@ before_install:
     # Turn off Xdebug. See https://core.trac.wordpress.org/changeset/40138.
     phpenv config-rm xdebug.ini || echo "Xdebug not available"
 
+install:
+  # Set up WP + BP installation.
+  - export WP_DEVELOP_DIR=/tmp/wordpress/
+  - export WP_TESTS_DIR=$WP_DEVELOP_DIR/tests/phpunit
+  - mkdir -p $WP_DEVELOP_DIR
+  - git clone --depth=1 --branch="$WP_VERSION" git://develop.git.wordpress.org/ $WP_DEVELOP_DIR
+  - plugin_slug=$(basename $(pwd))
+  - plugin_dir=$WP_DEVELOP_DIR/src/wp-content/plugins/$plugin_slug
+  - cd ..
+  - mv $plugin_slug $plugin_dir
+  - svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk $WP_DEVELOP_DIR/src/wp-content/plugins/buddypress
+
+  # set up tests config.
+  - cd $WP_DEVELOP_DIR
+  - echo $WP_DEVELOP_DIR
+  - cp wp-tests-config-sample.php wp-tests-config.php
+  - sed -i "s/youremptytestdbnamehere/wordpress_test/" wp-tests-config.php
+  - sed -i "s/yourusernamehere/root/" wp-tests-config.php
+  - sed -i "s/yourpasswordhere//" wp-tests-config.php
+
+  # set up database.
+  - mysql -e 'CREATE DATABASE wordpress_test;' -uroot
+
+  # cd into the plugin folder.
+  - cd $plugin_dir
+
 before_script:
   # Require PHPUnit.
   - |
@@ -103,32 +136,6 @@ before_script:
       ./vendor/bin/phpcs --config-set installed_paths '../../wimg/php-compatibility/,../../wp-coding-standards/wpcs/'
       ./vendor/bin/phpcs --config-set default_standard WordPress
     fi
-
-install:
-  # Set up WP + BP installation.
-  - export WP_DEVELOP_DIR=/tmp/wordpress/
-  - export WP_TESTS_DIR=$WP_DEVELOP_DIR/tests/phpunit
-  - mkdir -p $WP_DEVELOP_DIR
-  - git clone --depth=1 --branch="$WP_VERSION" git://develop.git.wordpress.org/ $WP_DEVELOP_DIR
-  - plugin_slug=$(basename $(pwd))
-  - plugin_dir=$WP_DEVELOP_DIR/src/wp-content/plugins/$plugin_slug
-  - cd ..
-  - mv $plugin_slug $plugin_dir
-  - svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk $WP_DEVELOP_DIR/src/wp-content/plugins/buddypress
-
-  # set up tests config.
-  - cd $WP_DEVELOP_DIR
-  - echo $WP_DEVELOP_DIR
-  - cp wp-tests-config-sample.php wp-tests-config.php
-  - sed -i "s/youremptytestdbnamehere/wordpress_test/" wp-tests-config.php
-  - sed -i "s/yourusernamehere/root/" wp-tests-config.php
-  - sed -i "s/yourpasswordhere//" wp-tests-config.php
-
-  # set up database.
-  - mysql -e 'CREATE DATABASE wordpress_test;' -uroot
-
-  # cd into the plugin folder.
-  - cd $plugin_dir
 
 script:
   - ./vendor/bin/phpunit;
