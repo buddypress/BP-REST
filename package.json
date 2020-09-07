@@ -3,13 +3,6 @@
   "title": "BP-REST",
   "version": "0.3.0",
   "description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
-  "devDependencies": {
-    "grunt": "^1.1.0",
-    "grunt-check-dependencies": "^1.0.0",
-    "grunt-checktextdomain": "~1.0.1",
-    "grunt-legacy-util": "^1.1.1",
-    "matchdep": "^2.0.0"
-  },
   "keywords": [
     "BuddyPress",
     "buddypress",
@@ -28,6 +21,20 @@
   "support": {
     "issues": "https://github.com/buddypress/BP-REST/issues",
     "source": "https://github.com/buddypress/BP-REST"
+  },
+  "scripts": {
+    "build": "grunt default"
+  },
+  "devDependencies": {
+    "grunt": "^1.1.0",
+    "grunt-check-dependencies": "^1.0.0",
+    "grunt-checktextdomain": "~1.0.1",
+    "grunt-legacy-util": "^1.1.1",
+    "matchdep": "^2.0.0"
+  },
+  "engines": {
+    "node": "12",
+    "npm": "6"
   },
   "repository": {
     "type": "git",
