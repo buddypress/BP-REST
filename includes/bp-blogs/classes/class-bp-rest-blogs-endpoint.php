@@ -44,6 +44,12 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'get_items_permissions_check' ),
 					'args'                => $this->get_collection_params(),
 				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'create_item' ),
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
+					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+				),
 				'schema' => array( $this, 'get_item_schema' ),
 			)
 		);
@@ -111,8 +117,8 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		}
 
 		// Check if user is valid.
-		if ( 0 !== $request['user_id'] ) {
-			$user = get_user_by( 'id', $request['user_id'] );
+		if ( 0 !== absint( $args['user_id'] ) ) {
+			$user = get_user_by( 'id', absint( $args['user_id'] ) );
 			if ( ! $user instanceof WP_User ) {
 				return new WP_Error(
 					'bp_rest_blogs_get_items_user_failed',
@@ -181,7 +187,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$blog = $this->get_blog_object( $request['id'] );
+		$blog = $this->get_blog_object( $request->get_param( 'id' ) );
 
 		if ( empty( $blog->blog_id ) || empty( $blog->admin_user_id ) ) {
 			return new WP_Error(
@@ -237,6 +243,139 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Create a new blog.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function create_item( $request ) {
+		$request->set_param( 'context', 'edit' );
+
+		$domain  = $request->get_param( 'domain' );
+		$path    = $request->get_param( 'path' );
+		$title   = $request->get_param( 'title' );
+		$site_id = $request->get_param( 'site_id' );
+		$user_id = $request->get_param( 'user_id' );
+		$meta    = $request->get_param( 'meta' );
+
+		if ( empty( $meta['public'] ) ) {
+			$meta['public'] = 1;
+		}
+
+		if ( empty( $meta['lang_id'] ) ) {
+			$meta['lang_id'] = 1;
+		}
+
+		/**
+		 * Filter the meta arguments for the new Blog.
+		 *
+		 * @since 6.0.0
+		 *
+		 * @param array           $args    Key value array of query var to query value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		$meta = apply_filters( 'bp_rest_blogs_create_item_meta', $meta, $request );
+
+		// Create blog.
+		$blog_id = wpmu_create_blog(
+			$domain,
+			$path,
+			$title,
+			$user_id,
+			$meta,
+			$site_id
+		);
+
+		// If something went wrong, bail it.
+		if ( is_wp_error( $blog_id ) ) {
+			return new WP_Error(
+				'bp_rest_blogs_create_error',
+				__( 'There was a problem creating blog.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$blog = $this->get_blog_object( $blog_id );
+
+		if ( empty( $blog->blog_id ) || empty( $blog->admin_user_id ) ) {
+			return new WP_Error(
+				'bp_rest_blog_invalid_id',
+				__( 'Invalid blog ID.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$retval = array(
+			$this->prepare_response_for_collection(
+				$this->prepare_item_for_response( $blog, $request )
+			),
+		);
+
+		$response = rest_ensure_response( $retval );
+
+		/**
+		 * Fires after a blog is created via the REST API.
+		 *
+		 * @since 6.0.0
+		 *
+		 * @param stdClass         $blog     Created blog.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'bp_rest_blogs_create_item', $blog, $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to create a blog.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_Error|bool
+	 */
+	public function create_item_permissions_check( $request ) {
+		$retval = true;
+
+		if ( ! is_user_logged_in() ) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
+
+		if ( true === $retval && false === bp_blog_signup_enabled() ) {
+			$retval = new WP_Error(
+				'bp_rest_blogs_signup_disabled',
+				__( 'Sorry, blog creation is disabled.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		/**
+		 * Filter the blogs `create_item` permissions check.
+		 *
+		 * @since 6.0.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_blogs_create_item_permissions_check', $retval, $request );
+	}
+
+	/**
 	 * Prepares blogs data for return as an object.
 	 *
 	 * @since 6.0.0
@@ -280,11 +419,11 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data    = $this->add_additional_fields_to_object( $data, $request );
-		$data    = $this->filter_response_by_context( $data, $context );
-
+		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data     = $this->add_additional_fields_to_object( $data, $request );
+		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
+
 		$response->add_links( $this->prepare_links( $blog ) );
 
 		/**
@@ -381,6 +520,86 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		}
 
 		return 0;
+	}
+
+	/**
+	 * Edit the type of the some properties for the CREATABLE & EDITABLE methods.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$args = parent::get_endpoint_args_for_item_schema( $method );
+		$key  = 'get_item';
+
+		if ( WP_REST_Server::CREATABLE === $method ) {
+			$key = 'create_item';
+
+			unset( $args['last_activity'] );
+
+			$args['domain'] = array(
+				'required'          => true,
+				'description'       => __( 'The new site\'s domain.', 'buddypress' ),
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'validate_callback' => 'rest_validate_request_arg',
+			);
+
+			$args['path'] = array(
+				'required'          => true,
+				'description'       => __( 'The new site\'s path.', 'buddypress' ),
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'validate_callback' => 'rest_validate_request_arg',
+			);
+
+			$args['title'] = array(
+				'required'          => true,
+				'description'       => __( 'The new site\'s title.', 'buddypress' ),
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+				'validate_callback' => 'rest_validate_request_arg',
+			);
+
+			$args['site_id'] = array(
+				'required'          => false,
+				'default'           => get_current_network_id(),
+				'description'       => __( 'The new site\'s network ID. (Only relevant on multi-network installations)', 'buddypress' ),
+				'type'              => 'integer',
+				'sanitize_callback' => 'absint',
+				'validate_callback' => 'rest_validate_request_arg',
+			);
+
+			$args['user_id'] = array(
+				'required'          => false,
+				'default'           => bp_loggedin_user_id(),
+				'description'       => __( 'The user ID of the new site\'s admin.', 'buddypress' ),
+				'type'              => 'integer',
+				'sanitize_callback' => 'absint',
+				'validate_callback' => 'rest_validate_request_arg',
+			);
+
+			$args['meta'] = array(
+				'required'          => false,
+				'description'       => __( 'Set initial Blog options.', 'buddypress' ),
+				'default'           => array(),
+				'type'              => 'array',
+				'items'             => array( 'type' => 'string' ),
+				'validate_callback' => 'rest_validate_request_arg',
+			);
+		}
+
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 6.0.0
+		 *
+		 * @param array  $args   Query arguments.
+		 * @param string $method HTTP method of the request.
+		 */
+		return apply_filters( "bp_rest_blogs_{$key}_query_arguments", $args, $method );
 	}
 
 	/**
