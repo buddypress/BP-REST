@@ -245,7 +245,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	/**
 	 * Create a new blog.
 	 *
-	 * @since 6.0.0
+	 * @since 7.0.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_REST_Response|WP_Error
@@ -253,13 +253,31 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	public function create_item( $request ) {
 		$request->set_param( 'context', 'edit' );
 
-		$domain  = $request->get_param( 'domain' );
-		$path    = $request->get_param( 'path' );
-		$title   = $request->get_param( 'title' );
+		// Get WP_User object.
+		$user = bp_rest_get_user( $request->get_param( 'user_id' ) );
+
+		// Validate blog signup.
+		$blog_meta = wpmu_validate_blog_signup(
+			$request->get_param( 'name' ),
+			$request->get_param( 'title' ),
+			$user
+		);
+
+		// Check if validation failed.
+		if ( is_wp_error( $blog_meta['errors'] ) && ! empty( $blog_meta['errors']->errors ) ) {
+			return new WP_Error(
+				'bp_rest_blog_validation_failed',
+				$blog_meta['errors']->get_error_message(),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
 		$site_id = $request->get_param( 'site_id' );
-		$user_id = $request->get_param( 'user_id' );
 		$meta    = $request->get_param( 'meta' );
 
+		// Assign blog meta.
 		if ( empty( $meta['public'] ) ) {
 			$meta['public'] = 1;
 		}
@@ -271,7 +289,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		/**
 		 * Filter the meta arguments for the new Blog.
 		 *
-		 * @since 6.0.0
+		 * @since 7.0.0
 		 *
 		 * @param array           $args    Key value array of query var to query value.
 		 * @param WP_REST_Request $request The request sent to the API.
@@ -280,10 +298,10 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 
 		// Create blog.
 		$blog_id = wpmu_create_blog(
-			$domain,
-			$path,
-			$title,
-			$user_id,
+			$blog_meta['domain'],
+			$blog_meta['path'],
+			$blog_meta['blog_title'],
+			$user->ID,
 			$meta,
 			$site_id
 		);
@@ -336,7 +354,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	/**
 	 * Check if a given request has access to create a blog.
 	 *
-	 * @since 6.0.0
+	 * @since 7.0.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return WP_Error|bool
@@ -367,7 +385,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		/**
 		 * Filter the blogs `create_item` permissions check.
 		 *
-		 * @since 6.0.0
+		 * @since 7.0.0
 		 *
 		 * @param bool|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
@@ -523,9 +541,9 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Edit the type of the some properties for the CREATABLE & EDITABLE methods.
+	 * Edit the type of the some properties for the CREATABLE method.
 	 *
-	 * @since 6.0.0
+	 * @since 7.0.0
 	 *
 	 * @param string $method Optional. HTTP method of the request.
 	 * @return array Endpoint arguments.
@@ -539,19 +557,11 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 
 			unset( $args['last_activity'] );
 
-			$args['domain'] = array(
+			$args['name'] = array(
 				'required'          => true,
-				'description'       => __( 'The new site\'s domain.', 'buddypress' ),
+				'description'       => __( 'The new site\'s name (used for the site URL).', 'buddypress' ),
 				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'validate_callback' => 'rest_validate_request_arg',
-			);
-
-			$args['path'] = array(
-				'required'          => true,
-				'description'       => __( 'The new site\'s path.', 'buddypress' ),
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
+				'sanitize_callback' => 'sanitize_key',
 				'validate_callback' => 'rest_validate_request_arg',
 			);
 
@@ -594,7 +604,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		/**
 		 * Filters the method query arguments.
 		 *
-		 * @since 6.0.0
+		 * @since 7.0.0
 		 *
 		 * @param array  $args   Query arguments.
 		 * @param string $method HTTP method of the request.

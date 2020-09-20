@@ -101,7 +101,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_invalid_group_id() {
+	public function test_get_item_invalid_blog_id() {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped();
 		}
@@ -126,7 +126,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$settings = array();
 		}
 
-		$settings['registration'] = 'all';
+		$settings['registration'] = 'blog';
 		buddypress()->site_options = $settings;
 
 		$this->bp->set_current_user( $this->admin );
@@ -175,6 +175,15 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$this->markTestSkipped();
 		}
 
+		$old_settings = $settings = buddypress()->site_options;
+
+		if ( ! is_array( $settings ) ) {
+			$settings = array();
+		}
+
+		$settings['registration'] = 'none';
+		buddypress()->site_options = $settings;
+
 		$this->bp->set_current_user( $this->admin );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
@@ -186,6 +195,8 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_blogs_signup_disabled', $response, 500 );
+
+		buddypress()->site_options = $old_settings;
 	}
 
 	/**
@@ -204,7 +215,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$params = $this->set_blog_data();
 
 		// Remove a required field.
-		unset( $params['title'] );
+		unset( $params['name'] );
 
 		$request->set_body( wp_json_encode( $params ) );
 		$request->set_param( 'context', 'edit' );
@@ -227,15 +238,17 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->markTestSkipped();
 	}
 
+	/**
+	 * @group get_item
+	 */
 	public function test_prepare_item() {
 		$this->markTestSkipped();
 	}
 
 	protected function set_blog_data( $args = array() ) {
 		return wp_parse_args( $args, array(
+			'name'    => 'Cool Blog',
 			'title'   => 'Blog Name',
-			'path'    => 'blog-path',
-			'domain'  => 'blog-path.com',
 			'user_id' => $this->admin,
 			'data'    => [
 				'public' => 1,
@@ -243,6 +256,9 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 	}
 
+	/**
+	 * @group additional_fields
+	 */
 	public function get_additional_field( $data, $attribute )  {
 		return bp_blogs_get_blogmeta( $data['id'], '_' . $attribute );
 	}
