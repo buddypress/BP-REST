@@ -340,7 +340,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		/**
 		 * Fires after a blog is created via the REST API.
 		 *
-		 * @since 6.0.0
+		 * @since 7.0.0
 		 *
 		 * @param stdClass         $blog     Created blog.
 		 * @param WP_REST_Response $response The response data.
