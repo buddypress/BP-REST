@@ -16,8 +16,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->blogs->id;
 		$this->admin        = $this->factory->user->create( array(
-			'role'       => 'administrator',
-			'user_email' => 'admin@example.com',
+			'role' => 'administrator',
 		) );
 
 		if ( ! $this->server ) {
@@ -34,7 +33,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		// Main.
 		$this->assertArrayHasKey( $this->endpoint_url, $routes );
-		$this->assertCount( 1, $routes[ $this->endpoint_url ] );
+		$this->assertCount( 2, $routes[ $this->endpoint_url ] );
 
 		// Single.
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\d]+)', $routes );
@@ -102,8 +101,10 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_invalid_group_id() {
-		$this->markTestSkipped();
+	public function test_get_item_invalid_blog_id() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -115,7 +116,112 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		$this->markTestSkipped();
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$old_settings = $settings = buddypress()->site_options;
+
+		if ( ! is_array( $settings ) ) {
+			$settings = array();
+		}
+
+		$settings['registration'] = 'blog';
+		buddypress()->site_options = $settings;
+
+		$this->bp->set_current_user( $this->admin );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_blog_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$blogs = $response->get_data();
+
+		$this->assertSame( $blogs[0]['name'], 'Blog Name' );
+
+		buddypress()->site_options = $old_settings;
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_user_not_logged_in() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_blog_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_signup_disabled() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$old_settings = $settings = buddypress()->site_options;
+
+		if ( ! is_array( $settings ) ) {
+			$settings = array();
+		}
+
+		$settings['registration'] = 'none';
+		buddypress()->site_options = $settings;
+
+		$this->bp->set_current_user( $this->admin );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_blog_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_blogs_signup_disabled', $response, 500 );
+
+		buddypress()->site_options = $old_settings;
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_without_required_field() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$this->bp->set_current_user( $this->admin );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_blog_data();
+
+		// Remove a required field.
+		unset( $params['name'] );
+
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_missing_callback_param', $response, 400 );
 	}
 
 	/**
@@ -132,47 +238,27 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->markTestSkipped();
 	}
 
+	/**
+	 * @group get_item
+	 */
 	public function test_prepare_item() {
 		$this->markTestSkipped();
 	}
 
-	protected function check_blog_data( $blog, $data ) {
-		$this->assertEquals( $blog->blog_id, $data['id'] );
-		$this->assertEquals( $blog->user_id, $data['user_id'] );
-		$this->assertEquals( $blog->name, $data['name'] );
-		$this->assertEquals( $blog->domain, $data['domain'] );
-		$this->assertEquals( $blog->path, $data['path'] );
-		$this->assertEquals( $blog->permalink, $data['permalink'] );
-		$this->assertEquals( $blog->description, $data['description'] );
-		$this->assertEquals( bp_rest_prepare_date_response( $blog->last_activity ), $data['last_activity'] );
+	protected function set_blog_data( $args = array() ) {
+		return wp_parse_args( $args, array(
+			'name'    => 'Cool Blog',
+			'title'   => 'Blog Name',
+			'user_id' => $this->admin,
+			'data'    => [
+				'public' => 1,
+			],
+		) );
 	}
 
-	public function test_get_item_schema() {
-		$request    = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
-		$response   = $this->server->dispatch( $request );
-		$data       = $response->get_data();
-		$properties = $data['schema']['properties'];
-
-		$this->assertEquals( 9, count( $properties ) );
-		$this->assertArrayHasKey( 'id', $properties );
-		$this->assertArrayHasKey( 'user_id', $properties );
-		$this->assertArrayHasKey( 'name', $properties );
-		$this->assertArrayHasKey( 'path', $properties );
-		$this->assertArrayHasKey( 'domain', $properties );
-		$this->assertArrayHasKey( 'permalink', $properties );
-		$this->assertArrayHasKey( 'description', $properties );
-		$this->assertArrayHasKey( 'last_activity', $properties );
-	}
-
-	public function test_context_param() {
-		$request  = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
-		$response = $this->server->dispatch( $request );
-		$data     = $response->get_data();
-
-		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
-	}
-
+	/**
+	 * @group additional_fields
+	 */
 	public function get_additional_field( $data, $attribute )  {
 		return bp_blogs_get_blogmeta( $data['id'], '_' . $attribute );
 	}
@@ -224,5 +310,31 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertTrue( $expected === $get_data[0]['foo_field'] );
 
 		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
+	}
+
+	public function test_get_item_schema() {
+		$request    = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
+		$response   = $this->server->dispatch( $request );
+		$data       = $response->get_data();
+		$properties = $data['schema']['properties'];
+
+		$this->assertEquals( 9, count( $properties ) );
+		$this->assertArrayHasKey( 'id', $properties );
+		$this->assertArrayHasKey( 'user_id', $properties );
+		$this->assertArrayHasKey( 'name', $properties );
+		$this->assertArrayHasKey( 'path', $properties );
+		$this->assertArrayHasKey( 'domain', $properties );
+		$this->assertArrayHasKey( 'permalink', $properties );
+		$this->assertArrayHasKey( 'description', $properties );
+		$this->assertArrayHasKey( 'last_activity', $properties );
+	}
+
+	public function test_context_param() {
+		$request  = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
+		$response = $this->server->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
+		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 	}
 }
