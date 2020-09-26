@@ -164,7 +164,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$args['since'] = $request['after'];
 		}
 
-		if ( isset( $request['user_id'] ) ) {
+		if ( ! empty( $request['user_id'] ) ) {
 			$args['filter']['user_id'] = $request['user_id'];
 		}
 
@@ -172,6 +172,10 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( ! empty( $args['group_id'] ) ) {
 			$args['filter']['object']     = 'groups';
 			$args['filter']['primary_id'] = $args['group_id'];
+
+			if ( empty( $request['component'] ) ) {
+				$request['component'] = 'groups';
+			}
 
 			$item_id = $args['group_id'];
 		}
@@ -184,7 +188,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( empty( $args['group_id'] ) && empty( $args['site_id'] ) ) {
-			if ( isset( $request['component'] ) ) {
+			if ( ! empty( $request['component'] ) ) {
 				$args['filter']['object'] = $request['component'];
 			}
 

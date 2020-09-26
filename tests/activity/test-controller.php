@@ -271,6 +271,133 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_items
 	 */
+	public function test_get_private_group_items_without_access() {
+		$component = buddypress()->groups->id;
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$this->bp->set_current_user( $u );
+
+		// Current user is $u.
+		$g1 = $this->bp_factory->group->create( array(
+			'status'     => 'private',
+			'creator_id' => $this->user,
+		) );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'created_group',
+			'user_id'       => $this->user,
+			'item_id'       => $g1,
+			'hide_sitewide' => true,
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'component'  => $component,
+			'primary_id' => $g1,
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertEmpty( $a_ids );
+		$this->assertNotContains( $a1, $a_ids );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_private_group_items_with_the_group_id_param() {
+		$component = buddypress()->groups->id;
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$this->bp->set_current_user( $u );
+
+		// Current user is $u.
+		$g1 = $this->bp_factory->group->create( array(
+			'status'     => 'private',
+			'creator_id' => $u,
+		) );
+
+		$g2 = $this->bp_factory->group->create( array(
+			'status'     => 'public',
+			'creator_id' => $this->user,
+		) );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'created_group',
+			'user_id'       => $u,
+			'item_id'       => $g1,
+			'hide_sitewide' => true,
+		) );
+
+		$a2 = $this->bp_factory->activity->create( array(
+			'component' => $component,
+			'type'      => 'created_group',
+			'user_id'   => $this->user,
+			'item_id'   => $g2,
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertNotContains( $a2, $a_ids );
+		$this->assertContains( $a1, $a_ids );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_private_group_items_with_group_id_param_without_access() {
+		$component = buddypress()->groups->id;
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$this->bp->set_current_user( $u );
+
+		// Current user is $u.
+		$g1 = $this->bp_factory->group->create( array(
+			'status'     => 'private',
+			'creator_id' => $this->user,
+		) );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'created_group',
+			'user_id'       => $this->user,
+			'item_id'       => $g1,
+			'hide_sitewide' => true,
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $g1,
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertEmpty( $a_ids );
+		$this->assertNotContains( $a1, $a_ids );
+	}
+
+	/**
+	 * @group get_items
+	 */
 	public function test_get_paginated_items() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$this->bp->set_current_user( $u );
