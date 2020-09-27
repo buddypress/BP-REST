@@ -359,8 +359,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 * @since 7.0.0 Add the $request parameter.
 	 *
-	 * @param WP_User $user    User object.
-	 * @param string  $context The context of the request. Defaults to 'view'.
+	 * @param WP_User         $user    User object.
+	 * @param string          $context The context of the request. Defaults to 'view'.
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return array
 	 */
