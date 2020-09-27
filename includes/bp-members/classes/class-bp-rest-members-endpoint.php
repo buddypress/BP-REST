@@ -35,16 +35,17 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'type'           => $request['type'],
-			'user_id'        => $request['user_id'],
-			'user_ids'       => $request['user_ids'],
-			'xprofile_query' => $request['xprofile'],
-			'include'        => $request['include'],
-			'exclude'        => $request['exclude'],
-			'member_type'    => $request['member_type'],
-			'search_terms'   => $request['search'],
-			'per_page'       => $request['per_page'],
-			'page'           => $request['page'],
+			'type'            => $request['type'],
+			'user_id'         => $request['user_id'],
+			'user_ids'        => $request['user_ids'],
+			'xprofile_query'  => $request['xprofile'],
+			'include'         => $request['include'],
+			'exclude'         => $request['exclude'],
+			'populate_extras' => $request['populate_extras'],
+			'member_type'     => $request['member_type'],
+			'search_terms'    => $request['search'],
+			'per_page'        => $request['per_page'],
+			'page'            => $request['page'],
 		);
 
 		if ( empty( $request['user_ids'] ) ) {
@@ -326,7 +327,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 */
 	public function prepare_item_for_response( $user, $request ) {
 		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$data     = $this->user_data( $user, $context );
+		$data     = $this->user_data( $user, $context, $request );
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
@@ -356,12 +357,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * This was abstracted to be used in other BuddyPress endpoints.
 	 *
 	 * @since 0.1.0
+	 * @since 7.0.0 Add the $request parameter.
 	 *
 	 * @param WP_User $user    User object.
 	 * @param string  $context The context of the request. Defaults to 'view'.
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return array
 	 */
-	public function user_data( $user, $context = 'view' ) {
+	public function user_data( $user, $context = 'view', $request ) {
 		$data = array(
 			'id'                     => $user->ID,
 			'name'                   => $user->display_name,
@@ -376,6 +379,32 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'friendship_status'      => false,
 			'friendship_status_slug' => '',
 		);
+
+		if ( $request->get_param( 'populate_extras' ) ) {
+			$data['last_activity'] = bp_rest_prepare_date_response( $user->last_activity );
+
+			if ( bp_is_active( 'activity' ) ) {
+				$data['latest_update'] = array(
+					'id'       => 0,
+					'raw'      => '',
+					'rendered' => '',
+				);
+
+				if ( isset( $user->latest_update ) && $user->latest_update ) {
+					$activity_data = maybe_unserialize( $user->latest_update );
+
+					if ( isset( $activity_data['id'], $activity_data['content'] ) ) {
+						$data['latest_update']['id']       = $activity_data['id'];
+						$data['latest_update']['raw']      = $activity_data['content'];
+						$data['latest_update']['rendered'] = apply_filters( 'bp_get_activity_content', $activity_data['content'] );
+					}
+				}
+			}
+
+			if ( bp_is_active( 'friends' ) && isset( $user->total_friend_count ) && $user->total_friend_count ) {
+				$data['total_friend_count'] = absint( $user->total_friend_count );
+			}
+		}
 
 		// Friends related fields.
 		if ( bp_is_active( 'friends' ) && get_current_user_id() !== $user->ID ) {
@@ -832,6 +861,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'type'              => 'array',
 			'items'             => array( 'type' => 'integer' ),
 			'sanitize_callback' => 'wp_parse_id_list',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$param['populate_extras'] = array(
+			'description'       => __( 'Whether to fetch extra metadata about returned members.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
