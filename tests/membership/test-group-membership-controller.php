@@ -975,7 +975,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 20, count( $properties ) );
+		$this->assertEquals( 23, count( $properties ) );
 		$this->assertArrayHasKey( 'avatar_urls', $properties );
 		$this->assertArrayHasKey( 'capabilities', $properties );
 		$this->assertArrayHasKey( 'extra_capabilities', $properties );
@@ -989,6 +989,9 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$this->assertArrayHasKey( 'xprofile', $properties );
 		$this->assertArrayHasKey( 'friendship_status', $properties );
 		$this->assertArrayHasKey( 'friendship_status_slug', $properties );
+		$this->assertArrayHasKey( 'last_activity', $properties );
+		$this->assertArrayHasKey( 'latest_update', $properties );
+		$this->assertArrayHasKey( 'total_friend_count', $properties );
 
 		// Extra fields.
 		$this->assertArrayHasKey( 'is_mod', $properties );
