@@ -94,6 +94,63 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_items
 	 */
+	public function test_get_items_extra() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$u3 = $this->factory->user->create();
+
+		// Register and set member types.
+		$current_user = get_current_user_id();
+		$this->bp->set_current_user( $u2 );
+
+		// u2 is the only one to have a latest_update.
+		$a1 = bp_activity_post_update(
+			array(
+				'type'    => 'activity_update',
+				'user_id' => $u2,
+				'content' => 'The Joshua Tree',
+			)
+		);
+
+		$date_last_activity = date( 'Y-m-d H:i:s', bp_core_current_time( true, 'timestamp' ) );
+
+		// u1 is the only one to have a last activity
+		bp_update_user_last_activity( $u1, $date_last_activity );
+
+		$this->bp->set_current_user( $current_user );
+
+		// u1 and u3 are friends.
+		friends_add_friend( $u1, $u3, true );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params(
+			array(
+				'populate_extras' => true,
+				'user_ids'        => [ $u1, $u2, $u3 ],
+			)
+		);
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$members = $response->get_data();
+		$this->assertNotEmpty( $members );
+
+		$this->assertTrue( 3 === count( $members ) );
+
+		$latest_activities = wp_list_pluck( $members, 'last_activity', 'id' );
+		$this->assertEquals( bp_rest_prepare_date_response( $date_last_activity ), $latest_activities[ $u1 ]['date'] );
+
+		$this->assertEquals( array( $u1, $u3 ), array_values( wp_filter_object_list( $members, array( 'total_friend_count' => 1 ), 'AND', 'id' ) ) );
+
+		$latest_updates = wp_list_pluck( $members, 'latest_update', 'id' );
+		$this->assertEquals( $a1, $latest_updates[ $u2 ]['id'] );
+	}
+
+	/**
+	 * @group get_items
+	 */
 	public function test_get_paginated_items() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
@@ -142,6 +199,49 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$this->check_get_user_response( $response );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_extras() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		// Register and set member types.
+		$current_user = get_current_user_id();
+		$this->bp->set_current_user( $u1 );
+
+		$a1 = bp_activity_post_update(
+			array(
+				'type'    => 'activity_update',
+				'user_id' => $u1,
+				'content' => '<a href="https://buddypress.org">BuddyPress</a> is awesome!',
+			)
+		);
+
+		friends_add_friend( $u1, $u2, true );
+
+		$date_last_activity = date( 'Y-m-d H:i:s', bp_core_current_time( true, 'timestamp' ) );
+		bp_update_user_last_activity( $u1, $date_last_activity );
+
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $u1 ) );
+		$request->set_query_params(
+			array(
+				'populate_extras' => true,
+			)
+		);
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$member = $response->get_data();
+
+		$this->assertEquals( bp_rest_prepare_date_response( $date_last_activity ), $member['last_activity']['date'] );
+		$this->assertEquals( $member['latest_update']['id'], $a1 );
+		$this->assertEquals( 1, $member['total_friend_count'] );
+
+		$this->bp->set_current_user( $current_user );
 	}
 
 	/**
@@ -423,7 +523,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 15, count( $properties ) );
+		$this->assertEquals( 18, count( $properties ) );
 		$this->assertArrayHasKey( 'avatar_urls', $properties );
 		$this->assertArrayHasKey( 'capabilities', $properties );
 		$this->assertArrayHasKey( 'extra_capabilities', $properties );
@@ -438,6 +538,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'xprofile', $properties );
 		$this->assertArrayHasKey( 'friendship_status', $properties );
 		$this->assertArrayHasKey( 'friendship_status_slug', $properties );
+		$this->assertArrayHasKey( 'last_activity', $properties );
+		$this->assertArrayHasKey( 'latest_update', $properties );
+		$this->assertArrayHasKey( 'total_friend_count', $properties );
 	}
 
 	public function test_context_param() {

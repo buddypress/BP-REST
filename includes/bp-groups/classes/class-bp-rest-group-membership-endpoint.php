@@ -688,7 +688,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	public function prepare_item_for_response( $group_member, $request ) {
 		$user        = bp_rest_get_user( $group_member->user_id );
 		$context     = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$member_data = $this->members_endpoint->user_data( $user, $context );
+		$member_data = $this->members_endpoint->user_data( $user, $context, $request );
 
 		// Merge both info.
 		$data = array_merge(
