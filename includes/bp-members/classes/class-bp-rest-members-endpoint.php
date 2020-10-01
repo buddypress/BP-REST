@@ -475,7 +475,13 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		);
 
 		if ( $request->get_param( 'populate_extras' ) ) {
-			$data['last_activity'] = bp_rest_prepare_date_response( $user->last_activity );
+			if ( $user->last_activity ) {
+				$data['last_activity']['timediff'] = bp_core_time_since( $user->last_activity );
+				$data['last_activity']['date']     = bp_rest_prepare_date_response( $user->last_activity );
+			} else {
+				$data['last_activity']['timediff'] = '';
+				$data['last_activity']['date']     = '';
+			}
 
 			if ( bp_is_active( 'activity' ) ) {
 				$data['latest_update'] = array(
@@ -858,7 +864,16 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				),
 				'last_activity'          => array(
 					'description' => __( 'Last date the member was active on the site.', 'buddypress' ),
-					'type'        => 'string',
+					'type'        => 'object',
+					'properties'  => array(
+						'timediff' => array(
+							'type' => 'string',
+						),
+						'date'     => array(
+							'type'   => 'string',
+							'format' => 'date-time',
+						),
+					),
 					'format'      => 'date-time',
 					'context'     => array( 'view', 'edit' ),
 					'readonly'    => true,

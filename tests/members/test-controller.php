@@ -112,8 +112,10 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 			)
 		);
 
+		$date_last_activity = date( 'Y-m-d H:i:s', bp_core_current_time( true, 'timestamp' ) );
+
 		// u1 is the only one to have a last activity
-		bp_update_user_last_activity( $u1, date( 'Y-m-d H:i:s', bp_core_current_time( true, 'timestamp' ) ) );
+		bp_update_user_last_activity( $u1, $date_last_activity );
 
 		$this->bp->set_current_user( $current_user );
 
@@ -137,7 +139,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertTrue( 3 === count( $members ) );
 
-		$this->assertEquals( array( $u2, $u3 ), array_values( wp_filter_object_list( $members, array( 'last_activity' => false ), 'AND', 'id' ) ) );
+		$latest_activities = wp_list_pluck( $members, 'last_activity', 'id' );
+		$this->assertEquals( bp_rest_prepare_date_response( $date_last_activity ), $latest_activities[ $u1 ]['date'] );
+
 		$this->assertEquals( array( $u1, $u3 ), array_values( wp_filter_object_list( $members, array( 'total_friend_count' => 1 ), 'AND', 'id' ) ) );
 
 		$latest_updates = wp_list_pluck( $members, 'latest_update', 'id' );
@@ -218,6 +222,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		friends_add_friend( $u1, $u2, true );
 
+		$date_last_activity = date( 'Y-m-d H:i:s', bp_core_current_time( true, 'timestamp' ) );
+		bp_update_user_last_activity( $u1, $date_last_activity );
+
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $u1 ) );
 		$request->set_query_params(
 			array(
@@ -230,7 +237,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$member = $response->get_data();
 
-		$this->assertEquals( bp_get_user_last_activity( $u1 ), $member['last_activity'] );
+		$this->assertEquals( bp_rest_prepare_date_response( $date_last_activity ), $member['last_activity']['date'] );
 		$this->assertEquals( $member['latest_update']['id'], $a1 );
 		$this->assertEquals( 1, $member['total_friend_count'] );
 
