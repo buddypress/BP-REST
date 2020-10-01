@@ -1009,7 +1009,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$param['populate_extras'] = array(
+		$params['populate_extras'] = array(
 			'description'       => __( 'Whether to fetch extra BP data about the returned members.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
