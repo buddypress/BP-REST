@@ -479,7 +479,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$data['last_activity']['date']     = '';
 
 			if ( get_current_user_id() === $user->ID ) {
-				$right_now                         = date( 'Y-m-d H:i:s', bp_core_current_time( true, 'timestamp' ) );
+				$right_now                         = gmdate( 'Y-m-d H:i:s', bp_core_current_time( true, 'timestamp' ) );
 				$data['last_activity']['timediff'] = bp_core_time_since( $right_now );
 				$data['last_activity']['date']     = bp_rest_prepare_date_response( $right_now );
 
