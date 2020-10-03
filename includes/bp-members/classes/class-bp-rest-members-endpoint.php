@@ -475,12 +475,17 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		);
 
 		if ( $request->get_param( 'populate_extras' ) ) {
-			if ( $user->last_activity ) {
+			$data['last_activity']['timediff'] = '';
+			$data['last_activity']['date']     = '';
+
+			if ( get_current_user_id() === $user->ID ) {
+				$right_now                         = date( 'Y-m-d H:i:s', bp_core_current_time( true, 'timestamp' ) );
+				$data['last_activity']['timediff'] = bp_core_time_since( $right_now );
+				$data['last_activity']['date']     = bp_rest_prepare_date_response( $right_now );
+
+			} elseif ( $user->last_activity ) {
 				$data['last_activity']['timediff'] = bp_core_time_since( $user->last_activity );
 				$data['last_activity']['date']     = bp_rest_prepare_date_response( $user->last_activity );
-			} else {
-				$data['last_activity']['timediff'] = '';
-				$data['last_activity']['date']     = '';
 			}
 
 			if ( bp_is_active( 'activity' ) ) {

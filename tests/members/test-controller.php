@@ -99,7 +99,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$u2 = $this->factory->user->create();
 		$u3 = $this->factory->user->create();
 
-		// Register and set member types.
+		// Set current user.
 		$current_user = get_current_user_id();
 		$this->bp->set_current_user( $u2 );
 
@@ -208,7 +208,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
 
-		// Register and set member types.
+		// Set current user.
 		$current_user = get_current_user_id();
 		$this->bp->set_current_user( $u1 );
 
@@ -240,6 +240,31 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( bp_rest_prepare_date_response( $date_last_activity ), $member['last_activity']['date'] );
 		$this->assertEquals( $member['latest_update']['id'], $a1 );
 		$this->assertEquals( 1, $member['total_friend_count'] );
+
+		$this->bp->set_current_user( $current_user );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_me_extras() {
+		// Set current user.
+		$current_user = get_current_user_id();
+		$this->bp->set_current_user( self::$user );
+
+		$request  = new WP_REST_Request( 'GET', $this->endpoint_url . '/me' );
+		$request->set_query_params(
+			array(
+				'populate_extras' => true,
+			)
+		);
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$me = $response->get_data();
+
+		$this->assertEquals( 'right now', $me['last_activity']['timediff'] );
 
 		$this->bp->set_current_user( $current_user );
 	}
