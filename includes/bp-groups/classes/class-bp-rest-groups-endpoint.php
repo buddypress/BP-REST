@@ -66,10 +66,18 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 					'args'                => array(
-						'context' => $this->get_context_param(
+						'context'         => $this->get_context_param(
 							array(
 								'default' => 'view',
 							)
+						),
+						'populate_extras' => array(
+							'description'       => __( 'Whether to fetch extra BP data about the returned group.', 'buddypress' ),
+							'context'           => array( 'view', 'edit' ),
+							'default'           => false,
+							'type'              => 'boolean',
+							'sanitize_callback' => 'rest_sanitize_boolean',
+							'validate_callback' => 'rest_validate_request_arg',
 						),
 					),
 				),
@@ -146,6 +154,10 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// See if the user can see hidden groups.
 		if ( isset( $request['show_hidden'] ) && true === (bool) $request['show_hidden'] && ! $this->can_see_hidden_groups( $request ) ) {
 			$args['show_hidden'] = false;
+		}
+
+		if ( true === $request->get_param( 'populate_extras' ) ) {
+			$args['update_meta_cache'] = true;
 		}
 
 		/**
@@ -736,6 +748,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'mods'               => array(),
 			'total_member_count' => null,
 			'last_activity'      => null,
+			'last_activity_diff' => null,
 		);
 
 		// Get item schema.
@@ -770,11 +783,15 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
-		// If this is the 'edit' context, fill in more details--similar to "populate_extras".
-		if ( 'edit' === $context ) {
-			$data['total_member_count'] = groups_get_groupmeta( $item->id, 'total_member_count' );
-			$data['last_activity']      = bp_rest_prepare_date_response( groups_get_groupmeta( $item->id, 'last_activity' ) );
+		// If this is the 'edit' context or 'populate_extras' has been requested.
+		if ( 'edit' === $context || true === $request->get_param( 'populate_extras' ) ) {
+			$data['total_member_count'] = (int) $item->total_member_count;
+			$data['last_activity']      = bp_rest_prepare_date_response( $item->last_activity );
+			$data['last_activity_diff'] = bp_get_group_last_active( $item );
+		}
 
+		// If this is the 'edit' context, get more data about the group.
+		if ( 'edit' === $context ) {
 			// Add admins and moderators to their respective arrays.
 			$admin_mods = groups_get_group_members(
 				array(
@@ -1247,17 +1264,23 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					),
 				),
 				'total_member_count' => array(
-					'context'     => array( 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'Count of all Group members.', 'buddypress' ),
 					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'last_activity'      => array(
-					'context'     => array( 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 					'description' => __( "The date the Group was last active, in the site's timezone.", 'buddypress' ),
 					'type'        => 'string',
 					'readonly'    => true,
 					'format'      => 'date-time',
+				),
+				'last_activity_diff'  => array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( "The human diff time the Group was last active, in the site's timezone.", 'buddypress' ),
+					'type'        => 'string',
+					'readonly'    => true,
 				),
 			),
 		);
@@ -1412,6 +1435,14 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		$params['show_hidden'] = array(
 			'description'       => __( 'Whether results should include hidden Groups.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['populate_extras'] = array(
+			'description'       => __( 'Whether to fetch extra BP data about the returned groups.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',
