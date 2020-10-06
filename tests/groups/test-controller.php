@@ -156,6 +156,51 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_items_extra() {
+		$this->bp->set_current_user( $this->user );
+		$now = time();
+
+		$d1 = gmdate( 'Y-m-d H:i:s', $now - 10000 );
+		$d2 = gmdate( 'Y-m-d H:i:s', $now - 1000 );
+		$d3 = gmdate( 'Y-m-d H:i:s', $now - 100 );
+		$d4 = gmdate( 'Y-m-d H:i:s', $now - 500 );
+
+		$a1 = $this->bp_factory->group->create( array( 'date_created' => $d1 ) );
+		$a2 = $this->bp_factory->group->create( array( 'date_created' => $d2 ) );
+		$a3 = $this->bp_factory->group->create( array( 'date_created' => $d3 ) );
+
+		$u = $this->factory->user->create();
+		groups_join_group( $a3, $u );
+
+		groups_update_groupmeta( $a1, 'last_activity', $d4 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$request->set_param( 'populate_extras', true );
+		$request->set_param( 'type', 'newest' );
+		$request->set_param( 'exclude', $this->group_id );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$data     = $all_data;
+
+		// Check order.
+		$this->assertSame( array( $a3, $a2, $a1 ), array_map( 'intval', wp_list_pluck( $data, 'id' ) ) );
+
+		// Check member count.
+		$this->assertEquals( array( $a3 ), array_values( wp_filter_object_list( $all_data, array( 'total_member_count' => 2 ), 'AND', 'id' ) ) );
+
+		// check time diff.
+		$not_right_now = wp_filter_object_list( $all_data, array( 'id' => $a1 ), 'AND', 'last_activity_diff' );
+		$not_right_now = reset( $not_right_now );
+		$this->assertEquals( bp_core_time_since( $d4 ), $not_right_now );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
@@ -290,6 +335,30 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		remove_filter( 'bp_disable_group_avatar_uploads', '__return_true' );
 
 		$this->assertArrayNotHasKey( 'avatar_urls', $all_data[0] );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_extra() {
+		$u = $this->factory->user->create();
+		$this->bp->set_current_user( $u );
+
+		$group = $this->endpoint->get_group_object( $this->group_id );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request->set_param( 'context', 'view' );
+		$request->set_param( 'populate_extras', true );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$group = reset( $all_data );
+
+		$this->assertTrue( ! is_null( $group['total_member_count'] ) );
+		$this->assertTrue( ! is_null( $group['last_activity'] ) );
+		$this->assertTrue( ! is_null( $group['last_activity_diff'] ) );
 	}
 
 	/**
@@ -866,7 +935,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 16, count( $properties ) );
+		$this->assertEquals( 17, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'creator_id', $properties );
 		$this->assertArrayHasKey( 'name', $properties );
@@ -882,6 +951,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'parent_id', $properties );
 		$this->assertArrayHasKey( 'total_member_count', $properties );
 		$this->assertArrayHasKey( 'last_activity', $properties );
+		$this->assertArrayHasKey( 'last_activity_diff', $properties );
 	}
 
 	public function test_context_param() {
