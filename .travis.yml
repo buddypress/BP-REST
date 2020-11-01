@@ -39,19 +39,19 @@ jobs:
     - php: 7.4
       env: WP_VERSION=master PHPCS=1 BUILD=1
     - php: 7.4
-      env: WP_VERSION=5.4
+      env: WP_VERSION=5.5
     - php: 7.4
       env: WP_VERSION=5.3
     - php: 7.3
       env: WP_VERSION=master PHPCS=1 BUILD=1
     - php: 7.3
-      env: WP_VERSION=5.4
+      env: WP_VERSION=5.5
     - php: 7.3
       env: WP_VERSION=5.0
     - php: 7.2
       env: WP_VERSION=master
     - php: 7.2
-      env: WP_VERSION=5.4
+      env: WP_VERSION=5.5
     - php: 7.2
       env: WP_VERSION=5.0
     - php: 7.2
@@ -59,17 +59,17 @@ jobs:
     - php: 7.1
       env: WP_VERSION=master
     - php: 7.1
-      env: WP_VERSION=5.4
+      env: WP_VERSION=5.5
     - php: 7.1
       env: WP_VERSION=5.0
     - php: 7.0
       env: WP_VERSION=master
     - php: 7.0
-      env: WP_VERSION=5.4
+      env: WP_VERSION=5.5
     - php: 5.6
       env: WP_VERSION=master
     - php: 5.6
-      env: WP_VERSION=5.4
+      env: WP_VERSION=5.5
     - php: 5.6
       env: WP_VERSION=5.0
     - php: 5.6
@@ -107,6 +107,9 @@ install:
   - cd $plugin_dir
 
 before_script:
+  # make sure composer is < 2.0.0 to avoid dependencies install errors.
+  - composer self-update 1.10.16
+
   # Require PHPUnit.
   - |
     if [[ ${TRAVIS_PHP_VERSION:0:3} == "5.6" ]]; then
