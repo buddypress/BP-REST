@@ -45,9 +45,15 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		$this->markTestSkipped();
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
 
 		$u = $this->bp_factory->user->create();
+		$expected = array(
+			'full'  => get_avatar_url( $u, array( 'size' => 150 ) ),
+			'thumb' => get_avatar_url( $u, array( 'size' => 50 ) ),
+		);
 
 		$this->bp->set_current_user( $u );
 
@@ -57,33 +63,118 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 		$request->set_param( 'context', 'view' );
 
 		$response = rest_get_server()->dispatch( $request );
+		$all_data = $response->get_data();
 
-		$this->assertErrorResponse( 'bp_rest_attachments_blog_avatar_no_image', $response, 500 );
+		$this->assertSame( $all_data[0], $expected );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_site_icon() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$expected = array(
+			'full'  => 'https://buddypress.org/media/disc.png',
+			'thumb' => 'https://buddypress.org/media/disc.png',
+		);
+
+		$u = $this->bp_factory->user->create();
+
+		$this->bp->set_current_user( $u );
+
+		$blog_id = $this->bp_factory->blog->create();
+
+		add_filter( 'get_site_icon_url', array( $this, 'filter_site_icon_url' ), 10, 1 );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $blog_id ) );
+		$request->set_param( 'context', 'view' );
+		$request->set_param( 'no_user_gravatar', true );
+
+		$response = rest_get_server()->dispatch( $request );
+		$all_data = $response->get_data();
+
+		remove_filter( 'get_site_icon_url', array( $this, 'filter_site_icon_url' ), 10, 1 );
+
+		$this->assertSame( $all_data[0], $expected );
+	}
+
+	public function filter_site_icon_url( $url ) {
+		return 'https://buddypress.org/media/disc.png';
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_no_grav() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$u = $this->bp_factory->user->create();
+
+		$this->bp->set_current_user( $u );
+
+		$blog_id = $this->bp_factory->blog->create();
+		$expected = array(
+			'full'  => bp_get_blog_avatar( array( 'blog_id' => $blog_id, 'html' => false, 'type' => 'full' ) ),
+			'thumb' => bp_get_blog_avatar( array( 'blog_id' => $blog_id, 'html' => false, 'type' => 'thumb' ) ),
+		);
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $blog_id ) );
+		$request->set_param( 'context', 'view' );
+		$request->set_param( 'no_user_gravatar', true );
+
+		$response = rest_get_server()->dispatch( $request );
+		$all_data = $response->get_data();
+
+		$this->assertSame( $all_data[0], $expected );
 	}
 
 	/**
 	 * @group get_item
 	 */
 	public function test_get_item_invalid_user_id() {
-		$this->markTestSkipped();
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
 
-		$blog_id = $this->bp_factory->blog->create();
+		$current_user = get_current_user_id();
+
+		$u = $this->bp_factory->user->create();
+
+		$this->bp->set_current_user( $u );
+
+		$blog_id = $this->bp_factory->blog->create( array( 'meta' => array( 'public' => 1 ) ) );
+
+		$this->bp->set_current_user( $current_user );
+
+		// Remove admins.
+		add_filter( 'bp_blogs_get_blogs', array( $this, 'filter_admin_user_id' ), 10, 1 );
+
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $blog_id ) );
-
-		$request->set_file_params(
-			[
-				'user_id' => REST_TESTS_IMPOSSIBLY_HIGH_NUMBER,
-			]
-		);
 		$response = rest_get_server()->dispatch( $request );
-		$this->assertErrorResponse( 'bp_rest_blog_avatar_get_item_user_failed', $response, 404 );
+
+		remove_filter( 'bp_blogs_get_blogs', array( $this, 'filter_admin_user_id' ), 10, 1 );
+
+		$this->assertErrorResponse( 'bp_rest_blog_avatar_get_item_user_failed', $response, 500 );
+	}
+
+	public function filter_admin_user_id( $blog_results ) {
+		unset( $blog_results['blogs'][0]->admin_user_id );
+
+		return $blog_results;
 	}
 
 	/**
 	 * @group get_item
 	 */
 	public function test_get_item_invalid_blog_id() {
-		$this->markTestSkipped();
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = rest_get_server()->dispatch( $request );
