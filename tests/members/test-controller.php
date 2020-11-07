@@ -406,7 +406,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 	/**
 	 * This test is there to make sure we are handling the `types` parameter
-	 * that was used before version 0.3.0 of the plugin and BuddyPress 7.0.0.
+	 * that was used before BP REST 0.3.0 and BuddyPress 7.0.0.
 	 *
 	 * @group update_item
 	 */
@@ -434,9 +434,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
-	 * This test is there to make sure we are handling the `types` parameter
-	 * that was used before version 0.3.0 of the plugin and BuddyPress 7.0.0.
-	 *
 	 * @group update_item
 	 */
 	public function test_update_item_member_type() {

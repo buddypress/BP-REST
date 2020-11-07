@@ -581,7 +581,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		/**
-		 * Untill version 7.0.0 the `types` parameter was used into the schema
+		 * Until BP REST version 0.3.0 the `types` parameter was used into the schema
 		 * but not used to actually assign the member type to the user.
 		 */
 		$types = $request->get_param( 'types' );
