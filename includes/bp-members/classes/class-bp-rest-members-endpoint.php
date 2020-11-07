@@ -65,7 +65,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'update_item' ),
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
-					'args'                => parent::get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
+					'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
 				),
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
@@ -580,6 +580,15 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$prepared_user->user_login = $request['user_login'];
 		}
 
+		/**
+		 * Until BP REST version 0.3.0 the `types` parameter was used into the schema
+		 * but not used to actually assign the member type to the user.
+		 */
+		$types = $request->get_param( 'types' );
+		if ( $types ) {
+			$request->set_param( 'member_type', bp_rest_sanitize_member_types( $types ) );
+		}
+
 		// Set member type.
 		if ( isset( $prepared_user->ID ) && isset( $request['member_type'] ) ) {
 
@@ -705,7 +714,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		// Add member type args.
 		$member_type_args = array(
-			'description'       => __( 'Set type(s) for a member.', 'buddypress' ),
+			'description'       => __( 'Assign a member type to a member, use a comma separated list of member types to assign more than one.', 'buddypress' ),
 			'type'              => 'string',
 			'enum'              => bp_get_member_types(),
 			'context'           => array( 'edit' ),
@@ -720,7 +729,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			unset( $args['mention_name'] );
 
 			// Add member type args.
-			$args['types'] = $member_type_args;
+			$args['member_type'] = $member_type_args;
 
 			// But we absolutely need the email.
 			$args['email'] = array(
@@ -740,7 +749,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			unset( $args['mention_name'], $args['user_login'], $args['password'] );
 
 			// Add member type args.
-			$args['types'] = $member_type_args;
+			$args['member_type'] = $member_type_args;
 		} elseif ( WP_REST_Server::DELETABLE === $method ) {
 			$key = 'delete_item';
 		}
