@@ -405,6 +405,65 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * This test is there to make sure we are handling the `types` parameter
+	 * that was used before version 0.3.0 of the plugin and BuddyPress 7.0.0.
+	 *
+	 * @group update_item
+	 */
+	public function test_update_item_types() {
+		$u = $this->factory->user->create( array(
+			'email' => 'member@type.com',
+			'name'  => 'User Name',
+		) );
+
+		$this->bp->set_current_user( self::$user );
+		bp_register_member_type( 'membertypeone' );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$request->set_body_params( array(
+			'types' => 'membertypeone',
+		) );
+
+		$response = $this->server->dispatch( $request );
+		$data = $response->get_data();
+
+		$member_type = reset( $data['member_types'] );
+
+		$this->assertSame( 'membertypeone', $member_type );
+	}
+
+	/**
+	 * This test is there to make sure we are handling the `types` parameter
+	 * that was used before version 0.3.0 of the plugin and BuddyPress 7.0.0.
+	 *
+	 * @group update_item
+	 */
+	public function test_update_item_member_type() {
+		$u = $this->factory->user->create( array(
+			'email' => 'member@type.com',
+			'name'  => 'User Name',
+		) );
+
+		$this->bp->set_current_user( self::$user );
+		bp_register_member_type( 'membertypeone' );
+		bp_register_member_type( 'membertypetwo' );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$request->set_body_params( array(
+			'member_type' => 'membertypeone,membertypetwo',
+		) );
+
+		$response = $this->server->dispatch( $request );
+		$data = $response->get_data();
+
+		$member_types = array( 'membertypeone' ,'membertypetwo' );
+
+		$this->assertSame( $data['member_types'], $member_types );
+	}
+
+	/**
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
