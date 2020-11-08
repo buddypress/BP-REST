@@ -799,6 +799,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_text_field',
 					),
+					'readonly'    => true,
 				),
 				'link'               => array(
 					'description' => __( 'Profile URL of the member.', 'buddypress' ),
@@ -874,6 +875,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'description' => __( 'Slug of the friendship status with current logged in user.', 'buddypress' ),
 					'enum'        => array( 'is_friend', 'not_friends', 'pending', 'awaiting_response' ),
 					'type'        => 'string',
+					'context'     => array( 'view', 'edit' ),
 					'readonly'    => true,
 				),
 				'last_activity'          => array(
@@ -905,7 +907,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'raw'      => array(
 							'description' => __( 'Content for the activity, as it exists in the database.', 'buddypress' ),
 							'type'        => 'string',
-							'context'     => array( 'edit' ),
+							'context'     => array( 'view', 'edit' ),
 						),
 						'rendered' => array(
 							'description' => __( 'HTML content for the activity, transformed for display.', 'buddypress' ),
@@ -914,6 +916,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 							'readonly'    => true,
 						),
 					),
+					'readonly'    => true,
 				),
 				'total_friend_count'     => array(
 					'context'     => array( 'view', 'edit' ),
