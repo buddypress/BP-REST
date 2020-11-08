@@ -72,7 +72,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 						'value' => array(
 							'description' => __( 'The value(s) for the field data.', 'buddypress' ),
 							'required'    => true,
-							'type'        => 'string',
+							'type'        => 'array',
 						),
 					),
 				),
