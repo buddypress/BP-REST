@@ -182,6 +182,44 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_items_with_types() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$u3 = $this->factory->user->create();
+
+		bp_register_member_type( 'foo' );
+		bp_register_member_type( 'bar' );
+
+		$expected_types = array(
+			$u1 => array( 'foo' ),
+			$u2 => array( 'bar', 'foo' ),
+			$u3 => array( 'bar' ),
+		);
+
+		foreach ( $expected_types as $user => $type ) {
+			bp_set_member_type( $user, $type );
+		}
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'user_ids' => [ $u1, $u2, $u3 ],
+		) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$this->assertTrue( 3 === count( $all_data ) );
+
+		$this->assertSame( $expected_types, wp_list_pluck( $all_data, 'member_types', 'id' ) );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
@@ -622,6 +660,25 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'last_activity', $properties );
 		$this->assertArrayHasKey( 'latest_update', $properties );
 		$this->assertArrayHasKey( 'total_friend_count', $properties );
+	}
+
+	/**
+	 * @group item_schema
+	 */
+	public function test_get_item_schema_member_types_enum() {
+		$expected = array( 'foo', 'bar' );
+
+		foreach ( $expected as $type ) {
+			bp_register_member_type( $type );
+		}
+
+		$request    = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
+		$response   = $this->server->dispatch( $request );
+		$data       = $response->get_data();
+		$properties = $data['schema']['properties'];
+
+		$this->assertArrayHasKey( 'member_types', $properties );
+		$this->assertEquals( array_values( $properties['member_types']['enum'] ), $expected );
 	}
 
 	public function test_context_param() {

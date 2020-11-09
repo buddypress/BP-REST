@@ -201,6 +201,41 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_items_with_group_types() {
+		$this->bp->set_current_user( $this->user );
+
+		bp_groups_register_group_type( 'foo' );
+		bp_groups_register_group_type( 'bar' );
+
+		$a1 = $this->bp_factory->group->create();
+		$a2 = $this->bp_factory->group->create();
+		$a3 = $this->bp_factory->group->create();
+
+		$expected_types = array(
+			$a1 => array( 'foo' ),
+			$a2 => array( 'bar', 'foo' ),
+			$a3 => array( 'bar' ),
+		);
+
+		foreach ( $expected_types as $group => $type ) {
+			bp_groups_set_group_type( $group, $type );
+		}
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$request->set_param( 'exclude', $this->group_id );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->assertSame( $expected_types, wp_list_pluck( $all_data, 'types', 'id' ) );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
@@ -952,6 +987,25 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'total_member_count', $properties );
 		$this->assertArrayHasKey( 'last_activity', $properties );
 		$this->assertArrayHasKey( 'last_activity_diff', $properties );
+	}
+
+	/**
+	 * @group item_schema
+	 */
+	public function test_get_item_schema_group_types_enum() {
+		$expected = array( 'foo', 'bar' );
+
+		foreach ( $expected as $type ) {
+			bp_groups_register_group_type( $type );
+		}
+
+		$request    = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
+		$response   = $this->server->dispatch( $request );
+		$data       = $response->get_data();
+		$properties = $data['schema']['properties'];
+
+		$this->assertArrayHasKey( 'types', $properties );
+		$this->assertEquals( array_values( $properties['types']['enum'] ), $expected );
 	}
 
 	public function test_context_param() {

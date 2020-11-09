@@ -819,7 +819,11 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				),
 				'member_types'       => array(
 					'description' => __( 'Member types associated with the member.', 'buddypress' ),
-					'type'        => 'object',
+					'enum'        => bp_get_member_types(),
+					'type'        => 'array',
+					'items'       => array(
+						'type' => 'string',
+					),
 					'context'     => array( 'embed', 'view', 'edit' ),
 					'readonly'    => true,
 				),
