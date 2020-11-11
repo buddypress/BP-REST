@@ -1083,14 +1083,11 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 			// Add group types.
 			$args['types'] = array(
-				'description'       => __( 'Set type(s) for a group.', 'buddypress' ),
-				'type'              => 'array',
+				'description'       => __( 'Assign one or more type to a group. To assign more than one type, use a comma separated list of types.', 'buddypress' ),
+				'type'              => 'string',
 				'enum'              => bp_groups_get_group_types(),
 				'sanitize_callback' => 'bp_rest_sanitize_group_types',
 				'validate_callback' => 'bp_rest_validate_group_types',
-				'items'             => array(
-					'type' => 'string',
-				),
 			);
 
 			if ( WP_REST_Server::EDITABLE === $method ) {
@@ -1099,26 +1096,20 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 				// Append group types.
 				$args['append_types'] = array(
-					'description'       => __( 'Append type(s) for a group.', 'buddypress' ),
-					'type'              => 'array',
+					'description'       => __( 'Append one or more type to a group. To append more than one type, use a comma separated list of types.', 'buddypress' ),
+					'type'              => 'string',
 					'enum'              => bp_groups_get_group_types(),
 					'sanitize_callback' => 'bp_rest_sanitize_group_types',
 					'validate_callback' => 'bp_rest_validate_group_types',
-					'items'             => array(
-						'type' => 'string',
-					),
 				);
 
 				// Remove group types.
 				$args['remove_types'] = array(
-					'description'       => __( 'Remove type(s) for a group.', 'buddypress' ),
-					'type'              => 'array',
+					'description'       => __( 'Remove one or more type of a group. To remove more than one type, use a comma separated list of types.', 'buddypress' ),
+					'type'              => 'string',
 					'enum'              => bp_groups_get_group_types(),
 					'sanitize_callback' => 'bp_rest_sanitize_group_types',
 					'validate_callback' => 'bp_rest_validate_group_types',
-					'items'             => array(
-						'type' => 'string',
-					),
 				);
 			}
 		} elseif ( WP_REST_Server::DELETABLE === $method ) {
