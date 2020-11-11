@@ -77,8 +77,8 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 		}
 
 		$expected = array(
-			'full'  => 'https://buddypress.org/media/disc.png',
-			'thumb' => 'https://buddypress.org/media/disc.png',
+			'full'  => bp_blogs_default_avatar( '', array( 'object' => 'blog', 'type' => 'full' ) ),
+			'thumb' => bp_blogs_default_avatar( '', array( 'object' => 'blog', 'type' => 'thumb' ) ),
 		);
 
 		$u = $this->bp_factory->user->create();
@@ -87,8 +87,6 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 
 		$blog_id = $this->bp_factory->blog->create();
 
-		add_filter( 'get_site_icon_url', array( $this, 'filter_site_icon_url' ), 10, 1 );
-
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $blog_id ) );
 		$request->set_param( 'context', 'view' );
 		$request->set_param( 'no_user_gravatar', true );
@@ -96,13 +94,7 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 		$response = rest_get_server()->dispatch( $request );
 		$all_data = $response->get_data();
 
-		remove_filter( 'get_site_icon_url', array( $this, 'filter_site_icon_url' ), 10, 1 );
-
 		$this->assertSame( $all_data[0], $expected );
-	}
-
-	public function filter_site_icon_url( $url ) {
-		return 'https://buddypress.org/media/disc.png';
 	}
 
 	/**
