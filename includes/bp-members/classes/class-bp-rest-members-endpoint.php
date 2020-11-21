@@ -458,7 +458,11 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return array
 	 */
-	public function user_data( $user, $context = 'view', $request ) {
+	public function user_data( $user, $context, $request ) {
+		if ( ! $context ) {
+			$context = 'view';
+		}
+
 		$data = array(
 			'id'                     => $user->ID,
 			'name'                   => $user->display_name,

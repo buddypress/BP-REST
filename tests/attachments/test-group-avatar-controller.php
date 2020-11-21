@@ -155,7 +155,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$_POST  = $reset_post;
 	}
 
-	public function copy_file( $return = null, $file, $new_file ) {
+	public function copy_file( $return, $file, $new_file ) {
 		return @copy( $file['tmp_name'], $new_file );
 	}
 
