@@ -673,26 +673,30 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 	 * @return BP_XProfile_Group|string XProfile field group object.
 	 */
 	public function get_xprofile_field_group_object( $request ) {
-		$profile_group_id = is_numeric( $request ) ? $request : (int) $request['id'];
+		if ( is_numeric( $request ) ) {
+			$args = array(
+				'profile_group_id' => $request,
+			);
+		} else {
+			$args = array(
+				'profile_group_id'       => (int) $request['id'],
+				'user_id'                => $request['user_id'],
+				'member_type'            => $request['member_type'],
+				'hide_empty_fields'      => $request['hide_empty_fields'],
+				'fetch_fields'           => $request['fetch_fields'],
+				'fetch_field_data'       => $request['fetch_field_data'],
+				'fetch_visibility_level' => $request['fetch_visibility_level'],
+				'exclude_fields'         => $request['exclude_fields'],
+				'update_meta_cache'      => $request['update_meta_cache'],
+			);
 
-		$args = array(
-			'profile_group_id'       => $profile_group_id,
-			'user_id'                => $request['user_id'],
-			'member_type'            => $request['member_type'],
-			'hide_empty_fields'      => $request['hide_empty_fields'],
-			'fetch_fields'           => $request['fetch_fields'],
-			'fetch_field_data'       => $request['fetch_field_data'],
-			'fetch_visibility_level' => $request['fetch_visibility_level'],
-			'exclude_fields'         => $request['exclude_fields'],
-			'update_meta_cache'      => $request['update_meta_cache'],
-		);
+			if ( empty( $request['member_type'] ) ) {
+				$args['member_type'] = null;
+			}
 
-		if ( empty( $request['member_type'] ) ) {
-			$args['member_type'] = null;
-		}
-
-		if ( empty( $request['exclude_fields'] ) ) {
-			$args['exclude_fields'] = false;
+			if ( empty( $request['exclude_fields'] ) ) {
+				$args['exclude_fields'] = false;
+			}
 		}
 
 		$field_group = current( bp_xprofile_get_groups( $args ) );

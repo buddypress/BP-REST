@@ -983,7 +983,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return BP_Messages_Thread
 	 */
 	public function get_thread_object( $thread_id ) {
-		return new BP_Messages_Thread( $thread_id );
+		return new BP_Messages_Thread( (int) $thread_id );
 	}
 
 	/**
@@ -995,7 +995,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return BP_Messages_Message
 	 */
 	public function get_message_object( $message_id ) {
-		return new BP_Messages_Message( $message_id );
+		return new BP_Messages_Message( (int) $message_id );
 	}
 
 	/**

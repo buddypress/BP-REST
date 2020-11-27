@@ -282,7 +282,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @param integer         $field_id The profile field object ID.
 	 * @param WP_REST_Request $request  The request sent to the API.
 	 */
-	public function set_additional_field_properties( $field_id = 0, WP_REST_Request $request ) {
+	public function set_additional_field_properties( $field_id, WP_REST_Request $request ) {
 		if ( ! $field_id ) {
 			return;
 		}
