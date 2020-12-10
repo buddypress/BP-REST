@@ -523,6 +523,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $notification, $request ) {
+
 		$data = array(
 			'id'                => $notification->id,
 			'user_id'           => $notification->user_id,
