@@ -5,10 +5,10 @@
  * Description: BuddyPress extension for WordPress' JSON-based REST API.
  * Author: The BuddyPress Community
  * Author URI: https://buddypress.org/
- * Version: 0.3.0
+ * Version: 0.4.0
  * Text Domain: buddypress
  * Requires at least: 4.9
- * Tested up to: 5.4
+ * Tested up to: 5.6
  * Requires PHP: 5.6
  * License: GPLv2
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
