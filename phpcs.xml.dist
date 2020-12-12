@@ -11,7 +11,7 @@
 	<config name="testVersion" value="5.6-"/>
 
 	<!-- Check against minimum WP version. -->
-	<config name="minimum_supported_wp_version" value="4.8"/>
+	<config name="minimum_supported_wp_version" value="4.9"/>
 
 	<!-- Load WordPress Coding standards -->
 	<rule ref="WordPress"/>
