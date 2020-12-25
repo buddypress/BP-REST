@@ -16,8 +16,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->bp              = new BP_UnitTestCase();
 		$this->endpoint_url    = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->notifications->id;
 		$this->notification_id = $this->bp_factory->notification->create();
-
-		$this->user = $this->factory->user->create( array(
+		$this->user            = $this->factory->user->create( array(
 			'role'       => 'administrator',
 			'user_email' => 'admin@example.com',
 		) );
@@ -43,8 +42,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		$this->bp_factory->notification->create();
-
+		$notification_id = $this->bp_factory->notification->create( array( 'user_id' => $this->user ) );
 		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
@@ -56,12 +54,56 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->check_notification_data(
-			$this->endpoint->get_notification_object( $all_data[0]['id'] ),
-			$all_data[0],
-			'view',
-			$response->get_links()
+		$this->assertSame( $notification_id, $all_data[0]['id'] );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_admin_can_get_items_from_multiple_users() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$this->bp_factory->notification->create( array( 'user_id' => $u1, ) );
+		$this->bp_factory->notification->create( array( 'user_id' => $u2, ) );
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array( 'user_ids' => array( $u1, $u2 ) ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$this->assertEqualSets(
+			array( $u1, $u2 ),
+			wp_list_pluck( $all_data, 'user_id' )
 		);
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_user_can_not_get_items_from_multiple_users() {
+		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u3 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$this->bp_factory->notification->create( array( 'user_id' => $u1 ) );
+		$this->bp_factory->notification->create( array( 'user_id' => $u2 ) );
+
+		$this->bp->set_current_user( $u3 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array( 'user_ids' => array( $u1, $u2 ) ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -78,7 +120,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	/**
 	 * @group get_items
 	 */
-	public function test_get_items_user_cannot_see_notifications() {
+	public function test_get_items_user_cannot_see_notifications_from_others() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$this->bp->set_current_user( $u );
 
@@ -107,7 +149,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->check_notification_data( $notification, $all_data[0], 'view', $response->get_links() );
+		$this->check_notification_data( $notification, $all_data[0] );
 	}
 
 	/**
@@ -314,7 +356,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->check_notification_data( $notification, $all_data['previous'], 'view', $response->get_links() );
+		$this->check_notification_data( $notification, $all_data['previous'] );
 	}
 
 	/**
@@ -374,10 +416,10 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->check_notification_data( $notification, $all_data[0], 'edit', $response->get_links() );
+		$this->check_notification_data( $notification, $all_data[0] );
 	}
 
-	protected function check_notification_data( $notification, $data, $context, $links ) {
+	protected function check_notification_data( $notification, $data ) {
 		$this->assertEquals( $notification->id, $data['id'] );
 		$this->assertEquals( $notification->user_id, $data['user_id'] );
 		$this->assertEquals( $notification->item_id, $data['item_id'] );
@@ -409,7 +451,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertNotEmpty( $data );
 
 		$group = $this->endpoint->get_notification_object( $data[0]['id'] );
-		$this->check_notification_data( $group, $data[0], 'edit', $response->get_links() );
+		$this->check_notification_data( $group, $data[0] );
 	}
 
 	protected function check_create_notification_response( $response ) {
@@ -422,7 +464,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertNotEmpty( $data );
 
 		$notification = $this->endpoint->get_notification_object( $data[0]['id'] );
-		$this->check_notification_data( $notification, $data[0], 'edit', $response->get_links() );
+		$this->check_notification_data( $notification, $data[0] );
 	}
 
 	public function test_get_item_schema() {
