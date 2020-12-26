@@ -158,6 +158,51 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group create_item
 	 */
+	public function test_create_item_to_myself_from_someone_else() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$params = $this->set_friendship_data(
+			[
+				'initiator_id' => $u1,
+				'friend_id'    => $u2,
+			]
+		);
+		$request->set_body_params( $params );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_friends_create_item_failed', $response, 403 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_admins_create_item_to_myself_from_someone_else() {
+		$u = $this->factory->user->create();
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$params = $this->set_friendship_data(
+			[
+				'initiator_id' => $u,
+				'friend_id'    => $this->user,
+			]
+		);
+		$request->set_body_params( $params );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_friends_create_item_failed', $response, 403 );
+	}
+
+	/**
+	 * @group create_item
+	 */
 	public function test_create_item_already_friends() {
 		$user = $this->factory->user->create();
 
