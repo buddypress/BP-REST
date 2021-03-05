@@ -3,6 +3,7 @@
 /node_modules
 /npm-debug.log
 /vendor/
+.vscode
 
 # Operating system specific files
 .DS_Store
