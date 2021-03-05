@@ -100,6 +100,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	public function get_items( $request ) {
 		$args = array(
 			'user_id'           => $request['user_id'],
+			'user_ids'          => $request['user_ids'],
 			'item_id'           => $request['item_id'],
 			'secondary_item_id' => $request['secondary_item_id'],
 			'component_name'    => $request['component_name'],
@@ -113,6 +114,14 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 
 		if ( empty( $request['component_action'] ) ) {
 			$args['component_action'] = false;
+		}
+
+		if ( ! empty( $args['user_ids'] ) ) {
+			$args['user_id'] = $args['user_ids'];
+		} else {
+			if ( empty( $args['user_id'] ) ) {
+				$args['user_id'] = bp_loggedin_user_id();
+			}
 		}
 
 		if ( empty( $request['component_name'] ) ) {
@@ -156,7 +165,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check if a given request has access to notification items.
+	 * Check if a given request has access to the notifications.
 	 *
 	 * @since 0.1.0
 	 *
@@ -166,13 +175,15 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	public function get_items_permissions_check( $request ) {
 		$retval = true;
 
-		if ( ! is_user_logged_in() || ( bp_loggedin_user_id() !== $request['user_id'] && ! $this->can_see() ) ) {
+		if (
+			( ! is_user_logged_in() )
+			|| ( bp_loggedin_user_id() !== $request->get_param( 'user_id' ) && ! $this->can_see() )
+			|| ( ! empty( $request->get_param( 'user_ids' ) ) && ! $this->can_see() )
+		) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you are not allowed to see the notifications.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
+				array( 'status' => rest_authorization_required_code() )
 			);
 		}
 
@@ -362,8 +373,9 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		$notification = $this->get_notification_object( $request );
+		$is_new       = $request->get_param( 'is_new' );
 
-		if ( $request['is_new'] === $notification->is_new ) {
+		if ( $is_new === $notification->is_new ) {
 			return new WP_Error(
 				'bp_rest_user_cannot_update_notification_status',
 				__( 'Notification is already with the status you are trying to update into.', 'buddypress' ),
@@ -374,7 +386,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		}
 
 		$updated = BP_Notifications_Notification::update(
-			array( 'is_new' => $request['is_new'] ),
+			array( 'is_new' => $is_new ),
 			array( 'id' => $notification->id )
 		);
 
@@ -860,6 +872,15 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'default'           => bp_loggedin_user_id(),
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['user_ids'] = array(
+			'description'       => __( 'Limit result set to notifications addressed to a list of specific users.', 'buddypress' ),
+			'default'           => array(),
+			'type'              => 'array',
+			'items'             => array( 'type' => 'integer' ),
+			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
