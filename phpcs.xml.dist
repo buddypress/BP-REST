@@ -1,41 +1,42 @@
 <?xml version="1.0"?>
-<ruleset name="Coding standards for the BuddyPress REST API plugin">
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="BP REST API" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/squizlabs/PHP_CodeSniffer/master/phpcs.xsd">
+	<description>PHP_CodeSniffer standard for the BuddyPress REST API plugin.</description>
 
-	<!-- Set a description for this ruleset -->
-	<description>Coding standards that will be run on the BuddyPress REST API plugin.</description>
+	<!-- Load WordPress Coding standards -->
+	<rule ref="WordPress"/>
 
-	<config name="encoding" value="utf-8"/>
+	<!-- Load PHPCompatibilityWP standards -->
+	<rule ref="PHPCompatibilityWP" />
 
-	<!-- Check code for cross-version PHP compatibility. -->
-	<!-- Will check the code compatiblity for PHP greater than 5.6 -->
+	<!-- Configure the PHP version -->
 	<config name="testVersion" value="5.6-"/>
 
 	<!-- Check against minimum WP version. -->
 	<config name="minimum_supported_wp_version" value="4.9"/>
 
-	<!-- Load WordPress Coding standards -->
-	<rule ref="WordPress"/>
-	<rule ref="WordPress-Docs"/>
-	<rule ref="WordPress-Extra"/>
-
-	<!-- What to exclude -->
-	<exclude-pattern>*/node_modules/*</exclude-pattern>
-	<exclude-pattern>*/vendor/*</exclude-pattern>
-
-	<!-- What to scan -->
-	<file>includes</file>
+	<!--
+	Pass some flags to PHPCS:
+    p flag: Show progress of the run.
+    s flag: Show sniff codes in all reports.
+    n flag: Do not print warnings.
+	-->
+	<arg value="ps" />
 
 	<!-- Enable colors in report -->
 	<arg name="colors"/>
 
-	<!-- Add source codes in the report -->
-	<arg value="psn" />
-	<arg name="extensions" value="php"/>
+	<!-- Whenever possible, cache the scan results and re-use those for unchanged files on the next scan. -->
+	<arg name="cache" value=".phpcs/cache.json" />
+
 	<arg name="parallel" value="20"/>
 
-	<exclude-pattern>tests/</exclude-pattern>
+	<!-- Set severity to 1 to see everything that isn't effectively turned off. -->
+	<arg name="severity" value="1" />
+
+	<!-- What to exclude -->
+	<exclude-pattern>*/**/tests/</exclude-pattern>
 	<exclude-pattern>*/node_modules/*</exclude-pattern>
-	<exclude-pattern>*/vendor/</exclude-pattern>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
 
 	<!-- Allow use of the short array syntax -->
 	<rule ref="WordPress">

@@ -6,3 +6,6 @@
 
 # Operating system specific files
 .DS_Store
+
+# Cache files
+.phpcs/*.json
