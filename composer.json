@@ -35,7 +35,7 @@
     "phpcompatibility/phpcompatibility-wp": "^2.1.0",
 		"dealerdirect/phpcodesniffer-composer-installer": "^0.7.1",
     "wp-coding-standards/wpcs": "*",
-		"phpunit/phpunit": "^7.5"
+		"phpunit/phpunit": "^6"
   },
   "scripts": {
     "phpcs" : "phpcs . --basepath=.",

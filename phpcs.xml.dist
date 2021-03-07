@@ -16,9 +16,9 @@
 
 	<!--
 	Pass some flags to PHPCS:
-    p flag: Show progress of the run.
-    s flag: Show sniff codes in all reports.
-    n flag: Do not print warnings.
+	p flag: Show progress of the run.
+	s flag: Show sniff codes in all reports.
+	n flag: Do not print warnings.
 	-->
 	<arg value="ps" />
 
