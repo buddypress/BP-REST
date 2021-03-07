@@ -122,8 +122,8 @@ before_script:
     fi
 
 script:
-  - ./vendor/bin/phpunit;
-  - ./vendor/bin/phpunit -c tests/multisite.xml;
+  - composer phpunit;
+  - composer phpunit:mu;
   - if [[ "$PHPCS" == "1" ]]; then composer phpcs; fi
 
 # Receive notifications for build results.
