@@ -28,6 +28,7 @@
 	<!-- Whenever possible, cache the scan results and re-use those for unchanged files on the next scan. -->
 	<arg name="cache" value=".phpcs/cache.json" />
 
+	<!-- Check 20 files in parallel. -->
 	<arg name="parallel" value="20"/>
 
 	<!-- Set severity to 1 to see everything that isn't effectively turned off. -->
@@ -38,13 +39,16 @@
 	<exclude-pattern>*/node_modules/*</exclude-pattern>
 	<exclude-pattern>*/vendor/*</exclude-pattern>
 
-	<!-- Allow use of the short array syntax -->
-	<rule ref="WordPress">
-		<exclude name="Generic.Arrays.DisallowShortArraySyntax.Found"/>
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="buddypress" />
+			</property>
+		</properties>
 	</rule>
 
+	<!-- Allow array disalignment -->
 	<rule ref="WordPress">
 		<exclude name="WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned"/>
 	</rule>
-
 </ruleset>

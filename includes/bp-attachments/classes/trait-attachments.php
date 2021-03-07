@@ -229,7 +229,7 @@ trait BP_REST_Attachments {
 
 		// Set the arguments for the avatar.
 		$args = array();
-		foreach ( [ 'full', 'thumb' ] as $key_type ) {
+		foreach ( array( 'full', 'thumb' ) as $key_type ) {
 
 			// Update path with an url.
 			$url = str_replace( bp_core_avatar_upload_path(), '', $cropped[ $key_type ] );

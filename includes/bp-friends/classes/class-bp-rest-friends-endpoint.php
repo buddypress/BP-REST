@@ -331,7 +331,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		if (
 			( $current_user_id !== $initiator_id->ID && ! $is_moderator )
 			|| ( $current_user_id === $friend_id->ID && $is_moderator )
-			|| ( ! in_array( $current_user_id, [ $initiator_id->ID, $friend_id->ID ], true ) && ! $is_moderator )
+			|| ( ! in_array( $current_user_id, array( $initiator_id->ID, $friend_id->ID ), true ) && ! $is_moderator )
 		) {
 			return new WP_Error(
 				'bp_rest_friends_create_item_failed',
