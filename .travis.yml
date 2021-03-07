@@ -117,15 +117,12 @@ before_script:
   - |
     if [[ "$PHPCS" == "1" ]]; then
       phpenv rehash
-
-      ./vendor/bin/phpcs --config-set installed_paths '../../wimg/php-compatibility/,../../wp-coding-standards/wpcs/'
-      ./vendor/bin/phpcs --config-set default_standard WordPress
     fi
 
 script:
-  - ./vendor/bin/phpunit;
+  - composer phpunit;
   - ./vendor/bin/phpunit -c tests/multisite.xml;
-  - if [[ "$PHPCS" == "1" ]]; then ./vendor/bin/phpcs . --basepath=.; fi
+  - if [[ "$PHPCS" == "1" ]]; then composer phpcs; fi
 
 # Receive notifications for build results.
 # @link http://docs.travis-ci.com/user/notifications/#Email-notifications
