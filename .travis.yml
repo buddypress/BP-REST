@@ -111,17 +111,18 @@ before_script:
 
   # Require PHPUnit.
   - |
-    composer install
-
-  # Install PHP CodeSniffer and WPCS.
-  - |
-    if [[ "$PHPCS" == "1" ]]; then
-      phpenv rehash
+    if [[ ${TRAVIS_PHP_VERSION:0:3} == "5.6" ]]; then
+      composer require --dev phpunit/phpunit ^5;
+    else
+      composer require --dev phpunit/phpunit ^6;
     fi
+
+  # Install composer packages.
+  - composer install
 
 script:
   - composer phpunit;
-  - ./vendor/bin/phpunit -c tests/multisite.xml;
+  - composer phpunit:mu;
   - if [[ "$PHPCS" == "1" ]]; then composer phpcs; fi
 
 # Receive notifications for build results.
