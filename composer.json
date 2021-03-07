@@ -3,14 +3,10 @@
   "description": "REST API endpoints for BuddyPress",
   "type": "library",
   "keywords": [
-		"activity",
-		"community",
-		"friends",
-		"groups",
-		"messaging",
-		"notifications",
-		"profiles",
-		"social network"
+		"bp-rest",
+		"bp-rest-api",
+		"buddypress",
+		"plugin"
 	],
 	"homepage": "https://buddypress.org",
 	"license": "GPL-2.0-or-later",

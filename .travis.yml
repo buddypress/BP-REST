@@ -109,16 +109,16 @@ before_script:
   # make sure composer is < 2.0.0 to avoid dependencies install errors.
   - composer self-update 1.10.16
 
+  # Install composer packages.
+  - composer install
+
   # Require PHPUnit.
   - |
     if [[ ${TRAVIS_PHP_VERSION:0:3} == "5.6" ]]; then
-      composer require --dev phpunit/phpunit ^5;
+      composer require --dev phpunit/phpunit ^5.*;
     else
-      composer require --dev phpunit/phpunit ^6;
+      composer require --dev phpunit/phpunit ^6.*;
     fi
-
-  # Install composer packages.
-  - composer install
 
 script:
   - composer phpunit;
