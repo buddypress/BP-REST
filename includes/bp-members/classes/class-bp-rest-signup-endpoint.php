@@ -340,13 +340,13 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$site_name  = '';
 
 		if ( is_multisite() ) {
-			$user_login = preg_replace( '/\s+/', '', sanitize_user( $user_login, true ) );
-			$user_email = sanitize_email( $user_email );
+			$user_login    = preg_replace( '/\s+/', '', sanitize_user( $user_login, true ) );
+			$user_email    = sanitize_email( $user_email );
 			$wp_key_suffix = $user_email;
 
 			if ( $this->is_blog_signup_allowed() ) {
 				$site_title = $request->get_param( 'site_title' );
-				$site_name = $request->get_param( 'site_name' );
+				$site_name  = $request->get_param( 'site_name' );
 
 				if ( $site_title && $site_name ) {
 					// Validate the blog signup.
