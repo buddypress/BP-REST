@@ -107,9 +107,6 @@ install:
   - cd $plugin_dir
 
 before_script:
-  # make sure composer is < 2.0.0 to avoid dependencies install errors.
-  - composer self-update 1.10.16
-
   # Install composer packages.
   - composer install
 
