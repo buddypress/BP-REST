@@ -636,14 +636,16 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				)
 			);
 
-			foreach ( $groups as $group ) {
-				$data['groups'][ $group->id ] = array(
+			foreach ( $groups as $group_order => $group ) {
+				$data['groups'][ $group_order ] = array(
 					'name' => $group->name,
+					'id'   => $group->id,
 				);
 
 				foreach ( $group->fields as $item ) {
-					$data['groups'][ $group->id ]['fields'][ $item->id ] = array(
+					$data['groups'][ $group_order ]['fields'][ $item->field_order ] = array(
 						'name'  => $item->name,
+						'id'    => $item->id,
 						'value' => array(
 							'raw'          => $item->data->value,
 							'unserialized' => $fields_endpoint->get_profile_field_unserialized_value( $item->data->value ),
