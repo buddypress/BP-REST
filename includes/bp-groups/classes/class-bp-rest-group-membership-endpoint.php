@@ -403,7 +403,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 					)
 				);
 			}
-		} elseif ( in_array( $action, [ 'demote', 'ban', 'unban' ], true ) ) {
+		} elseif ( in_array( $action, array( 'demote', 'ban', 'unban' ), true ) ) {
 			if ( ! $group_member->$action() ) {
 				$messages = array(
 					'demote' => __( 'Could not demote member from the group.', 'buddypress' ),
@@ -498,7 +498,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		} else {
 
 			$loggedin_user_id = bp_loggedin_user_id();
-			if ( true === $retval && in_array( $request['action'], [ 'ban', 'unban', 'promote', 'demote' ], true ) ) {
+			if ( true === $retval && in_array( $request['action'], array( 'ban', 'unban', 'promote', 'demote' ), true ) ) {
 				if ( ! groups_is_user_admin( $loggedin_user_id, $group->id ) ) {
 					$messages = array(
 						'ban'     => __( 'Sorry, you are not allowed to ban this group member.', 'buddypress' ),

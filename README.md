@@ -6,7 +6,7 @@ Access your BuddyPress site's data through an easy-to-use HTTP REST API.
 
 ## Documentation
 
-We have extensive documentation of each endpoint/components and their CRUD actions: https://developer.buddypress.org/bp-rest-api/
+We have extensive documentation of each endpoint/components and their CRUD actions: <https://developer.buddypress.org/bp-rest-api/>
 
 ## System Requirements
 
@@ -16,26 +16,26 @@ We have extensive documentation of each endpoint/components and their CRUD actio
 
 ## Endpoints (Components) Supported
 
-- [x] Activity `http://site.com/wp-json/buddypress/v1/activity`
-- [x] Groups `http://site.com/wp-json/buddypress/v1/groups`
-- [x] Group Membership `http://site.com/wp-json/buddypress/v1/groups/<group_id>/members`
-- [x] Group Membership Request(s) `http://site.com/wp-json/buddypress/v1/groups/{group_id}/membership-request/`
-- [x] Group Avatar `http://site.com/wp-json/buddypress/v1/groups/<group_id>/avatar`
-- [x] Group Cover `http://site.com/wp-json/buddypress/v1/groups/<group_id>/cover`
-- [x] Group Invites `http://site.com/wp-json/buddypress/v1/groups/<group_id>/invites`
-- [x] XProfile Fields `http://site.com/wp-json/buddypress/v1/xprofile/fields`
-- [x] XProfile Groups `http://site.com/wp-json/buddypress/v1/xprofile/groups`
-- [x] XProfile Data `http://site.com/wp-json/buddypress/v1/xprofile/<field_id>/data/<user_id>`
-- [x] Members `http://site.com/wp-json/buddypress/v1/members`
-- [x] Members Profile Photo (aka Avatar) `http://site.com/wp-json/buddypress/v1/members/<user_id>/avatar`
-- [x] Members Cover `http://site.com/wp-json/buddypress/v1/members/<user_id>/cover`
-- [x] Notifications `http://site.com/wp-json/buddypress/v1/notifications`
-- [x] Components `http://site.com/wp-json/buddypress/v1/components`
-- [x] Messages `http://site.com/wp-json/buddypress/v1/messages`
-- [x] Signup `http://site.com/wp-json/buddypress/v1/signup`
-- [x] Friends `http://site.com/wp-json/buddypress/v1/friends`
-- [x] Blogs `http://site.com/wp-json/buddypress/v1/blogs`
-- [x] Blog Avatar `http://site.com/wp-json/buddypress/v1/blogs/<id>/avatar`
+* [x] Activity `http://site.com/wp-json/buddypress/v1/activity`
+* [x] Groups `http://site.com/wp-json/buddypress/v1/groups`
+* [x] Group Membership `http://site.com/wp-json/buddypress/v1/groups/<group_id>/members`
+* [x] Group Membership Request(s) `http://site.com/wp-json/buddypress/v1/groups/{group_id}/membership-request/`
+* [x] Group Avatar `http://site.com/wp-json/buddypress/v1/groups/<group_id>/avatar`
+* [x] Group Cover `http://site.com/wp-json/buddypress/v1/groups/<group_id>/cover`
+* [x] Group Invites `http://site.com/wp-json/buddypress/v1/groups/<group_id>/invites`
+* [x] XProfile Fields `http://site.com/wp-json/buddypress/v1/xprofile/fields`
+* [x] XProfile Groups `http://site.com/wp-json/buddypress/v1/xprofile/groups`
+* [x] XProfile Data `http://site.com/wp-json/buddypress/v1/xprofile/<field_id>/data/<user_id>`
+* [x] Members `http://site.com/wp-json/buddypress/v1/members`
+* [x] Members Profile Photo (aka Avatar) `http://site.com/wp-json/buddypress/v1/members/<user_id>/avatar`
+* [x] Members Cover `http://site.com/wp-json/buddypress/v1/members/<user_id>/cover`
+* [x] Notifications `http://site.com/wp-json/buddypress/v1/notifications`
+* [x] Components `http://site.com/wp-json/buddypress/v1/components`
+* [x] Messages `http://site.com/wp-json/buddypress/v1/messages`
+* [x] Signup `http://site.com/wp-json/buddypress/v1/signup`
+* [x] Friends `http://site.com/wp-json/buddypress/v1/friends`
+* [x] Blogs `http://site.com/wp-json/buddypress/v1/blogs`
+* [x] Blog Avatar `http://site.com/wp-json/buddypress/v1/blogs/<id>/avatar`
 
 ## Installation
 
