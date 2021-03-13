@@ -1,10 +1,6 @@
 name: Coding Standards
 
 on:
-  push:
-    paths-ignore:
-      - '**.md'
-      - '**.txt'
   pull_request:
     paths-ignore:
       - '**.md'
