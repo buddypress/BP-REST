@@ -15,10 +15,12 @@ jobs:
       mariadb:
         image: mariadb:latest
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_USER: root
+          MYSQL_PASSWORD: root
+          MYSQL_ROOT_PASSWORD: root
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: --health-cmd="mysqladmin ping" --health-interval=15s --health-timeout=10s --health-retries=5
       redis:
         image: redis:5.0
         ports:
@@ -76,7 +78,7 @@ jobs:
       - name: Install WordPress and Copy Project
         shell: bash
         run: |
-          bash <(curl -s "https://raw.githubusercontent.com/wp-cli/sample-plugin/master/bin/install-wp-tests.sh") wordpress_test root '' mysql $WP_VERSION true
+          bash <(curl -s "https://raw.githubusercontent.com/wp-cli/sample-plugin/master/bin/install-wp-tests.sh") wordpress_test root root mysql $WP_VERSION true
 
           # Add the BuddyPress plugin.
           svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk ${WP_CORE_DIR}/wp-content/plugins/buddypress
