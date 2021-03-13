@@ -97,6 +97,4 @@ jobs:
 
       - name: Run Test
         shell: bash
-        run: |
-          cd ${WP_CORE_DIR}/wp-content/plugins/bp-rest
-          composer phpunit
+        run: ${WP_CORE_DIR}/wp-content/plugins/bp-rest/vendor/bin/phpunit
