@@ -1,0 +1,100 @@
+name: Test
+
+on:
+  # Run on all pushes and on all pull requests.
+  # Prevent the build from running when there are only irrelevant changes.
+  push:
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+  # Allow manually triggering the workflow.
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['5.6', '7.0', '7.1', '7.2', '7.3']
+        wp: ['latest', '4.9']
+        experimental: [false]
+
+        include:
+          - php: '7.4'
+            wp: 'trunk'
+            experimental: true
+
+    name: "PHP ${{ matrix.php }} - WP ${{ matrix.wp }}"
+
+    continue-on-error: ${{ matrix.experimental }}
+
+    services:
+      mysql:
+        # WP 5.4 is the first WP version which largely supports MySQL 8.0.
+        # See: https://core.trac.wordpress.org/ticket/49344
+        # During the setting up of these tests, it became clear that MySQL 8.0
+        # in combination with PHP < 7.4 is not properly/sufficiently supported
+        # within WP Core.
+        # See: https://core.trac.wordpress.org/ticket/52496
+        image: mysql:${{ ( matrix.wp == 5.3 && '5.6' ) || ( (matrix.wp < 5.4 || matrix.php < 7.4) && '5.7' ) || '8.0' }}
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: false
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=10s --health-retries=10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          # The PHP 5.6 and 7.0 images don't include mysql[i] by default.
+          extensions: mysqli
+
+      - name: Set up WordPress
+        run: bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1:3306 ${{ matrix.wp }}
+
+      # On WP 5.2, PHPUnit 5.x, 6.x and 7.x are supported.
+      # On PHP >= 8.0, PHPUnit 7.5+ is needed, no matter what.
+      - name: Determine supported PHPUnit version
+        id: set_phpunit
+        run: |
+          if [[ "${{ matrix.php }}" > "7.4" ]]; then
+            echo '::set-output name=PHPUNIT::7.5.*'
+          else
+            echo '::set-output name=PHPUNIT::5.7.*||6.5.*||7.5.*'
+          fi
+
+      - name: 'Composer: set up PHPUnit'
+        run: composer require --no-update phpunit/phpunit:"${{ steps.set_phpunit.outputs.PHPUNIT }}"
+
+      # Install dependencies and handle caching in one go.
+      # @link https://github.com/marketplace/actions/install-composer-dependencies
+      - name: Install Composer dependencies for PHP < 8.0
+        if: ${{ matrix.php < 8.0 }}
+        uses: "ramsey/composer-install@v1"
+
+      # For the PHP 8.0 and above, we need to install with ignore platform reqs as not all dependencies allow it yet.
+      - name: Install Composer dependencies for PHP >= 8.0
+        if: ${{ matrix.php >= 8.0 }}
+        uses: "ramsey/composer-install@v1"
+        with:
+          composer-options: --ignore-platform-reqs
+
+      - name: Run the unit tests - single site
+        run: composer phpunit
+
+      - name: Run the unit tests - multisite
+        run: composer phpunit:mu
+        env:
+          WP_MULTISITE: 1

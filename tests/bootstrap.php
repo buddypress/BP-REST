@@ -21,11 +21,11 @@ require_once $_tests_dir . '/includes/functions.php';
 
 if ( ! defined( 'BP_TESTS_DIR' ) ) {
 	$bp_tests_dir = getenv( 'BP_TESTS_DIR' );
-	if ( $bp_tests_dir ) {
-		define( 'BP_TESTS_DIR', $bp_tests_dir );
-	} else {
-		define( 'BP_TESTS_DIR', dirname( __FILE__ ) . '/../../buddypress/tests/phpunit' );
-	}
+	$bp_tests_dir = ( $bp_tests_dir )
+		? $bp_tests_dir
+		: dirname( __FILE__ ) . '/../../buddypress/tests/phpunit';
+
+	define( 'BP_TESTS_DIR', dirname( __FILE__ ) . '/../../buddypress/tests/phpunit' );
 }
 
 /**

@@ -12,7 +12,4 @@
 			<directory prefix="test-" suffix=".php">./tests/</directory>
 		</testsuite>
 	</testsuites>
-	<php>
-        <const name="SCRIPT_DEBUG" value="0" />
-    </php>
 </phpunit>
