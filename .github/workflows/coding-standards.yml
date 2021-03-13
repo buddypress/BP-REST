@@ -1,10 +1,18 @@
 name: Coding Standards
 
 on:
+  push:
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+  workflow_dispatch:
 
 jobs:
-  coding-standards:
+  phpcs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -23,25 +31,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Get Composer cache directory
-        id: composer-cache
-        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-
-      - name: Set up Composer caching
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-composer-dependencies
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
-
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, gd
           tools: composer:v2
           coverage: none
 
