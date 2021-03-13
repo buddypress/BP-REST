@@ -6,8 +6,6 @@ on:
       - '**.md'
       - '**.txt'
   pull_request:
-  schedule:
-    - cron: '0 0 * * *'
     paths-ignore:
       - '**.md'
       - '**.txt'
