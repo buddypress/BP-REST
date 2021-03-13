@@ -15,6 +15,7 @@ SKIP_DB_CREATE=${6-false}
 CACHEDIR=${CACHEDIR-/tmp}
 CACHEDIR=$(echo $CACHEDIR | sed -e "s/\/$//")
 
+WP_TESTS_DIR=${WP_TESTS_DIR-$TMPDIR/wordpress-tests-lib}
 WP_CORE_DIR=${WP_CORE_DIR-$CACHEDIR/wordpress/}
 
 # Create the cache directory if it doesn't exist.
@@ -114,6 +115,14 @@ install_config() {
 		local ioption='-i.bak'
 	else
 		local ioption='-i'
+	fi
+
+	# set up testing suite if it doesn't yet exist
+	if [ ! -d $WP_TESTS_DIR ]; then
+		# set up testing suite
+		mkdir -p $WP_TESTS_DIR
+		svn co --quiet https://develop.svn.wordpress.org/${WP_TESTS_TAG}/tests/phpunit/includes/ $WP_TESTS_DIR/includes
+		svn co --quiet https://develop.svn.wordpress.org/${WP_TESTS_TAG}/tests/phpunit/data/ $WP_TESTS_DIR/data
 	fi
 
 	if [ ! -f wp-tests-config.php ]; then
