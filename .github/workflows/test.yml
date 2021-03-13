@@ -1,100 +1,110 @@
-name: Test
+name: Unit Tests
 
 on:
-  # Run on all pushes and on all pull requests.
-  # Prevent the build from running when there are only irrelevant changes.
-  push:
-    paths-ignore:
-      - '**.md'
-      - '**.txt'
   pull_request:
-    paths-ignore:
-      - '**.md'
-      - '**.txt'
-  # Allow manually triggering the workflow.
-  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
-  test:
+  tests:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        php: ['5.6', '7.0', '7.1', '7.2', '7.3']
-        wp: ['latest', '4.9']
-        experimental: [false]
-
-        include:
-          - php: '7.4'
-            wp: 'trunk'
-            experimental: true
-
-    name: "PHP ${{ matrix.php }} - WP ${{ matrix.wp }}"
-
-    continue-on-error: ${{ matrix.experimental }}
-
     services:
-      mysql:
-        # WP 5.4 is the first WP version which largely supports MySQL 8.0.
-        # See: https://core.trac.wordpress.org/ticket/49344
-        # During the setting up of these tests, it became clear that MySQL 8.0
-        # in combination with PHP < 7.4 is not properly/sufficiently supported
-        # within WP Core.
-        # See: https://core.trac.wordpress.org/ticket/52496
-        image: mysql:${{ ( matrix.wp == 5.3 && '5.6' ) || ( (matrix.wp < 5.4 || matrix.php < 7.4) && '5.7' ) || '8.0' }}
+      mariadb:
+        image: mariadb:latest
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: false
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=10s --health-retries=10
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      redis:
+        image: redis:5.0
+        ports:
+          - 6379:6379
+        options: --entrypoint redis-server
+    continue-on-error: ${{ matrix.can_fail }}
+    strategy:
+      fail-fast: true
+      matrix:
+        php: [7.4, 8.0]
+        wp_version: ["latest"]
+        can_fail: [false]
+
+    name: ${{ matrix.php }} @ ${{ matrix.wp_version }}
+
+    env:
+      CACHEDIR: /tmp/test-cache
+      WP_CORE_DIR: /tmp/wordpress
+      WP_VERSION: ${{ matrix.wp_version }}
 
     steps:
+      - name: Cancel previous runs of this workflow (pull requests only)
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: styfle/cancel-workflow-action@0.5.0
+        with:
+          access_token: ${{ github.token }}
+
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install PHP
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Set up caching
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-composer-dependencies
+        with:
+          path: |
+            ${{ steps.composer-cache.outputs.dir }}
+            /tmp/test-cache
+          key: ${{ runner.os }}-${{ matrix.php }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.php }}-composer-
+
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, gd
+          tools: composer:v2
           coverage: none
-          # The PHP 5.6 and 7.0 images don't include mysql[i] by default.
-          extensions: mysqli
 
-      - name: Set up WordPress
-        run: bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1:3306 ${{ matrix.wp }}
-
-      # On WP 5.2, PHPUnit 5.x, 6.x and 7.x are supported.
-      # On PHP >= 8.0, PHPUnit 7.5+ is needed, no matter what.
-      - name: Determine supported PHPUnit version
-        id: set_phpunit
+      - name: Log debug information
         run: |
-          if [[ "${{ matrix.php }}" > "7.4" ]]; then
-            echo '::set-output name=PHPUNIT::7.5.*'
-          else
-            echo '::set-output name=PHPUNIT::5.7.*||6.5.*||7.5.*'
-          fi
+          php --version
+          composer --version
 
-      - name: 'Composer: set up PHPUnit'
-        run: composer require --no-update phpunit/phpunit:"${{ steps.set_phpunit.outputs.PHPUNIT }}"
+      - name: Validate Composer
+        run: composer validate --strict
 
-      # Install dependencies and handle caching in one go.
-      # @link https://github.com/marketplace/actions/install-composer-dependencies
-      - name: Install Composer dependencies for PHP < 8.0
-        if: ${{ matrix.php < 8.0 }}
-        uses: "ramsey/composer-install@v1"
-
-      # For the PHP 8.0 and above, we need to install with ignore platform reqs as not all dependencies allow it yet.
-      - name: Install Composer dependencies for PHP >= 8.0
-        if: ${{ matrix.php >= 8.0 }}
-        uses: "ramsey/composer-install@v1"
+      - name: Install dependencies
+        uses: nick-invision/retry@v1
         with:
-          composer-options: --ignore-platform-reqs
+          timeout_minutes: 5
+          max_attempts: 5
+          command: composer install
 
-      - name: Run the unit tests - single site
-        run: composer phpunit
+      - name: Make Composer packages available globally
+        run: echo "${PWD}/vendor/bin" >> $GITHUB_PATH
 
-      - name: Run the unit tests - multisite
-        run: composer phpunit:mu
-        env:
-          WP_MULTISITE: 1
+      - name: Install WordPress and Copy Project
+        shell: bash
+        run: |
+          bash bin/install-wp-tests.sh wordpress_unit_tests root '' 127.0.0.1 $WP_VERSION
+
+          # Add the BuddyPress plugin.
+          svn co --ignore-externals https://buddypress.svn.wordpress.org/trunk ${WP_CORE_DIR}/wp-content/plugins/buddypress
+
+          # Go into the core directory and replace wp-content.
+          mkdir -p ${WP_CORE_DIR}/wp-content/plugins/bp-rest
+          # cp -R . "${WP_CORE_DIR}/wp-content/plugins/bp-rest"
+          rm -rf ${WP_CORE_DIR}/wp-content/plugins/bp-rest
+          rsync -aWq --no-compress . ${WP_CORE_DIR}/wp-content/plugins/bp-rest
+
+      - name: Run Test
+        shell: bash
+        run: |
+          cd ${WP_CORE_DIR}/wp-content/plugins/bp-rest
+          phpunit
