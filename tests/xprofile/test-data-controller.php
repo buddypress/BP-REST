@@ -184,7 +184,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$data = $response->get_data();
 		$this->assertNotEmpty( $data );
 
-		$this->assertEmpty( $data['previous']['value']['unserialized'] );
+		$this->assertTrue( 'foo' === $data['previous']['value']['raw'] );
 
 		$field_data = $this->endpoint->get_xprofile_field_data_object( $data['previous']['field_id'], $data['previous']['user_id'] );
 
@@ -202,7 +202,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 			'field_group_id' => $g,
 		) );
 
-		xprofile_set_field_data( $f, $u, 'foo' );
+		xprofile_set_field_data( $f, $u, 'bar' );
 
 		$this->bp->set_current_user( $u );
 
@@ -215,7 +215,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$data = $response->get_data();
 		$this->assertNotEmpty( $data );
 
-		$this->assertEmpty( $data['previous']['value']['unserialized'] );
+		$this->assertTrue( 'bar' === $data['previous']['value']['raw'] );
 
 		$field_data = $this->endpoint->get_xprofile_field_data_object( $data['previous']['field_id'], $data['previous']['user_id'] );
 

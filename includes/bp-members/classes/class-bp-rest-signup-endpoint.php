@@ -179,10 +179,22 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return bool|WP_Error
+	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
-		$retval = true;
+		$error  = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not authorized to perform this action.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
+		$retval = $error;
+
+		$capability = 'edit_users';
+		if ( is_multisite() ) {
+			$capability = 'manage_network_users';
+		}
 
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error(
@@ -192,16 +204,10 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
-
-		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you are not authorized to perform this action.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
+		} elseif ( bp_current_user_can( $capability ) ) {
+			$retval = true;
+		} else {
+			$retval = $error;
 		}
 
 		/**
@@ -209,7 +215,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_signup_get_items_permissions_check', $retval, $request );
@@ -255,40 +261,23 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_Error|bool
+	 * @return true|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		$retval = true;
-		$signup = $this->get_signup_object( $request['id'] );
+		$retval = $this->get_items_permissions_check( $request );
 
-		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to perform this action.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
+		if ( ! is_wp_error( $retval ) ) {
+			$signup = $this->get_signup_object( $request['id'] );
 
-		if ( true === $retval && empty( $signup ) ) {
-			$retval = new WP_Error(
-				'bp_rest_invalid_id',
-				__( 'Invalid signup id.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you are not authorized to perform this action.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
+			if ( empty( $signup ) ) {
+				$retval = new WP_Error(
+					'bp_rest_invalid_id',
+					__( 'Invalid signup id.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			}
 		}
 
 		/**
@@ -296,7 +285,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_signup_get_item_permissions_check', $retval, $request );
@@ -506,21 +495,19 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return true
 	 */
 	public function create_item_permissions_check( $request ) {
-		// The purpose of a signup is to allow a new user to register to the site.
-		$retval = true;
 
 		/**
 		 * Filter the signup `create_item` permissions check.
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true   $value Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_signup_create_item_permissions_check', $retval, $request );
+		return apply_filters( 'bp_rest_signup_create_item_permissions_check', true, $request );
 	}
 
 	/**
@@ -578,7 +565,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return true|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
 		$retval = $this->get_item_permissions_check( $request );
@@ -588,7 +575,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_signup_delete_item_permissions_check', $retval, $request );
@@ -650,24 +637,23 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return true|WP_Error
 	 */
 	public function activate_item_permissions_check( $request ) {
-		$retval = true;
+		$retval = new WP_Error(
+			'bp_rest_invalid_activation_key',
+			__( 'Invalid activation key.', 'buddypress' ),
+			array(
+				'status' => 404,
+			)
+		);
+
 		// Get the activation key.
 		$activation_key = $request->get_param( 'activation_key' );
 
-		// Get the signup thanks to the activation key.
-		$signup = $this->get_signup_object( $activation_key );
-
-		if ( empty( $signup ) ) {
-			$retval = new WP_Error(
-				'bp_rest_invalid_activation_key',
-				__( 'Invalid activation key.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
+		// Check the activation key is valid.
+		if ( $this->get_signup_object( $activation_key ) ) {
+			$retval = true;
 		}
 
 		/**
@@ -675,7 +661,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_signup_activate_item_permissions_check', $retval, $request );

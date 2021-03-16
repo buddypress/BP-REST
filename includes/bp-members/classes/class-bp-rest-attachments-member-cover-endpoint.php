@@ -147,20 +147,20 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return true|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		$retval     = true;
+		$retval     = new WP_Error(
+			'bp_rest_member_invalid_id',
+			__( 'Invalid member ID.', 'buddypress' ),
+			array(
+				'status' => 404,
+			)
+		);
 		$this->user = bp_rest_get_user( $request['user_id'] );
 
-		if ( ! $this->user instanceof WP_User ) {
-			$retval = new WP_Error(
-				'bp_rest_member_invalid_id',
-				__( 'Invalid member ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
+		if ( $this->user instanceof WP_User ) {
+			$retval = true;
 		}
 
 		/**
@@ -168,7 +168,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_attachments_member_cover_get_item_permissions_check', $retval, $request );
@@ -232,7 +232,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return true|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
 		$retval = $this->delete_item_permissions_check( $request );
@@ -252,7 +252,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_attachments_member_cover_create_item_permissions_check', $retval, $request );
@@ -321,37 +321,43 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return true|WP_Error
 	 */
 	public function delete_item_permissions_check( $request ) {
 		$retval = $this->get_item_permissions_check( $request );
-		$args   = array();
 
-		if ( isset( $this->user->ID ) ) {
-			$args = array(
-				'item_id' => $this->user->ID,
-				'object'  => $this->object,
-			);
-		}
-
-		if ( true === $retval && ! is_user_logged_in() ) {
-			$retval = new WP_Error(
+		if ( ! is_wp_error( $retval ) ) {
+			$args  = array();
+			$error = new WP_Error(
 				'bp_rest_authorization_required',
-				__( 'Sorry, you need to be logged in to perform this action.', 'buddypress' ),
+				__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
 				array(
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
 
-		if ( true === $retval && ! empty( $args ) && ! bp_attachments_current_user_can( 'edit_cover_image', $args ) ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you are not authorized to perform this action.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
+			if ( ! isset( $this->user->ID ) || ! isset( $this->object ) ) {
+				$retval = $error;
+			} else {
+				$args = array(
+					'item_id' => $this->user->ID,
+					'object'  => $this->object,
+				);
+
+				if ( ! is_user_logged_in() ) {
+					$retval = new WP_Error(
+						'bp_rest_authorization_required',
+						__( 'Sorry, you need to be logged in to perform this action.', 'buddypress' ),
+						array(
+							'status' => rest_authorization_required_code(),
+						)
+					);
+				} elseif ( bp_attachments_current_user_can( 'edit_cover_image', $args ) ) {
+					$retval = true;
+				} else {
+					$retval = $error;
+				}
+			}
 		}
 
 		/**
@@ -359,7 +365,7 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_attachments_member_cover_delete_item_permissions_check', $retval, $request );

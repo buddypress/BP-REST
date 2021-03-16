@@ -182,19 +182,20 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
-		$retval      = true;
-		$user_id     = bp_loggedin_user_id();
-		$user_id_arg = $request['user_id'];
-		$group       = $this->groups_endpoint->get_group_object( $request['group_id'] );
-		$inviter     = bp_rest_get_user( $request['inviter_id'] );
+		$error           = new WP_Error(
+			'bp_rest_group_invites_cannot_get_items',
+			__( 'Sorry, you are not allowed to fetch group invitations with those arguments.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
+		$retval          = $error;
+		$group_id        = (int) $request['group_id'];
+		$current_user_id = (int) bp_loggedin_user_id();
+		$user_id_arg     = (int) $request['user_id'];
+		$inviter_id      = (int) $request['inviter_id'];
 
-		// If the query is not restricted by group or user, limit it to the current user, if not an admin.
-		if ( ! $request['group_id'] && ! $request['user_id'] && ! bp_current_user_can( 'bp_moderate' ) ) {
-			$user_id_arg = $user_id;
-		}
-		$user = bp_rest_get_user( $user_id_arg );
-
-		if ( ! $user_id ) {
+		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to see the group invitations.', 'buddypress' ),
@@ -202,63 +203,89 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
+		} elseif ( $group_id ) {
+			if ( ! $user_id_arg ) {
+				$user_id_arg = $current_user_id;
+			}
 
-		// If a group ID has been passed, check that it is valid.
-		if ( true === $retval && $request['group_id'] && ! $group instanceof BP_Groups_Group ) {
-			$retval = new WP_Error(
-				'bp_rest_group_invalid_id',
-				__( 'Invalid group ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
+			$user = bp_rest_get_user( $user_id_arg );
 
-		// If a user ID has been passed, check that it is valid.
-		if ( true === $retval && $user_id_arg && ! $user instanceof WP_User ) {
-			$retval = new WP_Error(
-				'bp_rest_member_invalid_id',
-				__( 'Invalid member ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
+			// Check the user is valid.
+			if ( ! $user instanceof WP_User ) {
+				$retval = new WP_Error(
+					'bp_rest_member_invalid_id',
+					__( 'Invalid member ID.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			} else {
+				$group = $this->groups_endpoint->get_group_object( $group_id );
 
-		// If an inviter ID has been passed, check that it is valid.
-		if ( true === $retval && $request['inviter_id'] && ! $inviter instanceof WP_User ) {
-			$retval = new WP_Error(
-				'bp_rest_member_invalid_id',
-				__( 'Invalid member ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
+				// Check the group is valid.
+				if ( ! $group instanceof BP_Groups_Group ) {
+					$retval = new WP_Error(
+						'bp_rest_group_invalid_id',
+						__( 'Invalid group ID.', 'buddypress' ),
+						array(
+							'status' => 404,
+						)
+					);
+				} elseif ( bp_current_user_can( 'bp_moderate' ) || $this->can_see( $group->id ) ) {
+					/*
+					 * Users can see invitations if they
+					 * - are a site admin,
+					 * - are a group admin of the subject group (group_id must be specified).
+					 */
+					$retval = true;
+				} else {
+					$retval = $error;
+				}
+			}
+		} elseif ( $user_id_arg ) {
+			$user = bp_rest_get_user( $user_id_arg );
 
-		}
+			// Check the user is valid.
+			if ( ! $user instanceof WP_User ) {
+				$retval = new WP_Error(
+					'bp_rest_member_invalid_id',
+					__( 'Invalid member ID.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			} elseif ( bp_current_user_can( 'bp_moderate' ) || $user->ID === $current_user_id ) {
+				/*
+				 * Users can see invitations if they:
+				 * - are a site admin,
+				 * - are the invite recipient (user_id must be specified).
+				 */
+				$retval = true;
+			} else {
+				$retval = $error;
+			}
+		} elseif ( $request['inviter_id'] ) {
+			$inviter = bp_rest_get_user( $request['inviter_id'] );
 
-		/**
-		 * Users can see invitations if they
-		 * - are a site admin
-		 * - are a group admin of the subject group (group_id must be specified)
-		 * - are the invite recipient (user_id must be specified)
-		 * - are the inviter (inviter_id must be specified)
-		 * So, the request must be scoped if the user is not a site admin.
-		 */
-		if ( true === $retval
-			&& ! bp_current_user_can( 'bp_moderate' )
-			&& ( $request['group_id'] && ! $this->can_see( $request['group_id'] ) )
-			&& $user_id_arg !== $user_id
-			&& $request['inviter_id'] !== $user_id
-			) {
-			$retval = new WP_Error(
-				'bp_rest_group_invites_cannot_get_items',
-				__( 'Sorry, you are not allowed to fetch group invitations with those arguments.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
+			// Check the inviter is valid.
+			if ( ! $inviter instanceof WP_User ) {
+				$retval = new WP_Error(
+					'bp_rest_member_invalid_id',
+					__( 'Invalid member ID.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			} elseif ( bp_current_user_can( 'bp_moderate' ) || $inviter->ID === $current_user_id ) {
+				/*
+				 * Users can see invitations if they:
+				 * - are a site admin,
+				 * - are the inviter (inviter_id must be specified).
+				 */
+				$retval = true;
+			} else {
+				$retval = $error;
+			}
 		}
 
 		/**
@@ -266,7 +293,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool|WP_Error   $retval  Whether the request can continue.
+		 * @param true|WP_Error   $retval  Whether the request can continue.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_group_invites_get_items_permissions_check', $retval, $request );
@@ -308,12 +335,17 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return true|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
 		$user_id = bp_loggedin_user_id();
-		$invite  = $this->fetch_single_invite( $request['invite_id'] );
-		$retval  = true;
+		$retval  = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
 
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
@@ -323,36 +355,35 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
+		} else {
+			$invite = $this->fetch_single_invite( $request['invite_id'] );
 
-		if ( true === $retval && ! $invite ) {
-			$retval = new WP_Error(
-				'bp_rest_group_invite_invalid_id',
-				__( 'Invalid group invitation ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		/**
-		 * Users can see a specific invitation if they
-		 * - are a site admin
-		 * - are a group admin of the subject group
-		 * - are the invite recipient
-		 * - are the inviter
-		 */
-		if ( true === $retval
-			&& ! bp_current_user_can( 'bp_moderate' )
-			&& ! $this->can_see( $invite->item_id )
-			&& ! in_array( $user_id, array( $invite->user_id, $invite->inviter_id ), true ) ) {
-			$retval = new WP_Error(
-				'bp_rest_group_invites_cannot_get_item',
-				__( 'Sorry, you are not allowed to fetch an invitation.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
+			if ( ! $invite ) {
+				$retval = new WP_Error(
+					'bp_rest_group_invite_invalid_id',
+					__( 'Invalid group invitation ID.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			} elseif ( bp_current_user_can( 'bp_moderate' ) || $this->can_see( $invite->item_id ) || in_array( $user_id, array( $invite->user_id, $invite->inviter_id ), true ) ) {
+				/*
+				 * Users can see a specific invitation if they
+				 * - are a site admin
+				 * - are a group admin of the subject group
+				 * - are the invite recipient
+				 * - are the inviter
+				 */
+				$retval = true;
+			} else {
+				$retval = new WP_Error(
+					'bp_rest_group_invites_cannot_get_item',
+					__( 'Sorry, you are not allowed to fetch an invitation.', 'buddypress' ),
+					array(
+						'status' => rest_authorization_required_code(),
+					)
+				);
+			}
 		}
 
 		/**
@@ -360,7 +391,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool|WP_Error   $retval  Whether the request can continue.
+		 * @param true|WP_Error   $retval  Whether the request can continue.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_group_invites_get_item_permissions_check', $retval, $request );
@@ -436,14 +467,17 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return true|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
 		$inviter_id_arg = $request['inviter_id'] ? $request['inviter_id'] : bp_loggedin_user_id();
-		$group          = $this->groups_endpoint->get_group_object( $request['group_id'] );
-		$user           = bp_rest_get_user( $request['user_id'] );
-		$inviter        = bp_rest_get_user( $inviter_id_arg );
-		$retval         = true;
+		$retval         = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
 
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error(
@@ -453,37 +487,43 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
+		} else {
+			$user    = bp_rest_get_user( $request['user_id'] );
+			$inviter = bp_rest_get_user( $inviter_id_arg );
 
-		if ( true === $retval && empty( $group->id ) ) {
-			$retval = new WP_Error(
-				'bp_rest_group_invalid_id',
-				__( 'Invalid group ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
+			if ( empty( $user->ID ) || empty( $inviter->ID ) || $user->ID === $inviter->ID ) {
+				$retval = new WP_Error(
+					'bp_rest_member_invalid_id',
+					__( 'Invalid member ID.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			} else {
+				$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
 
-		if ( true === $retval && ( empty( $user->ID ) || empty( $inviter->ID ) || $user->ID === $inviter->ID ) ) {
-			$retval = new WP_Error(
-				'bp_rest_member_invalid_id',
-				__( 'Invalid member ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		// Only a site admin or the user herself can extend invites.
-		if ( true === $retval && ! bp_current_user_can( 'bp_moderate' ) && bp_loggedin_user_id() !== $inviter_id_arg ) {
-			$retval = new WP_Error(
-				'bp_rest_group_invite_cannot_create_item',
-				__( 'Sorry, you are not allowed to create the invitation as requested.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
+				if ( empty( $group->id ) ) {
+					$retval = new WP_Error(
+						'bp_rest_group_invalid_id',
+						__( 'Invalid group ID.', 'buddypress' ),
+						array(
+							'status' => 404,
+						)
+					);
+				} else {
+					if ( bp_current_user_can( 'bp_moderate' ) || bp_loggedin_user_id() === $inviter_id_arg ) {
+						$retval = true;
+					} else {
+						$retval = new WP_Error(
+							'bp_rest_group_invite_cannot_create_item',
+							__( 'Sorry, you are not allowed to create the invitation as requested.', 'buddypress' ),
+							array(
+								'status' => rest_authorization_required_code(),
+							)
+						);
+					}
+				}
+			}
 		}
 
 		/**
@@ -491,7 +531,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool|WP_Error   $retval  Whether the request can continue.
+		 * @param true|WP_Error   $retval  Whether the request can continue.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_group_invites_create_item_permissions_check', $retval, $request );
@@ -552,12 +592,17 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return true|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
-		$retval  = true;
+		$retval  = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
 		$user_id = bp_loggedin_user_id();
-		$invite  = $this->fetch_single_invite( $request['invite_id'] );
 
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
@@ -567,29 +612,28 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		}
+		} else {
+			$invite = $this->fetch_single_invite( $request['invite_id'] );
 
-		if ( true === $retval && ! $invite ) {
-			$retval = new WP_Error(
-				'bp_rest_group_invite_invalid_id',
-				__( 'Invalid group invitation ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		// Only the invitee or a site admin should be able to accept an invitation.
-		if ( true === $retval
-			&& ! bp_current_user_can( 'bp_moderate' )
-			&& $user_id !== $invite->user_id ) {
-			$retval = new WP_Error(
-				'bp_rest_group_invite_cannot_update_item',
-				__( 'Sorry, you are not allowed to accept the invitation as requested.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
+			if ( ! $invite ) {
+				$retval = new WP_Error(
+					'bp_rest_group_invite_invalid_id',
+					__( 'Invalid group invitation ID.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			} elseif ( bp_current_user_can( 'bp_moderate' ) || $user_id === $invite->user_id ) {
+				$retval = true;
+			} else {
+				$retval = new WP_Error(
+					'bp_rest_group_invite_cannot_update_item',
+					__( 'Sorry, you are not allowed to accept the invitation as requested.', 'buddypress' ),
+					array(
+						'status' => rest_authorization_required_code(),
+					)
+				);
+			}
 		}
 
 		/**
@@ -597,7 +641,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool|WP_Error   $retval  Whether the request can continue.
+		 * @param true|WP_Error   $retval  Whether the request can continue.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_group_invites_update_item_permissions_check', $retval, $request );
