@@ -12,9 +12,9 @@ jobs:
     name: ${{ matrix.php }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        php: [ '7.4' ]
+        php: [ '7.4', '8.0' ]
         os: [ ubuntu-latest ]
 
     env:
