@@ -191,17 +191,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
-		$retval = true;
-
-		if ( ! ( is_user_logged_in() && current_user_can( 'bp_moderate' ) ) ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
+		$retval = parent::create_item_permissions_check( $request );
 
 		/**
 		 * Filter or override the members `create_item` permissions check.
@@ -223,8 +213,17 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function update_item_permissions_check( $request ) {
-		$retval = true;
-		$user   = bp_rest_get_user( $request['id'] );
+		$error = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
+		$retval = $error;
+
+		$user             = bp_rest_get_user( $request['id'] );
+		$member_type_edit = isset( $request['member_type'] );
 
 		if ( ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
@@ -234,21 +233,30 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'status' => 404,
 				)
 			);
-		}
+		} else {
+			$action = 'delete';
 
-		$action = 'delete';
-		if ( 'DELETE' !== $request->get_method() ) {
-			$action = 'update';
-		}
+			if ( 'DELETE' !== $request->get_method() ) {
+				$action = 'update';
+			}
 
-		if ( true === $retval && ! $this->can_manage_member( $user, $action ) ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
+			if ( get_current_user_id() === $user->ID ) {
+				if ( $member_type_edit && ! bp_current_user_can( 'bp_moderate' ) ) {
+					$retval = $error;
+				} else {
+					$retval = parent::update_item_permissions_check( $request );
+				}
+			} elseif ( ! $this->can_manage_member( $user, $action ) ) {
+				$retval = new WP_Error(
+					'bp_rest_authorization_required',
+					__( 'Sorry, you are not allowed to view members.', 'buddypress' ),
+					array(
+						'status' => rest_authorization_required_code(),
+					)
+				);
+			} else {
+				$retval = true;
+			}
 		}
 
 		/**
@@ -256,7 +264,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_members_update_item_permissions_check', $retval, $request );
@@ -508,7 +516,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$capability = 'edit_user';
 		}
 
-		return ( current_user_can( 'bp_moderate' ) || current_user_can( $capability, $user->ID ) );
+		return current_user_can( $capability, $user->ID );
 	}
 
 	/**

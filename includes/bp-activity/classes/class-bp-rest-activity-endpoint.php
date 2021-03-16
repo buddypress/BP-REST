@@ -445,33 +445,34 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return bool|WP_Error
+	 * @return true|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
-		$retval = true;
+		$error = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to create activities.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
 
-		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to create activities.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
+		$retval = $error;
 
-		$item_id   = $request['primary_item_id'];
-		$component = $request['component'];
+		if ( is_user_logged_in() ) {
+			$user_id = $request->get_param( 'user_id' );
 
-		if ( true === $retval && bp_is_active( 'groups' ) && buddypress()->groups->id === $component && ! is_null( $item_id ) ) {
-			if ( ! $this->show_hidden( $component, $item_id ) ) {
-				$retval = new WP_Error(
-					'bp_rest_authorization_required',
-					__( 'Sorry, you are not allowed to create activities.', 'buddypress' ),
-					array(
-						'status' => rest_authorization_required_code(),
-					)
-				);
+			if ( empty( $user_id ) || (int) bp_loggedin_user_id() === (int) $user_id ) {
+				$item_id   = $request->get_param( 'primary_item_id' );
+				$component = $request->get_param( 'component' );
+
+				// The current user can create an activity.
+				$retval = true;
+
+				if ( bp_is_active( 'groups' ) && buddypress()->groups->id === $component && ! is_null( $item_id ) ) {
+					if ( ! $this->show_hidden( $component, $item_id ) ) {
+						$retval = $error;
+					}
+				}
 			}
 		}
 
@@ -480,7 +481,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_activity_create_item_permissions_check', $retval, $request );
@@ -1023,8 +1024,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// Activity author ID.
-		if ( ! empty( $schema['properties']['user_id'] ) && isset( $request['user_id'] ) ) {
-			$prepared_activity->user_id = (int) $request['user_id'];
+		if ( ! empty( $activity->user_id ) ) {
+			$prepared_activity->user_id = (int) $activity->user_id;
 		} else {
 			$prepared_activity->user_id = get_current_user_id();
 		}
@@ -1286,6 +1287,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'user_id'           => array(
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The ID for the author of the activity.', 'buddypress' ),
+					'readonly'    => true,
 					'type'        => 'integer',
 				),
 				'link'              => array(
