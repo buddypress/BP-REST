@@ -1,0 +1,23 @@
+{
+	"homepage": "https://buddypress.org",
+	"license": "GPL-2.0-or-later",
+	"name": "buddypress",
+	"author": "BP REST API",
+	"devDependencies": {
+		"@wordpress/env": "^3.0.2"
+	},
+	"engines": {
+		"node": ">=14.15.0",
+		"npm": ">=6.14.8"
+	},
+	"scripts": {
+		"wp-env": "wp-env",
+		"phpunit": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/bp-rest/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/bp-rest/phpunit.xml.dist'",
+		"phpunit:mu": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/bp-rest/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/bp-rest/tests/multisite.xml'"
+	},
+	"keywords": [
+		"buddypress",
+		"bp-rest",
+		"plugin"
+	]
+}

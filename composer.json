@@ -30,7 +30,9 @@
     "squizlabs/php_codesniffer" : "^3.5.4",
     "phpcompatibility/phpcompatibility-wp": "^2.1.0",
 		"dealerdirect/phpcodesniffer-composer-installer": "^0.7.1",
-    "wp-coding-standards/wpcs": "*"
+    "wp-coding-standards/wpcs": "*",
+    "phpunit/phpunit": "^7.5",
+    "wp-phpunit/wp-phpunit": "^5.6"
   },
   "scripts": {
     "phpcs" : "phpcs . --basepath=.",
