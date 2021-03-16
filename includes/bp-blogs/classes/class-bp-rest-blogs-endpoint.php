@@ -163,7 +163,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return WP_Error|bool
+	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
 
@@ -172,7 +172,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_blogs_get_items_permissions_check', true, $request );
@@ -227,7 +227,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_Error|bool
+	 * @return true|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
 
@@ -236,7 +236,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 6.0.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_blogs_get_item_permissions_check', true, $request );
@@ -357,29 +357,29 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 * @since 7.0.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_Error|bool
+	 * @return true|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
-		$retval = true;
+		$retval = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
 
-		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
-
-		if ( true === $retval && false === bp_blog_signup_enabled() ) {
-			$retval = new WP_Error(
-				'bp_rest_blogs_signup_disabled',
-				__( 'Sorry, blog creation is disabled.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
+		if ( is_user_logged_in() ) {
+			if ( true === bp_blog_signup_enabled() ) {
+				$retval = true;
+			} else {
+				$retval = new WP_Error(
+					'bp_rest_blogs_signup_disabled',
+					__( 'Sorry, blog creation is disabled.', 'buddypress' ),
+					array(
+						'status' => 500,
+					)
+				);
+			}
 		}
 
 		/**
@@ -387,7 +387,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 7.0.0
 		 *
-		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_blogs_create_item_permissions_check', $retval, $request );

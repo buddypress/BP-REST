@@ -360,7 +360,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_body_params( $params );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse( 'rest_cannot_create_user', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -474,17 +474,35 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group update_item
 	 */
-	public function test_update_item_member_type() {
+	public function test_update_item_member_type_as_regular_user() {
 		$u = $this->factory->user->create( array(
 			'email' => 'member@type.com',
 			'name'  => 'User Name',
 		) );
 
+		$this->bp->set_current_user( $u );
+		bp_register_member_type( 'membertypeone' );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+		$request->set_body_params( array(
+			'member_type' => 'membertypeone',
+		) );
+
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_member_type_as_admin_user() {
 		$this->bp->set_current_user( self::$user );
 		bp_register_member_type( 'membertypeone' );
 		bp_register_member_type( 'membertypetwo' );
 
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', self::$user ) );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
 		$request->set_body_params( array(
 			'member_type' => 'membertypeone,membertypetwo',
