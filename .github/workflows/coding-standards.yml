@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [7.4]
+        php: [ '7.4' ]
 
     name: PHPCS
 
@@ -33,6 +33,14 @@ jobs:
           php-version: ${{ matrix.php }}
           tools: composer:v2
           coverage: none
+
+      - name: Log information
+        run: |
+          echo "$GITHUB_REF"
+          echo "$GITHUB_EVENT_NAME"
+          git --version
+          php --version
+          composer --version
 
       - name: Validate Composer
         run: composer validate --strict

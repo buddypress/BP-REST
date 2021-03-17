@@ -4,7 +4,7 @@
 	"name": "buddypress",
 	"author": "BP REST API",
 	"devDependencies": {
-		"@wordpress/env": "^3.0.2"
+		"@wordpress/env": "https://gitpkg.now.sh/WordPress/gutenberg/packages/env?trunk"
 	},
 	"engines": {
 		"node": ">=14.15.0",
