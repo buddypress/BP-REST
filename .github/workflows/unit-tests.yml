@@ -78,7 +78,7 @@ jobs:
 
       - name: Setup PHPUNIT - PHP 8.0
         if: ${{ matrix.php >= '7.4' }}
-        run: composer require --dev --with-all-dependencies phpunit/phpunit ^7.5
+        run: composer require --dev phpunit/phpunit ^7.5
 
       - name: Setup WP PHPUNIT
         run: |
