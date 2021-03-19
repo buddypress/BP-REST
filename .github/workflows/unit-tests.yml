@@ -95,7 +95,11 @@ jobs:
 
       - name: Setup PHPUNIT
         if: ${{ matrix.php == '5.6' }}
-        run: composer require --dev --with-all-dependencies phpunit/phpunit ^5.0
+        run: composer require --dev --with-all-dependencies phpunit/phpunit ^5
+
+      - name: Setup PHPUNIT
+        if: ${{ matrix.php == '7.0' }}
+        run: composer require --dev --with-all-dependencies phpunit/phpunit ^6
 
       - name: Cache node modules
         uses: actions/cache@v2
@@ -119,7 +123,11 @@ jobs:
           cat > .wp-env.override.json <<EOF
           {
             "core": "WordPress/WordPress#$wp_version",
-            "plugins": [ ".", "buddypress/BuddyPress#master" ]
+            "plugins": [ ".", "buddypress/BuddyPress#master" ],
+            "config": {
+              "WP_DEBUG": true,
+              "SCRIPT_DEBUG": true
+            }
           }
           EOF
 
