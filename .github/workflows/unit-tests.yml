@@ -34,9 +34,6 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v2
-        with:
-          # bp-rest rather BP-REST (default) to mirrow locally.
-          path: bp-rest
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
