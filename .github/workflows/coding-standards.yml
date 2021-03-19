@@ -9,13 +9,12 @@ on:
 
 jobs:
   phpcs:
+    name: PHPCS
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        php: [ '7.4' ]
-
-    name: PHPCS
+        php: ['8.0']
 
     steps:
       - name: Cancel previous runs of this workflow (pull requests only)

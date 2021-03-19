@@ -9,13 +9,18 @@ on:
 
 jobs:
   tests:
-    name: ${{ matrix.php }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: WP ${{ matrix.wp_version }} on PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        php: [ '7.4', '8.0' ]
-        os: [ ubuntu-latest ]
+        php: ['7.4', '8.0']
+        wp_version: ['master']
+        include:
+          - php: '8.0'
+            wp_version: '5.7'
+          - php: '7.4'
+            wp_version: '5.7'
 
     env:
       WP_ENV_PHP_VERSION: ${{ matrix.php }}
@@ -68,13 +73,18 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
 
-      - name: Use Node.js 14.x
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14.x
-
       - name: Install node modules
         run: npm ci
+
+      - name: Setup WordPress
+        run: |
+          wp_version=${{ matrix.wp_version }}
+cat > .wp-env.override.json <<EOF
+{
+  "core": "WordPress/WordPress#$wp_version",
+  "plugins": [ ".", "buddypress/BuddyPress#master" ]
+}
+EOF
 
       - name: Install WordPress
         run: |
@@ -83,4 +93,8 @@ jobs:
 
       - name: Running single site unit tests
         run: npm run phpunit
+        if: ${{ success() || failure() }}
+
+      - name: Running multisite unit tests
+        run: npm run phpunit:mu
         if: ${{ success() || failure() }}

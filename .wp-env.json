@@ -1,8 +1,4 @@
 {
-	"core": "WordPress/WordPress#master",
-	"plugins": [ ".", "buddypress/BuddyPress#master" ],
-	"config": {
-		"WP_DEBUG": true,
-		"SCRIPT_DEBUG": true
-	}
+  "core": "WordPress/WordPress#master",
+  "plugins": [ ".", "buddypress/BuddyPress#master" ]
 }
