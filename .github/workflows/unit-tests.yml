@@ -27,8 +27,6 @@ jobs:
             wp_version: '5.0'
           - php: '7.2'
             wp_version: '5.7'
-          - php: '7.2'
-            wp_version: '5.0'
     env:
       WP_ENV_PHP_VERSION: ${{ matrix.php }}
       WP_VERSION: ${{ matrix.wp_version }}
@@ -74,7 +72,7 @@ jobs:
 
       - name: Setup PHPUNIT - PHP 8.0
         if: ${{ matrix.php == '8.0' }}
-        run: composer require --dev --with-all-dependencies phpunit/phpunit ^7
+        run: composer require --dev --update-with-dependencies phpunit/phpunit ^7
 
       - name: Setup WP PHPUNIT
         run: |
