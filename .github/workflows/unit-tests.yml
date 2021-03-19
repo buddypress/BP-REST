@@ -10,14 +10,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['7.2', '7.3', '7.4', '8.0']
+        php: ['7.2', '7.3', '7.4']
         wp_version: ['master']
         can_fail: [false]
         include:
           - php: '8.0'
             wp_version: '5.7'
-          - php: '8.0'
-            wp_version: '5.6'
+            experimental: true
           - php: '7.4'
             wp_version: '5.7'
           - php: '7.4'
@@ -30,6 +29,9 @@ jobs:
             wp_version: '5.7'
           - php: '7.2'
             wp_version: '5.6'
+          - php: '7.1'
+            wp_version: '5.7'
+            experimental: true
           - php: '5.6'
             wp_version: '5.7'
             experimental: true
@@ -76,9 +78,13 @@ jobs:
         if: ${{ matrix.php == '5.6' }}
         run: composer require --dev --with-all-dependencies phpunit/phpunit ^5
 
-      - name: Setup PHPUNIT - >= PHP 7.2
-        if: ${{ matrix.php >= '7.2' }}
+      - name: Setup PHPUNIT - >= PHP 7.1
+        if: ${{ matrix.php >= '7.1' }}
         run: composer require --dev --with-all-dependencies phpunit/phpunit ^6
+
+      - name: Setup PHPUNIT - PHP 8.0
+        if: ${{ matrix.php == '8.0' }}
+        run: composer require --dev --with-all-dependencies phpunit/phpunit ^7.5
 
       - name: Setup WP PHPUNIT
         run: |
