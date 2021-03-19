@@ -79,12 +79,12 @@ jobs:
       - name: Setup WordPress
         run: |
           wp_version=${{ matrix.wp_version }}
-cat > .wp-env.override.json <<EOF
-{
-  "core": "WordPress/WordPress#$wp_version",
-  "plugins": [ ".", "buddypress/BuddyPress#master" ]
-}
-EOF
+          cat > .wp-env.override.json <<EOF
+          {
+            "core": "WordPress/WordPress#$wp_version",
+            "plugins": [ ".", "buddypress/BuddyPress#master" ]
+          }
+          EOF
 
       - name: Install WordPress
         run: |
