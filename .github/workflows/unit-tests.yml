@@ -5,12 +5,11 @@ on: pull_request
 jobs:
   tests:
     name: WP ${{ matrix.wp_version }} / PHP ${{ matrix.php }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         php: ['7.2', '7.3', '7.4', '8.0']
-        os: [ubuntu-latest]
         wp_version: ['master']
         can_fail: [false]
         include:
