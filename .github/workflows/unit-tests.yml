@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['7.2', '7.3', '7.4', '8.0']
+        php: ['5.6', '7.2', '7.3', '7.4', '8.0']
         wp_version: ['master']
         include:
           - php: '8.0'
@@ -28,6 +28,8 @@ jobs:
             wp_version: '5.7'
           - php: '7.2'
             wp_version: '5.6'
+          - php: '5.6'
+            wp_version: '5.7'
     env:
       WP_ENV_PHP_VERSION: ${{ matrix.php }}
 
@@ -65,6 +67,10 @@ jobs:
         uses: ramsey/composer-install@v1
         with:
           composer-options: "--ignore-platform-reqs"
+
+      - name: Setup PHPUNIT
+        if: ${{ matrix.php == '5.6' }}
+        run: composer require --dev --with-all-dependencies phpunit/phpunit ^5
 
       - name: Cache node modules
         uses: actions/cache@v2
