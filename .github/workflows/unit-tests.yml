@@ -1,26 +1,59 @@
-name: PHP Unit Tests
+name: Unit Tests
 
-on:
-  pull_request:
-    paths-ignore:
-      - '**.md'
-      - '**.txt'
-  workflow_dispatch:
+on: pull_request
 
 jobs:
   tests:
-    name: WP ${{ matrix.wp_version }} on PHP ${{ matrix.php }}
+    name: WP ${{ matrix.wp_version }} / PHP ${{ matrix.php }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        php: ['7.4', '8.0']
+        php: ['5.6', '7.0', '7.1', '7.2', '7.3', '7.4', '8.0']
         wp_version: ['master']
         include:
           - php: '8.0'
             wp_version: '5.7'
+          - php: '8.0'
+            wp_version: '5.6'
           - php: '7.4'
             wp_version: '5.7'
+          - php: '7.4'
+            wp_version: '5.6'
+          - php: '7.4'
+            wp_version: '5.3'
+          - php: '7.3'
+            wp_version: '5.7'
+          - php: '7.3'
+            wp_version: '5.6'
+          - php: '7.3'
+            wp_version: '5.0'
+          - php: '7.2'
+            wp_version: '5.7'
+          - php: '7.2'
+            wp_version: '5.6'
+          - php: '7.2'
+            wp_version: '5.0'
+          - php: '7.2'
+            wp_version: '4.9'
+          - php: '7.1'
+            wp_version: '5.7'
+          - php: '7.1'
+            wp_version: '5.6'
+          - php: '7.1'
+            wp_version: '5.0'
+          - php: '7.0'
+            wp_version: '5.7'
+          - php: '7.0'
+            wp_version: '5.6'
+          - php: '5.6'
+            wp_version: '5.7'
+          - php: '5.6'
+            wp_version: '5.6'
+          - php: '5.6'
+            wp_version: '5.0'
+          - php: '5.6'
+            wp_version: '4.9'
 
     env:
       WP_ENV_PHP_VERSION: ${{ matrix.php }}

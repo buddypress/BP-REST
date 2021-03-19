@@ -1,11 +1,6 @@
 name: Coding Standards
 
-on:
-  pull_request:
-    paths-ignore:
-      - '**.md'
-      - '**.txt'
-  workflow_dispatch:
+on: pull_request
 
 jobs:
   phpcs:
