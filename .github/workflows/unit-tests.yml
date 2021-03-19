@@ -6,6 +6,7 @@ jobs:
   tests:
     name: WP ${{ matrix.wp_version }} / PHP ${{ matrix.php }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental == true }}
     strategy:
       fail-fast: false
       matrix:
@@ -31,8 +32,10 @@ jobs:
             wp_version: '5.6'
           - php: '5.6'
             wp_version: '5.7'
+            experimental: true
     env:
       WP_ENV_PHP_VERSION: ${{ matrix.php }}
+      WP_VERSION: ${{ matrix.wp_version }}
 
     steps:
       - name: Cancel previous runs of this workflow (pull requests only)
@@ -73,6 +76,9 @@ jobs:
         if: ${{ matrix.php == '5.6' }}
         run: composer require --dev --with-all-dependencies phpunit/phpunit ^5
 
+      - name: Setup WP PHPUNIT
+        run: composer require --dev --with-all-dependencies wp-phpunit/wp-phpunit:${WP_VERSION}
+
       - name: Cache node modules
         uses: actions/cache@v2
         env:
@@ -90,18 +96,7 @@ jobs:
         run: npm ci
 
       - name: Setup WordPress
-        run: |
-          wp_version=${{ matrix.wp_version }}
-          cat > .wp-env.override.json <<EOF
-          {
-            "core": "WordPress/WordPress#$wp_version",
-            "plugins": [ ".", "buddypress/BuddyPress#master" ],
-            "config": {
-              "WP_DEBUG": true,
-              "SCRIPT_DEBUG": true
-            }
-          }
-          EOF
+        run: echo "{\"core\":\"WordPress/WordPress#${WP_VERSION}\"}" >> .wp-env.override.json
 
       - name: Install WordPress
         run: |
@@ -115,4 +110,8 @@ jobs:
 
       - name: Running multisite unit tests
         run: npm run phpunit:mu
+        if: ${{ success() || failure() }}
+
+      - name: Stop Docker environment
+        run: npm run wp-env stop
         if: ${{ success() || failure() }}
