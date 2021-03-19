@@ -42,7 +42,7 @@ jobs:
           - php: '5.6'
             wp_version: '5.7'
             os: ${{ matrix.os }}
-            can_fail: [true]
+            can_fail: true
     env:
       WP_ENV_PHP_VERSION: ${{ matrix.php }}
 
