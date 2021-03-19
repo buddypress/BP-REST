@@ -77,7 +77,7 @@ jobs:
         run: composer require --dev --with-all-dependencies phpunit/phpunit ^5
 
       - name: Setup WP PHPUNIT
-        run: composer require --dev --with-all-dependencies wp-phpunit/wp-phpunit:${WP_VERSION}
+        run: composer require --prefer-dist --with-all-dependencies --no-suggest --no-progress --no-interaction --no-scripts --dev wp-phpunit/wp-phpunit:${WP_VERSION}
 
       - name: Cache node modules
         uses: actions/cache@v2
@@ -101,7 +101,7 @@ jobs:
       - name: Install WordPress
         run: |
           chmod -R 767 ./
-          npm run wp-env start
+          npm run wp-env start -- --update
           npm run wp-env run cli wp core version
 
       - name: Running single site unit tests
