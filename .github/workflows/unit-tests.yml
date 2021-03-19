@@ -73,7 +73,7 @@ jobs:
       - name: Setup PHPUNIT - PHP 8.0
         if: ${{ matrix.php == '8.0' }}
         run: |
-          omposer remove phpunit/phpunit --dev
+          composer remove phpunit/phpunit --dev
           composer require phpunit/phpunit --dev
 
       - name: Setup WP PHPUNIT
