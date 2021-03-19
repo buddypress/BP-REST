@@ -6,7 +6,6 @@ jobs:
   tests:
     name: WP ${{ matrix.wp_version }} / PHP ${{ matrix.php }}
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.can_fail }}
     strategy:
       fail-fast: false
       matrix:
@@ -17,32 +16,22 @@ jobs:
         include:
           - php: '8.0'
             wp_version: '5.7'
-            os: ${{ matrix.os }}
           - php: '8.0'
             wp_version: '5.6'
-            os: ${{ matrix.os }}
           - php: '7.4'
             wp_version: '5.7'
-            os: ${{ matrix.os }}
           - php: '7.4'
             wp_version: '5.6'
-            os: ${{ matrix.os }}
           - php: '7.3'
             wp_version: '5.7'
-            os: ${{ matrix.os }}
           - php: '7.3'
             wp_version: '5.6'
-            os: ${{ matrix.os }}
           - php: '7.2'
             wp_version: '5.7'
-            os: ${{ matrix.os }}
           - php: '7.2'
             wp_version: '5.6'
-            os: ${{ matrix.os }}
           - php: '5.6'
             wp_version: '5.7'
-            os: ${{ matrix.os }}
-            can_fail: true
     env:
       WP_ENV_PHP_VERSION: ${{ matrix.php }}
 
