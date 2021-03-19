@@ -55,14 +55,6 @@ jobs:
         with:
           composer-options: "--ignore-platform-reqs"
 
-      - name: Setup WP PHPUNIT
-        run: |
-          if [[ $WP_VERSION == 'master' ]]; then
-            WP_VERSION=dev-master
-          fi
-
-          composer require --dev --with-all-dependencies wp-phpunit/wp-phpunit:${WP_VERSION}
-
       - name: Cache node modules
         uses: actions/cache@v2
         env:
