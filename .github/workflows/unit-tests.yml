@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: ${{ matrix.experimental == true }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         php: ['7.2', '7.3', '7.4', '8.0']
         wp_version: ['master']
@@ -75,10 +75,6 @@ jobs:
       - name: Setup PHPUNIT
         if: ${{ matrix.php == '5.6' }}
         run: composer require --dev --with-all-dependencies phpunit/phpunit ^5
-
-      - name: Setup PHPUNIT
-        if: ${{ matrix.php >= '7.2' }}
-        run: composer require --dev --with-all-dependencies phpunit/phpunit ^7
 
       - name: Setup WP PHPUNIT
         run: |
