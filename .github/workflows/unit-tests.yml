@@ -77,7 +77,12 @@ jobs:
         run: composer require --dev --with-all-dependencies phpunit/phpunit ^5
 
       - name: Setup WP PHPUNIT
-        run: composer require --prefer-dist --with-all-dependencies --no-suggest --no-progress --no-interaction --no-scripts --dev wp-phpunit/wp-phpunit:${WP_VERSION}
+        run: |
+          if [[ $WP_VERSION == 'master' ]]; then
+            WP_VERSION=dev-master
+          fi
+
+          composer require --dev --with-all-dependencies wp-phpunit/wp-phpunit:${WP_VERSION}
 
       - name: Cache node modules
         uses: actions/cache@v2
