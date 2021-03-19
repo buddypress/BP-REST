@@ -90,6 +90,7 @@ jobs:
         run: |
           chmod -R 767 ./
           npm run wp-env start
+          npm run wp-env run cli wp core version
 
       - name: Running single site unit tests
         run: npm run phpunit

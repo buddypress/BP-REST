@@ -4,6 +4,7 @@
 /npm-debug.log
 /vendor/
 .vscode
+.wp-env.override.json
 
 # Operating system specific files
 .DS_Store
