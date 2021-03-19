@@ -79,7 +79,7 @@ jobs:
         run: composer require --dev --with-all-dependencies phpunit/phpunit ^5
 
       - name: Setup PHPUNIT - >= PHP 7.1
-        if: ${{ matrix.php >= '7.1' }}
+        if: ${{ matrix.php >= '7.1' && matrix.php < '8.0' }}
         run: composer require --dev --with-all-dependencies phpunit/phpunit ^6
 
       - name: Setup PHPUNIT - PHP 8.0
