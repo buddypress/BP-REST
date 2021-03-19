@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['5.6', '7.0', '7.1', '7.2', '7.3', '7.4', '8.0']
+        php: ['7.2', '7.3', '7.4', '8.0']
         wp_version: ['master']
         include:
           - php: '8.0'
@@ -20,41 +20,14 @@ jobs:
             wp_version: '5.7'
           - php: '7.4'
             wp_version: '5.6'
-          - php: '7.4'
-            wp_version: '5.3'
           - php: '7.3'
             wp_version: '5.7'
           - php: '7.3'
             wp_version: '5.6'
-          - php: '7.3'
-            wp_version: '5.0'
           - php: '7.2'
             wp_version: '5.7'
           - php: '7.2'
             wp_version: '5.6'
-          - php: '7.2'
-            wp_version: '5.0'
-          - php: '7.2'
-            wp_version: '4.9'
-          - php: '7.1'
-            wp_version: '5.7'
-          - php: '7.1'
-            wp_version: '5.6'
-          - php: '7.1'
-            wp_version: '5.0'
-          - php: '7.0'
-            wp_version: '5.7'
-          - php: '7.0'
-            wp_version: '5.6'
-          - php: '5.6'
-            wp_version: '5.7'
-          - php: '5.6'
-            wp_version: '5.6'
-          - php: '5.6'
-            wp_version: '5.0'
-          - php: '5.6'
-            wp_version: '4.9'
-
     env:
       WP_ENV_PHP_VERSION: ${{ matrix.php }}
 
@@ -92,14 +65,6 @@ jobs:
         uses: ramsey/composer-install@v1
         with:
           composer-options: "--ignore-platform-reqs"
-
-      - name: Setup PHPUNIT
-        if: ${{ matrix.php == '5.6' }}
-        run: composer require --dev --with-all-dependencies phpunit/phpunit ^5
-
-      - name: Setup PHPUNIT
-        if: ${{ matrix.php == '7.0' }}
-        run: composer require --dev --with-all-dependencies phpunit/phpunit ^6
 
       - name: Cache node modules
         uses: actions/cache@v2
