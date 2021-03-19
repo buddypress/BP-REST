@@ -20,16 +20,23 @@ jobs:
           - php: '7.4'
             wp_version: '5.7'
           - php: '7.4'
-            wp_version: '5.6'
+            wp_version: '5.3'
           - php: '7.3'
             wp_version: '5.7'
           - php: '7.3'
-            wp_version: '5.6'
+            wp_version: '5.0'
           - php: '7.2'
             wp_version: '5.7'
+          - php: '7.2'
+            wp_version: '5.0'
+          - php: '7.2'
+            wp_version: '4.9'
           - php: '7.2'
             wp_version: '5.6'
           - php: '7.1'
+            wp_version: '5.7'
+            experimental: true
+          - php: '7.0'
             wp_version: '5.7'
             experimental: true
           - php: '5.6'
@@ -78,13 +85,13 @@ jobs:
         if: ${{ matrix.php == '5.6' }}
         run: composer require --dev --with-all-dependencies phpunit/phpunit ^5
 
-      - name: Setup PHPUNIT - >= PHP 7.1
+      - name: Setup PHPUNIT - >= PHP 7.1 - 7.4
         if: ${{ matrix.php >= '7.1' && matrix.php < '8.0' }}
         run: composer require --dev --with-all-dependencies phpunit/phpunit ^6
 
       - name: Setup PHPUNIT - PHP 8.0
         if: ${{ matrix.php == '8.0' }}
-        run: composer require --dev --with-all-dependencies phpunit/phpunit ^7.5
+        run: composer require --dev --with-all-dependencies phpunit/phpunit ^8
 
       - name: Setup WP PHPUNIT
         run: |
