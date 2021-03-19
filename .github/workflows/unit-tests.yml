@@ -4,7 +4,7 @@ on: pull_request
 
 jobs:
   tests:
-    name: WP ${{ matrix.wp_version }} / PHP ${{ matrix.php }}
+    name: "WP: ${{ matrix.wp_version }} - PHP: ${{ matrix.php }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -29,6 +29,9 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Check Gitignored files
+        run: if [[ ! -z $(git ls-files -i --exclude-standard) ]]; then exit 1; fi
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -68,8 +71,11 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
 
+      - name: Validate node modules
+        run: if [[ -f package.json ]]; then npm audit --audit-level=high --production --cache ~/.npm; fi
+
       - name: Install node modules
-        run: npm ci
+        run: npm ci --cache ~/.npm
 
       - name: Setup WordPress
         run: echo "{\"core\":\"WordPress/WordPress#${WP_VERSION}\"}" >> .wp-env.override.json
@@ -78,7 +84,6 @@ jobs:
         run: |
           chmod -R 767 ./
           npm run wp-env start -- --update
-          npm run wp-env run cli wp core version
 
       - name: Running single site unit tests
         run: npm run phpunit
