@@ -11,7 +11,7 @@
     "plugin"
   ],
   "devDependencies": {
-    "@wordpress/env": "https://gitpkg.now.sh/WordPress/gutenberg/packages/env?trunk"
+    "@wordpress/env": "^4.0.0"
   },
   "engines": {
     "node": ">=14.15.0",
@@ -19,7 +19,7 @@
   },
   "scripts": {
     "wp-env": "wp-env",
-    "phpunit": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/phpunit.xml.dist'",
+    "phpunit": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/bp-rest/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/bp-rest/phpunit.xml.dist'",
     "phpunit:mu": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/tests/multisite.xml'"
   }
 }
