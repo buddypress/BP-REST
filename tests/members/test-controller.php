@@ -309,6 +309,31 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 	/**
 	 * @group get_item
+	 * @group avatar
+	 */
+	public function test_get_item_without_avatar() {
+		$u = $this->factory->user->create();
+
+		// Register and set member types.
+		bp_register_member_type( 'foo' );
+		bp_register_member_type( 'bar' );
+		bp_set_member_type( $u, 'foo' );
+		bp_set_member_type( $u, 'bar', true );
+
+		buddypress()->avatar->show_avatars = false;
+
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $u ) );
+		$response = $this->server->dispatch( $request );
+
+		buddypress()->avatar->show_avatars = true;
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$this->assertArrayNotHasKey( 'avatar_urls', $response->get_data() );
+	}
+
+	/**
+	 * @group get_item
 	 */
 	public function test_get_item_invalid_id() {
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
@@ -321,6 +346,11 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item() {
+
+		if ( is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
 		$this->allow_user_to_manage_multisite();
 
 		$params = array(
@@ -449,6 +479,11 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group update_item
 	 */
 	public function test_update_item_types() {
+
+		if ( is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
 		$u = $this->factory->user->create( array(
 			'email' => 'member@type.com',
 			'name'  => 'User Name',
@@ -520,6 +555,11 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
+
+		if ( is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
 		$u = $this->factory->user->create( array( 'display_name' => 'Deleted User' ) );
 
 		$this->allow_user_to_manage_multisite();
@@ -706,7 +746,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data     = $response->get_data();
 
 		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 
 		// Single.
 		$request  = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', self::$user ) );
@@ -714,7 +754,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data     = $response->get_data();
 
 		$this->assertEquals( 'view', $data['endpoints'][0]['args']['context']['default'] );
-		$this->assertEquals( array( 'view', 'embed', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
+		$this->assertEquals( array( 'view', 'edit' ), $data['endpoints'][0]['args']['context']['enum'] );
 	}
 
 	public function update_additional_field( $value, $data, $attribute ) {
@@ -729,6 +769,11 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group additional_fields
 	 */
 	public function test_additional_fields() {
+
+		if ( is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
 		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
 
 		bp_rest_register_field( 'members', 'foo_field', array(

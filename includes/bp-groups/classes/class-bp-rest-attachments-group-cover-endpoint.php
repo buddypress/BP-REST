@@ -426,11 +426,16 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 			),
 		);
 
+		// Cache current schema here.
+		if ( is_null( $this->schema ) ) {
+			$this->schema = $schema;
+		}
+
 		/**
-		 * Filters the group cover schema.
+		 * Filters the attachments group cover schema.
 		 *
-		 * @param string $schema The endpoint schema.
+		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_attachments_group_cover_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_attachments_group_cover_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 }

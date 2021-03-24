@@ -805,12 +805,17 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			),
 		);
 
+		// Cache current schema here.
+		if ( is_null( $this->schema ) ) {
+			$this->schema = $schema;
+		}
+
 		/**
-		 * Filters the notifications schema.
+		 * Filters the notification schema.
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_notification_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_notification_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 
 	/**

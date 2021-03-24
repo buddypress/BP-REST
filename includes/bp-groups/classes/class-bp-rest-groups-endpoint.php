@@ -1291,12 +1291,17 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// (Re)cache current schema here.
+		if ( ( bp_disable_group_avatar_uploads() && $this->schema ) || is_null( $this->schema ) ) {
+			$this->schema = $schema;
+		}
+
 		/**
 		 * Filters the group schema.
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_group_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_group_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 
 	/**

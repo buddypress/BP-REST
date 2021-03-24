@@ -461,12 +461,17 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 			),
 		);
 
+		// Cache current schema here.
+		if ( is_null( $this->schema ) ) {
+			$this->schema = $schema;
+		}
+
 		/**
-		 * Filters the member avatar schema.
+		 * Filters the attachments member avatar schema.
 		 *
-		 * @param string $schema The endpoint schema.
+		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_attachments_member_avatar_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_attachments_member_avatar_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 
 	/**

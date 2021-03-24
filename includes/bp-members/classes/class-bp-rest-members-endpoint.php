@@ -237,7 +237,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				'status' => rest_authorization_required_code(),
 			)
 		);
-		$user   = bp_rest_get_user( $request['id'] );
+
+		$user = bp_rest_get_user( $request['id'] );
 
 		if ( ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
@@ -803,13 +804,13 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				'id'                 => array(
 					'description' => __( 'A unique numeric ID for the Member.', 'buddypress' ),
 					'type'        => 'integer',
-					'context'     => array( 'embed', 'view', 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 					'readonly'    => true,
 				),
 				'name'               => array(
 					'description' => __( 'Display name for the member.', 'buddypress' ),
 					'type'        => 'string',
-					'context'     => array( 'embed', 'view', 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_text_field',
 					),
@@ -817,7 +818,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				'mention_name'       => array(
 					'description' => __( 'The name used for that user in @-mentions.', 'buddypress' ),
 					'type'        => 'string',
-					'context'     => array( 'embed', 'view', 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_text_field',
 					),
@@ -827,13 +828,13 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'description' => __( 'Profile URL of the member.', 'buddypress' ),
 					'type'        => 'string',
 					'format'      => 'uri',
-					'context'     => array( 'embed', 'view', 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 					'readonly'    => true,
 				),
 				'user_login'         => array(
 					'description' => __( 'An alphanumeric identifier for the Member.', 'buddypress' ),
 					'type'        => 'string',
-					'context'     => array( 'embed', 'view', 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 					'required'    => true,
 					'arg_options' => array(
 						'sanitize_callback' => array( $this, 'check_username' ),
@@ -846,7 +847,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'items'       => array(
 						'type' => 'string',
 					),
-					'context'     => array( 'embed', 'view', 'edit' ),
+					'context'     => array( 'view', 'edit' ),
 					'readonly'    => true,
 				),
 				'registered_date'    => array(
@@ -962,7 +963,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_full_width() ), number_format_i18n( bp_core_avatar_full_height() ) ),
 				'type'        => 'string',
 				'format'      => 'uri',
-				'context'     => array( 'embed', 'view', 'edit' ),
+				'context'     => array( 'view', 'edit' ),
 			);
 
 			$avatar_properties['thumb'] = array(
@@ -970,16 +971,24 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
 				'type'        => 'string',
 				'format'      => 'uri',
-				'context'     => array( 'embed', 'view', 'edit' ),
+				'context'     => array( 'view', 'edit' ),
 			);
 
 			$schema['properties']['avatar_urls'] = array(
 				'description' => __( 'Avatar URLs for the member.', 'buddypress' ),
 				'type'        => 'object',
-				'context'     => array( 'embed', 'view', 'edit' ),
+				'context'     => array( 'view', 'edit' ),
 				'readonly'    => true,
 				'properties'  => $avatar_properties,
 			);
+		}
+
+		// Update schema if member types don't match.
+		$update_schema = ( $this->schema && $schema['properties']['member_types']['enum'] !== $this->schema['properties']['member_types']['enum'] );
+
+		// (Re)cache current schema here.
+		if ( $update_schema || is_null( $this->schema ) ) {
+			$this->schema = $schema;
 		}
 
 		/**
