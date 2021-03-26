@@ -334,6 +334,29 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 	/**
 	 * @group get_item
+	 * @group avatar
+	 */
+	function test_get_item_schema_show_avatar() {
+		buddypress()->avatar->show_avatars = false;
+
+		// Re-initialize the controller to cache-bust schemas from prior test runs.
+		$GLOBALS['wp_rest_server']->override_by_default = true;
+		$controller                                     = new BP_REST_Members_Endpoint();
+		$controller->register_routes();
+		$GLOBALS['wp_rest_server']->override_by_default = false;
+
+		$request    = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
+		$response   = rest_get_server()->dispatch( $request );
+		$data       = $response->get_data();
+		$properties = $data['schema']['properties'];
+
+		buddypress()->avatar->show_avatars = true;
+
+		$this->assertArrayNotHasKey( 'avatar_urls', $properties );
+	}
+
+	/**
+	 * @group get_item
 	 */
 	public function test_get_item_invalid_id() {
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
@@ -499,11 +522,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		) );
 
 		$response = $this->server->dispatch( $request );
-		$data = $response->get_data();
+		$data     = $response->get_data();
 
-		$member_type = reset( $data['member_types'] );
-
-		$this->assertSame( 'membertypeone', $member_type );
+		$this->assertSame( 'membertypeone', reset( $data['member_types'] ) );
 	}
 
 	/**
