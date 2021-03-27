@@ -414,11 +414,8 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 			'last_activity' => bp_rest_prepare_date_response( $blog->last_activity ),
 		);
 
-		// Get item schema.
-		$schema = $this->get_item_schema();
-
 		// Blog Avatars.
-		if ( ! empty( $schema['properties']['avatar_urls'] ) ) {
+		if ( true === buddypress()->avatar->show_avatars ) {
 			$data['avatar_urls'] = array(
 				'thumb' => bp_get_blog_avatar(
 					array(
@@ -681,7 +678,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		);
 
 		// Blog Avatars.
-		if ( buddypress()->avatar->show_avatars ) {
+		if ( true === buddypress()->avatar->show_avatars ) {
 			$avatar_properties = array();
 
 			$avatar_properties['full'] = array(

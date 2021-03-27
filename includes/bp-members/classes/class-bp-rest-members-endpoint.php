@@ -552,11 +552,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$data['mention_name'] = bp_activity_get_user_mentionname( $user->ID );
 		}
 
-		// Get item schema.
-		$schema = $this->get_item_schema();
-
 		// Avatars.
-		if ( ! empty( $schema['properties']['avatar_urls'] ) ) {
+		if ( true === buddypress()->avatar->show_avatars ) {
 			$data['avatar_urls'] = array(
 				'full'  => bp_core_fetch_avatar(
 					array(

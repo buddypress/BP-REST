@@ -929,7 +929,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			}
 		}
 
-		if ( ! empty( $schema['properties']['user_avatar'] ) ) {
+		if ( true === buddypress()->avatar->show_avatars ) {
 			$data['user_avatar'] = array(
 				'full'  => bp_core_fetch_avatar(
 					array(
