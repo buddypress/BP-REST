@@ -983,11 +983,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			);
 		}
 
-		// Update schema if member types don't match.
-		$update_schema = ( $this->schema && $schema['properties']['member_types']['enum'] !== $this->schema['properties']['member_types']['enum'] );
-
 		// (Re)cache current schema here.
-		if ( $update_schema || is_null( $this->schema ) ) {
+		if ( is_null( $this->schema ) ) {
 			$this->schema = $schema;
 		}
 

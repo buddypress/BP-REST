@@ -737,11 +737,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'last_activity_diff' => null,
 		);
 
-		// Get item schema.
-		$schema = $this->get_item_schema();
-
-		// Avatars.
-		if ( ! empty( $schema['properties']['avatar_urls'] ) ) {
+		// Return avatars, if allowed.
+		if ( true !== bp_disable_group_avatar_uploads() ) {
 			$data['avatar_urls'] = array(
 				'full'  => bp_core_fetch_avatar(
 					array(
@@ -1263,7 +1260,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		// Avatars.
-		if ( ! bp_disable_group_avatar_uploads() ) {
+		if ( true !== bp_disable_group_avatar_uploads() ) {
 			$avatar_properties = array();
 
 			$avatar_properties['full'] = array(
@@ -1291,8 +1288,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// (Re)cache current schema here.
-		if ( ( bp_disable_group_avatar_uploads() && $this->schema ) || is_null( $this->schema ) ) {
+		// Cache current schema here.
+		if ( is_null( $this->schema ) ) {
 			$this->schema = $schema;
 		}
 
