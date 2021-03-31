@@ -852,23 +852,23 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-
-		// Get schema from the membership endpoint.
-		$schema = $this->invites_endpoint->get_item_schema();
-
-		// Set title to this endpoint.
-		$schema['title'] = 'bp_group_membership_request';
-
-		// Adapt some item schema property descriptions to this endpoint.
-		$schema['properties']['user_id']['description']  = __( 'The ID of the user who requested a Group membership.', 'buddypress' );
-		$schema['properties']['group_id']['description'] = __( 'The ID of the group the user requested a membership for.', 'buddypress' );
-		$schema['properties']['type']['default']         = 'request';
-
-		// Remove unused properties.
-		unset( $schema['properties']['invite_sent'], $schema['properties']['inviter_id'] );
-
-		// Cache current schema here.
 		if ( is_null( $this->schema ) ) {
+
+			// Get schema from the membership endpoint.
+			$schema = $this->invites_endpoint->get_item_schema();
+
+			// Set title to this endpoint.
+			$schema['title'] = 'bp_group_membership_request';
+
+			// Adapt some item schema property descriptions to this endpoint.
+			$schema['properties']['user_id']['description']  = __( 'The ID of the user who requested a Group membership.', 'buddypress' );
+			$schema['properties']['group_id']['description'] = __( 'The ID of the group the user requested a membership for.', 'buddypress' );
+			$schema['properties']['type']['default']         = 'request';
+
+			// Remove unused properties.
+			unset( $schema['properties']['invite_sent'], $schema['properties']['inviter_id'] );
+
+			// Cache current schema here.
 			$this->schema = $schema;
 		}
 

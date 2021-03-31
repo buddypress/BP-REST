@@ -1073,7 +1073,6 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 */
 	public function test_update_item_invalid_id() {
 		$this->bp->set_current_user( $this->user );
-		$a = $this->bp_factory->activity->create();
 
 		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$request->add_header( 'content-type', 'application/json' );

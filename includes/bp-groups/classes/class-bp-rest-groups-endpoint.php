@@ -1118,178 +1118,177 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_groups',
-			'type'       => 'object',
-			'properties' => array(
-				'id'                 => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique numeric ID for the Group.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
-				'creator_id'         => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the user who created the Group.', 'buddypress' ),
-					'type'        => 'integer',
-					'default'     => bp_loggedin_user_id(),
-				),
-				'name'               => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The name of the Group.', 'buddypress' ),
-					'type'        => 'string',
-					'required'    => true,
-					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_text_field',
+		if ( is_null( $this->schema ) ) {
+			$schema = array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => 'bp_groups',
+				'type'       => 'object',
+				'properties' => array(
+					'id'                 => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'A unique numeric ID for the Group.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
+					),
+					'creator_id'         => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of the user who created the Group.', 'buddypress' ),
+						'type'        => 'integer',
+						'default'     => bp_loggedin_user_id(),
+					),
+					'name'               => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The name of the Group.', 'buddypress' ),
+						'type'        => 'string',
+						'required'    => true,
+						'arg_options' => array(
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
+					'slug'               => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The URL-friendly slug for the Group.', 'buddypress' ),
+						'type'        => 'string',
+						'arg_options' => array(
+							'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
+						),
+					),
+					'link'               => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The permalink to the Group on the site.', 'buddypress' ),
+						'type'        => 'string',
+						'format'      => 'uri',
+						'readonly'    => true,
+					),
+					'description'        => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The description of the Group.', 'buddypress' ),
+						'type'        => 'object',
+						'required'    => true,
+						'arg_options' => array(
+							'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
+							'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
+						),
+						'properties'  => array(
+							'raw'      => array(
+								'description' => __( 'Content for the description of the Group, as it exists in the database.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+							),
+							'rendered' => array(
+								'description' => __( 'HTML content for the description of the Group, transformed for display.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+								'readonly'    => true,
+							),
+						),
+					),
+					'status'             => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The status of the Group.', 'buddypress' ),
+						'type'        => 'string',
+						'enum'        => buddypress()->groups->valid_status,
+						'default'     => 'public',
+						'arg_options' => array(
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+					'enable_forum'       => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Whether the Group has a forum enabled or not.', 'buddypress' ),
+						'type'        => 'boolean',
+					),
+					'parent_id'          => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'ID of the parent Group.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'date_created'       => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( "The date the Group was created, in the site's timezone.", 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'string',
+						'format'      => 'date-time',
+					),
+					'types'              => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The type(s) of the Group.', 'buddypress' ),
+						'readonly'    => true,
+						'enum'        => bp_groups_get_group_types(),
+						'type'        => 'array',
+						'items'       => array(
+							'type' => 'string',
+						),
+					),
+					'admins'             => array(
+						'context'     => array( 'edit' ),
+						'description' => __( 'Group administrators.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'array',
+						'items'       => array(
+							'type' => 'object',
+						),
+					),
+					'mods'               => array(
+						'context'     => array( 'edit' ),
+						'description' => __( 'Group moderators.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'array',
+						'items'       => array(
+							'type' => 'object',
+						),
+					),
+					'total_member_count' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Count of all Group members.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
+					),
+					'last_activity'      => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( "The date the Group was last active, in the site's timezone.", 'buddypress' ),
+						'type'        => 'string',
+						'readonly'    => true,
+						'format'      => 'date-time',
+					),
+					'last_activity_diff'  => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( "The human diff time the Group was last active, in the site's timezone.", 'buddypress' ),
+						'type'        => 'string',
+						'readonly'    => true,
 					),
 				),
-				'slug'               => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The URL-friendly slug for the Group.', 'buddypress' ),
-					'type'        => 'string',
-					'arg_options' => array(
-						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
-					),
-				),
-				'link'               => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The permalink to the Group on the site.', 'buddypress' ),
+			);
+
+			if ( true !== bp_disable_group_avatar_uploads() ) {
+				$avatar_properties = array();
+
+				$avatar_properties['full'] = array(
+					/* translators: 1: Full avatar width in pixels. 2: Full avatar height in pixels */
+					'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_full_width() ), number_format_i18n( bp_core_avatar_full_height() ) ),
 					'type'        => 'string',
 					'format'      => 'uri',
-					'readonly'    => true,
-				),
-				'description'        => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The description of the Group.', 'buddypress' ),
+				);
+
+				$avatar_properties['thumb'] = array(
+					/* translators: 1: Thumb avatar width in pixels. 2: Thumb avatar height in pixels */
+					'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
+					'type'        => 'string',
+					'format'      => 'uri',
+					'context'     => array( 'view', 'edit' ),
+				);
+
+				$schema['properties']['avatar_urls'] = array(
+					'description' => __( 'Avatar URLs for the group.', 'buddypress' ),
 					'type'        => 'object',
-					'required'    => true,
-					'arg_options' => array(
-						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
-						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
-					),
-					'properties'  => array(
-						'raw'      => array(
-							'description' => __( 'Content for the description of the Group, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-						),
-						'rendered' => array(
-							'description' => __( 'HTML content for the description of the Group, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-							'readonly'    => true,
-						),
-					),
-				),
-				'status'             => array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The status of the Group.', 'buddypress' ),
-					'type'        => 'string',
-					'enum'        => buddypress()->groups->valid_status,
-					'default'     => 'public',
-					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_key',
-					),
-				),
-				'enable_forum'       => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the Group has a forum enabled or not.', 'buddypress' ),
-					'type'        => 'boolean',
-				),
-				'parent_id'          => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'ID of the parent Group.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'date_created'       => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( "The date the Group was created, in the site's timezone.", 'buddypress' ),
 					'readonly'    => true,
-					'type'        => 'string',
-					'format'      => 'date-time',
-				),
-				'types'              => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The type(s) of the Group.', 'buddypress' ),
-					'readonly'    => true,
-					'enum'        => bp_groups_get_group_types(),
-					'type'        => 'array',
-					'items'       => array(
-						'type' => 'string',
-					),
-				),
-				'admins'             => array(
-					'context'     => array( 'edit' ),
-					'description' => __( 'Group administrators.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'array',
-					'items'       => array(
-						'type' => 'object',
-					),
-				),
-				'mods'               => array(
-					'context'     => array( 'edit' ),
-					'description' => __( 'Group moderators.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'array',
-					'items'       => array(
-						'type' => 'object',
-					),
-				),
-				'total_member_count' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Count of all Group members.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
-				'last_activity'      => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( "The date the Group was last active, in the site's timezone.", 'buddypress' ),
-					'type'        => 'string',
-					'readonly'    => true,
-					'format'      => 'date-time',
-				),
-				'last_activity_diff'  => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( "The human diff time the Group was last active, in the site's timezone.", 'buddypress' ),
-					'type'        => 'string',
-					'readonly'    => true,
-				),
-			),
-		);
+					'properties'  => $avatar_properties,
+				);
+			}
 
-		// Avatars.
-		if ( true !== bp_disable_group_avatar_uploads() ) {
-			$avatar_properties = array();
-
-			$avatar_properties['full'] = array(
-				/* translators: 1: Full avatar width in pixels. 2: Full avatar height in pixels */
-				'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_full_width() ), number_format_i18n( bp_core_avatar_full_height() ) ),
-				'type'        => 'string',
-				'format'      => 'uri',
-				'context'     => array( 'view', 'edit' ),
-			);
-
-			$avatar_properties['thumb'] = array(
-				/* translators: 1: Thumb avatar width in pixels. 2: Thumb avatar height in pixels */
-				'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
-				'type'        => 'string',
-				'format'      => 'uri',
-				'context'     => array( 'view', 'edit' ),
-			);
-
-			$schema['properties']['avatar_urls'] = array(
-				'description' => __( 'Avatar URLs for the group.', 'buddypress' ),
-				'type'        => 'object',
-				'context'     => array( 'view', 'edit' ),
-				'readonly'    => true,
-				'properties'  => $avatar_properties,
-			);
-		}
-
-		// Cache current schema here.
-		if ( is_null( $this->schema ) ) {
+			// Cache current schema here.
 			$this->schema = $schema;
 		}
 

@@ -526,72 +526,69 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_xprofile_data',
-			'type'       => 'object',
-			'properties' => array(
-				'id'           => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique numeric ID for the profile data.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
-				'field_id'     => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the field the data is from.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
-				'user_id'      => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the user the field data is from.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
-				'value'        => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The value of the field data.', 'buddypress' ),
-					'type'        => 'object',
-					'arg_options' => array(
-						'sanitize_callback' => null,
-						'validate_callback' => null,
-					),
-					'properties'  => array(
-						'raw'          => array(
-							'description' => __( 'Value for the field, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'edit' ),
-						),
-						'unserialized' => array(
-							'description' => __( 'Unserialized value for the field, regular string will be casted as array.', 'buddypress' ),
-							'type'        => 'array',
-							'context'     => array( 'view', 'edit' ),
-							'items'       => array(
-								'type' => 'string',
-							),
-							'readonly'    => true,
-						),
-						'rendered'     => array(
-							'description' => __( 'HTML value for the field, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-							'readonly'    => true,
-						),
-					),
-				),
-				'last_updated' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The date the field data was last updated, in the site\'s timezone.', 'buddypress' ),
-					'type'        => 'string',
-					'format'      => 'date-time',
-				),
-			),
-		);
-
-		// Cache current schema here.
 		if ( is_null( $this->schema ) ) {
-			$this->schema = $schema;
+			$this->schema = array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => 'bp_xprofile_data',
+				'type'       => 'object',
+				'properties' => array(
+					'id'           => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'A unique numeric ID for the profile data.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
+					),
+					'field_id'     => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of the field the data is from.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
+					),
+					'user_id'      => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of the user the field data is from.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
+					),
+					'value'        => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The value of the field data.', 'buddypress' ),
+						'type'        => 'object',
+						'arg_options' => array(
+							'sanitize_callback' => null,
+							'validate_callback' => null,
+						),
+						'properties'  => array(
+							'raw'          => array(
+								'description' => __( 'Value for the field, as it exists in the database.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'edit' ),
+							),
+							'unserialized' => array(
+								'description' => __( 'Unserialized value for the field, regular string will be casted as array.', 'buddypress' ),
+								'type'        => 'array',
+								'context'     => array( 'view', 'edit' ),
+								'items'       => array(
+									'type' => 'string',
+								),
+								'readonly'    => true,
+							),
+							'rendered'     => array(
+								'description' => __( 'HTML value for the field, transformed for display.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+								'readonly'    => true,
+							),
+						),
+					),
+					'last_updated' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The date the field data was last updated, in the site\'s timezone.', 'buddypress' ),
+						'type'        => 'string',
+						'format'      => 'date-time',
+					),
+				),
+			);
 		}
 
 		/**

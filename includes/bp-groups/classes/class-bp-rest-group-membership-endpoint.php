@@ -844,46 +844,46 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-
-		// Get schema from members.
-		$schema = $this->members_endpoint->get_item_schema();
-
-		// Set title to this endpoint.
-		$schema['title'] = 'bp_group_members';
-
-		$schema['properties']['is_mod'] = array(
-			'context'     => array( 'view', 'edit' ),
-			'description' => __( 'Whether the member is a group moderator.', 'buddypress' ),
-			'type'        => 'boolean',
-		);
-
-		$schema['properties']['is_banned'] = array(
-			'context'     => array( 'view', 'edit' ),
-			'description' => __( 'Whether the member has been banned from the group.', 'buddypress' ),
-			'type'        => 'boolean',
-		);
-
-		$schema['properties']['is_admin'] = array(
-			'context'     => array( 'view', 'edit' ),
-			'description' => __( 'Whether the member is a group administrator.', 'buddypress' ),
-			'type'        => 'boolean',
-		);
-
-		$schema['properties']['is_confirmed'] = array(
-			'context'     => array( 'view', 'edit' ),
-			'description' => __( 'Whether the membership of this user has been confirmed.', 'buddypress' ),
-			'type'        => 'boolean',
-		);
-
-		$schema['properties']['date_modified'] = array(
-			'context'     => array( 'view', 'edit' ),
-			'description' => __( "The date of the last time the membership of this user was modified, in the site's timezone.", 'buddypress' ),
-			'type'        => 'string',
-			'format'      => 'date-time',
-		);
-
-		// Cache current schema here.
 		if ( is_null( $this->schema ) ) {
+
+			// Get schema from members.
+			$schema = $this->members_endpoint->get_item_schema();
+
+			// Set title to this endpoint.
+			$schema['title'] = 'bp_group_members';
+
+			$schema['properties']['is_mod'] = array(
+				'context'     => array( 'view', 'edit' ),
+				'description' => __( 'Whether the member is a group moderator.', 'buddypress' ),
+				'type'        => 'boolean',
+			);
+
+			$schema['properties']['is_banned'] = array(
+				'context'     => array( 'view', 'edit' ),
+				'description' => __( 'Whether the member has been banned from the group.', 'buddypress' ),
+				'type'        => 'boolean',
+			);
+
+			$schema['properties']['is_admin'] = array(
+				'context'     => array( 'view', 'edit' ),
+				'description' => __( 'Whether the member is a group administrator.', 'buddypress' ),
+				'type'        => 'boolean',
+			);
+
+			$schema['properties']['is_confirmed'] = array(
+				'context'     => array( 'view', 'edit' ),
+				'description' => __( 'Whether the membership of this user has been confirmed.', 'buddypress' ),
+				'type'        => 'boolean',
+			);
+
+			$schema['properties']['date_modified'] = array(
+				'context'     => array( 'view', 'edit' ),
+				'description' => __( "The date of the last time the membership of this user was modified, in the site's timezone.", 'buddypress' ),
+				'type'        => 'string',
+				'format'      => 'date-time',
+			);
+
+			// Cache current schema here.
 			$this->schema = $schema;
 		}
 

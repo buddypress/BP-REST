@@ -742,6 +742,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_item
 	 * @group item_schema
 	 */
 	public function test_get_item_schema_member_types_enum() {
@@ -750,6 +751,12 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		foreach ( $expected as $type ) {
 			bp_register_member_type( $type );
 		}
+
+		// Re-initialize the controller to cache-bust schemas from prior test runs.
+		$GLOBALS['wp_rest_server']->override_by_default = true;
+		$controller                                     = new BP_REST_Members_Endpoint();
+		$controller->register_routes();
+		$GLOBALS['wp_rest_server']->override_by_default = false;
 
 		$request    = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
 		$response   = $this->server->dispatch( $request );

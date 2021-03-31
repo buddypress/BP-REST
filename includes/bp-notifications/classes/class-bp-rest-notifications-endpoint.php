@@ -753,61 +753,58 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_notifications',
-			'type'       => 'object',
-			'properties' => array(
-				'id'                => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique numeric ID for the notification.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
-				'user_id'           => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the user the notification is addressed to.', 'buddypress' ),
-					'type'        => 'integer',
-					'default'     => bp_loggedin_user_id(),
-				),
-				'item_id'           => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the item associated with the notification.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'secondary_item_id' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the secondary item associated with the notification.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'component'         => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The name of the BuddyPress component the notification relates to.', 'buddypress' ),
-					'type'        => 'string',
-				),
-				'action'            => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The name of the component\'s action the notification is about.', 'buddypress' ),
-					'type'        => 'string',
-				),
-				'date'              => array(
-					'description' => __( 'The date the notification was created, in the site\'s timezone.', 'buddypress' ),
-					'type'        => 'string',
-					'format'      => 'date-time',
-					'context'     => array( 'view', 'edit' ),
-				),
-				'is_new'            => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether it\'s a new notification or not.', 'buddypress' ),
-					'type'        => 'integer',
-					'default'     => 1,
-				),
-			),
-		);
-
-		// Cache current schema here.
 		if ( is_null( $this->schema ) ) {
-			$this->schema = $schema;
+			$this->schema = array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => 'bp_notifications',
+				'type'       => 'object',
+				'properties' => array(
+					'id'                => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'A unique numeric ID for the notification.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
+					),
+					'user_id'           => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of the user the notification is addressed to.', 'buddypress' ),
+						'type'        => 'integer',
+						'default'     => bp_loggedin_user_id(),
+					),
+					'item_id'           => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of the item associated with the notification.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'secondary_item_id' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of the secondary item associated with the notification.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'component'         => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The name of the BuddyPress component the notification relates to.', 'buddypress' ),
+						'type'        => 'string',
+					),
+					'action'            => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The name of the component\'s action the notification is about.', 'buddypress' ),
+						'type'        => 'string',
+					),
+					'date'              => array(
+						'description' => __( 'The date the notification was created, in the site\'s timezone.', 'buddypress' ),
+						'type'        => 'string',
+						'format'      => 'date-time',
+						'context'     => array( 'view', 'edit' ),
+					),
+					'is_new'            => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Whether it\'s a new notification or not.', 'buddypress' ),
+						'type'        => 'integer',
+						'default'     => 1,
+					),
+				),
+			);
 		}
 
 		/**
