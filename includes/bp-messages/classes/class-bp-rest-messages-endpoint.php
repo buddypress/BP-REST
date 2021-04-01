@@ -717,7 +717,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 */
 	protected function prepare_item_for_database( $request ) {
 		$prepared_thread = new stdClass();
-		$schema          = $this->get_item_schema();
+		$schema          = $this->schema;
 		$thread          = $this->get_thread_object( $request['id'] );
 
 		if ( ! empty( $schema['properties']['id'] ) && ! empty( $request['id'] ) ) {

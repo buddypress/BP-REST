@@ -569,7 +569,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	protected function prepare_item_for_database( $request ) {
 		$prepared_notification = new stdClass();
-		$schema                = $this->get_item_schema();
+		$schema                = $this->schema;
 		$notification          = $this->get_notification_object( $request );
 
 		if ( ! empty( $schema['properties']['id'] ) && ! empty( $notification->id ) ) {

@@ -836,7 +836,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return stdClass|WP_Error
 	 */
 	protected function prepare_item_for_database( $request ) {
-		$schema = $this->get_item_schema();
+		$schema = $this->schema;
 		$group  = $this->get_group_object( $request );
 
 		if ( isset( $group->id ) && $group->id ) {

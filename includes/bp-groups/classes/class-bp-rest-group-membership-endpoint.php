@@ -798,9 +798,8 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 			if ( WP_REST_Server::CREATABLE === $method ) {
 				$key             = 'create_item';
-				$schema          = $this->get_item_schema();
 				$args['user_id'] = array_merge(
-					$schema['properties']['id'],
+					$this->schema['properties']['id'],
 					array(
 						'description' => __( 'A unique numeric ID for the Member to add to the Group.', 'buddypress' ),
 						'default'     => bp_loggedin_user_id(),
