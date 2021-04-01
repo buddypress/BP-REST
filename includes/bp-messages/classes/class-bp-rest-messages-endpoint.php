@@ -1098,148 +1098,150 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_messages',
-			'type'       => 'object',
-			'properties' => array(
-				'id'                  => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique numeric ID for the Thread.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'message_id'          => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the latest message of the Thread.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
-				'last_sender_id'      => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of latest sender of the Thread.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
-				'subject'             => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Title of the latest message of the Thread.', 'buddypress' ),
-					'type'        => 'object',
-					'arg_options' => array(
-						'sanitize_callback' => null,
-						'validate_callback' => null,
+		if ( is_null( $this->schema ) ) {
+			$this->schema = array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => 'bp_messages',
+				'type'       => 'object',
+				'properties' => array(
+					'id'                  => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'A unique numeric ID for the Thread.', 'buddypress' ),
+						'type'        => 'integer',
 					),
-					'properties'  => array(
-						'raw'      => array(
-							'description' => __( 'Title of the latest message of the Thread, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'edit' ),
-							'default'     => false,
-						),
-						'rendered' => array(
-							'description' => __( 'Title of the latest message of the Thread, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-							'readonly'    => true,
-							'default'     => false,
-						),
+					'message_id'          => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of the latest message of the Thread.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
 					),
-				),
-				'excerpt'             => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Summary of the latest message of the Thread.', 'buddypress' ),
-					'type'        => 'object',
-					'readonly'    => true,
-					'arg_options' => array(
-						'sanitize_callback' => null,
-						'validate_callback' => null,
+					'last_sender_id'      => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of latest sender of the Thread.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
 					),
-					'properties'  => array(
-						'raw'      => array(
-							'description' => __( 'Summary for the latest message of the Thread, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'edit' ),
+					'subject'             => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Title of the latest message of the Thread.', 'buddypress' ),
+						'type'        => 'object',
+						'arg_options' => array(
+							'sanitize_callback' => null,
+							'validate_callback' => null,
 						),
-						'rendered' => array(
-							'description' => __( 'HTML summary for the latest message of the Thread, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
+						'properties'  => array(
+							'raw'      => array(
+								'description' => __( 'Title of the latest message of the Thread, as it exists in the database.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'edit' ),
+								'default'     => false,
+							),
+							'rendered' => array(
+								'description' => __( 'Title of the latest message of the Thread, transformed for display.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+								'readonly'    => true,
+								'default'     => false,
+							),
 						),
 					),
-				),
-				'message'             => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Content of the latest message of the Thread.', 'buddypress' ),
-					'type'        => 'object',
-					'required'    => true,
-					'arg_options' => array(
-						'sanitize_callback' => null,
-						'validate_callback' => null,
-					),
-					'properties'  => array(
-						'raw'      => array(
-							'description' => __( 'Content for the latest message of the Thread, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'edit' ),
+					'excerpt'             => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Summary of the latest message of the Thread.', 'buddypress' ),
+						'type'        => 'object',
+						'readonly'    => true,
+						'arg_options' => array(
+							'sanitize_callback' => null,
+							'validate_callback' => null,
 						),
-						'rendered' => array(
-							'description' => __( 'HTML content for the latest message of the Thread, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-							'readonly'    => true,
+						'properties'  => array(
+							'raw'      => array(
+								'description' => __( 'Summary for the latest message of the Thread, as it exists in the database.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'edit' ),
+							),
+							'rendered' => array(
+								'description' => __( 'HTML summary for the latest message of the Thread, transformed for display.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+							),
 						),
 					),
-				),
-				'date'                => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( "The date the latest message of the Thread, in the site's timezone.", 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'string',
-					'format'      => 'date-time',
-				),
-				'unread_count'        => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Total count of unread messages into the Thread for the requested user.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
-				'sender_ids'          => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The list of user IDs for all messages in the Thread.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'array',
-					'items'       => array(
-						'type' => 'integer',
+					'message'             => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Content of the latest message of the Thread.', 'buddypress' ),
+						'type'        => 'object',
+						'required'    => true,
+						'arg_options' => array(
+							'sanitize_callback' => null,
+							'validate_callback' => null,
+						),
+						'properties'  => array(
+							'raw'      => array(
+								'description' => __( 'Content for the latest message of the Thread, as it exists in the database.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'edit' ),
+							),
+							'rendered' => array(
+								'description' => __( 'HTML content for the latest message of the Thread, transformed for display.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+								'readonly'    => true,
+							),
+						),
+					),
+					'date'                => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( "The date the latest message of the Thread, in the site's timezone.", 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'string',
+						'format'      => 'date-time',
+					),
+					'unread_count'        => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Total count of unread messages into the Thread for the requested user.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
+					),
+					'sender_ids'          => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The list of user IDs for all messages in the Thread.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'array',
+						'items'       => array(
+							'type' => 'integer',
+						),
+					),
+					'recipients'          => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The list of recipient User Objects involved into the Thread.', 'buddypress' ),
+						'type'        => 'array',
+						'items'       => array(
+							'type' => 'object',
+						),
+					),
+					'messages'            => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'List of message objects for the thread.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'array',
+						'items'       => array(
+							'type' => 'object',
+						),
+					),
+					'starred_message_ids' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'List of starred message IDs.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'array',
+						'items'       => array(
+							'type' => 'integer',
+						),
+						'default'     => array(),
 					),
 				),
-				'recipients'          => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The list of recipient User Objects involved into the Thread.', 'buddypress' ),
-					'type'        => 'array',
-					'items'       => array(
-						'type' => 'object',
-					),
-				),
-				'messages'            => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'List of message objects for the thread.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'array',
-					'items'       => array(
-						'type' => 'object',
-					),
-				),
-				'starred_message_ids' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'List of starred message IDs.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'array',
-					'items'       => array(
-						'type' => 'integer',
-					),
-					'default'     => array(),
-				),
-			),
-		);
+			);
+		}
 
 		/**
 		 * Filters the message schema.
@@ -1248,7 +1250,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_message_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_message_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 
 	/**

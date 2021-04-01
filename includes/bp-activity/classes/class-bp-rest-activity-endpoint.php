@@ -929,7 +929,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			}
 		}
 
-		if ( ! empty( $schema['properties']['user_avatar'] ) ) {
+		if ( true === buddypress()->avatar->show_avatars ) {
 			$data['user_avatar'] = array(
 				'full'  => bp_core_fetch_avatar(
 					array(
@@ -1262,165 +1262,169 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_activity',
-			'type'       => 'object',
-			'properties' => array(
-				'id'                => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique numeric ID for the activity.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
+		if ( is_null( $this->schema ) ) {
+			$schema = array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => 'bp_activity',
+				'type'       => 'object',
+				'properties' => array(
+					'id'                => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'A unique numeric ID for the activity.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
+					),
+					'primary_item_id'   => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'secondary_item_id' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'user_id'           => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID for the author of the activity.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
+					),
+					'link'              => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The permalink to this activity on the site.', 'buddypress' ),
+						'format'      => 'uri',
+						'type'        => 'string',
+					),
+					'component'         => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The active BuddyPress component the activity relates to.', 'buddypress' ),
+						'type'        => 'string',
+						'enum'        => array_keys( buddypress()->active_components ),
+						'arg_options' => array(
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+					'type'              => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The activity type of the activity.', 'buddypress' ),
+						'type'        => 'string',
+						'enum'        => array_keys( bp_activity_get_types() ),
+						'arg_options' => array(
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+					'title'             => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The description of the activity\'s type (eg: Username posted an update)', 'buddypress' ),
+						'type'        => 'string',
+						'readonly'    => true,
+						'arg_options' => array(
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
+					'content'           => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Allowed HTML content for the activity.', 'buddypress' ),
+						'type'        => 'object',
+						'arg_options' => array(
+							'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
+							'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
+						),
+						'properties'  => array(
+							'raw'      => array(
+								'description' => __( 'Content for the activity, as it exists in the database.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'edit' ),
+							),
+							'rendered' => array(
+								'description' => __( 'HTML content for the activity, transformed for display.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+								'readonly'    => true,
+							),
+						),
+					),
+					'date'              => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( "The date the activity was published, in the site's timezone.", 'buddypress' ),
+						'type'        => 'string',
+						'format'      => 'date-time',
+					),
+					'status'            => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Whether the activity has been marked as spam or not.', 'buddypress' ),
+						'type'        => 'string',
+						'enum'        => array( 'published', 'spam' ),
+						'readonly'    => true,
+						'arg_options' => array(
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+					'comments'          => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'A list of objects children of the activity object.', 'buddypress' ),
+						'type'        => 'array',
+						'readonly'    => true,
+					),
+					'comment_count'     => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Total number of comments of the activity object.', 'buddypress' ),
+						'type'        => 'integer',
+						'readonly'    => true,
+					),
+					'hidden'            => array(
+						'context'     => array( 'edit' ),
+						'description' => __( 'Whether the activity object should be sitewide hidden or not.', 'buddypress' ),
+						'type'        => 'boolean',
+					),
+					'favorited'         => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Whether the activity object has been favorited by the current user.', 'buddypress' ),
+						'type'        => 'boolean',
+						'readonly'    => true,
+					),
 				),
-				'primary_item_id'   => array(
+			);
+
+			if ( true === buddypress()->avatar->show_avatars ) {
+				$avatar_properties = array();
+
+				$avatar_properties['full'] = array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of some other object primarily associated with this one.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'secondary_item_id' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of some other object also associated with this one.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'user_id'           => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID for the author of the activity.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
-				'link'              => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The permalink to this activity on the site.', 'buddypress' ),
+					/* translators: 1: Full avatar width in pixels. 2: Full avatar height in pixels */
+					'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_full_width() ), number_format_i18n( bp_core_avatar_full_height() ) ),
+					'type'        => 'string',
 					'format'      => 'uri',
-					'type'        => 'string',
-				),
-				'component'         => array(
+				);
+
+				$avatar_properties['thumb'] = array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The active BuddyPress component the activity relates to.', 'buddypress' ),
+					/* translators: 1: Thumb avatar width in pixels. 2: Thumb avatar height in pixels */
+					'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
 					'type'        => 'string',
-					'enum'        => array_keys( buddypress()->active_components ),
-					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_key',
-					),
-				),
-				'type'              => array(
+					'format'      => 'uri',
+				);
+
+				$schema['properties']['user_avatar'] = array(
 					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The activity type of the activity.', 'buddypress' ),
-					'type'        => 'string',
-					'enum'        => array_keys( bp_activity_get_types() ),
-					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_key',
-					),
-				),
-				'title'             => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The description of the activity\'s type (eg: Username posted an update)', 'buddypress' ),
-					'type'        => 'string',
-					'readonly'    => true,
-					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_text_field',
-					),
-				),
-				'content'           => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Allowed HTML content for the activity.', 'buddypress' ),
+					'description' => __( 'Avatar URLs for the author of the activity.', 'buddypress' ),
 					'type'        => 'object',
-					'arg_options' => array(
-						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
-						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
-					),
-					'properties'  => array(
-						'raw'      => array(
-							'description' => __( 'Content for the activity, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'edit' ),
-						),
-						'rendered' => array(
-							'description' => __( 'HTML content for the activity, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-							'readonly'    => true,
-						),
-					),
-				),
-				'date'              => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( "The date the activity was published, in the site's timezone.", 'buddypress' ),
-					'type'        => 'string',
-					'format'      => 'date-time',
-				),
-				'status'            => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the activity has been marked as spam or not.', 'buddypress' ),
-					'type'        => 'string',
-					'enum'        => array( 'published', 'spam' ),
 					'readonly'    => true,
-					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_key',
-					),
-				),
-				'comments'          => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A list of objects children of the activity object.', 'buddypress' ),
-					'type'        => 'array',
-					'readonly'    => true,
-				),
-				'comment_count'     => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Total number of comments of the activity object.', 'buddypress' ),
-					'type'        => 'integer',
-					'readonly'    => true,
-				),
-				'hidden'            => array(
-					'context'     => array( 'edit' ),
-					'description' => __( 'Whether the activity object should be sitewide hidden or not.', 'buddypress' ),
-					'type'        => 'boolean',
-				),
-				'favorited'         => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the activity object has been favorited by the current user.', 'buddypress' ),
-					'type'        => 'boolean',
-					'readonly'    => true,
-				),
-			),
-		);
+					'properties'  => $avatar_properties,
+				);
+			}
 
-		// Avatars.
-		if ( true === buddypress()->avatar->show_avatars ) {
-			$avatar_properties = array();
-
-			$avatar_properties['full'] = array(
-				'context'     => array( 'view', 'edit' ),
-				/* translators: 1: Full avatar width in pixels. 2: Full avatar height in pixels */
-				'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_full_width() ), number_format_i18n( bp_core_avatar_full_height() ) ),
-				'type'        => 'string',
-				'format'      => 'uri',
-			);
-
-			$avatar_properties['thumb'] = array(
-				'context'     => array( 'view', 'edit' ),
-				/* translators: 1: Thumb avatar width in pixels. 2: Thumb avatar height in pixels */
-				'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
-				'type'        => 'string',
-				'format'      => 'uri',
-			);
-
-			$schema['properties']['user_avatar'] = array(
-				'context'     => array( 'view', 'edit' ),
-				'description' => __( 'Avatar URLs for the author of the activity.', 'buddypress' ),
-				'type'        => 'object',
-				'readonly'    => true,
-				'properties'  => $avatar_properties,
-			);
+			// Cache current schema here.
+			$this->schema = $schema;
 		}
 
 		/**
 		 * Filters the activity schema.
 		 *
-		 * @param string $schema The endpoint schema.
+		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_activity_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_activity_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 
 	/**

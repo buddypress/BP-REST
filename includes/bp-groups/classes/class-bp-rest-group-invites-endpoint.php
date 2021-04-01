@@ -940,82 +940,84 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_group_invites',
-			'type'       => 'object',
-			'properties' => array(
-				'id'            => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique numeric ID for the BP Invitation object.', 'buddypress' ),
-					'type'        => 'integer',
-					'readonly'    => true,
-				),
-				'user_id'       => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the user who is invited to join the Group.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'invite_sent'   => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the invite has been sent to the invitee.', 'buddypress' ),
-					'type'        => 'boolean',
-				),
-				'inviter_id'    => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the user who made the invite.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'group_id'      => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the group to which the user has been invited.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'date_modified' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( "The date the object was created or last updated, in the site's timezone.", 'buddypress' ),
-					'type'        => 'string',
-					'format'      => 'date-time',
-				),
-				'type'          => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Invitation or request.', 'buddypress' ),
-					'type'        => 'string',
-					'enum'        => array( 'invite', 'request' ),
-					'default'     => 'invite',
-				),
-				'message'       => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The raw and rendered versions for the content of the message.', 'buddypress' ),
-					'type'        => 'object',
-					'arg_options' => array(
-						'sanitize_callback' => null,
-						'validate_callback' => null,
+		if ( is_null( $this->schema ) ) {
+			$this->schema = array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => 'bp_group_invites',
+				'type'       => 'object',
+				'properties' => array(
+					'id'            => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'A unique numeric ID for the BP Invitation object.', 'buddypress' ),
+						'type'        => 'integer',
+						'readonly'    => true,
 					),
-					'properties'  => array(
-						'raw'      => array(
-							'description' => __( 'Content for the object, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
+					'user_id'       => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of the user who is invited to join the Group.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'invite_sent'   => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Whether the invite has been sent to the invitee.', 'buddypress' ),
+						'type'        => 'boolean',
+					),
+					'inviter_id'    => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of the user who made the invite.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'group_id'      => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The ID of the group to which the user has been invited.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'date_modified' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( "The date the object was created or last updated, in the site's timezone.", 'buddypress' ),
+						'type'        => 'string',
+						'format'      => 'date-time',
+					),
+					'type'          => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Invitation or request.', 'buddypress' ),
+						'type'        => 'string',
+						'enum'        => array( 'invite', 'request' ),
+						'default'     => 'invite',
+					),
+					'message'       => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The raw and rendered versions for the content of the message.', 'buddypress' ),
+						'type'        => 'object',
+						'arg_options' => array(
+							'sanitize_callback' => null,
+							'validate_callback' => null,
 						),
-						'rendered' => array(
-							'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-							'readonly'    => true,
+						'properties'  => array(
+							'raw'      => array(
+								'description' => __( 'Content for the object, as it exists in the database.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+							),
+							'rendered' => array(
+								'description' => __( 'HTML content for the object, transformed for display.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+								'readonly'    => true,
+							),
 						),
 					),
-				),
 
-			),
-		);
+				),
+			);
+		}
 
 		/**
 		 * Filters the group invites schema.
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_group_invites_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_group_invites_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 
 	/**

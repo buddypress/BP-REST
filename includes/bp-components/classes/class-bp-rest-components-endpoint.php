@@ -428,41 +428,43 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_components',
-			'type'       => 'object',
-			'properties' => array(
-				'name'        => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Name of the object.', 'buddypress' ),
-					'type'        => 'string',
+		if ( is_null( $this->schema ) ) {
+			$this->schema = array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => 'bp_components',
+				'type'       => 'object',
+				'properties' => array(
+					'name'        => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Name of the object.', 'buddypress' ),
+						'type'        => 'string',
+					),
+					'status'      => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Whether the object is active or inactive.', 'buddypress' ),
+						'type'        => 'string',
+						'enum'        => array( 'active', 'inactive' ),
+					),
+					'title'       => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'HTML title of the object.', 'buddypress' ),
+						'type'        => 'string',
+					),
+					'description' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'HTML description of the object.', 'buddypress' ),
+						'type'        => 'string',
+					),
 				),
-				'status'      => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the object is active or inactive.', 'buddypress' ),
-					'type'        => 'string',
-					'enum'        => array( 'active', 'inactive' ),
-				),
-				'title'       => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'HTML title of the object.', 'buddypress' ),
-					'type'        => 'string',
-				),
-				'description' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'HTML description of the object.', 'buddypress' ),
-					'type'        => 'string',
-				),
-			),
-		);
+			);
+		}
 
 		/**
 		 * Filters the components schema.
 		 *
-		 * @param string $schema The endpoint schema.
+		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_components_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_components_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 
 	/**

@@ -11,7 +11,7 @@
     "plugin"
   ],
   "devDependencies": {
-    "@wordpress/env": "https://gitpkg.now.sh/WordPress/gutenberg/packages/env?trunk"
+    "@wordpress/env": "^4.0.0"
   },
   "engines": {
     "node": ">=14.15.0",

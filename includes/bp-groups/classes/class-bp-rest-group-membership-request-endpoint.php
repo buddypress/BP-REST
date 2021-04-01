@@ -852,27 +852,32 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
+		if ( is_null( $this->schema ) ) {
 
-		// Get schema from the membership endpoint.
-		$schema = $this->invites_endpoint->get_item_schema();
+			// Get schema from the membership endpoint.
+			$schema = $this->invites_endpoint->get_item_schema();
 
-		// Set title to this endpoint.
-		$schema['title'] = 'bp_group_membership_request';
+			// Set title to this endpoint.
+			$schema['title'] = 'bp_group_membership_request';
 
-		// Adapt some item schema property descriptions to this endpoint.
-		$schema['properties']['user_id']['description']  = __( 'The ID of the user who requested a Group membership.', 'buddypress' );
-		$schema['properties']['group_id']['description'] = __( 'The ID of the group the user requested a membership for.', 'buddypress' );
-		$schema['properties']['type']['default']         = 'request';
+			// Adapt some item schema property descriptions to this endpoint.
+			$schema['properties']['user_id']['description']  = __( 'The ID of the user who requested a Group membership.', 'buddypress' );
+			$schema['properties']['group_id']['description'] = __( 'The ID of the group the user requested a membership for.', 'buddypress' );
+			$schema['properties']['type']['default']         = 'request';
 
-		// Remove unused properties.
-		unset( $schema['properties']['invite_sent'], $schema['properties']['inviter_id'] );
+			// Remove unused properties.
+			unset( $schema['properties']['invite_sent'], $schema['properties']['inviter_id'] );
+
+			// Cache current schema here.
+			$this->schema = $schema;
+		}
 
 		/**
 		 * Filters the group membership request schema.
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_group_membership_requests_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_group_membership_requests_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 
 	/**

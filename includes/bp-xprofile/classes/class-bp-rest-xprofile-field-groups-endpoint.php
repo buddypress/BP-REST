@@ -714,73 +714,75 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_xprofile_group',
-			'type'       => 'object',
-			'properties' => array(
-				'id'          => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique numeric ID for the group of profile fields.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
-				'name'        => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The name of group of profile fields.', 'buddypress' ),
-					'type'        => 'string',
-					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_text_field',
+		if ( is_null( $this->schema ) ) {
+			$this->schema = array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => 'bp_xprofile_group',
+				'type'       => 'object',
+				'properties' => array(
+					'id'          => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'A unique numeric ID for the group of profile fields.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
 					),
-				),
-				'description' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The description of the group of profile fields.', 'buddypress' ),
-					'type'        => 'object',
-					'arg_options' => array(
-						'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
-						'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
-					),
-					'properties'  => array(
-						'raw'      => array(
-							'description' => __( 'Content for the group of profile fields, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'edit' ),
-						),
-						'rendered' => array(
-							'description' => __( 'HTML content for the group of profile fields, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-							'readonly'    => true,
+					'name'        => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The name of group of profile fields.', 'buddypress' ),
+						'type'        => 'string',
+						'arg_options' => array(
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
+					'description' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The description of the group of profile fields.', 'buddypress' ),
+						'type'        => 'object',
+						'arg_options' => array(
+							'sanitize_callback' => null, // Note: sanitization implemented in self::prepare_item_for_database().
+							'validate_callback' => null, // Note: validation implemented in self::prepare_item_for_database().
+						),
+						'properties'  => array(
+							'raw'      => array(
+								'description' => __( 'Content for the group of profile fields, as it exists in the database.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'edit' ),
+							),
+							'rendered' => array(
+								'description' => __( 'HTML content for the group of profile fields, transformed for display.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+								'readonly'    => true,
+							),
+						),
+					),
+					'group_order' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The order of the group of profile fields.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'can_delete'  => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Whether the group of profile fields can be deleted or not.', 'buddypress' ),
+						'type'        => 'boolean',
+						'readonly'    => true,
+					),
+					'fields'      => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The fields associated with this group of profile fields.', 'buddypress' ),
+						'type'        => 'array',
+						'readonly'    => true,
+					),
 				),
-				'group_order' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The order of the group of profile fields.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'can_delete'  => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the group of profile fields can be deleted or not.', 'buddypress' ),
-					'type'        => 'boolean',
-					'readonly'    => true,
-				),
-				'fields'      => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The fields associated with this group of profile fields.', 'buddypress' ),
-					'type'        => 'array',
-					'readonly'    => true,
-				),
-			),
-		);
+			);
+		}
 
 		/**
 		 * Filters the xprofile field group schema.
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_xprofile_field_group_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_xprofile_field_group_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 
 	/**

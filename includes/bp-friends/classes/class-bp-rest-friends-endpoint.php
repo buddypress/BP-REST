@@ -813,41 +813,43 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_friends',
-			'type'       => 'object',
-			'properties' => array(
-				'id'           => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Unique numeric identifier of the friendship.', 'buddypress' ),
-					'type'        => 'integer',
+		if ( is_null( $this->schema ) ) {
+			$this->schema = array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => 'bp_friends',
+				'type'       => 'object',
+				'properties' => array(
+					'id'           => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Unique numeric identifier of the friendship.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'initiator_id' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The unique numeric identifier of the user who is requesting the Friendship.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'friend_id'    => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The unique numeric identifier of the user who is invited to agree to the Friendship request.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+					'is_confirmed' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Whether the friendship been confirmed/accepted.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'boolean',
+					),
+					'date_created' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( "The date the friendship was created, in the site's timezone.", 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'string',
+						'format'      => 'date-time',
+					),
 				),
-				'initiator_id' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the user who is requesting the Friendship.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'friend_id'    => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The ID of the user who is invited to agree to the Friendship request.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'is_confirmed' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Whether the friendship been confirmed/accepted.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'boolean',
-				),
-				'date_created' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( "The date the friendship was created, in the site's timezone.", 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'string',
-					'format'      => 'date-time',
-				),
-			),
-		);
+			);
+		}
 
 		/**
 		 * Filters the friends schema.
@@ -856,7 +858,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_friends_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_friends_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 
 	/**

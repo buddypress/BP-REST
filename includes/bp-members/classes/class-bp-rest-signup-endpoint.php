@@ -864,111 +864,116 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_signup',
-			'type'       => 'object',
-			'properties' => array(
-				'id'             => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique numeric ID for the signup.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'integer',
-				),
-				'user_login'     => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The username of the user the signup is for.', 'buddypress' ),
-					'required'    => true,
-					'type'        => 'string',
-				),
-				'user_email'     => array(
-					'context'     => array( 'edit' ),
-					'description' => __( 'The email for the user the signup is for.', 'buddypress' ),
-					'type'        => 'string',
-					'required'    => true,
-				),
-				'activation_key' => array(
-					'context'     => array( 'edit' ),
-					'description' => __( 'Activation key of the signup.', 'buddypress' ),
-					'type'        => 'string',
-					'readonly'    => true,
-				),
-				'registered'     => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The registered date for the user, in the site\'s timezone.', 'buddypress' ),
-					'type'        => 'string',
-					'readonly'    => true,
-					'format'      => 'date-time',
-				),
-				'date_sent'      => array(
-					'context'     => array( 'edit' ),
-					'description' => __( 'The date the activation email was sent to the user, in the site\'s timezone.', 'buddypress' ),
-					'type'        => 'string',
-					'readonly'    => true,
-					'format'      => 'date-time',
-				),
-				'count_sent'     => array(
-					'description' => __( 'The number of times the activation email was sent to the user.', 'buddypress' ),
-					'type'        => 'integer',
-					'context'     => array( 'edit' ),
-					'readonly'    => true,
-				),
-				'meta'           => array(
-					'context'     => array( 'edit' ),
-					'description' => __( 'The signup meta information', 'buddypress' ),
-					'type'        => 'object',
-					'properties'  => array(
-						'password' => array(
-							'description' => __( 'Password for the new user (never included).', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array(), // Password is never displayed.
+		if ( is_null( $this->schema ) ) {
+			$schema = array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => 'bp_signup',
+				'type'       => 'object',
+				'properties' => array(
+					'id'             => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'A unique numeric ID for the signup.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
+					),
+					'user_login'     => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The username of the user the signup is for.', 'buddypress' ),
+						'required'    => true,
+						'type'        => 'string',
+					),
+					'user_email'     => array(
+						'context'     => array( 'edit' ),
+						'description' => __( 'The email for the user the signup is for.', 'buddypress' ),
+						'type'        => 'string',
+						'required'    => true,
+					),
+					'activation_key' => array(
+						'context'     => array( 'edit' ),
+						'description' => __( 'Activation key of the signup.', 'buddypress' ),
+						'type'        => 'string',
+						'readonly'    => true,
+					),
+					'registered'     => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The registered date for the user, in the site\'s timezone.', 'buddypress' ),
+						'type'        => 'string',
+						'readonly'    => true,
+						'format'      => 'date-time',
+					),
+					'date_sent'      => array(
+						'context'     => array( 'edit' ),
+						'description' => __( 'The date the activation email was sent to the user, in the site\'s timezone.', 'buddypress' ),
+						'type'        => 'string',
+						'readonly'    => true,
+						'format'      => 'date-time',
+					),
+					'count_sent'     => array(
+						'description' => __( 'The number of times the activation email was sent to the user.', 'buddypress' ),
+						'type'        => 'integer',
+						'context'     => array( 'edit' ),
+						'readonly'    => true,
+					),
+					'meta'           => array(
+						'context'     => array( 'edit' ),
+						'description' => __( 'The signup meta information', 'buddypress' ),
+						'type'        => 'object',
+						'properties'  => array(
+							'password' => array(
+								'description' => __( 'Password for the new user (never included).', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array(), // Password is never displayed.
+							),
 						),
 					),
 				),
-			),
-		);
-
-		if ( bp_is_active( 'xprofile' ) ) {
-			$schema['properties']['user_name'] = array(
-				'context'     => array( 'view', 'edit' ),
-				'description' => __( 'The new user\'s full name.', 'buddypress' ),
-				'type'        => 'string',
-				'required'    => true,
-				'arg_options' => array(
-					'sanitize_callback' => 'sanitize_text_field',
-				),
-			);
-		}
-
-		if ( is_multisite() && $this->is_blog_signup_allowed() ) {
-			$schema['properties']['site_name'] = array(
-				'context'     => array( 'edit' ),
-				'description' => __( 'Unique site name (slug) of the new user\'s child site.', 'buddypress' ),
-				'type'        => 'string',
-				'default'     => '',
 			);
 
-			$schema['properties']['site_title'] = array(
-				'context'     => array( 'edit' ),
-				'description' => __( 'Title of the new user\'s child site.', 'buddypress' ),
-				'type'        => 'string',
-				'default'     => '',
-			);
+			if ( bp_is_active( 'xprofile' ) ) {
+				$schema['properties']['user_name'] = array(
+					'context'     => array( 'view', 'edit' ),
+					'description' => __( 'The new user\'s full name.', 'buddypress' ),
+					'type'        => 'string',
+					'required'    => true,
+					'arg_options' => array(
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				);
+			}
 
-			$schema['properties']['site_public'] = array(
-				'context'     => array( 'edit' ),
-				'description' => __( 'Search engine visibility of the new user\'s  site.', 'buddypress' ),
-				'type'        => 'boolean',
-				'default'     => true,
-			);
+			if ( is_multisite() && $this->is_blog_signup_allowed() ) {
+				$schema['properties']['site_name'] = array(
+					'context'     => array( 'edit' ),
+					'description' => __( 'Unique site name (slug) of the new user\'s child site.', 'buddypress' ),
+					'type'        => 'string',
+					'default'     => '',
+				);
 
-			$schema['properties']['site_language'] = array(
-				'context'     => array( 'edit' ),
-				'description' => __( 'Language to use for the new user\'s  site.', 'buddypress' ),
-				'type'        => 'string',
-				'default'     => get_locale(),
-				'enum'        => array_merge( array( get_locale() ), $this->get_available_languages() ),
-			);
+				$schema['properties']['site_title'] = array(
+					'context'     => array( 'edit' ),
+					'description' => __( 'Title of the new user\'s child site.', 'buddypress' ),
+					'type'        => 'string',
+					'default'     => '',
+				);
+
+				$schema['properties']['site_public'] = array(
+					'context'     => array( 'edit' ),
+					'description' => __( 'Search engine visibility of the new user\'s  site.', 'buddypress' ),
+					'type'        => 'boolean',
+					'default'     => true,
+				);
+
+				$schema['properties']['site_language'] = array(
+					'context'     => array( 'edit' ),
+					'description' => __( 'Language to use for the new user\'s  site.', 'buddypress' ),
+					'type'        => 'string',
+					'default'     => get_locale(),
+					'enum'        => array_merge( array( get_locale() ), $this->get_available_languages() ),
+				);
+			}
+
+			// Cache current schema here.
+			$this->schema = $schema;
 		}
 
 		/**
@@ -976,7 +981,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_signup_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_signup_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 
 	/**

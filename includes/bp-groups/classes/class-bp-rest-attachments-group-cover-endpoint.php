@@ -411,26 +411,28 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_attachments_group_cover',
-			'type'       => 'object',
-			'properties' => array(
-				'image' => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Full size of the image file.', 'buddypress' ),
-					'type'        => 'string',
-					'format'      => 'uri',
-					'readonly'    => true,
+		if ( is_null( $this->schema ) ) {
+			$this->schema = array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => 'bp_attachments_group_cover',
+				'type'       => 'object',
+				'properties' => array(
+					'image' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Full size of the image file.', 'buddypress' ),
+						'type'        => 'string',
+						'format'      => 'uri',
+						'readonly'    => true,
+					),
 				),
-			),
-		);
+			);
+		}
 
 		/**
-		 * Filters the group cover schema.
+		 * Filters the attachments group cover schema.
 		 *
-		 * @param string $schema The endpoint schema.
+		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_attachments_group_cover_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_attachments_group_cover_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 }
