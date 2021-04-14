@@ -827,7 +827,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		if ( is_user_logged_in() && bp_activity_can_favorite() ) {
+		if ( is_user_logged_in() && bp_activity_can_favorite() && $this->can_see( $request ) ) {
 			$retval = true;
 		}
 
