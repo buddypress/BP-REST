@@ -384,7 +384,10 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		if ( is_user_logged_in() && bp_user_can_create_groups() ) {
+		$current_user_id = (int) bp_loggedin_user_id();
+		$creator_id      = (int) $request->get_param( 'creator_id' );
+
+		if ( ( $current_user_id && $current_user_id === $creator_id && bp_user_can_create_groups() ) || bp_current_user_can( 'bp_moderate' ) ) {
 			$retval = true;
 		}
 
