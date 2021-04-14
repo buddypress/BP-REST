@@ -661,7 +661,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 					);
 				} elseif ( bp_current_user_can( 'bp_moderate' ) || ( $user->ID !== $loggedin_user_id && groups_is_user_admin( $loggedin_user_id, $group->id ) ) ) {
 					$retval = true;
-				} elseif ( $user->ID === $loggedin_user_id ) {
+				} elseif ( $user->ID === $loggedin_user_id && ! groups_is_user_banned( $user->ID, $group->id ) ) {
 					$group_admins = groups_get_group_admins( $group->id );
 
 					// Special case for self-removal: don't allow if it'd leave a group with no admins.
