@@ -4,7 +4,7 @@
  */
 
 if ( ! defined( 'BP_TESTS_DIR' ) ) {
-	define( 'BP_TESTS_DIR', dirname( dirname( dirname( __FILE__ ) ) ) . '/BuddyPress/tests/phpunit' );
+	define( 'BP_TESTS_DIR', dirname( dirname( dirname( __FILE__ ) ) ) . '/buddypress/tests/phpunit' );
 }
 
 /**
