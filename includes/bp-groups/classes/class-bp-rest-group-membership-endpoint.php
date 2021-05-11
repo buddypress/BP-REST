@@ -707,6 +707,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		$data = array_merge(
 			$member_data,
 			array(
+				'group_id'      => (int) $group_member->group_id,
 				'is_mod'        => (bool) $group_member->is_mod,
 				'is_admin'      => (bool) $group_member->is_admin,
 				'is_banned'     => (bool) $group_member->is_banned,
@@ -851,6 +852,12 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 			// Set title to this endpoint.
 			$schema['title'] = 'bp_group_members';
+
+			$schema['properties']['group_id'] = array(
+				'context'     => array( 'view', 'edit' ),
+				'description' => __( 'Group id.', 'buddypress' ),
+				'type'        => 'integer',
+			);
 
 			$schema['properties']['is_mod'] = array(
 				'context'     => array( 'view', 'edit' ),
