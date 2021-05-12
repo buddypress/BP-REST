@@ -134,6 +134,10 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$args['member_type'] = '';
 		}
 
+		if ( is_null( $args['search_terms'] ) ) {
+			$args['search_terms'] = false;
+		}
+
 		/**
 		 * Filter the query arguments for the request.
 		 *
