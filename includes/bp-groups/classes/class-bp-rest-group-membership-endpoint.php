@@ -120,9 +120,8 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_items( $request ) {
-		$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
-
-		$args = array(
+		$group = $this->groups_endpoint->get_group_object( $request->get_param( 'group_id' ) );
+		$args  = array(
 			'group_id'            => $group->id,
 			'group_role'          => $request['roles'],
 			'type'                => $request['status'],
@@ -699,14 +698,16 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $group_member, $request ) {
-		$user        = bp_rest_get_user( $group_member->user_id );
-		$context     = ! empty( $request['context'] ) ? $request['context'] : 'view';
-		$member_data = $this->members_endpoint->user_data( $user, $context, $request );
+		$user                   = bp_rest_get_user( $group_member->user_id );
+		$context                = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$member_data            = $this->members_endpoint->user_data( $user, $context, $request );
+		$group_member->group_id = $request->get_param( 'group_id' );
 
 		// Merge both info.
 		$data = array_merge(
 			$member_data,
 			array(
+				'group'         => (int) $group_member->group_id,
 				'is_mod'        => (bool) $group_member->is_mod,
 				'is_admin'      => (bool) $group_member->is_admin,
 				'is_banned'     => (bool) $group_member->is_banned,
@@ -719,7 +720,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
-		$response->add_links( $this->prepare_links( $user ) );
+		$response->add_links( $this->prepare_links( $group_member ) );
 
 		/**
 		 * Filter a group member value returned from the API.
@@ -738,20 +739,23 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_User $user User object.
+	 * @param BP_Groups_Member $group_member Group member object.
 	 * @return array
 	 */
-	protected function prepare_links( $user ) {
-		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $user->ID;
+	protected function prepare_links( $group_member ) {
+		$base = sprintf( '/%s/%s', $this->namespace, $this->rest_base );
 
 		// Entity meta.
 		$links = array(
 			'self'       => array(
-				'href' => rest_url( $url ),
+				'href' => rest_url( bp_rest_get_user_url( $group_member->user_id ) ),
 			),
 			'collection' => array(
-				'href' => rest_url( $base ),
+				'href' => rest_url( sprintf( '/%s/%d/members', $base, $group_member->group_id ) ),
+			),
+			'group'      => array(
+				'href'       => rest_url( sprintf( '/%s/%d', $base, $group_member->group_id ) ),
+				'embeddable' => true,
 			),
 		);
 
@@ -760,10 +764,10 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array   $links The prepared links of the REST response.
-		 * @param WP_User $user  User object.
+		 * @param array $          links         The prepared links of the REST response.
+		 * @param BP_Groups_Member $group_member Group member object.
 		 */
-		return apply_filters( 'bp_rest_group_members_prepare_links', $links, $user );
+		return apply_filters( 'bp_rest_group_members_prepare_links', $links, $group_member );
 	}
 
 	/**
@@ -851,6 +855,12 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 			// Set title to this endpoint.
 			$schema['title'] = 'bp_group_members';
+
+			$schema['properties']['group_id'] = array(
+				'context'     => array( 'view', 'edit', 'embed' ),
+				'description' => __( 'A unique numeric ID for the Group.', 'buddypress' ),
+				'type'        => 'integer',
+			);
 
 			$schema['properties']['is_mod'] = array(
 				'context'     => array( 'view', 'edit' ),

@@ -422,6 +422,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 						'type'          => 'thumb',
 						'blog_id'       => $blog->blog_id,
 						'admin_user_id' => $blog->admin_user_id,
+						'html'          => false,
 					)
 				),
 				'full'  => bp_get_blog_avatar(
@@ -429,6 +430,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 						'type'          => 'full',
 						'blog_id'       => $blog->blog_id,
 						'admin_user_id' => $blog->admin_user_id,
+						'html'          => false,
 					)
 				),
 			);
@@ -473,7 +475,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'user'       => array(
+			'admin'      => array(
 				'href'       => rest_url( bp_rest_get_user_url( $blog->admin_user_id ) ),
 				'embeddable' => true,
 			),
@@ -624,19 +626,19 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 				'type'       => 'object',
 				'properties' => array(
 					'id'            => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'A unique numeric ID for the blog.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'integer',
 					),
 					'user_id'       => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'A unique numeric ID for the blog admin.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'integer',
 					),
 					'name'          => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The name of the blog.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'string',
@@ -645,32 +647,32 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 						),
 					),
 					'permalink'     => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The permalink of the blog.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'string',
 						'format'      => 'uri',
 					),
 					'description'   => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The description of the blog.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'string',
 					),
 					'path'          => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The path of the blog.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'string',
 					),
 					'domain'        => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'the domain of the blog.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'string',
 					),
 					'last_activity' => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( "The last activity date from the blog, in the site's timezone.", 'buddypress' ),
 						'type'        => 'string',
 						'format'      => 'date-time',
@@ -686,7 +688,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 					'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_full_width() ), number_format_i18n( bp_core_avatar_full_height() ) ),
 					'type'        => 'string',
 					'format'      => 'uri',
-					'context'     => array( 'view', 'edit' ),
+					'context'     => array( 'view', 'edit', 'embed' ),
 				);
 
 				$avatar_properties['thumb'] = array(
@@ -694,13 +696,13 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 					'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
 					'type'        => 'string',
 					'format'      => 'uri',
-					'context'     => array( 'view', 'edit' ),
+					'context'     => array( 'view', 'edit', 'embed' ),
 				);
 
 				$schema['properties']['avatar_urls'] = array(
 					'description' => __( 'Avatar URLs for the blog.', 'buddypress' ),
 					'type'        => 'object',
-					'context'     => array( 'view', 'edit' ),
+					'context'     => array( 'view', 'edit', 'embed' ),
 					'readonly'    => true,
 					'properties'  => $avatar_properties,
 				);

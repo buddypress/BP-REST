@@ -806,7 +806,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'id'                 => array(
 						'description' => __( 'A unique numeric ID for the Member.', 'buddypress' ),
 						'type'        => 'integer',
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'readonly'    => true,
 					),
 					'name'               => array(
@@ -820,7 +820,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'mention_name'       => array(
 						'description' => __( 'The name used for that user in @-mentions.', 'buddypress' ),
 						'type'        => 'string',
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'arg_options' => array(
 							'sanitize_callback' => 'sanitize_text_field',
 						),
@@ -830,13 +830,13 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'description' => __( 'Profile URL of the member.', 'buddypress' ),
 						'type'        => 'string',
 						'format'      => 'uri',
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'readonly'    => true,
 					),
 					'user_login'         => array(
 						'description' => __( 'An alphanumeric identifier for the Member.', 'buddypress' ),
 						'type'        => 'string',
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'required'    => true,
 						'arg_options' => array(
 							'sanitize_callback' => array( $this, 'check_username' ),
@@ -849,7 +849,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'items'       => array(
 							'type' => 'string',
 						),
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'readonly'    => true,
 					),
 					'registered_date'    => array(
@@ -897,14 +897,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'friendship_status'    => array(
 						'description' => __( 'Friendship relation with, current, logged in user.', 'buddypress' ),
 						'type'        => 'bool',
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'readonly'    => true,
 					),
 					'friendship_status_slug' => array(
 						'description' => __( 'Slug of the friendship status with current logged in user.', 'buddypress' ),
 						'enum'        => array( 'is_friend', 'not_friends', 'pending', 'awaiting_response' ),
 						'type'        => 'string',
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'readonly'    => true,
 					),
 					'last_activity'          => array(
@@ -948,7 +948,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'readonly'    => true,
 					),
 					'total_friend_count'     => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'Total number of friends for the member.', 'buddypress' ),
 						'type'        => 'integer',
 						'readonly'    => true,
