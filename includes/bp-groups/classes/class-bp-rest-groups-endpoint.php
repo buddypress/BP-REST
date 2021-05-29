@@ -957,7 +957,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'creator'    => array(
+			'user'    => array(
 				'href'       => rest_url( bp_rest_get_user_url( $group->creator_id ) ),
 				'embeddable' => true,
 			),

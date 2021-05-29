@@ -540,6 +540,98 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_item
 	 */
+	public function test_get_embedded_hidden_group_from_activity() {
+		$component = buddypress()->groups->id;
+		$u1 = $this->factory->user->create();
+
+		$this->bp->set_current_user( $u1 );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'status'     => 'hidden',
+			'creator_id' => $u1,
+		) );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'created_group',
+			'user_id'       => $u1,
+			'item_id'       => $g1,
+		) );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $a1 ) );
+		$request->set_query_params( array( '_embed' => 'group' ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$data           = $this->server->response_to_data( $response, true )[0];
+		$embedded_group = current( $data['_embedded']['group'][0] );
+
+		$this->assertSame( $g1, $embedded_group['id'] );
+		$this->assertSame( $u1, $embedded_group['creator_id'] );
+		$this->assertSame( 'hidden', $embedded_group['status'] );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_embedded_hidden_group_from_activity_without_permission() {
+		$component = buddypress()->groups->id;
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$g1 = $this->bp_factory->group->create( array(
+			'status'     => 'hidden',
+			'creator_id' => $u1,
+		) );
+
+		$this->bp->set_current_user( $u2 );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'created_group',
+			'user_id'       => $u2,
+			'item_id'       => $g1,
+		) );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $a1 ) );
+		$request->set_query_params( array( '_embed' => 'group' ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_embedded_private_group_from_activity_without_permission() {
+		$component = buddypress()->groups->id;
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$g1 = $this->bp_factory->group->create( array(
+			'status'     => 'private',
+			'creator_id' => $u1,
+		) );
+
+		$this->bp->set_current_user( $u2 );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'created_group',
+			'user_id'       => $u2,
+			'item_id'       => $g1,
+		) );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $a1 ) );
+		$request->set_query_params( array( '_embed' => 'group' ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_item
+	 */
 	public function test_get_item_for_item_belonging_to_private_group() {
 		$component = buddypress()->groups->id;
 
@@ -693,7 +785,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 401 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -1176,7 +1268,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_delete_item() {
 		$this->bp->set_current_user( $this->user );
 
-		$activity_id  = $this->bp_factory->activity->create( array(
+		$activity_id = $this->bp_factory->activity->create( array(
 			'content' => 'Deleted activity',
 		) );
 

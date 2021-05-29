@@ -475,7 +475,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'admin'      => array(
+			'user'      => array(
 				'href'       => rest_url( bp_rest_get_user_url( $blog->admin_user_id ) ),
 				'embeddable' => true,
 			),
