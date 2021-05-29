@@ -957,11 +957,19 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'user'       => array(
+			'user'    => array(
 				'href'       => rest_url( bp_rest_get_user_url( $group->creator_id ) ),
 				'embeddable' => true,
 			),
 		);
+
+		// Embed parent group if available.
+		if ( ! empty( $group->parent ) ) {
+			$links['parent'] = array(
+				'href'       => rest_url( $base . $group->parent ),
+				'embeddable' => true,
+			);
+		}
 
 		/**
 		 * Filter links prepared for the REST response.
@@ -1128,19 +1136,19 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'type'       => 'object',
 				'properties' => array(
 					'id'                 => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'A unique numeric ID for the Group.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'integer',
 					),
 					'creator_id'         => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The ID of the user who created the Group.', 'buddypress' ),
 						'type'        => 'integer',
 						'default'     => bp_loggedin_user_id(),
 					),
 					'name'               => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The name of the Group.', 'buddypress' ),
 						'type'        => 'string',
 						'required'    => true,
@@ -1149,7 +1157,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 						),
 					),
 					'slug'               => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The URL-friendly slug for the Group.', 'buddypress' ),
 						'type'        => 'string',
 						'arg_options' => array(
@@ -1157,14 +1165,14 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 						),
 					),
 					'link'               => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The permalink to the Group on the site.', 'buddypress' ),
 						'type'        => 'string',
 						'format'      => 'uri',
 						'readonly'    => true,
 					),
 					'description'        => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The description of the Group.', 'buddypress' ),
 						'type'        => 'object',
 						'required'    => true,
@@ -1176,18 +1184,18 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 							'raw'      => array(
 								'description' => __( 'Content for the description of the Group, as it exists in the database.', 'buddypress' ),
 								'type'        => 'string',
-								'context'     => array( 'view', 'edit' ),
+								'context'     => array( 'view', 'edit', 'embed' ),
 							),
 							'rendered' => array(
 								'description' => __( 'HTML content for the description of the Group, transformed for display.', 'buddypress' ),
 								'type'        => 'string',
-								'context'     => array( 'view', 'edit' ),
+								'context'     => array( 'view', 'edit', 'embed' ),
 								'readonly'    => true,
 							),
 						),
 					),
 					'status'             => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The status of the Group.', 'buddypress' ),
 						'type'        => 'string',
 						'enum'        => buddypress()->groups->valid_status,
@@ -1197,24 +1205,24 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 						),
 					),
 					'enable_forum'       => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'Whether the Group has a forum enabled or not.', 'buddypress' ),
 						'type'        => 'boolean',
 					),
 					'parent_id'          => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'ID of the parent Group.', 'buddypress' ),
 						'type'        => 'integer',
 					),
 					'date_created'       => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( "The date the Group was created, in the site's timezone.", 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'string',
 						'format'      => 'date-time',
 					),
 					'types'              => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The type(s) of the Group.', 'buddypress' ),
 						'readonly'    => true,
 						'enum'        => bp_groups_get_group_types(),
@@ -1242,20 +1250,20 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 						),
 					),
 					'total_member_count' => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'Count of all Group members.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'integer',
 					),
 					'last_activity'      => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( "The date the Group was last active, in the site's timezone.", 'buddypress' ),
 						'type'        => 'string',
 						'readonly'    => true,
 						'format'      => 'date-time',
 					),
 					'last_activity_diff'  => array(
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( "The human diff time the Group was last active, in the site's timezone.", 'buddypress' ),
 						'type'        => 'string',
 						'readonly'    => true,
@@ -1271,7 +1279,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'description' => sprintf( __( 'Avatar URL with full image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_full_width() ), number_format_i18n( bp_core_avatar_full_height() ) ),
 					'type'        => 'string',
 					'format'      => 'uri',
-					'context'     => array( 'view', 'edit' ),
+					'context'     => array( 'view', 'edit', 'embed' ),
 				);
 
 				$avatar_properties['thumb'] = array(
@@ -1279,13 +1287,13 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'description' => sprintf( __( 'Avatar URL with thumb image size (%1$d x %2$d pixels).', 'buddypress' ), number_format_i18n( bp_core_avatar_thumb_width() ), number_format_i18n( bp_core_avatar_thumb_height() ) ),
 					'type'        => 'string',
 					'format'      => 'uri',
-					'context'     => array( 'view', 'edit' ),
+					'context'     => array( 'view', 'edit', 'embed' ),
 				);
 
 				$schema['properties']['avatar_urls'] = array(
 					'description' => __( 'Avatar URLs for the group.', 'buddypress' ),
 					'type'        => 'object',
-					'context'     => array( 'view', 'edit' ),
+					'context'     => array( 'view', 'edit', 'embed' ),
 					'readonly'    => true,
 					'properties'  => $avatar_properties,
 				);

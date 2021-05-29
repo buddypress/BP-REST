@@ -1123,11 +1123,32 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Embed Group.
 		if ( bp_is_active( 'groups' ) && 'groups' === $activity->component && ! empty( $activity->item_id ) ) {
-			$group = groups_get_group( $activity->item_id );
-
 			$links['group'] = array(
-				'href'       => bp_get_group_permalink( $group ),
+				'href'       => rest_url(
+					sprintf(
+						'/%s/%s/%d',
+						$this->namespace,
+						buddypress()->groups->id,
+						absint( $activity->item_id )
+					)
+				),
+				'embeddable' => true,
+			);
+		}
+
+		// Embed Blog.
+		if ( bp_is_active( 'blogs' ) && 'blogs' === $activity->component && ! empty( $activity->item_id ) ) {
+			$links['blog'] = array(
+				'href'       => rest_url(
+					sprintf(
+						'/%s/%s/%d',
+						$this->namespace,
+						buddypress()->blogs->id,
+						absint( $activity->item_id )
+					)
+				),
 				'embeddable' => true,
 			);
 		}
