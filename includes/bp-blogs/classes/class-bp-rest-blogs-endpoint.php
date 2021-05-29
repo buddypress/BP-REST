@@ -404,15 +404,23 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $blog, $request ) {
 		$data = array(
-			'id'            => $blog->blog_id,
-			'user_id'       => $blog->admin_user_id,
-			'name'          => $blog->name,
-			'domain'        => $blog->domain,
-			'path'          => $blog->path,
-			'permalink'     => $this->get_blog_domain( $blog ),
-			'description'   => stripslashes( $blog->description ),
-			'last_activity' => bp_rest_prepare_date_response( $blog->last_activity ),
+			'id'              => absint( $blog->blog_id ),
+			'user_id'         => absint( $blog->admin_user_id ),
+			'name'            => apply_filters( 'bp_get_blog_name', $blog->name ),
+			'domain'          => (string) $blog->domain,
+			'path'            => (string) $blog->path,
+			'permalink'       => $this->get_blog_domain( $blog ),
+			'description'     => array(
+				'raw'      => $blog->description,
+				'rendered' => apply_filters( 'bp_get_blog_description', $blog->description ),
+			),
+			'last_activity'   => bp_rest_prepare_date_response( $blog->last_activity ),
+			'lastest_post_id' => 0,
 		);
+
+		if ( ! empty( $blog->latest_post->ID ) ) {
+			$data['lastest_post_id'] = absint( $blog->latest_post->ID );
+		}
 
 		// Blog Avatars.
 		if ( true === buddypress()->avatar->show_avatars ) {
@@ -465,12 +473,11 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 */
 	protected function prepare_links( $blog ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$url  = $base . $blog->blog_id;
 
 		// Entity meta.
 		$links = array(
 			'self'       => array(
-				'href' => rest_url( $url ),
+				'href' => rest_url( $base . $blog->blog_id ),
 			),
 			'collection' => array(
 				'href' => rest_url( $base ),
@@ -480,6 +487,18 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 				'embeddable' => true,
 			),
 		);
+
+		// Embed latest blog post.
+		if ( ! empty( $blog->latest_post->ID ) ) {
+			$links['post'] = array(
+				'embeddable' => true,
+				'href'       => sprintf(
+					'%s/%d',
+					get_rest_url( absint( $blog->blog_id ), 'wp/v2/posts' ),
+					absint( $blog->latest_post->ID )
+				),
+			);
+		}
 
 		/**
 		 * Filter links prepared for the REST response.
@@ -653,11 +672,27 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 						'type'        => 'string',
 						'format'      => 'uri',
 					),
-					'description'   => array(
+					'description'        => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The description of the blog.', 'buddypress' ),
-						'readonly'    => true,
-						'type'        => 'string',
+						'type'        => 'object',
+						'arg_options' => array(
+							'sanitize_callback' => null,
+							'validate_callback' => null,
+						),
+						'properties'  => array(
+							'raw'      => array(
+								'description' => __( 'Content for the description of the blog, as it exists in the database.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit', 'embed' ),
+							),
+							'rendered' => array(
+								'description' => __( 'HTML content for the description of the blog, transformed for display.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit', 'embed' ),
+								'readonly'    => true,
+							),
+						),
 					),
 					'path'          => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
@@ -667,7 +702,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 					),
 					'domain'        => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
-						'description' => __( 'the domain of the blog.', 'buddypress' ),
+						'description' => __( 'The domain of the blog.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'string',
 					),
@@ -676,6 +711,12 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 						'description' => __( "The last activity date from the blog, in the site's timezone.", 'buddypress' ),
 						'type'        => 'string',
 						'format'      => 'date-time',
+					),
+					'lastest_post_id' => array(
+						'context'     => array( 'view', 'edit', 'embed' ),
+						'description' => __( 'The latest post ID from the blog', 'buddypress' ),
+						'type'        => 'integer',
+						'readonly'    => true,
 					),
 				),
 			);
