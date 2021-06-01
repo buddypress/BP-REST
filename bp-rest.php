@@ -222,8 +222,6 @@ add_filter( 'rest_request_from_url', 'bp_filter_rest_request_blog_url', 10, 2 );
  * @return WP_REST_Response
  */
 function bp_rest_post_dispatch( $response, $instance, $request ) {
-	global $wpdb;
-
 	if (
 		! bp_is_active( 'blogs' )
 		|| 404 !== $response->get_status()
@@ -247,22 +245,14 @@ function bp_rest_post_dispatch( $response, $instance, $request ) {
 		return $response;
 	}
 
-	// Get blog id.
-	// @todo update with a cached version.
-	// @todo send a patch to BuddyPress core with a way to fetch a single blog object directly,
-	// with a blog_id or domain.
-	$blog_id = $wpdb->get_var( // phpcs:ignore
-		$wpdb->prepare(
-			"SELECT blog_id FROM {$wpdb->base_prefix}blogs WHERE domain = %s",
-			$bits['host']
-		)
-	);
+	// Get site using the domain.
+	$site = get_site_by_path( $bits['host'], $bits['path'] );
 
-	if ( empty( $blog_id ) ) {
+	if ( ! $site instanceof WP_Site || empty( $site->blog_id ) ) {
 		return $response;
 	}
 
-	switch_to_blog( absint( $blog_id ) );
+	switch_to_blog( absint( $site->blog_id ) );
 
 	$response = rest_do_request(
 		new WP_REST_Request(

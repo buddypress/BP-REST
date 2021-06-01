@@ -50,8 +50,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->bp->set_current_user( $this->admin );
 
-		$this->bp_factory->blog->create();
-		$this->bp_factory->blog->create();
+		$this->bp_factory->blog->create_many( 2 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -113,7 +112,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_item
 	 */
-	public function test_get_embedded_latest_post_from_blog() {
+	public function test_get_embedded_latest_post_from_blog_using_subdirectory() {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped();
 		}
@@ -152,6 +151,55 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertNotEmpty( $embedded_post );
 		$this->assertSame( $blog_id, $data['id'] );
+		$this->assertSame( $latest_post, $embedded_post['id'] );
+		$this->assertSame( $permalink, $embedded_post['link'] );
+		$this->assertSame( $title, $embedded_post['title']['rendered'] );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_embedded_latest_post_from_blog_using_subdomain() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$this->bp->set_current_user( $this->admin );
+
+		$subdomain = 'cool-site.foo-bar';
+		$blog_id   = $this->bp_factory->blog->create(
+			[
+				'title'  => 'The Foo Bar Blog',
+				'domain' => $subdomain,
+				'path'   => '/',
+			]
+		);
+
+		switch_to_blog( $blog_id );
+
+		$this->factory->post->create();
+		$latest_post = $this->factory->post->create();
+		$permalink   = get_permalink( $latest_post );
+		$title       = get_the_title( $latest_post );
+
+		restore_current_blog();
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $blog_id ) );
+		$request->set_query_params( array( '_embed' => 'post' ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $this->server->response_to_data( $response, true )[0];
+
+		$this->assertNotEmpty( $data['_embedded']['post'] );
+
+		$embedded_post = current( $data['_embedded']['post'] );
+
+		$this->assertNotEmpty( $embedded_post );
+		$this->assertSame( $blog_id, $data['id'] );
+		$this->assertSame( $subdomain, $data['domain'] );
 		$this->assertSame( $latest_post, $embedded_post['id'] );
 		$this->assertSame( $permalink, $embedded_post['link'] );
 		$this->assertSame( $title, $embedded_post['title']['rendered'] );
