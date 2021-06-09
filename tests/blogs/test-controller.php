@@ -48,11 +48,9 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$this->markTestSkipped();
 		}
 
-		$u = $this->bp_factory->user->create();
-		$this->bp->set_current_user( $u );
+		$this->bp->set_current_user( $this->admin );
 
-		$a = $this->bp_factory->blog->create();
-		update_blog_option( $a, 'blog_public', '1' );
+		$this->bp_factory->blog->create_many( 2 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -63,9 +61,9 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$blogs   = $response->get_data();
 		$headers = $response->get_headers();
 
-		$this->assertEquals( 2, $headers['X-WP-Total'] );
+		$this->assertEquals( 3, $headers['X-WP-Total'] );
 		$this->assertEquals( 1, $headers['X-WP-TotalPages'] );
-		$this->assertTrue( count( $blogs ) === 2 );
+		$this->assertTrue( count( $blogs ) === 3 );
 		$this->assertTrue( ! empty( $blogs[0] ) );
 	}
 
@@ -77,17 +75,13 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$this->markTestSkipped();
 		}
 
-		$blog = $this->bp_factory->blog->create(
-			array(
-				'title'   => 'The Foo Bar Blog',
-				'user_id' => $this->admin,
-			)
+		$this->bp->set_current_user( $this->admin );
+
+		$blog_id = $this->bp_factory->blog->create(
+			array( 'title' => 'The Foo Bar Blog' )
 		);
 
-		bp_blogs_record_existing_blogs();
-		update_blog_option( $blog, 'blog_public', '1' );
-
-		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $blog ) );
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $blog_id ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
@@ -95,7 +89,10 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$blogs = $response->get_data();
 
-		$this->assertSame( $blogs[0]['id'], $blog );
+		$this->assertNotEmpty( $blogs );
+		$this->assertSame( $blogs[0]['id'], $blog_id );
+		$this->assertSame( $blogs[0]['name'], 'The Foo Bar Blog' );
+		$this->assertSame( $blogs[0]['user_id'], $this->admin );
 	}
 
 	/**
@@ -110,6 +107,102 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_blog_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_embedded_latest_post_from_blog_using_subdirectory() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$this->bp->set_current_user( $this->admin );
+
+		$blog_id = $this->bp_factory->blog->create(
+			[
+				'title'  => 'The Foo Bar Blog',
+				'domain' => 'foo-bar',
+				'path'   => '/',
+			]
+		);
+
+		switch_to_blog( $blog_id );
+
+		$this->factory->post->create();
+		$latest_post = $this->factory->post->create();
+		$permalink   = get_permalink( $latest_post );
+		$title       = get_the_title( $latest_post );
+
+		restore_current_blog();
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $blog_id ) );
+		$request->set_query_params( array( '_embed' => 'post' ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $this->server->response_to_data( $response, true )[0];
+
+		$this->assertNotEmpty( $data['_embedded']['post'] );
+
+		$embedded_post = current( $data['_embedded']['post'] );
+
+		$this->assertNotEmpty( $embedded_post );
+		$this->assertSame( $blog_id, $data['id'] );
+		$this->assertSame( $latest_post, $embedded_post['id'] );
+		$this->assertSame( $permalink, $embedded_post['link'] );
+		$this->assertSame( $title, $embedded_post['title']['rendered'] );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_embedded_latest_post_from_blog_using_subdomain() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$this->bp->set_current_user( $this->admin );
+
+		$subdomain = 'cool-site.foo-bar';
+		$blog_id   = $this->bp_factory->blog->create(
+			[
+				'title'  => 'The Foo Bar Blog',
+				'domain' => $subdomain,
+				'path'   => '/',
+			]
+		);
+
+		switch_to_blog( $blog_id );
+
+		$this->factory->post->create();
+		$latest_post = $this->factory->post->create();
+		$permalink   = get_permalink( $latest_post );
+		$title       = get_the_title( $latest_post );
+
+		restore_current_blog();
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $blog_id ) );
+		$request->set_query_params( array( '_embed' => 'post' ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $this->server->response_to_data( $response, true )[0];
+
+		$this->assertNotEmpty( $data['_embedded']['post'] );
+
+		$embedded_post = current( $data['_embedded']['post'] );
+
+		$this->assertNotEmpty( $embedded_post );
+		$this->assertSame( $blog_id, $data['id'] );
+		$this->assertSame( $subdomain, $data['domain'] );
+		$this->assertSame( $latest_post, $embedded_post['id'] );
+		$this->assertSame( $permalink, $embedded_post['link'] );
+		$this->assertSame( $title, $embedded_post['title']['rendered'] );
 	}
 
 	/**
@@ -134,8 +227,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
 
-		$params = $this->set_blog_data();
-		$request->set_body( wp_json_encode( $params ) );
+		$request->set_body( wp_json_encode( $this->set_blog_data() ) );
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
@@ -143,6 +235,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$blogs = $response->get_data();
 
+		$this->assertNotEmpty( $blogs );
 		$this->assertSame( $blogs[0]['name'], 'Blog Name' );
 
 		buddypress()->site_options = $old_settings;
@@ -318,7 +411,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 9, count( $properties ) );
+		$this->assertEquals( 10, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'user_id', $properties );
 		$this->assertArrayHasKey( 'name', $properties );
@@ -327,6 +420,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'permalink', $properties );
 		$this->assertArrayHasKey( 'description', $properties );
 		$this->assertArrayHasKey( 'last_activity', $properties );
+		$this->assertArrayHasKey( 'lastest_post_id', $properties );
 	}
 
 	public function test_context_param() {
