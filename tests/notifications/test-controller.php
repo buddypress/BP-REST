@@ -155,6 +155,32 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	/**
 	 * @group get_item
 	 */
+	public function test_get_embedded_user_from_notification_item() {
+		$this->bp->set_current_user( $this->user );
+
+		$notification_id = $this->bp_factory->notification->create( array( 'user_id' => $this->user ) );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $notification_id ) );
+		$request->set_query_params( array( '_embed' => 'user' ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $this->server->response_to_data( $response, true )[0];
+
+		$this->assertNotEmpty( $data['_embedded']['user'] );
+
+		$embedded_user = current( $data['_embedded']['user'] );
+
+		$this->assertNotEmpty( $embedded_user );
+		$this->assertSame( $notification_id, $data['id'] );
+		$this->assertSame( $this->user, $embedded_user['id'] );
+	}
+
+	/**
+	 * @group get_item
+	 */
 	public function test_get_item_user_not_logged_in() {
 		$n = $this->bp_factory->notification->create( $this->set_notification_data() );
 
@@ -340,10 +366,9 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	 */
 	public function test_delete_item() {
 		$notification_id = $this->bp_factory->notification->create( $this->set_notification_data() );
+		$notification    = $this->endpoint->get_notification_object( $notification_id );
 
-		$notification = $this->endpoint->get_notification_object( $notification_id );
 		$this->assertEquals( $notification_id, $notification->id );
-
 		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $notification_id ) );
