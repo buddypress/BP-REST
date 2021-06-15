@@ -523,8 +523,8 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param BP_Notifications_Notification $notification Notification data.
-	 * @param WP_REST_Request               $request     Full details about the request.
+	 * @param BP_Notifications_Notification $notification Notification object.
+	 * @param WP_REST_Request               $request      Full details about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $notification, $request ) {
@@ -639,7 +639,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @return array Links for the given plugin.
 	 */
 	protected function prepare_links( $notification ) {
-		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
+		$base = sprintf( '/%1$s/%2$s/', $this->namespace, $this->rest_base );
 
 		// Entity meta.
 		$links = array(
@@ -649,11 +649,60 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'user'       => array(
-				'href'       => rest_url( bp_rest_get_user_url( $notification->user_id ) ),
-				'embeddable' => true,
-			),
 		);
+
+		// Embed User.
+		if ( ! empty( $notification->user_id ) ) {
+			$links['user'] = array(
+				'embeddable' => true,
+				'href'       => rest_url( bp_rest_get_user_url( absint( $notification->user_id ) ) ),
+			);
+		}
+
+		// Embed Activity.
+		if ( bp_is_active( 'activity' ) && buddypress()->activity->id === $notification->component_name && ! empty( $notification->item_id ) ) {
+			$links[ buddypress()->activity->id ] = array(
+				'embeddable' => true,
+				'href'       => rest_url(
+					sprintf(
+						'/%1$s/%2$s/%3$d',
+						$this->namespace,
+						buddypress()->activity->id,
+						absint( $notification->item_id )
+					)
+				),
+			);
+		}
+
+		// Embed Group.
+		if ( bp_is_active( 'groups' ) && buddypress()->groups->id === $notification->component_name && ! empty( $notification->item_id ) ) {
+			$links['group'] = array(
+				'embeddable' => true,
+				'href'       => rest_url(
+					sprintf(
+						'/%1$s/%2$s/%3$d',
+						$this->namespace,
+						buddypress()->groups->id,
+						absint( $notification->item_id )
+					)
+				),
+			);
+		}
+
+		// Embed Blog.
+		if ( bp_is_active( 'blogs' ) && buddypress()->blogs->id === $notification->component_name && ! empty( $notification->item_id ) ) {
+			$links['blog'] = array(
+				'embeddable' => true,
+				'href'       => rest_url(
+					sprintf(
+						'/%1$s/%2$s/%3$d',
+						$this->namespace,
+						buddypress()->blogs->id,
+						absint( $notification->item_id )
+					)
+				),
+			);
+		}
 
 		/**
 		 * Filter links prepared for the REST response.
