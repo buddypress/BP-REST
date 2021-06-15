@@ -204,8 +204,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item( $request ) {
 		$notification = $this->get_notification_object( $request );
-
-		$retval = array(
+		$retval       = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $notification, $request )
 			),
@@ -247,7 +246,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		if ( is_user_logged_in() ) {
 			$notification = $this->get_notification_object( $request );
 
-			if ( is_null( $notification->item_id ) ) {
+			if ( empty( $notification ) ) {
 				$retval = new WP_Error(
 					'bp_rest_notification_invalid_id',
 					__( 'Invalid notification ID.', 'buddypress' ),
@@ -418,8 +417,8 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param BP_Notifications_Notification $notification The updated notification.
-		 * @param WP_REST_Response            $response    The response data.
-		 * @param WP_REST_Request             $request     The request sent to the API.
+		 * @param WP_REST_Response              $response     The response data.
+		 * @param WP_REST_Request               $request      The request sent to the API.
 		 */
 		do_action( 'bp_rest_notifications_update_item', $notification, $response, $request );
 
@@ -552,8 +551,8 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param WP_REST_Response            $response    The response data.
-		 * @param WP_REST_Request             $request     Request used to generate the response.
+		 * @param WP_REST_Response              $response     The response data.
+		 * @param WP_REST_Request               $request      Request used to generate the response.
 		 * @param BP_Notifications_Notification $notification Notification object.
 		 */
 		return apply_filters( 'bp_rest_notifications_prepare_value', $response, $request, $notification );
@@ -683,27 +682,23 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		}
 
 		// Moderators as well.
-		if ( bp_current_user_can( 'bp_moderate' ) ) {
-			return true;
-		}
-
-		return false;
+		return bp_current_user_can( 'bp_moderate' );
 	}
 
 	/**
-	 * Get notification object.
+	 * Get a notification object.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  WP_REST_Request $request Full details about the request.
+	 * @param  int|WP_REST_Request $request Full details about the request or an integer.
 	 * @return BP_Notifications_Notification|string A notification object|Empty string.
 	 */
 	public function get_notification_object( $request ) {
-		$notification_id = is_numeric( $request ) ? $request : (int) $request['id'];
+		$notification_id = is_numeric( $request ) ? $request : $request->get_param( 'id' );
+		$notification    = bp_notifications_get_notification( absint( $notification_id ) );
 
-		$notification = bp_notifications_get_notification( $notification_id );
-
-		if ( empty( $notification->id ) ) {
+		// Inexistent notification objects return the id being checked, so confirm another field is present.
+		if ( empty( $notification->id ) || is_null( $notification->item_id ) ) {
 			return '';
 		}
 
