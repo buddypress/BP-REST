@@ -189,7 +189,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		);
 
 		if ( is_user_logged_in() ) {
-			$user = bp_rest_get_user( $request['user_id'] );
+			$user = bp_rest_get_user( $request->get_param( 'user_id' ) );
 
 			if ( ! $user instanceof WP_User ) {
 				$retval = new WP_Error(
@@ -232,8 +232,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_item( $request ) {
-		$thread = $this->get_thread_object( $request['id'] );
-
+		$thread = $this->get_thread_object( $request->get_param( 'id' ) );
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $thread, $request )
@@ -247,9 +246,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param BP_Messages_Thread $thread  Thread object.
-		 * @param WP_REST_Response   $retval  The response data.
-		 * @param WP_REST_Request    $request The request sent to the API.
+		 * @param BP_Messages_Thread $thread   Thread object.
+		 * @param WP_REST_Response   $response The response data.
+		 * @param WP_REST_Request    $request  The request sent to the API.
 		 */
 		do_action( 'bp_rest_messages_get_item', $thread, $response, $request );
 
@@ -275,9 +274,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$retval = $error;
 
 		if ( is_user_logged_in() ) {
-			$thread = $this->get_thread_object( $request['id'] );
+			$thread = $this->get_thread_object( $request->get_param( 'id' ) );
 
-			if ( empty( $thread->thread_id ) ) {
+			if ( empty( $thread ) ) {
 				$retval = new WP_Error(
 					'bp_rest_invalid_id',
 					__( 'Sorry, this thread does not exist.', 'buddypress' ),
@@ -352,9 +351,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param BP_Messages_Thread $thread  Thread object.
-		 * @param WP_REST_Response   $retval  The response data.
-		 * @param WP_REST_Request    $request The request sent to the API.
+		 * @param BP_Messages_Thread $thread   Thread object.
+		 * @param WP_REST_Response   $response The response data.
+		 * @param WP_REST_Request    $request  The request sent to the API.
 		 */
 		do_action( 'bp_rest_messages_create_item', $thread, $response, $request );
 
@@ -424,7 +423,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		// Get the thread.
-		$thread = $this->get_thread_object( $request['id'] );
+		$thread = $this->get_thread_object( $request->get_param( 'id' ) );
 		$error  = new WP_Error(
 			'bp_rest_messages_update_failed',
 			__( 'There was an error trying to update the message.', 'buddypress' ),
@@ -433,14 +432,23 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		if ( ! $thread->thread_id ) {
-			return $error;
+		// Is someone updating the thread status?
+		$thread_status_update = $request->get_param( 'read' ) || $request->get_param( 'unread' );
+
+		// Mark thread as read.
+		if ( true === $request->get_param( 'read' ) ) {
+			messages_mark_thread_read( $thread->thread_id );
+		}
+
+		// Mark thread as unread.
+		if ( true === $request->get_param( 'unread' ) ) {
+			messages_mark_thread_unread( $thread->thread_id );
 		}
 
 		// By default use the last message.
 		$message_id = $thread->last_message_id;
-		if ( $request['message_id'] ) {
-			$message_id = $request['message_id'];
+		if ( $request->get_param( 'message_id' ) ) {
+			$message_id = $request->get_param( 'message_id' );
 		}
 
 		$updated_message = wp_list_filter( $thread->messages, array( 'id' => $message_id ) );
@@ -454,7 +462,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 * @param boolean             $value           Whether the user can edit the message meta.
 		 *                                             By default: only the sender and a community moderator can.
 		 * @param BP_Messages_Message $updated_message The updated message object.
-		 * @param WP_REST_Request     $request         The request sent to the API.
+		 * @param WP_REST_Request     $request         Full details about the request.
 		 */
 		$can_edit_item_meta = apply_filters(
 			'bp_rest_messages_can_edit_item_meta',
@@ -464,7 +472,14 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		);
 
 		// The message must exist in the thread, and the logged in user must be the sender.
-		if ( ! isset( $updated_message->id ) || ! $updated_message->id || ! $can_edit_item_meta ) {
+		if (
+			false === $thread_status_update
+			&& (
+				! isset( $updated_message->id )
+				|| ! $updated_message->id
+				|| ! $can_edit_item_meta
+			)
+		) {
 			return $error;
 		}
 
@@ -473,6 +488,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			return $fields_update;
 		}
 
+		// Get the updated thread object.
+		$thread = $this->get_thread_object( $request->get_param( 'id' ) );
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $thread, $request )
@@ -526,7 +543,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_starred( $request ) {
-		$message = $this->get_message_object( $request['id'] );
+		$message = $this->get_message_object( $request->get_param( 'id' ) );
 
 		if ( empty( $message->id ) ) {
 			return new WP_Error(
@@ -640,12 +657,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		// Get the thread before it's deleted.
-		$thread   = $this->get_thread_object( $request['id'] );
+		$thread   = $this->get_thread_object( $request->get_param( 'id' ) );
 		$previous = $this->prepare_item_for_response( $thread, $request );
 
 		$user_id = bp_loggedin_user_id();
-		if ( ! empty( $request['user_id'] ) ) {
-			$user_id = $request['user_id'];
+		if ( ! empty( $request->get_param( 'user_id' ) ) ) {
+			$user_id = $request->get_param( 'user_id' );
 		}
 
 		// Check the user is one of the recipients.
@@ -676,7 +693,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param BP_Messages_Thread $thread   Thread object.
+		 * @param BP_Messages_Thread $thread   The thread object.
 		 * @param WP_REST_Response   $response The response data.
 		 * @param WP_REST_Request    $request  The request sent to the API.
 		 */
@@ -908,7 +925,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		}
 
 		// Loop through recipients to prepare them for the response.
-		foreach ( $thread->recipients as $recipient ) {
+		foreach ( $thread->get_recipients() as $recipient ) {
 			$data['recipients'][ $recipient->user_id ] = $this->prepare_recipient_for_response( $recipient, $request );
 		}
 
@@ -978,27 +995,39 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Get thread object.
+	 * Get the thread object.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param int $thread_id Thread ID.
-	 * @return BP_Messages_Thread
+	 * @return BP_Messages_Thread|empty
 	 */
 	public function get_thread_object( $thread_id ) {
-		return new BP_Messages_Thread( (int) $thread_id );
+		$thread_object = new BP_Messages_Thread( (int) $thread_id );
+
+		if ( false === (bool) $thread_object::is_valid( $thread_id ) ) {
+			return '';
+		}
+
+		return $thread_object;
 	}
 
 	/**
-	 * Get the message object thanks to its ID.
+	 * Get the message object.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param int $message_id Message ID.
-	 * @return BP_Messages_Message
+	 * @return BP_Messages_Message|empty
 	 */
 	public function get_message_object( $message_id ) {
-		return new BP_Messages_Message( (int) $message_id );
+		$message_object = new BP_Messages_Message( (int) $message_id );
+
+		if ( empty( $message_object->id ) ) {
+			return '';
+		}
+
+		return $message_object;
 	}
 
 	/**
@@ -1055,6 +1084,24 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 			if ( WP_REST_Server::EDITABLE === $method ) {
 				$key = 'update_item';
+
+				$args['read'] = array(
+					'description'       => __( 'Whether to mark the thread as read.', 'buddypress' ),
+					'required'          => false,
+					'default'           => false,
+					'type'              => 'boolean',
+					'sanitize_callback' => 'rest_sanitize_boolean',
+					'validate_callback' => 'rest_validate_request_arg',
+				);
+
+				$args['unread'] = array(
+					'description'       => __( 'Whether to mark the thread as unread.', 'buddypress' ),
+					'required'          => false,
+					'default'           => false,
+					'type'              => 'boolean',
+					'sanitize_callback' => 'rest_sanitize_boolean',
+					'validate_callback' => 'rest_validate_request_arg',
+				);
 
 				$args['message_id'] = array(
 					'description'       => __( 'By default the latest message of the thread will be updated. Specify this message ID to edit another message of the thread.', 'buddypress' ),
