@@ -130,17 +130,17 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'exclude'           => $request['exclude'],
-			'in'                => $request['include'],
-			'page'              => $request['page'],
-			'per_page'          => $request['per_page'],
-			'search_terms'      => $request['search'],
-			'sort'              => $request['order'],
-			'spam'              => $request['status'],
-			'display_comments'  => $request['display_comments'],
-			'site_id'           => $request['site_id'],
-			'group_id'          => $request['group_id'],
-			'scope'             => $request['scope'],
+			'exclude'           => $request->get_param( 'exclude' ),
+			'in'                => $request->get_param( 'include' ),
+			'page'              => $request->get_param( 'page' ),
+			'per_page'          => $request->get_param( 'per_page' ),
+			'search_terms'      => $request->get_param( 'search' ),
+			'sort'              => $request->get_param( 'order' ),
+			'spam'              => $request->get_param( 'status' ),
+			'display_comments'  => $request->get_param( 'display_comments' ),
+			'site_id'           => $request->get_param( 'site_id' ),
+			'group_id'          => $request->get_param( 'group_id' ),
+			'scope'             => $request->get_param( 'scope' ),
 			'count_total'       => true,
 			'fields'            => 'all',
 			'show_hidden'       => false,
@@ -152,20 +152,20 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$args['display_comments'] = false;
 		}
 
-		if ( empty( $request['exclude'] ) ) {
+		if ( empty( $request->get_param( 'exclude' ) ) ) {
 			$args['exclude'] = false;
 		}
 
-		if ( empty( $request['include'] ) ) {
+		if ( empty( $request->get_param( 'include' ) ) ) {
 			$args['in'] = false;
 		}
 
-		if ( isset( $request['after'] ) ) {
-			$args['since'] = $request['after'];
+		if ( ! empty( $request->get_param( 'after' ) ) ) {
+			$args['since'] = $request->get_param( 'after' );
 		}
 
-		if ( ! empty( $request['user_id'] ) ) {
-			$args['filter']['user_id'] = $request['user_id'];
+		if ( ! empty( $request->get_param( 'user_id' ) ) ) {
+			$args['filter']['user_id'] = $request->get_param( 'user_id' );
 		}
 
 		$item_id = 0;
@@ -173,8 +173,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$args['filter']['object']     = 'groups';
 			$args['filter']['primary_id'] = $args['group_id'];
 
-			if ( empty( $request['component'] ) ) {
-				$request['component'] = 'groups';
+			if ( empty( $request->get_param( 'component' ) ) ) {
+				$request->set_param( 'component', 'groups' );
 			}
 
 			$item_id = $args['group_id'];
@@ -188,33 +188,33 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( empty( $args['group_id'] ) && empty( $args['site_id'] ) ) {
-			if ( ! empty( $request['component'] ) ) {
-				$args['filter']['object'] = $request['component'];
+			if ( ! empty( $request->get_param( 'component' ) ) ) {
+				$args['filter']['object'] = $request->get_param( 'component' );
 			}
 
-			if ( ! empty( $request['primary_id'] ) ) {
-				$item_id                      = $request['primary_id'];
+			if ( ! empty( $request->get_param( 'primary_id' ) ) ) {
+				$item_id                      = $request->get_param( 'primary_id' );
 				$args['filter']['primary_id'] = $item_id;
 			}
 		}
 
-		if ( empty( $request['scope'] ) ) {
+		if ( empty( $request->get_param( 'scope' ) ) ) {
 			$args['scope'] = false;
 		}
 
-		if ( isset( $request['type'] ) ) {
-			$args['filter']['action'] = $request['type'];
+		if ( ! empty( $request->get_param( 'type' ) ) ) {
+			$args['filter']['action'] = $request->get_param( 'type' );
 		}
 
-		if ( ! empty( $request['secondary_id'] ) ) {
-			$args['filter']['secondary_id'] = $request['secondary_id'];
+		if ( ! empty( $request->get_param( 'secondary_id' ) ) ) {
+			$args['filter']['secondary_id'] = $request->get_param( 'secondary_id' );
 		}
 
 		if ( $args['in'] ) {
 			$args['count_total'] = false;
 		}
 
-		if ( $this->show_hidden( $request['component'], $item_id ) ) {
+		if ( $this->show_hidden( $request->get_param( 'component' ), $item_id ) ) {
 			$args['show_hidden'] = true;
 		}
 
@@ -224,7 +224,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param array           $args    Key value array of query var to query value.
-		 * @param WP_REST_Request $request The request sent to the API.
+		 * @param WP_REST_Request $request Full data about the request.
 		 */
 		$args = apply_filters( 'bp_rest_activity_get_items_query_args', $args, $request );
 
@@ -248,7 +248,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array            $activities Fetched activities.
 		 * @param WP_REST_Response $response   The response data.
-		 * @param WP_REST_Request  $request    The request sent to the API.
+		 * @param WP_REST_Request  $request    Full data about the request.
 		 */
 		do_action( 'bp_rest_activity_get_items', $activities, $response, $request );
 
@@ -271,7 +271,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param true|WP_Error   $retval  Returned value.
-		 * @param WP_REST_Request $request The request sent to the API.
+		 * @param WP_REST_Request $request Full data about the request.
 		 */
 		return apply_filters( 'bp_rest_activity_get_items_permissions_check', true, $request );
 	}
@@ -362,7 +362,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	public function create_item( $request ) {
 		$request->set_param( 'context', 'edit' );
 
-		if ( empty( $request['content'] ) ) {
+		if ( empty( $request->get_param( 'content' ) ) ) {
 			return new WP_Error(
 				'bp_rest_create_activity_empty_content',
 				__( 'Please, enter some content.', 'buddypress' ),
@@ -376,11 +376,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 
 		// Fallback for the activity_update type.
 		$type = 'activity_update';
-		if ( ! empty( $request['type'] ) ) {
-			$type = $request['type'];
+		if ( ! empty( $request->get_param( 'type' ) ) ) {
+			$type = $request->get_param( 'type' );
 		}
 
-		$prime       = $request['primary_item_id'];
+		$prime       = $request->get_param( 'primary_item_id' );
 		$activity_id = 0;
 
 		// Post a regular activity update.
@@ -400,8 +400,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			}
 
 			// ID of a parent comment.
-			if ( isset( $request['secondary_item_id'] ) ) {
-				$prepared_activity->parent_id = (int) $request['secondary_item_id'];
+			if ( ! empty( $request->get_param( 'secondary_item_id' ) ) ) {
+				$prepared_activity->parent_id = $request->get_param( 'secondary_item_id' );
 			}
 
 			$activity_id = bp_activity_new_comment( $prepared_activity );
@@ -520,7 +520,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	public function update_item( $request ) {
 		$request->set_param( 'context', 'edit' );
 
-		if ( empty( $request['content'] ) ) {
+		if ( empty( $request->get_param( 'content' ) ) ) {
 			return new WP_Error(
 				'bp_rest_update_activity_empty_content',
 				__( 'Please, enter some content.', 'buddypress' ),
@@ -924,7 +924,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$comment_count         = wp_filter_object_list( $activity->children, array( 'type' => 'activity_comment' ), 'AND', 'id' );
 			$data['comment_count'] = ! empty( $comment_count ) ? count( $comment_count ) : 0;
 
-			if ( ! empty( $schema['properties']['comments'] ) && 'threaded' === $request['display_comments'] ) {
+			if ( ! empty( $schema['properties']['comments'] ) && 'threaded' === $request->get_param( 'display_comments' ) ) {
 				$data['comments'] = $this->prepare_activity_comments( $activity->children, $request );
 			}
 		}
@@ -947,7 +947,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
@@ -971,8 +971,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  array           $comments Comments.
-	 * @param  WP_REST_Request $request Full details about the request.
+	 * @param  array           $comments Array of comments.
+	 * @param  WP_REST_Request $request  Full details about the request.
 	 * @return array           An array of activity comments.
 	 */
 	protected function prepare_activity_comments( $comments, $request ) {
@@ -993,9 +993,9 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array           $data     An array of activity comments.
-		 * @param array           $comments Comments.
-		 * @param WP_REST_Request $request  Request used to generate the response.
+		 * @param array           $data     An array of activity comments with proper API response.
+		 * @param array           $comments An array of activity comments.
+		 * @param WP_REST_Request $request  Full details about the request.
 		 */
 		return apply_filters( 'bp_rest_activity_prepare_comments', $data, $comments, $request );
 	}
@@ -1005,7 +1005,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Request object.
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return stdClass|WP_Error Object or WP_Error.
 	 */
 	protected function prepare_item_for_database( $request ) {
@@ -1016,7 +1016,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( ! empty( $schema['properties']['id'] ) && ! empty( $activity->id ) ) {
 			$prepared_activity->id = $activity->id;
 
-			if ( 'activity_comment' !== $request['type'] ) {
+			if ( 'activity_comment' !== $request->get_param( 'type' ) ) {
 				$prepared_activity->error_type = 'wp_error';
 			}
 		}
@@ -1029,15 +1029,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// Activity component.
-		if ( ! empty( $schema['properties']['component'] ) && isset( $request['component'] ) ) {
-			$prepared_activity->component = $request['component'];
+		if ( ! empty( $schema['properties']['component'] ) && ! empty( $request->get_param( 'component' ) ) ) {
+			$prepared_activity->component = $request->get_param( 'component' );
 		} else {
 			$prepared_activity->component = buddypress()->activity->id;
 		}
 
 		// Activity Item ID.
-		if ( ! empty( $schema['properties']['primary_item_id'] ) && isset( $request['primary_item_id'] ) ) {
-			$item_id = (int) $request['primary_item_id'];
+		if ( ! empty( $schema['properties']['primary_item_id'] ) && ! empty( $request->get_param( 'primary_item_id' ) ) ) {
+			$item_id = (int) $request->get_param( 'primary_item_id' );
 
 			// Set the group ID of the activity.
 			if ( bp_is_active( 'groups' ) && isset( $prepared_activity->component ) && buddypress()->groups->id === $prepared_activity->component ) {
@@ -1050,27 +1050,27 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// Secondary Item ID.
-		if ( ! empty( $schema['properties']['secondary_item_id'] ) && isset( $request['secondary_item_id'] ) ) {
-			$prepared_activity->secondary_item_id = (int) $request['secondary_item_id'];
+		if ( ! empty( $schema['properties']['secondary_item_id'] ) && ! empty( $request->get_param( 'secondary_item_id' ) ) ) {
+			$prepared_activity->secondary_item_id = (int) $request->get_param( 'secondary_item_id' );
 		}
 
 		// Activity type.
-		if ( ! empty( $schema['properties']['type'] ) && isset( $request['type'] ) ) {
-			$prepared_activity->type = $request['type'];
+		if ( ! empty( $schema['properties']['type'] ) && ! empty( $request->get_param( 'type' ) ) ) {
+			$prepared_activity->type = $request->get_param( 'type' );
 		}
 
 		// Activity content.
-		if ( ! empty( $schema['properties']['content'] ) && isset( $request['content'] ) ) {
-			if ( is_string( $request['content'] ) ) {
-				$prepared_activity->content = $request['content'];
+		if ( ! empty( $schema['properties']['content'] ) && ! empty( $request->get_param( 'content' ) ) ) {
+			if ( is_string( $request->get_param( 'content' ) ) ) {
+				$prepared_activity->content = $request->get_param( 'content' );
 			} elseif ( isset( $request['content']['raw'] ) ) {
 				$prepared_activity->content = $request['content']['raw'];
 			}
 		}
 
 		// Activity Sitewide visibility.
-		if ( ! empty( $schema['properties']['hidden'] ) && isset( $request['hidden'] ) ) {
-			$prepared_activity->hide_sitewide = (bool) $request['hidden'];
+		if ( ! empty( $schema['properties']['hidden'] ) && ! empty( $request->get_param( 'hidden' ) ) ) {
+			$prepared_activity->hide_sitewide = (bool) $request->get_param( 'hidden' );
 		}
 
 		/**
@@ -1186,7 +1186,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  string $component The activity component.
+	 * @param  string $component The component the activity is from.
 	 * @param  int    $item_id   The activity item ID.
 	 * @return boolean
 	 */
@@ -1225,7 +1225,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return BP_Activity_Activity|string An activity object.
 	 */
 	public function get_activity_object( $request ) {
-		$activity_id = is_numeric( $request ) ? $request : (int) $request['id'];
+		$activity_id = is_numeric( $request ) ? $request : (int) $request->get_param( 'id' );
 
 		$activity = bp_activity_get_specific(
 			array(

@@ -163,23 +163,6 @@ function bp_rest() {
 add_action( 'bp_rest_api_init', 'bp_rest', 5 );
 
 /**
- * Load functions so that they can also be used out of a REST request.
- *
- * @since 0.1.0
- */
-add_action(
-	'bp_include',
-	function() {
-		// BuddyPress is already including the needed functions.
-		if ( function_exists( 'bp_rest_namespace' ) ) {
-			return;
-		}
-
-		require_once dirname( __FILE__ ) . '/includes/functions.php';
-	}
-);
-
-/**
  * Filter the Blog url in the WP_REST_Request::from_url().
  *
  * @param WP_REST_Request $request Request used to generate the response.
