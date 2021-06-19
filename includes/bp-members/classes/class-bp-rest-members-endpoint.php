@@ -101,36 +101,36 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'type'            => $request['type'],
-			'user_id'         => $request['user_id'],
-			'user_ids'        => $request['user_ids'],
-			'xprofile_query'  => $request['xprofile'],
-			'include'         => $request['include'],
-			'exclude'         => $request['exclude'],
-			'populate_extras' => $request['populate_extras'],
-			'member_type'     => $request['member_type'],
-			'search_terms'    => $request['search'],
-			'per_page'        => $request['per_page'],
-			'page'            => $request['page'],
+			'type'            => $request->get_param( 'type' ),
+			'user_id'         => $request->get_param( 'user_id' ),
+			'user_ids'        => $request->get_param( 'user_ids' ),
+			'xprofile_query'  => $request->get_param( 'xprofile' ),
+			'include'         => $request->get_param( 'include' ),
+			'exclude'         => $request->get_param( 'exclude' ),
+			'populate_extras' => $request->get_param( 'populate_extras' ),
+			'member_type'     => $request->get_param( 'member_type' ),
+			'search_terms'    => $request->get_param( 'search' ),
+			'per_page'        => $request->get_param( 'per_page' ),
+			'page'            => $request->get_param( 'page' ),
 		);
 
-		if ( empty( $request['user_ids'] ) ) {
+		if ( empty( $request->get_param( 'user_ids' ) ) ) {
 			$args['user_ids'] = false;
 		}
 
-		if ( empty( $request['exclude'] ) ) {
+		if ( empty( $request->get_param( 'exclude' ) ) ) {
 			$args['exclude'] = false;
 		}
 
-		if ( empty( $request['include'] ) ) {
+		if ( empty( $request->get_param( 'include' ) ) ) {
 			$args['include'] = false;
 		}
 
-		if ( empty( $request['xprofile'] ) ) {
+		if ( empty( $request->get_param( 'xprofile' ) ) ) {
 			$args['xprofile_query'] = false;
 		}
 
-		if ( empty( $request['member_type'] ) ) {
+		if ( empty( $request->get_param( 'member_type' ) ) ) {
 			$args['member_type'] = '';
 		}
 
@@ -206,9 +206,9 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
 	 */
 	public function get_item( $request ) {
-		if ( true === $request['populate_extras'] ) {
+		if ( true === $request->get_param( 'populate_extras' ) ) {
 			$args = array(
-				'user_ids'        => array( $request['id'] ),
+				'user_ids'        => array( $request->get_param( 'id' ) ),
 				'populate_extras' => true,
 			);
 
@@ -242,7 +242,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			)
 		);
 
-		$user = bp_rest_get_user( $request['id'] );
+		$user = bp_rest_get_user( $request->get_param( 'id' ) );
 
 		if ( ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
@@ -252,7 +252,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'status' => 404,
 				)
 			);
-		} elseif ( 'edit' === $request['context'] ) {
+		} elseif ( 'edit' === $request->get_param( 'context' ) ) {
 			if ( get_current_user_id() === $user->ID || bp_current_user_can( 'list_users' ) ) {
 				$retval = true;
 			} else {
@@ -319,8 +319,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		);
 		$retval = $error;
 
-		$user             = bp_rest_get_user( $request['id'] );
-		$member_type_edit = isset( $request['member_type'] );
+		$user             = bp_rest_get_user( $request->get_param( 'id' ) );
+		$member_type_edit = ! empty( $request->get_param( 'member_type' ) );
 
 		if ( ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
@@ -441,7 +441,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $user, $request ) {
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 		$data     = $this->user_data( $user, $context, $request );
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
@@ -598,8 +598,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$prepared_user = parent::prepare_item_for_database( $request );
 
 		// The parent class uses username instead of user_login.
-		if ( ! isset( $prepared_user->user_login ) && isset( $request['user_login'] ) ) {
-			$prepared_user->user_login = $request['user_login'];
+		if ( ! isset( $prepared_user->user_login ) && ! empty( $request->get_param( 'user_login' ) ) ) {
+			$prepared_user->user_login = $request->get_param( 'user_login' );
 		}
 
 		/**
@@ -612,12 +612,12 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		// Set member type.
-		if ( isset( $prepared_user->ID ) && isset( $request['member_type'] ) ) {
+		if ( isset( $prepared_user->ID ) && ! empty( $request->get_param( 'member_type' ) ) ) {
 
 			// Append on update. Add on creation.
 			$append = WP_REST_Server::EDITABLE === $request->get_method();
 
-			bp_set_member_type( $prepared_user->ID, $request['member_type'], $append );
+			bp_set_member_type( $prepared_user->ID, $request->get_param( 'member_type' ), $append );
 		}
 
 		/**

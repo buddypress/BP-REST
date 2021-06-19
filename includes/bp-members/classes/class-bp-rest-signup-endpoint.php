@@ -124,15 +124,15 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'include'    => $request['include'],
-			'order'      => $request['order'],
-			'orderby'    => $request['orderby'],
-			'user_login' => $request['user_login'],
-			'number'     => $request['number'],
-			'offset'     => $request['offset'],
+			'include'    => $request->get_param( 'include' ),
+			'order'      => $request->get_param( 'order' ),
+			'orderby'    => $request->get_param( 'orderby' ),
+			'user_login' => $request->get_param( 'user_login' ),
+			'number'     => $request->get_param( 'number' ),
+			'offset'     => $request->get_param( 'offset' ),
 		);
 
-		if ( empty( $request['include'] ) ) {
+		if ( empty( $request->get_param( 'include' ) ) ) {
 			$args['include'] = false;
 		}
 
@@ -231,8 +231,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item( $request ) {
 		// Get signup.
-		$signup = $this->get_signup_object( $request['id'] );
-
+		$signup = $this->get_signup_object( $request->get_param( 'id' ) );
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $signup, $request )
@@ -267,7 +266,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$retval = $this->get_items_permissions_check( $request );
 
 		if ( ! is_wp_error( $retval ) ) {
-			$signup = $this->get_signup_object( $request['id'] );
+			$signup = $this->get_signup_object( $request->get_param( 'id' ) );
 
 			if ( empty( $signup ) ) {
 				$retval = new WP_Error(
@@ -303,7 +302,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		// Validate user signup.
-		$signup_validation = bp_core_validate_user_signup( $request['user_login'], $request['user_email'] );
+		$signup_validation = bp_core_validate_user_signup( $request->get_param( 'user_login' ), $request->get_param( 'user_email' ) );
 		if ( is_wp_error( $signup_validation['errors'] ) && $signup_validation['errors']->get_error_messages() ) {
 			// Return the first error.
 			return new WP_Error(
@@ -522,7 +521,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		// Get the signup before it's deleted.
-		$signup   = $this->get_signup_object( $request['id'] );
+		$signup   = $this->get_signup_object( $request->get_param( 'id' ) );
 		$previous = $this->prepare_item_for_response( $signup, $request );
 		$deleted  = BP_Signup::delete( array( $signup->id ) );
 
@@ -688,7 +687,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			$data['user_name'] = $signup->user_name;
 		}
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 
 		if ( 'edit' === $context ) {
 			$data['activation_key'] = $signup->activation_key;

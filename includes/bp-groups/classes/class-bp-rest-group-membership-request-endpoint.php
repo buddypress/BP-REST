@@ -123,10 +123,10 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'item_id'  => $request['group_id'],
-			'user_id'  => $request['user_id'],
-			'per_page' => $request['per_page'],
-			'page'     => $request['page'],
+			'item_id'  => $request->get_param( 'group_id' ),
+			'user_id'  => $request->get_param( 'user_id' ),
+			'per_page' => $request->get_param( 'per_page' ),
+			'page'     => $request->get_param( 'page' ),
 		);
 
 		// If the query is not restricted by group or user, limit it to the current user, if not an admin.
@@ -187,11 +187,11 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			)
 		);
 		$user_id     = bp_loggedin_user_id();
-		$user_id_arg = $request['user_id'];
-		$group       = $this->groups_endpoint->get_group_object( $request['group_id'] );
+		$user_id_arg = $request->get_param( 'user_id' );
+		$group       = $this->groups_endpoint->get_group_object( $request->get_param( 'group_id' ) );
 
 		// If the query is not restricted by group or user, limit it to the current user, if not an admin.
-		if ( ! $request['group_id'] && ! $request['user_id'] && ! bp_current_user_can( 'bp_moderate' ) ) {
+		if ( ! $request->get_param( 'group_id' ) && ! $request->get_param( 'user_id' ) && ! bp_current_user_can( 'bp_moderate' ) ) {
 			$user_id_arg = $user_id;
 		}
 		$user = bp_rest_get_user( $user_id_arg );
@@ -204,7 +204,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 					'status' => rest_authorization_required_code(),
 				)
 			);
-		} elseif ( $request['group_id'] && ! $group instanceof BP_Groups_Group ) {
+		} elseif ( $request->get_param( 'group_id' ) && ! $group instanceof BP_Groups_Group ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
 				__( 'Invalid group ID.', 'buddypress' ),
@@ -220,7 +220,11 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 					'status' => 404,
 				)
 			);
-		} elseif ( bp_current_user_can( 'bp_moderate' ) || ( $request['group_id'] && groups_is_user_admin( $user_id, $request['group_id'] ) ) || $user_id_arg === $user_id ) {
+		} elseif (
+			bp_current_user_can( 'bp_moderate' )
+			|| ( $request->get_param( 'group_id' ) && groups_is_user_admin( $user_id, $request->get_param( 'group_id' ) ) )
+			|| $user_id_arg === $user_id
+		) {
 			$retval = true;
 		} else {
 			$retval = new WP_Error(
@@ -252,7 +256,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$group_request = $this->fetch_single_membership_request( $request['request_id'] );
+		$group_request = $this->fetch_single_membership_request( $request->get_param( 'request_id' ) );
 		$retval        = $this->prepare_response_for_collection(
 			$this->prepare_item_for_response( $group_request, $request )
 		);
@@ -290,7 +294,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			)
 		);
 		$user_id       = bp_loggedin_user_id();
-		$group_request = $this->fetch_single_membership_request( $request['request_id'] );
+		$group_request = $this->fetch_single_membership_request( $request->get_param( 'request_id' ) );
 
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
@@ -340,9 +344,9 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
-		$user_id_arg = $request['user_id'] ? $request['user_id'] : bp_loggedin_user_id();
+		$user_id_arg = ! empty( $request->get_param( 'user_id' ) ) ? $request->get_param( 'user_id' ) : bp_loggedin_user_id();
 		$user        = bp_rest_get_user( $user_id_arg );
-		$group       = $this->groups_endpoint->get_group_object( $request['group_id'] );
+		$group       = $this->groups_endpoint->get_group_object( $request->get_param( 'group_id' ) );
 
 		// Avoid duplicate requests.
 		if ( groups_check_for_membership_request( $user->ID, $group->id ) ) {
@@ -359,7 +363,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			array(
 				'group_id' => $group->id,
 				'user_id'  => $user->ID,
-				'content'  => $request['message'],
+				'content'  => $request->get_param( 'message' ),
 			)
 		);
 
@@ -419,9 +423,9 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			)
 		);
 		$user_id     = bp_loggedin_user_id();
-		$user_id_arg = $request['user_id'] ? $request['user_id'] : $user_id;
+		$user_id_arg = ! empty( $request->get_param( 'user_id' ) ) ? $request->get_param( 'user_id' ) : $user_id;
 		$user        = bp_rest_get_user( $user_id_arg );
-		$group       = $this->groups_endpoint->get_group_object( $request['group_id'] );
+		$group       = $this->groups_endpoint->get_group_object( $request->get_param( 'group_id' ) );
 
 		// User must be logged in.
 		if ( ! is_user_logged_in() ) {
@@ -480,7 +484,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$group_request = $this->fetch_single_membership_request( $request['request_id'] );
+		$group_request = $this->fetch_single_membership_request( $request->get_param( 'request_id' ) );
 		$success       = groups_accept_membership_request( false, $group_request->user_id, $group_request->item_id );
 		if ( ! $success ) {
 			return new WP_Error(
@@ -538,7 +542,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			)
 		);
 		$user_id       = bp_loggedin_user_id();
-		$group_request = $this->fetch_single_membership_request( $request['request_id'] );
+		$group_request = $this->fetch_single_membership_request( $request->get_param( 'request_id' ) );
 
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
@@ -593,7 +597,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		// Get invite.
-		$group_request = $this->fetch_single_membership_request( $request['request_id'] );
+		$group_request = $this->fetch_single_membership_request( $request->get_param( 'request_id' ) );
 
 		// Set the invite response before it is deleted.
 		$previous = $this->prepare_item_for_response( $group_request, $request );
@@ -666,7 +670,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			)
 		);
 		$user_id       = bp_loggedin_user_id();
-		$group_request = $this->fetch_single_membership_request( $request['request_id'] );
+		$group_request = $this->fetch_single_membership_request( $request->get_param( 'request_id' ) );
 
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
@@ -731,7 +735,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
