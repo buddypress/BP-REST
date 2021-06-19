@@ -74,9 +74,9 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'type'     => $request['type'],
-			'status'   => $request['status'],
-			'per_page' => $request['per_page'],
+			'type'     => $request->get_param( 'type' ),
+			'status'   => $request->get_param( 'status' ),
+			'per_page' => $request->get_param( 'per_page' ),
 		);
 
 		/**
@@ -191,7 +191,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$component = $request['name'];
+		$component = $request->get_param( 'name' );
 
 		if ( ! $this->component_exists( $component ) ) {
 			return new WP_Error(
@@ -203,7 +203,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		if ( 'activate' === $request['action'] ) {
+		if ( 'activate' === $request->get_param( 'action' ) ) {
 			if ( bp_is_active( $component ) ) {
 				return new WP_Error(
 					'bp_rest_component_already_active',
@@ -293,7 +293,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $component, $request ) {
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 		$data     = $this->add_additional_fields_to_object( $component, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
