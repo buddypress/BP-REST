@@ -99,20 +99,20 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'user_id'           => $request['user_id'],
-			'user_ids'          => $request['user_ids'],
-			'item_id'           => $request['item_id'],
-			'secondary_item_id' => $request['secondary_item_id'],
-			'component_name'    => $request['component_name'],
-			'component_action'  => $request['component_action'],
-			'order_by'          => $request['order_by'],
-			'sort_order'        => strtoupper( $request['sort_order'] ),
-			'is_new'            => $request['is_new'],
-			'page'              => $request['page'],
-			'per_page'          => $request['per_page'],
+			'user_id'           => $request->get_param( 'user_id' ),
+			'user_ids'          => $request->get_param( 'user_ids' ),
+			'item_id'           => $request->get_param( 'item_id' ),
+			'secondary_item_id' => $request->get_param( 'secondary_item_id' ),
+			'component_name'    => $request->get_param( 'component_name' ),
+			'component_action'  => $request->get_param( 'component_action' ),
+			'order_by'          => $request->get_param( 'order_by' ),
+			'sort_order'        => strtoupper( $request->get_param( 'sort_order' ) ),
+			'is_new'            => $request->get_param( 'is_new' ),
+			'page'              => $request->get_param( 'page' ),
+			'per_page'          => $request->get_param( 'per_page' ),
 		);
 
-		if ( empty( $request['component_action'] ) ) {
+		if ( empty( $request->get_param( 'component_action' ) ) ) {
 			$args['component_action'] = false;
 		}
 
@@ -124,7 +124,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			}
 		}
 
-		if ( empty( $request['component_name'] ) ) {
+		if ( empty( $request->get_param( 'component_name' ) ) ) {
 			$args['component_name'] = false;
 		}
 
@@ -539,7 +539,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			'is_new'            => $notification->is_new,
 		);
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
@@ -563,7 +563,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Request object.
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return stdClass
 	 */
 	protected function prepare_item_for_database( $request ) {
@@ -575,46 +575,46 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 			$prepared_notification->id = $notification->id;
 		}
 
-		if ( ! empty( $schema['properties']['user_id'] ) && isset( $request['user_id'] ) ) {
-			$prepared_notification->user_id = (int) $request['user_id'];
+		if ( ! empty( $schema['properties']['user_id'] ) && ! empty( $request->get_param( 'user_id' ) ) ) {
+			$prepared_notification->user_id = (int) $request->get_param( 'user_id' );
 		} elseif ( isset( $notification->user_id ) ) {
 			$prepared_notification->user_id = $notification->user_id;
 		} else {
 			$prepared_notification->user_id = bp_loggedin_user_id();
 		}
 
-		if ( ! empty( $schema['properties']['item_id'] ) && isset( $request['item_id'] ) ) {
-			$prepared_notification->item_id = $request['item_id'];
+		if ( ! empty( $schema['properties']['item_id'] ) && ! empty( $request->get_param( 'item_id' ) ) ) {
+			$prepared_notification->item_id = $request->get_param( 'item_id' );
 		} elseif ( isset( $notification->item_id ) ) {
 			$prepared_notification->item_id = $notification->item_id;
 		}
 
-		if ( ! empty( $schema['properties']['secondary_item_id'] ) && isset( $request['secondary_item_id'] ) ) {
-			$prepared_notification->secondary_item_id = $request['secondary_item_id'];
+		if ( ! empty( $schema['properties']['secondary_item_id'] ) && ! empty( $request->get_param( 'secondary_item_id' ) ) ) {
+			$prepared_notification->secondary_item_id = $request->get_param( 'secondary_item_id' );
 		} elseif ( isset( $notification->secondary_item_id ) ) {
 			$prepared_notification->secondary_item_id = $notification->secondary_item_id;
 		}
 
-		if ( ! empty( $schema['properties']['component'] ) && isset( $request['component'] ) ) {
-			$prepared_notification->component_name = $request['component'];
+		if ( ! empty( $schema['properties']['component'] ) && ! empty( $request->get_param( 'component' ) ) ) {
+			$prepared_notification->component_name = $request->get_param( 'component' );
 		} elseif ( isset( $notification->component_name ) ) {
 			$prepared_notification->component_name = $notification->component_name;
 		}
 
-		if ( ! empty( $schema['properties']['action'] ) && isset( $request['action'] ) ) {
-			$prepared_notification->component_action = $request['action'];
+		if ( ! empty( $schema['properties']['action'] ) && ! empty( $request->get_param( 'action' ) ) ) {
+			$prepared_notification->component_action = $request->get_param( 'action' );
 		} elseif ( isset( $notification->component_action ) ) {
 			$prepared_notification->component_action = $notification->component_action;
 		}
 
-		if ( ! empty( $schema['properties']['is_new'] ) && isset( $request['is_new'] ) ) {
-			$prepared_notification->is_new = $request['is_new'];
+		if ( ! empty( $schema['properties']['is_new'] ) && ! empty( $request->get_param( 'is_new' ) ) ) {
+			$prepared_notification->is_new = $request->get_param( 'is_new' );
 		} elseif ( isset( $notification->is_new ) ) {
 			$prepared_notification->is_new = $notification->is_new;
 		}
 
-		if ( ! empty( $schema['properties']['date'] ) && isset( $request['date'] ) ) {
-			$prepared_notification->date_notified = $request['date'];
+		if ( ! empty( $schema['properties']['date'] ) && ! empty( $request->get_param( 'date' ) ) ) {
+			$prepared_notification->date_notified = $request->get_param( 'date' );
 		} elseif ( isset( $notification->date_notified ) ) {
 			$prepared_notification->date_notified = $notification->date_notified;
 		}
@@ -625,7 +625,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param stdClass        $prepared_notification An object prepared for inserting or updating the database.
-		 * @param WP_REST_Request $request Request object.
+		 * @param WP_REST_Request $request               Full details about the request.
 		 */
 		return apply_filters( 'bp_rest_notifications_pre_insert_value', $prepared_notification, $request );
 	}
