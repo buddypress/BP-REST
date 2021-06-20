@@ -113,11 +113,11 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'item_id'     => $request['group_id'],
-			'user_id'     => $request['user_id'],
-			'invite_sent' => $request['invite_sent'],
-			'per_page'    => $request['per_page'],
-			'page'        => $request['page'],
+			'item_id'     => $request->get_param( 'group_id' ),
+			'user_id'     => $request->get_param( 'user_id' ),
+			'invite_sent' => $request->get_param( 'invite_sent' ),
+			'per_page'    => $request->get_param( 'per_page' ),
+			'page'        => $request->get_param( 'page' ),
 		);
 
 		/**
@@ -125,8 +125,8 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		 * but if it is zero for invitations, we can safely ignore it and should.
 		 * So, only apply non-zero inviter_ids.
 		 */
-		if ( $request['inviter_id'] ) {
-			$args['inviter_id'] = $request['inviter_id'];
+		if ( $request->get_param( 'inviter_id' ) ) {
+			$args['inviter_id'] = $request->get_param( 'inviter_id' );
 		}
 
 		// If the query is not restricted by group, user or inviter, limit it to the current user, if not an admin.
@@ -190,10 +190,10 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			)
 		);
 		$retval          = $error;
-		$group_id        = (int) $request['group_id'];
+		$group_id        = (int) $request->get_param( 'group_id' );
 		$current_user_id = (int) bp_loggedin_user_id();
-		$user_id_arg     = (int) $request['user_id'];
-		$inviter_id      = (int) $request['inviter_id'];
+		$user_id_arg     = (int) $request->get_param( 'user_id' );
+		$inviter_id      = (int) $request->get_param( 'inviter_id' );
 
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error(
@@ -264,8 +264,8 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			} else {
 				$retval = $error;
 			}
-		} elseif ( $request['inviter_id'] ) {
-			$inviter = bp_rest_get_user( $request['inviter_id'] );
+		} elseif ( $inviter_id ) {
+			$inviter = bp_rest_get_user( $inviter_id );
 
 			// Check the inviter is valid.
 			if ( ! $inviter instanceof WP_User ) {
@@ -308,7 +308,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_item( $request ) {
-		$invite = $this->fetch_single_invite( $request['invite_id'] );
+		$invite = $this->fetch_single_invite( $request->get_param( 'invite_id' ) );
 		$retval = $this->prepare_response_for_collection(
 			$this->prepare_item_for_response( $invite, $request )
 		);
@@ -356,7 +356,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				)
 			);
 		} else {
-			$invite = $this->fetch_single_invite( $request['invite_id'] );
+			$invite = $this->fetch_single_invite( $request->get_param( 'invite_id' ) );
 
 			if ( ! $invite ) {
 				$retval = new WP_Error(
@@ -406,9 +406,9 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
-		$inviter_id_arg = $request['inviter_id'] ? $request['inviter_id'] : bp_loggedin_user_id();
-		$group          = $this->groups_endpoint->get_group_object( $request['group_id'] );
-		$user           = bp_rest_get_user( $request['user_id'] );
+		$inviter_id_arg = ! empty( $request->get_param( 'inviter_id' ) ) ? $request->get_param( 'inviter_id' ) : bp_loggedin_user_id();
+		$group          = $this->groups_endpoint->get_group_object( $request->get_param( 'group_id' ) );
+		$user           = bp_rest_get_user( $request->get_param( 'user_id' ) );
 		$inviter        = bp_rest_get_user( $inviter_id_arg );
 
 		$invite_id = groups_invite_user(
@@ -416,8 +416,8 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				'user_id'     => $user->ID,
 				'group_id'    => $group->id,
 				'inviter_id'  => $inviter->ID,
-				'send_invite' => isset( $request['invite_sent'] ) ? (bool) $request['invite_sent'] : 1,
-				'content'     => $request['message'],
+				'send_invite' => ! empty( $request->get_param( 'invite_sent' ) ) ? (bool) $request->get_param( 'invite_sent' ) : 1,
+				'content'     => $request->get_param( 'message' ),
 			)
 		);
 
@@ -470,7 +470,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function create_item_permissions_check( $request ) {
-		$inviter_id_arg = $request['inviter_id'] ? $request['inviter_id'] : bp_loggedin_user_id();
+		$inviter_id_arg = ! empty( $request->get_param( 'inviter_id' ) ) ? $request->get_param( 'inviter_id' ) : bp_loggedin_user_id();
 		$retval         = new WP_Error(
 			'bp_rest_authorization_required',
 			__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
@@ -488,7 +488,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				)
 			);
 		} else {
-			$user    = bp_rest_get_user( $request['user_id'] );
+			$user    = bp_rest_get_user( $request->get_param( 'user_id' ) );
 			$inviter = bp_rest_get_user( $inviter_id_arg );
 
 			if ( empty( $user->ID ) || empty( $inviter->ID ) || $user->ID === $inviter->ID ) {
@@ -500,7 +500,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					)
 				);
 			} else {
-				$group = $this->groups_endpoint->get_group_object( $request['group_id'] );
+				$group = $this->groups_endpoint->get_group_object( $request->get_param( 'group_id' ) );
 
 				if ( empty( $group->id ) ) {
 					$retval = new WP_Error(
@@ -548,7 +548,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	public function update_item( $request ) {
 		$request->set_param( 'context', 'edit' );
 
-		$invite = $this->fetch_single_invite( $request['invite_id'] );
+		$invite = $this->fetch_single_invite( $request->get_param( 'invite_id' ) );
 		$accept = groups_accept_invite( $invite->user_id, $invite->item_id );
 		if ( ! $accept ) {
 			return new WP_Error(
@@ -613,7 +613,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				)
 			);
 		} else {
-			$invite = $this->fetch_single_invite( $request['invite_id'] );
+			$invite = $this->fetch_single_invite( $request->get_param( 'invite_id' ) );
 
 			if ( ! $invite ) {
 				$retval = new WP_Error(
@@ -659,7 +659,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		$user_id = bp_loggedin_user_id();
-		$invite  = $this->fetch_single_invite( $request['invite_id'] );
+		$invite  = $this->fetch_single_invite( $request->get_param( 'invite_id' ) );
 
 		// Set the invite response before it is deleted.
 		$previous = $this->prepare_item_for_response( $invite, $request );
@@ -726,7 +726,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	public function delete_item_permissions_check( $request ) {
 		$retval  = true;
 		$user_id = bp_loggedin_user_id();
-		$invite  = $this->fetch_single_invite( $request['invite_id'] );
+		$invite  = $this->fetch_single_invite( $request->get_param( 'invite_id' ) );
 
 		if ( ! $user_id ) {
 			$retval = new WP_Error(
@@ -798,7 +798,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			),
 		);
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
