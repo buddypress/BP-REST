@@ -181,10 +181,129 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_user_not_logged_in() {
-		$n = $this->bp_factory->notification->create( $this->set_notification_data() );
+	public function test_get_embedded_group_from_notification_item() {
+		$group_id        = $this->bp_factory->group->create();
+		$notification_id = $this->bp_factory->notification->create(
+			$this->set_notification_data(
+				array(
+					'component_name' => buddypress()->groups->id,
+					'item_id'        => $group_id
+				)
+			)
+		);
 
-		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $n ) );
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $notification_id ) );
+		$request->set_query_params( array( '_embed' => 'group' ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $this->server->response_to_data( $response, true )[0];
+
+		$this->assertNotEmpty( $data['_embedded']['group'] );
+
+		// Group single endpoint returns an array.
+		// @todo update this when we change the endpoint to return an object only in v2.
+		$embedded_group = current( current( $data['_embedded']['group'] ) );
+
+		$this->assertNotEmpty( $embedded_group );
+		$this->assertSame( $notification_id, $data['id'] );
+		$this->assertSame( $group_id, $embedded_group['id'] );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_embedded_activity_from_notification_item() {
+		$activity_id     = $this->bp_factory->activity->create();
+		$notification_id = $this->bp_factory->notification->create(
+			$this->set_notification_data(
+				array(
+					'component_name' => buddypress()->activity->id,
+					'item_id'        => $activity_id
+				)
+			)
+		);
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $notification_id ) );
+		$request->set_query_params( array( '_embed' => 'activity' ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $this->server->response_to_data( $response, true )[0];
+
+		$this->assertNotEmpty( $data['_embedded']['activity'] );
+
+		// Activity single endpoint returns an array.
+		// @todo update this when we change the endpoint to return an object only in v2.
+		$embedded_activity = current( current( $data['_embedded']['activity'] ) );
+
+		$this->assertNotEmpty( $embedded_activity );
+		$this->assertSame( $notification_id, $data['id'] );
+		$this->assertSame( $activity_id, $embedded_activity['id'] );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_embedded_blog_from_notification_item() {
+
+		// @todo investigate why bp_is_active( 'blogs' ) is failing for this test only
+		// when testing on MU.
+		$this->markTestSkipped();
+
+		$blog_title = 'The Foo Bar Blog';
+
+		$this->bp->set_current_user( $this->user );
+
+		$blog_id = $this->bp_factory->blog->create(
+			array( 'title' => $blog_title )
+		);
+
+		$notification_id = $this->bp_factory->notification->create(
+			$this->set_notification_data(
+				array(
+					'component_name' => buddypress()->blogs->id,
+					'item_id'        => $blog_id
+				)
+			)
+		);
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $notification_id ) );
+		$request->set_query_params( array( '_embed' => 'blog' ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $this->server->response_to_data( $response, true )[0];
+
+		$this->assertNotEmpty( $data['_embedded']['blog'] );
+
+		// Blog single endpoint returns an array.
+		// @todo update this when we change the endpoint to return an object only in v2.
+		$embedded_blog = current( current( $data['_embedded']['blog'] ) );
+
+		$this->assertNotEmpty( $embedded_blog );
+		$this->assertSame( $notification_id, $data['id'] );
+		$this->assertSame( $blog_id, $embedded_blog['id'] );
+		$this->assertSame( $blog_title, $embedded_blog['name'] );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_user_not_logged_in() {
+		$notification_id = $this->bp_factory->notification->create( $this->set_notification_data() );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $notification_id ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
@@ -195,12 +314,12 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_item
 	 */
 	public function test_get_item_user_cannot_see_notification() {
-		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$notification_id = $this->bp_factory->notification->create( $this->set_notification_data() );
+		$u               = $this->factory->user->create();
+
 		$this->bp->set_current_user( $u );
 
-		$n = $this->bp_factory->notification->create( $this->set_notification_data() );
-
-		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $n ) );
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $notification_id ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
@@ -457,9 +576,8 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 
 	protected function set_notification_data( $args = array() ) {
 		return wp_parse_args( $args, array(
-			'component_name' => 'groups',
-			'user_id'        => $this->user,
-			'is_new'         => 1,
+			'user_id' => $this->user,
+			'is_new'  => 1,
 		) );
 	}
 

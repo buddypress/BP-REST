@@ -644,7 +644,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			'date_created' => bp_rest_prepare_date_response( $friendship->date_created ),
 		);
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );

@@ -141,28 +141,28 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'profile_group_id'       => $request['profile_group_id'],
-			'user_id'                => $request['user_id'],
-			'member_type'            => $request['member_type'],
-			'hide_empty_groups'      => $request['hide_empty_groups'],
-			'hide_empty_fields'      => $request['hide_empty_fields'],
-			'fetch_fields'           => $request['fetch_fields'],
-			'fetch_field_data'       => $request['fetch_field_data'],
-			'fetch_visibility_level' => $request['fetch_visibility_level'],
-			'exclude_groups'         => $request['exclude_groups'],
-			'exclude_fields'         => $request['exclude_fields'],
-			'update_meta_cache'      => $request['update_meta_cache'],
+			'profile_group_id'       => $request->get_param( 'profile_group_id' ),
+			'user_id'                => $request->get_param( 'user_id' ),
+			'member_type'            => $request->get_param( 'member_type' ),
+			'hide_empty_groups'      => $request->get_param( 'hide_empty_groups' ),
+			'hide_empty_fields'      => $request->get_param( 'hide_empty_fields' ),
+			'fetch_fields'           => $request->get_param( 'fetch_fields' ),
+			'fetch_field_data'       => $request->get_param( 'fetch_field_data' ),
+			'fetch_visibility_level' => $request->get_param( 'fetch_visibility_level' ),
+			'exclude_groups'         => $request->get_param( 'exclude_groups' ),
+			'exclude_fields'         => $request->get_param( 'exclude_fields' ),
+			'update_meta_cache'      => $request->get_param( 'update_meta_cache' ),
 		);
 
-		if ( empty( $request['member_type'] ) ) {
+		if ( empty( $request->get_param( 'member_type' ) ) ) {
 			$args['member_type'] = null;
 		}
 
-		if ( empty( $request['exclude_fields'] ) ) {
+		if ( empty( $request->get_param( 'exclude_fields' ) ) ) {
 			$args['exclude_fields'] = false;
 		}
 
-		if ( empty( $request['exclude_groups'] ) ) {
+		if ( empty( $request->get_param( 'exclude_groups' ) ) ) {
 			$args['exclude_groups'] = false;
 		}
 
@@ -301,8 +301,8 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		$args = array(
-			'name'        => $request['name'],
-			'description' => $request['description'],
+			'name'        => $request->get_param( 'name' ),
+			'description' => $request->get_param( 'description' ),
 		);
 
 		/**
@@ -426,8 +426,8 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 
 		$args = array(
 			'field_group_id' => $field_group->id,
-			'name'           => is_null( $request['name'] ) ? $field_group->name : $request['name'],
-			'description'    => is_null( $request['description'] ) ? $field_group->description : $request['description'],
+			'name'           => empty( $request->get_param( 'name' ) ) ? $field_group->name : $request->get_param( 'name' ),
+			'description'    => empty( $request->get_param( 'description' ) ) ? $field_group->description : $request->get_param( 'description' ),
 		);
 
 		$group_id = xprofile_insert_field_group( $args );
@@ -443,8 +443,8 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		// Update the position if the group_order exists.
-		if ( is_numeric( $request['group_order'] ) ) {
-			xprofile_update_field_group_position( $group_id, $request['group_order'] );
+		if ( is_numeric( $request->get_param( 'group_order' ) ) ) {
+			xprofile_update_field_group_position( $group_id, $request->get_param( 'group_order' ) );
 		}
 
 		$field_group = $this->get_xprofile_field_group_object( $group_id );
@@ -603,7 +603,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		// If the fields have been requested, we populate them.
-		if ( $request['fetch_fields'] ) {
+		if ( $request->get_param( 'fetch_fields' ) ) {
 			$data['fields'] = array();
 
 			foreach ( $group->fields as $field ) {
@@ -611,7 +611,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			}
 		}
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
@@ -677,22 +677,22 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			);
 		} else {
 			$args = array(
-				'profile_group_id'       => (int) $request['id'],
-				'user_id'                => $request['user_id'],
-				'member_type'            => $request['member_type'],
-				'hide_empty_fields'      => $request['hide_empty_fields'],
-				'fetch_fields'           => $request['fetch_fields'],
-				'fetch_field_data'       => $request['fetch_field_data'],
-				'fetch_visibility_level' => $request['fetch_visibility_level'],
-				'exclude_fields'         => $request['exclude_fields'],
-				'update_meta_cache'      => $request['update_meta_cache'],
+				'profile_group_id'       => (int) $request->get_param( 'id' ),
+				'user_id'                => $request->get_param( 'user_id' ),
+				'member_type'            => $request->get_param( 'member_type' ),
+				'hide_empty_fields'      => $request->get_param( 'hide_empty_fields' ),
+				'fetch_fields'           => $request->get_param( 'fetch_fields' ),
+				'fetch_field_data'       => $request->get_param( 'fetch_field_data' ),
+				'fetch_visibility_level' => $request->get_param( 'fetch_visibility_level' ),
+				'exclude_fields'         => $request->get_param( 'exclude_fields' ),
+				'update_meta_cache'      => $request->get_param( 'update_meta_cache' ),
 			);
 
-			if ( empty( $request['member_type'] ) ) {
+			if ( empty( $request->get_param( 'member_type' ) ) ) {
 				$args['member_type'] = null;
 			}
 
-			if ( empty( $request['exclude_fields'] ) ) {
+			if ( empty( $request->get_param( 'exclude_fields' ) ) ) {
 				$args['exclude_fields'] = false;
 			}
 		}

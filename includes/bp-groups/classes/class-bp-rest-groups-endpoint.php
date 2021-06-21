@@ -130,29 +130,29 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'type'         => $request['type'],
-			'order'        => $request['order'],
-			'fields'       => $request['fields'],
-			'orderby'      => $request['orderby'],
-			'user_id'      => $request['user_id'],
-			'include'      => $request['include'],
-			'parent_id'    => $request['parent_id'],
-			'exclude'      => $request['exclude'],
-			'search_terms' => $request['search'],
-			'meta_query'   => $request['meta'], // phpcs:ignore
-			'group_type'   => $request['group_type'],
-			'show_hidden'  => $request['show_hidden'],
-			'per_page'     => $request['per_page'],
-			'status'       => $request['status'],
-			'page'         => $request['page'],
+			'type'         => $request->get_param( 'type' ),
+			'order'        => $request->get_param( 'order' ),
+			'fields'       => $request->get_param( 'fields' ),
+			'orderby'      => $request->get_param( 'orderby' ),
+			'user_id'      => $request->get_param( 'user_id' ),
+			'include'      => $request->get_param( 'include' ),
+			'parent_id'    => $request->get_param( 'parent_id' ),
+			'exclude'      => $request->get_param( 'exclude' ),
+			'search_terms' => $request->get_param( 'search' ),
+			'meta_query'   => $request->get_param( 'meta' ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			'group_type'   => $request->get_param( 'group_type' ),
+			'show_hidden'  => $request->get_param( 'show_hidden' ),
+			'per_page'     => $request->get_param( 'per_page' ),
+			'status'       => $request->get_param( 'status' ),
+			'page'         => $request->get_param( 'page' ),
 		);
 
-		if ( empty( $request['parent_id'] ) ) {
+		if ( empty( $request->get_param( 'parent_id' ) ) ) {
 			$args['parent_id'] = null;
 		}
 
 		// See if the user can see hidden groups.
-		if ( isset( $request['show_hidden'] ) && true === (bool) $request['show_hidden'] && ! $this->can_see_hidden_groups( $request ) ) {
+		if ( ! empty( $request->get_param( 'show_hidden' ) ) && true === (bool) $request->get_param( 'show_hidden' ) && ! $this->can_see_hidden_groups( $request ) ) {
 			$args['show_hidden'] = false;
 		}
 
@@ -311,7 +311,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		// If no group name.
-		if ( empty( $request['name'] ) ) {
+		if ( empty( $request->get_param( 'name' ) ) ) {
 			return new WP_Error(
 				'bp_rest_create_group_empty_name',
 				__( 'Please, enter the name of group.', 'buddypress' ),
@@ -341,8 +341,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		// Set group type(s).
-		if ( ! empty( $request['types'] ) ) {
-			bp_groups_set_group_type( $group_id, $request['types'] );
+		if ( ! empty( $request->get_param( 'types' ) ) ) {
+			bp_groups_set_group_type( $group_id, $request->get_param( 'types' ) );
 		}
 
 		$retval = array(
@@ -767,7 +767,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			$data['types'] = array();
 		}
 
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 
 		// If this is the 'edit' context or 'populate_extras' has been requested.
 		if ( 'edit' === $context || true === $request->get_param( 'populate_extras' ) ) {
@@ -854,8 +854,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		// Group Creator ID.
-		if ( ! empty( $schema['properties']['creator_id'] ) && isset( $request['creator_id'] ) ) {
-			$prepared_group->creator_id = (int) $request['creator_id'];
+		if ( ! empty( $schema['properties']['creator_id'] ) && ! empty( $request->get_param( 'creator_id' ) ) ) {
+			$prepared_group->creator_id = (int) $request->get_param( 'creator_id' );
 
 			// Fallback on the current user otherwise.
 		} else {
@@ -863,13 +863,13 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		// Group Slug.
-		if ( ! empty( $schema['properties']['slug'] ) && isset( $request['slug'] ) ) {
-			$prepared_group->slug = $request['slug'];
+		if ( ! empty( $schema['properties']['slug'] ) && ! empty( $request->get_param( 'slug' ) ) ) {
+			$prepared_group->slug = $request->get_param( 'slug' );
 		}
 
 		// Group Name.
-		if ( ! empty( $schema['properties']['name'] ) && isset( $request['name'] ) ) {
-			$prepared_group->name = $request['name'];
+		if ( ! empty( $schema['properties']['name'] ) && ! empty( $request->get_param( 'name' ) ) ) {
+			$prepared_group->name = $request->get_param( 'name' );
 		}
 
 		// Do additional checks for the Group's slug.
@@ -884,47 +884,47 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		}
 
 		// Group description.
-		if ( ! empty( $schema['properties']['description'] ) && isset( $request['description'] ) ) {
-			if ( is_string( $request['description'] ) ) {
-				$prepared_group->description = $request['description'];
+		if ( ! empty( $schema['properties']['description'] ) && ! empty( $request->get_param( 'description' ) ) ) {
+			if ( is_string( $request->get_param( 'description' ) ) ) {
+				$prepared_group->description = $request->get_param( 'description' );
 			} elseif ( isset( $request['description']['raw'] ) ) {
 				$prepared_group->description = $request['description']['raw'];
 			}
 		}
 
 		// Group status.
-		if ( ! empty( $schema['properties']['status'] ) && isset( $request['status'] ) ) {
-			$prepared_group->status = $request['status'];
+		if ( ! empty( $schema['properties']['status'] ) && ! empty( $request->get_param( 'status' ) ) ) {
+			$prepared_group->status = $request->get_param( 'status' );
 		}
 
 		// Group Forum Enabled.
-		if ( ! empty( $schema['properties']['enable_forum'] ) && isset( $request['enable_forum'] ) ) {
-			$prepared_group->enable_forum = (bool) $request['enable_forum'];
+		if ( ! empty( $schema['properties']['enable_forum'] ) && ! empty( $request->get_param( 'enable_forum' ) ) ) {
+			$prepared_group->enable_forum = (bool) $request->get_param( 'enable_forum' );
 		}
 
 		// Group Parent ID.
-		if ( ! empty( $schema['properties']['parent_id'] ) && isset( $request['parent_id'] ) ) {
-			$prepared_group->parent_id = $request['parent_id'];
+		if ( ! empty( $schema['properties']['parent_id'] ) && ! empty( $request->get_param( 'parent_id' ) ) ) {
+			$prepared_group->parent_id = $request->get_param( 'parent_id' );
 		}
 
 		// Update group type(s).
-		if ( isset( $prepared_group->group_id ) && isset( $request['types'] ) ) {
-			bp_groups_set_group_type( $prepared_group->group_id, $request['types'], false );
+		if ( isset( $prepared_group->group_id ) && ! empty( $request->get_param( 'types' ) ) ) {
+			bp_groups_set_group_type( $prepared_group->group_id, $request->get_param( 'types' ), false );
 		}
 
 		// Remove group type(s).
-		if ( isset( $prepared_group->group_id ) && isset( $request['remove_types'] ) ) {
+		if ( isset( $prepared_group->group_id ) && ! empty( $request->get_param( 'remove_types' ) ) ) {
 			array_map(
 				function( $type ) use ( $prepared_group ) {
 					bp_groups_remove_group_type( $prepared_group->group_id, $type );
 				},
-				$request['remove_types']
+				$request->get_param( 'remove_types' )
 			);
 		}
 
 		// Append group type(s).
-		if ( isset( $prepared_group->group_id ) && isset( $request['append_types'] ) ) {
-			bp_groups_set_group_type( $prepared_group->group_id, $request['append_types'], true );
+		if ( isset( $prepared_group->group_id ) && ! empty( $request->get_param( 'append_types' ) ) ) {
+			bp_groups_set_group_type( $prepared_group->group_id, $request->get_param( 'append_types' ), true );
 		}
 
 		/**
@@ -1028,8 +1028,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 
 		return (
 			is_user_logged_in()
-			&& isset( $request['user_id'] )
-			&& absint( $request['user_id'] ) === bp_loggedin_user_id()
+			&& ! empty( $request->get_param( 'user_id' ) )
+			&& absint( $request->get_param( 'user_id' ) ) === bp_loggedin_user_id()
 		);
 	}
 
@@ -1038,16 +1038,18 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param  WP_REST_Request $request Full details about the request.
-	 * @return bool|BP_Groups_Group
+	 * @param  int|WP_REST_Request $request Full details about the request or an group integer.
+	 * @return false|BP_Groups_Group
 	 */
 	public function get_group_object( $request ) {
-		if ( ! empty( $request['group_id'] ) ) {
-			$group_id = (int) $request['group_id'];
+		if ( $request instanceof WP_REST_Request ) {
+			if ( ! empty( $request->get_param( 'group_id' ) ) ) {
+				$group_id = (int) $request->get_param( 'group_id' );
+			} else {
+				$group_id = (int) $request->get_param( 'id' );
+			}
 		} elseif ( is_numeric( $request ) ) {
-			$group_id = $request;
-		} else {
-			$group_id = (int) $request['id'];
+			$group_id = (int) $request;
 		}
 
 		$group = groups_get_group( $group_id );

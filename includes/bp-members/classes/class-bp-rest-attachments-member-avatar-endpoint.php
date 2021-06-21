@@ -109,9 +109,9 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 					'object'  => $this->object,
 					'type'    => $type,
 					'item_id' => (int) $this->user->ID,
-					'html'    => (bool) $request['html'],
-					'alt'     => $request['alt'],
-					'no_grav' => (bool) $request['no_gravatar'],
+					'html'    => (bool) $request->get_param( 'html' ),
+					'alt'     => $request->get_param( 'alt' ),
+					'no_grav' => (bool) $request->get_param( 'no_gravatar' ),
 				)
 			);
 		}
@@ -167,7 +167,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 				'status' => 404,
 			)
 		);
-		$this->user = bp_rest_get_user( $request['user_id'] );
+		$this->user = bp_rest_get_user( $request->get_param( 'user_id' ) );
 
 		if ( $this->user instanceof WP_User ) {
 			$retval = true;
@@ -414,7 +414,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 			'thumb' => $avatar->thumb,
 		);
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );

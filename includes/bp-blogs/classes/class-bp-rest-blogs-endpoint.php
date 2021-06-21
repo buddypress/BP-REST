@@ -91,12 +91,12 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'type'             => $request['type'],
-			'include_blog_ids' => $request['include'],
-			'user_id'          => $request['user_id'],
-			'search_terms'     => $request['search'],
-			'page'             => $request['page'],
-			'per_page'         => $request['per_page'],
+			'type'             => $request->get_param( 'type' ),
+			'include_blog_ids' => $request->get_param( 'include' ),
+			'user_id'          => $request->get_param( 'user_id' ),
+			'search_terms'     => $request->get_param( 'search' ),
+			'page'             => $request->get_param( 'page' ),
+			'per_page'         => $request->get_param( 'per_page' ),
 		);
 
 		/**
@@ -131,8 +131,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		}
 
 		// Actually, query it.
-		$blogs = bp_blogs_get_blogs( $args );
-
+		$blogs  = bp_blogs_get_blogs( $args );
 		$retval = array();
 		foreach ( (array) $blogs['blogs'] as $blog ) {
 			$retval[] = $this->prepare_response_for_collection(
@@ -444,7 +443,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
@@ -482,11 +481,14 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'user'      => array(
-				'href'       => rest_url( bp_rest_get_user_url( $blog->admin_user_id ) ),
-				'embeddable' => true,
-			),
 		);
+
+		if ( ! empty( $blog->admin_user_id ) ) {
+			$links['user'] = array(
+				'href'       => rest_url( bp_rest_get_user_url( absint( $blog->admin_user_id ) ) ),
+				'embeddable' => true,
+			);
+		}
 
 		// Embed latest blog post.
 		if ( ! empty( $blog->latest_post->ID ) ) {
@@ -506,7 +508,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param array    $links The prepared links of the REST response.
-		 * @param stdClass $blog  Blog object.
+		 * @param stdClass $blog  The blog object.
 		 */
 		return apply_filters( 'bp_rest_blogs_prepare_links', $links, $blog );
 	}
@@ -684,7 +686,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 							'raw'      => array(
 								'description' => __( 'Content for the description of the blog, as it exists in the database.', 'buddypress' ),
 								'type'        => 'string',
-								'context'     => array( 'view', 'edit', 'embed' ),
+								'context'     => array( 'view', 'edit' ),
 							),
 							'rendered' => array(
 								'description' => __( 'HTML content for the description of the blog, transformed for display.', 'buddypress' ),

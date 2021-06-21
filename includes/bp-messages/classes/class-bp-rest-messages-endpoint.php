@@ -116,12 +116,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'user_id'      => $request['user_id'],
-			'box'          => $request['box'],
-			'type'         => $request['type'],
-			'page'         => $request['page'],
-			'per_page'     => $request['per_page'],
-			'search_terms' => $request['search'],
+			'user_id'      => $request->get_param( 'user_id' ),
+			'box'          => $request->get_param( 'box' ),
+			'type'         => $request->get_param( 'type' ),
+			'page'         => $request->get_param( 'page' ),
+			'per_page'     => $request->get_param( 'per_page' ),
+			'search_terms' => $request->get_param( 'search' ),
 		);
 
 		// Include the meta_query for starred messages.
@@ -626,7 +626,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		);
 
 		if ( is_user_logged_in() ) {
-			$thread_id = messages_get_message_thread_id( $request['id'] );
+			$thread_id = messages_get_message_thread_id( $request->get_param( 'id' ) );
 
 			if ( messages_check_thread_access( $thread_id ) ) {
 				$retval = true;
@@ -735,15 +735,15 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	protected function prepare_item_for_database( $request ) {
 		$prepared_thread = new stdClass();
 		$schema          = $this->get_item_schema();
-		$thread          = $this->get_thread_object( $request['id'] );
+		$thread          = $this->get_thread_object( $request->get_param( 'id' ) );
 
-		if ( ! empty( $schema['properties']['id'] ) && ! empty( $request['id'] ) ) {
-			$prepared_thread->thread_id = $request['id'];
+		if ( ! empty( $schema['properties']['id'] ) && ! empty( $request->get_param( 'id' ) ) ) {
+			$prepared_thread->thread_id = $request->get_param( 'id' );
 		} elseif ( ! empty( $thread->thread_id ) ) {
 			$prepared_thread->thread_id = $thread->thread_id;
 		}
 
-		if ( ! empty( $schema['properties']['sender_id'] ) && ! empty( $request['sender_id'] ) ) {
+		if ( ! empty( $schema['properties']['sender_id'] ) && ! empty( $request->get_param( 'sender_id' ) ) ) {
 			$prepared_thread->sender_id = $thread->sender_id;
 		} elseif ( ! empty( $thread->sender_id ) ) {
 			$prepared_thread->sender_id = $thread->sender_id;
@@ -751,20 +751,20 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			$prepared_thread->sender_id = bp_loggedin_user_id();
 		}
 
-		if ( ! empty( $schema['properties']['message'] ) && ! empty( $request['message'] ) ) {
-			$prepared_thread->content = $request['message'];
+		if ( ! empty( $schema['properties']['message'] ) && ! empty( $request->get_param( 'message' ) ) ) {
+			$prepared_thread->content = $request->get_param( 'message' );
 		} elseif ( ! empty( $thread->message ) ) {
 			$prepared_thread->message = $thread->message;
 		}
 
-		if ( ! empty( $schema['properties']['subject'] ) && ! empty( $request['subject'] ) ) {
-			$prepared_thread->subject = $request['subject'];
+		if ( ! empty( $schema['properties']['subject'] ) && ! empty( $request->get_param( 'subject' ) ) ) {
+			$prepared_thread->subject = $request->get_param( 'subject' );
 		} elseif ( ! empty( $thread->subject ) ) {
 			$prepared_thread->subject = $thread->subject;
 		}
 
-		if ( ! empty( $schema['properties']['recipients'] ) && ! empty( $request['recipients'] ) ) {
-			$prepared_thread->recipients = $request['recipients'];
+		if ( ! empty( $schema['properties']['recipients'] ) && ! empty( $request->get_param( 'recipients' ) ) ) {
+			$prepared_thread->recipients = $request->get_param( 'recipients' );
 		} elseif ( ! empty( $thread->recipients ) ) {
 			$prepared_thread->recipients = wp_parse_id_list( wp_list_pluck( $thread->recipients, 'user_id' ) );
 		}
@@ -808,8 +808,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		if ( bp_is_active( 'messages', 'star' ) ) {
 			$user_id = bp_loggedin_user_id();
 
-			if ( isset( $request['user_id'] ) && $request['user_id'] ) {
-				$user_id = (int) $request['user_id'];
+			if ( ! empty( $request->get_param( 'user_id' ) ) ) {
+				$user_id = (int) $request->get_param( 'user_id' );
 			}
 
 			$data['is_starred'] = bp_messages_is_message_starred( $data['id'], $user_id );
@@ -932,7 +932,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		// Pluck starred message ids.
 		$data['starred_message_ids'] = array_keys( array_filter( wp_list_pluck( $data['messages'], 'is_starred', 'id' ) ) );
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
