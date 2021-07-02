@@ -433,16 +433,19 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		);
 
 		// Is someone updating the thread status?
-		$thread_status_update = $request->get_param( 'read' ) || $request->get_param( 'unread' );
+		$thread_status_update = ( (bool) $request->get_param( 'read' ) || (bool) $request->get_param( 'unread' ) );
+
+		// Updated user id.
+		$updated_user_id = bp_loggedin_user_id();
 
 		// Mark thread as read.
-		if ( true === $request->get_param( 'read' ) ) {
-			messages_mark_thread_read( $thread->thread_id );
+		if ( true === (bool) $request->get_param( 'read' ) ) {
+			messages_mark_thread_read( $thread->thread_id, $updated_user_id );
 		}
 
 		// Mark thread as unread.
-		if ( true === $request->get_param( 'unread' ) ) {
-			messages_mark_thread_unread( $thread->thread_id );
+		if ( true === (bool) $request->get_param( 'unread' ) ) {
+			messages_mark_thread_unread( $thread->thread_id, $updated_user_id );
 		}
 
 		// By default use the last message.
@@ -489,7 +492,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		}
 
 		// Get the updated thread object.
-		$thread = $this->get_thread_object( $request->get_param( 'id' ) );
+		$thread = $this->get_thread_object( $thread->thread_id );
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $thread, $request )
@@ -913,7 +916,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				'rendered' => apply_filters( 'bp_get_message_thread_content', wp_staticize_emoji( $thread->last_message_content ) ),
 			),
 			'date'           => bp_rest_prepare_date_response( $thread->last_message_date ),
-			'unread_count'   => ! empty( $thread->unread_count ) ? $thread->unread_count : 0,
+			'unread_count'   => ! empty( $thread->unread_count ) ? absint( $thread->unread_count ) : 0,
 			'sender_ids'     => $thread->sender_ids,
 			'recipients'     => array(),
 			'messages'       => array(),
@@ -1000,7 +1003,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param int $thread_id Thread ID.
-	 * @return BP_Messages_Thread|empty
+	 * @return BP_Messages_Thread|string
 	 */
 	public function get_thread_object( $thread_id ) {
 		$thread_object = new BP_Messages_Thread( (int) $thread_id );
@@ -1018,7 +1021,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param int $message_id Message ID.
-	 * @return BP_Messages_Message|empty
+	 * @return BP_Messages_Message|string
 	 */
 	public function get_message_object( $message_id ) {
 		$message_object = new BP_Messages_Message( (int) $message_id );
