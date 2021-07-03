@@ -655,7 +655,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		if ( ! empty( $notification->user_id ) ) {
 			$links['user'] = array(
 				'embeddable' => true,
-				'href'       => rest_url( bp_rest_get_object_url( absint( $notification->user_id ), 'members' ) ),
+				'href'       => bp_rest_get_object_url( absint( $notification->user_id ), 'members' ),
 			);
 		}
 
