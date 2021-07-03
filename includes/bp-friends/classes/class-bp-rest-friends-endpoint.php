@@ -684,11 +684,11 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'initiator'       => array(
-				'href'       => rest_url( bp_rest_get_user_url( $friendship->initiator_user_id ) ),
+				'href'       => rest_url( bp_rest_get_object_url( $friendship->initiator_user_id, 'members' ) ),
 				'embeddable' => true,
 			),
 			'friend'       => array(
-				'href'       => rest_url( bp_rest_get_user_url( $friendship->friend_user_id ) ),
+				'href'       => rest_url( bp_rest_get_object_url( $friendship->friend_user_id, 'members' ) ),
 				'embeddable' => true,
 			),
 		);
