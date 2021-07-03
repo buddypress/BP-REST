@@ -748,7 +748,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		// Entity meta.
 		$links = array(
 			'self'       => array(
-				'href' => rest_url( bp_rest_get_user_url( $group_member->user_id ) ),
+				'href' => rest_url( bp_rest_get_object_url( $group_member->user_id, 'members' ) ),
 			),
 			'collection' => array(
 				'href' => rest_url( sprintf( '/%s/%d/members', $base, $group_member->group_id ) ),

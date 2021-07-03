@@ -838,7 +838,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'user'       => array(
-				'href'       => rest_url( bp_rest_get_user_url( $invite->user_id ) ),
+				'href'       => rest_url( bp_rest_get_object_url( $invite->user_id, 'members' ) ),
 				'embeddable' => true,
 			),
 		);
