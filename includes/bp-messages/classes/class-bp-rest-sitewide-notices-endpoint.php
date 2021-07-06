@@ -183,8 +183,8 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		if ( 'edit' === $context && bp_current_user_can( 'bp_moderate' ) ) {
 
 			$args = array(
-				'pag_num'  => isset( $request['per_page'] ) ? absint( $request['per_page'] ) : 20,
-				'pag_page' => isset( $request['page'] ) ? absint( $request['page'] ) : 1,
+				'pag_page' => $request->get_param( 'page' ),
+				'pag_num'  => $request->get_param( 'per_page' ),
 			);
 
 			/**
@@ -254,7 +254,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items_permissions_check( $request ) {
 		$retval  = true;
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context = $request->get_param( 'context' );
 
 		if ( ! is_user_logged_in() || ( 'edit' === $context && ! bp_current_user_can( 'bp_moderate' ) ) ) {
 			$retval = new WP_Error(
@@ -286,7 +286,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_item( $request ) {
-		$notice = $this->get_notice_object( $request['id'] );
+		$notice = $this->get_notice_object( $request->get_param( 'id' ) );
 
 		$retval = array(
 			$this->prepare_response_for_collection(
@@ -331,7 +331,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$notice = $this->get_notice_object( $request['id'] );
+		$notice = $this->get_notice_object( $request->get_param( 'id' ) );
 
 		if ( true === $retval && empty( $notice->id ) ) {
 			$retval = new WP_Error(
@@ -379,8 +379,8 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
-		$subject = isset( $request['subject'] ) ? $request['subject'] : '';
-		$message = isset( $request['message'] ) ? $request['message'] : '';
+		$subject = $request->get_param( 'subject' );
+		$message = $request->get_param( 'message' );
 		$success = messages_send_notice( $subject, $message );
 
 		if ( ! $success ) {
@@ -454,7 +454,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$test_notice = $this->get_notice_object( $request['id'] );
+		$test_notice = $this->get_notice_object( $request->get_param( 'id' ) );
 		if ( ! $test_notice->id ) {
 			return new WP_Error(
 				'bp_rest_sitewide_notices_update_failed',
@@ -601,7 +601,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 */
 	public function delete_item( $request ) {
 		// Get the notice before it's deleted.
-		$notice   = $this->get_notice_object( $request['id'] );
+		$notice   = $this->get_notice_object( $request->get_param( 'id' ) );
 		$previous = $this->prepare_item_for_response( $notice, $request );
 
 		// Delete a thread.
@@ -741,7 +741,11 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 			'is_active' => $notice->is_active,
 		);
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context = $request->get_param( 'context' );
+		// @TODO: There must be something wrong here.
+		if ( empty( $context ) ) {
+			$context = "view";
+		}
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
@@ -893,7 +897,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	protected function prepare_item_for_database( $request ) {
 
 		$schema          = $this->get_item_schema();
-		$notice_id       = isset( $request['id'] ) ? absint( $request['id'] ) : 0;
+		$notice_id       = $request->get_param( 'id' );
 		$prepared_item   = $this->get_notice_object( $notice_id );
 
 		// Notice ID.
@@ -902,28 +906,32 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		}
 
 		// Notice subject.
-		if ( ! empty( $schema['properties']['subject'] ) && isset( $request['subject'] ) ) {
-			if ( is_string( $request['subject'] ) ) {
-				$prepared_item->subject = $request['subject'];
-			} elseif ( isset( $request['subject']['raw'] ) ) {
-				$prepared_item->subject = $request['subject']['raw'];
+		$subject = $request->get_param( 'subject' );
+		if ( ! empty( $schema['properties']['subject'] ) && $subject ) {
+			if ( is_string( $subject ) ) {
+				$prepared_item->subject = $subject;
+			} elseif ( isset( $subject['raw'] ) ) {
+				$prepared_item->subject = $subject['raw'];
 			}
 		}
 
 		// Notice message.
-		if ( ! empty( $schema['properties']['message'] ) && isset( $request['message'] ) ) {
-			if ( is_string( $request['message'] ) ) {
-				$prepared_item->message = $request['message'];
-			} elseif ( isset( $request['subject']['raw'] ) ) {
-				$prepared_item->message = $request['message']['raw'];
+		$message = $request->get_param( 'message' );
+		if ( ! empty( $schema['properties']['message'] ) && $message ) {
+			if ( is_string( $message ) ) {
+				$prepared_item->message = $message;
+			} elseif ( isset( $message['raw'] ) ) {
+				$prepared_item->message = $message['raw'];
 			}
 		}
 
 		// Date_sent is set at creation, so nothing to do.
 
 		// Is active
-		if ( ! empty( $schema['properties']['is_active'] ) && isset( $request['is_active'] ) ) {
-			$prepared_item->is_active = $request['is_active'];
+		$is_active = $request->get_param( 'is_active' );
+		if ( ! empty( $schema['properties']['is_active'] ) && ! is_null( $is_active ) ) {
+			// The method get_param() returns a string, so we must convert to an integer.
+			$prepared_item->is_active = absint( $is_active );
 		}
 
 		/**
