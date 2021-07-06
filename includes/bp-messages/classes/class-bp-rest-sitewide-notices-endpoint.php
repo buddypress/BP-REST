@@ -610,7 +610,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		$previous = $this->prepare_item_for_response( $notice, $request );
 
 		// Delete a sitewide notice.
-		if ( ! bp_current_user_can( 'bp_moderate' ) || ! $notice->delete() ) {
+		if ( ! $notice->delete() ) {
 			return new WP_Error(
 				'bp_rest_sitewide_notice_delete_failed',
 				__( 'There was an error trying to delete a notice.', 'buddypress' ),
