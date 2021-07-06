@@ -1,6 +1,6 @@
 <?php
 /**
- * BP REST: BP_REST_Messages_Endpoint class
+ * BP REST: BP_REST_Sitewide_Notices_Endpoint class
  *
  * @package BuddyPress
  * @since 9.0.0
@@ -9,7 +9,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Messages endpoints.
+ * Sitewide Notices endpoints.
  *
  * @since 9.0.0
  */
@@ -611,7 +611,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		$notice   = $this->get_notice_object( $request->get_param( 'id' ) );
 		$previous = $this->prepare_item_for_response( $notice, $request );
 
-		// Delete a thread.
+		// Delete a sitewide notice.
 		if ( ! bp_current_user_can( 'bp_moderate' ) || ! $notice->delete() ) {
 			return new WP_Error(
 				'bp_rest_sitewide_notice_delete_failed',
