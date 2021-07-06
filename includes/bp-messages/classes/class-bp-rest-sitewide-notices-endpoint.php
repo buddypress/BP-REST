@@ -211,8 +211,9 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 
 		} else {
 			// Ordinary users, or Admins who aren't currently managing notices, only get the most recent notice.
-			$retval = array();
-			$notice = BP_Messages_Notice::get_active();
+			$retval  = array();
+			$notice  = BP_Messages_Notice::get_active();
+			$notices = array();
 			if ( ! empty( $notice ) ) {
 				// Make sure the user hasn't already dismissed it.
 				$closed_notices = bp_get_user_meta( bp_loggedin_user_id(), 'closed_notices', true );
@@ -223,6 +224,8 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 					$retval[] = $this->prepare_response_for_collection(
 						$this->prepare_item_for_response( $notice, $request )
 					);
+					// Add the item to the notices array used in the filter.
+					$notices[] = $notice;
 				}
 			}
 			$response = rest_ensure_response( $retval );
