@@ -256,17 +256,21 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_items_permissions_check( $request ) {
-		$retval  = true;
 		$context = $request->get_param( 'context' );
+		$retval  = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to see the notices.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
 
-		if ( ! is_user_logged_in() || ( 'edit' === $context && ! bp_current_user_can( 'bp_moderate' ) ) ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to see the notices.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
+		if ( is_user_logged_in() ) {
+		    if ( 'view' === $context ) {
+				$retval = true;
+			} elseif ( 'edit' === $context ) {
+				$retval = bp_current_user_can( 'bp_moderate' );
+			}
 		}
 
 		/**
@@ -322,43 +326,43 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_item_permissions_check( $request ) {
-		$retval = true;
 
-		if ( ! is_user_logged_in() ) {
-			$retval = new WP_Error(
-				'bp_rest_authorization_required',
-				__( 'Sorry, you are not allowed to read notices.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
-			);
-		}
+		$retval = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to read notices.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
 
-		$notice = $this->get_notice_object( $request->get_param( 'id' ) );
-
-		if ( true === $retval && empty( $notice->id ) ) {
-			$retval = new WP_Error(
-				'bp_rest_invalid_id',
-				__( 'Sorry, this notice does not exist.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
-		if ( true === $retval && bp_current_user_can( 'bp_moderate' ) ) {
-			$retval = true;
-		} else {
-			// Non-admin users can only see the active notice.
-			$is_active = isset( $notice->is_active ) ? $notice->is_active : false;
-			if ( true === $retval && ! $is_active ) {
+		if ( is_user_logged_in() ) {
+			$notice = $this->get_notice_object( $request->get_param( 'id' ) );
+			if ( empty( $notice->id ) ) {
 				$retval = new WP_Error(
-					'bp_rest_authorization_required',
-					__( 'Sorry, you are not allowed to see this notice.', 'buddypress' ),
+					'bp_rest_invalid_id',
+					__( 'Sorry, this notice does not exist.', 'buddypress' ),
 					array(
-						'status' => rest_authorization_required_code(),
+						'status' => 404,
 					)
 				);
+			} else {
+				if ( bp_current_user_can( 'bp_moderate' ) ) {
+					$retval = true;
+				} else {
+					// Non-admin users can only see the active notice.
+					$is_active = isset( $notice->is_active ) ? $notice->is_active : false;
+					if ( ! $is_active ) {
+						$retval = new WP_Error(
+							'bp_rest_authorization_required',
+							__( 'Sorry, you are not allowed to see this notice.', 'buddypress' ),
+							array(
+								'status' => rest_authorization_required_code(),
+							)
+						);
+					} else {
+						$retval = true;
+					}
+				}
 			}
 		}
 
@@ -652,7 +656,17 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function manage_item_permissions_check( $request ) {
-		$retval = bp_current_user_can( 'bp_moderate' );
+		$retval = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
+
+		if ( bp_current_user_can( 'bp_moderate' ) ) {
+			$retval = true;
+		}
 
 		/**
 		 * Filter the notice `manage_item` permissions check.
