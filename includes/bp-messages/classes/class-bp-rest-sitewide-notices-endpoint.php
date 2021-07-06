@@ -91,7 +91,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 				array(
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'dismiss_notice' ),
-					'permission_callback' => array( $this, 'get_items_permissions_check' ), // Anyone who can get items can dismiss them.
+					'permission_callback' => array( $this, 'dismiss_notice_permissions_check' ), // Anyone who can get items can dismiss them.
 				),
 				'schema' => array( $this, 'get_item_schema' ),
 			)
@@ -567,6 +567,28 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		do_action( 'bp_rest_sitewide_notices_dismiss_notice', $notice, $response, $request );
 
 		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to dismiss the current notice.
+	 *
+	 * @since 9.0.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_Error|bool
+	 */
+	public function dismiss_notice_permissions_check( $request ) {
+		$retval = $this->get_items_permissions_check( $request );
+
+		/**
+		 * Filter the sitewide notices `dismiss_notice` permissions check.
+		 *
+		 * @since 9.0.0
+		 *
+		 * @param bool|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_sitewide_notices_dismiss_notice_permissions_check', $retval, $request );
 	}
 
 	/**
