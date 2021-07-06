@@ -86,8 +86,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			$dismiss_endpoint,
 			array(
-				'args'   => array(
-				),
+				'args'   => array(),
 				array(
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'dismiss_notice' ),
@@ -117,7 +116,6 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 			// Edit the Thread ID description and default properties.
 			$args['id']['description'] = __( 'ID of the sitewide notice. Required when editing an existing notice.', 'buddypress' );
 			$args['id']['default']     = 0;
-
 
 			// Edit subject's properties.
 			$args['subject']['type']        = 'string';
@@ -178,7 +176,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 
-		$context  = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
 
 		if ( 'edit' === $context && bp_current_user_can( 'bp_moderate' ) ) {
 
@@ -266,7 +264,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		);
 
 		if ( is_user_logged_in() ) {
-		    if ( 'view' === $context ) {
+			if ( 'view' === $context ) {
 				$retval = true;
 			} elseif ( 'edit' === $context ) {
 				$retval = bp_current_user_can( 'bp_moderate' );
@@ -761,7 +759,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		$context = $request->get_param( 'context' );
 		// @TODO: There must be something wrong here.
 		if ( empty( $context ) ) {
-			$context = "view";
+			$context = 'view';
 		}
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
@@ -913,9 +911,9 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 */
 	protected function prepare_item_for_database( $request ) {
 
-		$schema          = $this->get_item_schema();
-		$notice_id       = $request->get_param( 'id' );
-		$prepared_item   = $this->get_notice_object( $notice_id );
+		$schema        = $this->get_item_schema();
+		$notice_id     = $request->get_param( 'id' );
+		$prepared_item = $this->get_notice_object( $notice_id );
 
 		// Notice ID.
 		if ( ! empty( $schema['properties']['id'] ) && ! empty( $prepared_item->id ) ) {
@@ -944,7 +942,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 
 		// Date_sent is set at creation, so nothing to do.
 
-		// Is active
+		// Is active.
 		$is_active = $request->get_param( 'is_active' );
 		if ( ! empty( $schema['properties']['is_active'] ) && ! is_null( $is_active ) ) {
 			// The method get_param() returns a string, so we must convert to an integer.
