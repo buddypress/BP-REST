@@ -146,6 +146,10 @@ function bp_rest() {
 		require_once dirname( __FILE__ ) . '/includes/bp-messages/classes/class-bp-rest-messages-endpoint.php';
 		$controller = new BP_REST_Messages_Endpoint();
 		$controller->register_routes();
+
+		require_once dirname( __FILE__ ) . '/includes/bp-messages/classes/class-bp-rest-sitewide-notices-endpoint.php';
+		$controller = new BP_REST_Sitewide_Notices_Endpoint();
+		$controller->register_routes();
 	}
 
 	if ( bp_is_active( 'notifications' ) ) {
