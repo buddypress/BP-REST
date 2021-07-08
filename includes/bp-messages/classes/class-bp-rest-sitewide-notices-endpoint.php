@@ -103,75 +103,6 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
-	 * Select the item schema arguments needed for the CREATABLE, EDITABLE and DELETABLE methods.
-	 *
-	 * @since 9.0.0
-	 *
-	 * @param string $method Optional. HTTP method of the request.
-	 * @return array Endpoint arguments.
-	 */
-	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
-		$key                       = 'get_item';
-		$args                      = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
-		$args['id']['description'] = __( 'ID of the sitewide notice.', 'buddypress' );
-
-		if ( WP_REST_Server::CREATABLE === $method ) {
-			$key = 'create_item';
-
-			// Edit the Thread ID description and default properties.
-			$args['id']['description'] = __( 'ID of the sitewide notice. Required when editing an existing notice.', 'buddypress' );
-			$args['id']['default']     = 0;
-
-			// Edit subject's properties.
-			$args['subject']['type']        = 'string';
-			$args['subject']['default']     = false;
-			$args['subject']['description'] = __( 'Subject of the sitewide notice.', 'buddypress' );
-
-			// Edit message's properties.
-			$args['message']['type']        = 'string';
-			$args['message']['description'] = __( 'Content of the sitewide notice.', 'buddypress' );
-
-		} else {
-			unset( $args['subject'], $args['message'] );
-
-			if ( WP_REST_Server::EDITABLE === $method ) {
-				$key = 'update_item';
-
-				$args['id'] = array(
-					'description'       => __( 'ID of the sitewide notice to update. Required when editing an existing notice.', 'buddypress' ),
-					'required'          => true,
-					'type'              => 'integer',
-					'sanitize_callback' => 'absint',
-					'validate_callback' => 'rest_validate_request_arg',
-				);
-			}
-
-			if ( WP_REST_Server::DELETABLE === $method ) {
-				$key = 'delete_item';
-
-				$args['id'] = array(
-					'description'       => __( 'The ID of the sitewide notice to delete', 'buddypress' ),
-					'required'          => true,
-					'type'              => 'integer',
-					'sanitize_callback' => 'absint',
-					'validate_callback' => 'rest_validate_request_arg',
-					'default'           => 0,
-				);
-			}
-		}
-
-		/**
-		 * Filters the method query arguments.
-		 *
-		 * @since 9.0.0
-		 *
-		 * @param array $args Query arguments.
-		 * @param string $method HTTP method of the request.
-		 */
-		return apply_filters( "bp_rest_sitewide_notices_{$key}_query_arguments", $args, $method );
-	}
-
-	/**
 	 * Retrieve sitewide notices.
 	 *
 	 * @since 9.0.0
@@ -241,9 +172,9 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 9.0.0
 		 *
-		 * @param BP_Messages_Notice $notices  Fetched notices.
-		 * @param WP_REST_Response   $response The response data.
-		 * @param WP_REST_Request    $request  The request sent to the API.
+		 * @param array            $notices  Fetched notices.
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
 		 */
 		do_action( 'bp_rest_sitewide_notices_get_items', $notices, $response, $request );
 
@@ -298,12 +229,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	public function get_item( $request ) {
 		$notice = $this->get_notice_object( $request->get_param( 'id' ) );
 
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $notice, $request )
-			),
-		);
-
+		$retval   = $this->prepare_item_for_response( $notice, $request );
 		$response = rest_ensure_response( $retval );
 
 		/**
@@ -411,12 +337,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 			return $fields_update;
 		}
 
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $notice, $request )
-			),
-		);
-
+		$retval   = $this->prepare_item_for_response( $notice, $request );
 		$response = rest_ensure_response( $retval );
 
 		/**
@@ -464,31 +385,35 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$test_notice = $this->get_notice_object( $request->get_param( 'id' ) );
-		if ( ! $test_notice->id ) {
-			return new WP_Error(
-				'bp_rest_sitewide_notices_update_failed',
-				__( 'There was an error trying to update the notice.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
+		$error = new WP_Error(
+			'bp_rest_sitewide_notices_update_failed',
+			__( 'There was an error trying to update the notice.', 'buddypress' ),
+			array(
+				'status' => 500,
+			)
+		);
+
+		// Check the notice exists.
+		$notice = $this->get_notice_object( $request->get_param( 'id' ) );
+		if ( ! $notice->id ) {
+			return $error;
 		}
 
-		$notice = $this->prepare_item_for_database( $request );
-		$notice->save();
+		// Update the notice.
+		$updated_notice = $this->prepare_item_for_database( $request );
+		if ( ! $updated_notice->save() ) {
+			return $error;
+		}
 
-		$fields_update = $this->update_additional_fields_for_object( $notice, $request );
+		$fields_update = $this->update_additional_fields_for_object( $updated_notice, $request );
 		if ( is_wp_error( $fields_update ) ) {
 			return $fields_update;
 		}
 
-		$retval = array(
-			$this->prepare_response_for_collection(
-				$this->prepare_item_for_response( $notice, $request )
-			),
-		);
-
+		$retval   = $this->prepare_item_for_response( $updated_notice, $request );
 		$response = rest_ensure_response( $retval );
 
 		/**
@@ -496,11 +421,11 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 9.0.0
 		 *
-		 * @param BP_Messages_Notice  $notice    Notice object.
-		 * @param WP_REST_Response    $response  The response data.
-		 * @param WP_REST_Request     $request   The request sent to the API.
+		 * @param BP_Messages_Notice $updated_notice The notice object.
+		 * @param WP_REST_Response   $response       The response data.
+		 * @param WP_REST_Request    $request        The request sent to the API.
 		 */
-		do_action( 'bp_rest_sitewide_notices_update_item', $notice, $response, $request );
+		do_action( 'bp_rest_sitewide_notices_update_item', $updated_notice, $response, $request );
 
 		return $response;
 	}
@@ -543,11 +468,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 
 		if ( is_user_logged_in() && ! empty( $notice->id ) ) {
 			$user_id        = bp_loggedin_user_id();
-			$closed_notices = bp_get_user_meta( $user_id, 'closed_notices', true );
-
-			if ( empty( $closed_notices ) ) {
-				$closed_notices = array();
-			}
+			$closed_notices = (array) bp_get_user_meta( $user_id, 'closed_notices', true );
 
 			// Add the notice to the array of the user's closed notices.
 			$closed_notices[] = (int) $notice->id;
@@ -794,6 +715,65 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_notice_object( $id ) {
 		return new BP_Messages_Notice( $id );
+	}
+
+	/**
+	 * Select the item schema arguments needed for the CREATABLE, EDITABLE and DELETABLE methods.
+	 *
+	 * @since 9.0.0
+	 *
+	 * @param string $method Optional. HTTP method of the request.
+	 * @return array Endpoint arguments.
+	 */
+	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
+		$key                       = 'get_item';
+		$args                      = WP_REST_Controller::get_endpoint_args_for_item_schema( $method );
+		$args['id']['description'] = __( 'ID of the sitewide notice.', 'buddypress' );
+
+		if ( WP_REST_Server::CREATABLE === $method ) {
+			$key = 'create_item';
+
+			// Edit the Sitewide Notice ID description and default properties.
+			$args['id']['description'] = __( 'ID of the sitewide notice. Required when editing an existing notice.', 'buddypress' );
+			$args['id']['default']     = 0;
+
+			// Edit subject's properties.
+			$args['subject']['type']        = 'string';
+			$args['subject']['default']     = false;
+			$args['subject']['description'] = __( 'Subject of the sitewide notice.', 'buddypress' );
+
+			// Edit message's properties.
+			$args['message']['type']        = 'string';
+			$args['message']['description'] = __( 'Content of the sitewide notice.', 'buddypress' );
+
+		} else {
+			unset( $args['subject'], $args['message'] );
+			$args['id']['required'] = true;
+
+			if ( WP_REST_Server::EDITABLE === $method ) {
+				$key = 'update_item';
+
+				// Edit the Sitewide Notice ID description and default properties.
+				$args['id']['description'] = __( 'ID of the sitewide notice to update. Required when editing an existing notice.', 'buddypress' );
+			}
+
+			if ( WP_REST_Server::DELETABLE === $method ) {
+				$key = 'delete_item';
+
+				// Edit the Sitewide Notice ID description and default properties.
+				$args['id']['description'] = __( 'ID of the sitewide notice to delete. Required when deleting an existing notice.', 'buddypress' );
+			}
+		}
+
+		/**
+		 * Filters the method query arguments.
+		 *
+		 * @since 9.0.0
+		 *
+		 * @param array $args Query arguments.
+		 * @param string $method HTTP method of the request.
+		 */
+		return apply_filters( "bp_rest_sitewide_notices_{$key}_query_arguments", $args, $method );
 	}
 
 	/**
