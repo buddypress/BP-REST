@@ -232,7 +232,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_item( $request ) {
-		$thread = $this->get_thread_object( $request->get_param( 'id' ) );
+		$thread = $this->get_thread_object( $request->get_param( 'id' ), bp_loggedin_user_id() );
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $thread, $request )
@@ -264,17 +264,19 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		$error  = new WP_Error(
+		$error = new WP_Error(
 			'bp_rest_authorization_required',
 			__( 'Sorry, you are not allowed to see this thread.', 'buddypress' ),
 			array(
 				'status' => rest_authorization_required_code(),
 			)
 		);
-		$retval = $error;
+
+		$retval  = $error;
+		$user_id = bp_loggedin_user_id();
 
 		if ( is_user_logged_in() ) {
-			$thread = $this->get_thread_object( $request->get_param( 'id' ) );
+			$thread = $this->get_thread_object( $request->get_param( 'id' ), $user_id );
 
 			if ( empty( $thread ) ) {
 				$retval = new WP_Error(
@@ -284,7 +286,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 						'status' => 404,
 					)
 				);
-			} elseif ( bp_current_user_can( 'bp_moderate' ) || messages_check_thread_access( $thread->thread_id ) ) {
+			} elseif ( bp_current_user_can( 'bp_moderate' ) || messages_check_thread_access( $thread->thread_id, $user_id ) ) {
 				$retval = true;
 			} else {
 				$retval = $error;
@@ -422,8 +424,14 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		// Setting context.
 		$request->set_param( 'context', 'edit' );
 
+		// Updated user id.
+		$updated_user_id = bp_loggedin_user_id();
+		if ( ! empty( $request->get_param( 'user_id' ) ) ) {
+			$updated_user_id = $request->get_param( 'user_id' );
+		}
+
 		// Get the thread.
-		$thread = $this->get_thread_object( $request->get_param( 'id' ) );
+		$thread = $this->get_thread_object( $request->get_param( 'id' ), $updated_user_id );
 		$error  = new WP_Error(
 			'bp_rest_messages_update_failed',
 			__( 'There was an error trying to update the message.', 'buddypress' ),
@@ -435,22 +443,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		// Is someone updating the thread status?
 		$thread_status_update = ( (bool) $request->get_param( 'read' ) || (bool) $request->get_param( 'unread' ) );
 
-		// Updated user id.
-		$updated_user_id = bp_loggedin_user_id();
-		if ( ! empty( $request->get_param( 'user_id' ) ) ) {
-			$updated_user_id = $request->get_param( 'user_id' );
-		}
-
 		// Mark thread as read.
 		if ( true === (bool) $request->get_param( 'read' ) ) {
 			messages_mark_thread_read( $thread->thread_id, $updated_user_id );
-			global $wpdb;
-
-			$bp     = buddypress();
-			// $retval = $wpdb->query( $wpdb->prepare( "UPDATE {$bp->messages->table_name_recipients} SET unread_count = 0 WHERE user_id = %d AND thread_id = %d", $updated_user_id, $thread->thread_id ) );
-
-			wp_cache_delete( 'thread_recipients_' . $thread->thread_id, 'bp_messages' );
-			wp_cache_delete( $updated_user_id, 'bp_messages_unread_count' );
 		}
 
 		// Mark thread as unread.
@@ -502,7 +497,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		}
 
 		// Get the updated thread object.
-		$thread = $this->get_thread_object( $thread->thread_id );
+		$thread = $this->get_thread_object( $thread->thread_id, $updated_user_id );
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $thread, $request )
@@ -669,14 +664,14 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		// Setting context.
 		$request->set_param( 'context', 'edit' );
 
-		// Get the thread before it's deleted.
-		$thread   = $this->get_thread_object( $request->get_param( 'id' ) );
-		$previous = $this->prepare_item_for_response( $thread, $request );
-
 		$user_id = bp_loggedin_user_id();
 		if ( ! empty( $request->get_param( 'user_id' ) ) ) {
 			$user_id = $request->get_param( 'user_id' );
 		}
+
+		// Get the thread before it's deleted.
+		$thread   = $this->get_thread_object( $request->get_param( 'id' ), $user_id );
+		$previous = $this->prepare_item_for_response( $thread, $request );
 
 		// Check the user is one of the recipients.
 		if ( ! in_array( $user_id, wp_parse_id_list( wp_list_pluck( $thread->get_recipients(), 'user_id' ) ), true ) ) {
@@ -1021,10 +1016,16 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param int $thread_id Thread ID.
+	 * @param int $user_id   User ID.
 	 * @return BP_Messages_Thread|string
 	 */
-	public function get_thread_object( $thread_id ) {
-		$thread_object = new BP_Messages_Thread( (int) $thread_id );
+	public function get_thread_object( $thread_id, $user_id = 0 ) {
+		$args = array();
+		if ( ! empty( $user_id ) ) {
+			$args = array( 'user_id' => $user_id );
+		}
+
+		$thread_object = new BP_Messages_Thread( (int) $thread_id, 'ASC', $args );
 
 		if ( false === (bool) $thread_object::is_valid( $thread_id ) ) {
 			return '';

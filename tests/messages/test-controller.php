@@ -20,13 +20,10 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
 		}
-
-		// $this->old_current_user = get_current_user_id();
 	}
 
 	public function tearDown() {
 		parent::tearDown();
-		// $this->bp->set_current_user( $this->old_current_user );
 	}
 
 	public function test_register_routes() {
@@ -91,8 +88,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_item() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
-
-		$m = $this->bp_factory->message->create_and_get( array(
+		$m  = $this->bp_factory->message->create_and_get( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2 ),
 			'subject'    => 'Foo',
@@ -111,7 +107,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertNotEmpty( $all_data );
 
 		$data = current( $all_data );
-		$this->check_thread_data( $this->endpoint->get_thread_object( $data['id'] ), $data );
+		$this->check_thread_data( $this->endpoint->get_thread_object( $data['id'], $u2 ), $data );
 	}
 
 	/**
@@ -324,6 +320,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $m->thread_id ) );
 		$request->set_param( 'unread', true );
+		$request->set_param( 'user_id', $u2 );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
