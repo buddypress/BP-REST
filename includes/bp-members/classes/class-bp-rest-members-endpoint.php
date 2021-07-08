@@ -500,6 +500,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		);
 
 		if ( $request->get_param( 'populate_extras' ) ) {
+			$data['registered_since']          = bp_core_time_since( $user->user_registered );
 			$data['last_activity']['timediff'] = '';
 			$data['last_activity']['date']     = '';
 
@@ -857,6 +858,12 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'type'        => 'string',
 						'format'      => 'date-time',
 						'context'     => array( 'edit' ),
+						'readonly'    => true,
+					),
+					'registered_since'   => array(
+						'description' => __( 'Elapsed time since the member registered.', 'buddypress' ),
+						'type'        => 'string',
+						'context'     => array( 'view', 'edit' ),
 						'readonly'    => true,
 					),
 					'password'           => array(
