@@ -123,6 +123,89 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_items_active_permission() {
+		$u = $this->factory->user->create(
+			array(
+				'role' => 'author',
+			)
+		);
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'status', 'active' );
+		$response = $this->server->dispatch( $request );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$all_features = wp_list_pluck( $all_data, 'features' );
+		$this->assertNotEmpty( array_filter( $all_features ) );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_inactive_component_features() {
+		$this->bp->set_current_user( $this->user );
+
+		add_filter( 'bp_is_messages_star_active', '__return_false' );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		remove_filter( 'bp_is_messages_star_active', '__return_false' );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$messages_info = wp_list_filter( $all_data, array( 'name' => 'messages' ) );
+		$messages_info = reset( $messages_info );
+
+		$this->assertFalse( $messages_info['features']['star'] );
+	}
+
+	public function deactivate_activity_component( $retval, $component ) {
+		if ( 'activity' === $component ) {
+			$retval = false;
+		}
+
+		return $retval;
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_inactive_component() {
+		$this->bp->set_current_user( $this->user );
+
+		add_filter( 'bp_is_active', array( $this, 'deactivate_activity_component' ), 10, 2 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		remove_filter( 'bp_is_active', array( $this, 'deactivate_activity_component' ), 10, 2 );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$components_info = wp_list_filter( $all_data, array( 'name' => 'messages', 'title' => 'Activity Streams' ), 'or' );
+		$features = wp_list_pluck( $components_info, 'features', 'name' );
+
+		$this->assertTrue( $features['messages']['star'] );
+		$this->assertEmpty( $features['activity'] );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
@@ -261,7 +344,7 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 4, count( $properties ) );
+		$this->assertEquals( 6, count( $properties ) );
 		$this->assertArrayHasKey( 'name', $properties );
 		$this->assertArrayHasKey( 'status', $properties );
 		$this->assertArrayHasKey( 'title', $properties );
