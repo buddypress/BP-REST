@@ -428,7 +428,6 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 					array(
 						'type'          => 'thumb',
 						'blog_id'       => $blog->blog_id,
-						'admin_user_id' => $blog->admin_user_id,
 						'html'          => false,
 					)
 				),
@@ -436,7 +435,6 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 					array(
 						'type'          => 'full',
 						'blog_id'       => $blog->blog_id,
-						'admin_user_id' => $blog->admin_user_id,
 						'html'          => false,
 					)
 				),
