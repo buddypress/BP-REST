@@ -15,21 +15,15 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->endpoint     = new BP_REST_Messages_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->messages->id;
-		$this->user         = $this->factory->user->create( array(
-			'role'       => 'administrator',
-			'user_email' => 'admin@example.com',
-		) );
+		$this->user         = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
 		}
-
-		$this->old_current_user = get_current_user_id();
 	}
 
 	public function tearDown() {
 		parent::tearDown();
-		$this->bp->set_current_user( $this->old_current_user );
 	}
 
 	public function test_register_routes() {
@@ -75,13 +69,8 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
-		$request->set_query_params(
-			array(
-				'user_id' => $u1,
-			)
-		);
-
 		$request->set_param( 'context', 'view' );
+		$request->set_param( 'user_id', $u1 );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -89,8 +78,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$data = current( $all_data );
-		$this->check_thread_data( $this->endpoint->get_thread_object( $data['id'] ), $data );
+		$this->check_thread_data( $this->endpoint->get_thread_object( $all_data[0]['id'], $u2 ), $all_data[0] );
 	}
 
 	/**
@@ -99,8 +87,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_item() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
-
-		$m = $this->bp_factory->message->create_and_get( array(
+		$m  = $this->bp_factory->message->create_and_get( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2 ),
 			'subject'    => 'Foo',
@@ -119,7 +106,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertNotEmpty( $all_data );
 
 		$data = current( $all_data );
-		$this->check_thread_data( $this->endpoint->get_thread_object( $data['id'] ), $data );
+		$this->check_thread_data( $this->endpoint->get_thread_object( $data['id'], $u2 ), $data );
 	}
 
 	/**
@@ -128,8 +115,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_item_admin_access() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
-
-		$m = $this->bp_factory->message->create_and_get( array(
+		$m  = $this->bp_factory->message->create_and_get( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2 ),
 			'subject'    => 'Foo',
@@ -140,6 +126,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m->thread_id );
 
 		$request->set_param( 'context', 'view' );
+		$request->set_param( 'user_id', $u2 );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -147,12 +134,8 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		foreach ( $all_data as $data ) {
-			$this->check_thread_data(
-				$this->endpoint->get_thread_object( $data['id'] ),
-				$data
-			);
-		}
+		$data = current( $all_data );
+		$this->check_thread_data( $this->endpoint->get_thread_object( $data['id'], $u2 ), $data );
 	}
 
 	/**
@@ -162,8 +145,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
 		$u3 = $this->factory->user->create();
-
-		$m = $this->bp_factory->message->create( array(
+		$m  = $this->bp_factory->message->create_and_get( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2 ),
 			'subject'    => 'Foo',
@@ -171,8 +153,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->bp->set_current_user( $u3 );
 
-		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m );
-
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m->thread_id );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
@@ -183,12 +164,33 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item_user_is_not_logged_in() {
-		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$u3 = $this->factory->user->create();
+		$m  = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m->thread_id );
 
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_invalid_id() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . REST_TESTS_IMPOSSIBLY_HIGH_NUMBER );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -243,22 +245,22 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item_with_no_content() {
-		$u = $this->factory->user->create();
-
 		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params(
 			array(
 				'sender_id'  => $this->user,
-				'recipients' => [ $u ],
+				'recipients' => [ $this->factory->user->create() ],
 				'subject'    => 'Foo',
 			)
 		);
 
-		$response = $this->server->dispatch( $request );
-
-		$this->assertErrorResponse( 'rest_missing_callback_param', $response, 400 );
+		$this->assertErrorResponse(
+			'rest_missing_callback_param',
+			$this->server->dispatch( $request ),
+			400
+		);
 	}
 
 	/**
@@ -276,26 +278,20 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 			)
 		);
 
-		$response = $this->server->dispatch( $request );
-
-		$this->assertErrorResponse( 'rest_missing_callback_param', $response, 400 );
+		$this->assertErrorResponse(
+			'rest_missing_callback_param',
+			$this->server->dispatch( $request ),
+			400
+		);
 	}
 
 	/**
 	 * @group update_item
 	 */
 	public function test_update_item() {
-		$this->markTestSkipped();
-	}
-
-	/**
-	 * @group delete_item
-	 */
-	public function test_delete_item() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
-
-		$m = $this->bp_factory->message->create_and_get( array(
+		$m  = $this->bp_factory->message->create_and_get( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2 ),
 			'subject'    => 'Foo',
@@ -304,7 +300,132 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->bp->set_current_user( $u2 );
 
-		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $m->thread_id );
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $m->thread_id ) );
+		$request->set_param( 'read', true );
+		$request->set_param( 'user_id', $u2 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$data     = current( $all_data );
+
+		$this->assertNotEmpty( $data );
+		$this->assertFalse( (bool) $data['unread_count'] );
+		$this->assertFalse( (bool) $data['recipients'][ $u1 ]['unread_count'] );
+		$this->assertFalse( (bool) $data['recipients'][ $u2 ]['unread_count'] );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_thread_to_unread() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$m  = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+			'content'    => 'Content',
+		) );
+
+		// Update to read.
+		messages_mark_thread_read( $m->thread_id, $u2 );
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $m->thread_id ) );
+		$request->set_param( 'unread', true );
+		$request->set_param( 'user_id', $u2 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$data     = current( $all_data );
+
+		$this->assertNotEmpty( $data );
+		$this->assertTrue( (bool) $data['unread_count'] );
+		$this->assertFalse( (bool) $data['recipients'][ $u1 ]['unread_count'] );
+		$this->assertTrue( (bool) $data['recipients'][ $u2 ]['unread_count'] );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_user_is_not_logged_in() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$m  = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+			'content'    => 'Content',
+		) );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $m->thread_id ) );
+
+		$this->assertErrorResponse(
+			'bp_rest_authorization_required',
+			$this->server->dispatch( $request ),
+			rest_authorization_required_code()
+		);
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_invalid_id() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_with_user_with_no_access() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$u3 = $this->factory->user->create();
+		$m  = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+			'content'    => 'Content',
+		) );
+
+		$this->bp->set_current_user( $u3 );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $m->thread_id ) );
+
+		$this->assertErrorResponse(
+			'bp_rest_authorization_required',
+			$this->server->dispatch( $request ),
+			rest_authorization_required_code()
+		);
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$m  = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+			'content'    => 'Content',
+		) );
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $m->thread_id ) );
+		$request->set_query_params( array( 'user_id' => $u2 ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -322,8 +443,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_delete_item_admin_access() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
-
-		$m = $this->bp_factory->message->create_and_get( array(
+		$m  = $this->bp_factory->message->create_and_get( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2 ),
 			'subject'    => 'Foo',
@@ -332,11 +452,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->bp->set_current_user( $this->user );
 
 		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $m->thread_id );
-		$request->set_query_params(
-			array(
-				'user_id' => $u2,
-			)
-		);
+		$request->set_query_params( array( 'user_id' => $u2 ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -351,12 +467,11 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group delete_item
 	 */
-	public function test_delete_item_user_with_no_access() {
+	public function test_delete_item_with_user_with_no_access() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
 		$u3 = $this->factory->user->create();
-
-		$m = $this->bp_factory->message->create( array(
+		$m  = $this->bp_factory->message->create_and_get( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2 ),
 			'subject'    => 'Foo',
@@ -364,10 +479,13 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->bp->set_current_user( $u3 );
 
-		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $m );
-		$response = $this->server->dispatch( $request );
+		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $m->thread_id );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse(
+			'bp_rest_authorization_required',
+			$this->server->dispatch( $request ),
+			rest_authorization_required_code()
+		);
 	}
 
 	/**
@@ -376,17 +494,19 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_delete_item_user_is_not_logged_in() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
-
-		$m = $this->bp_factory->message->create( array(
+		$m  = $this->bp_factory->message->create( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2 ),
 			'subject'    => 'Foo',
 		) );
 
-		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $m );
-		$response = $this->server->dispatch( $request );
+		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $m );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertErrorResponse(
+			'bp_rest_authorization_required',
+			$this->server->dispatch( $request ),
+			rest_authorization_required_code()
+		);
 	}
 
 	/**
@@ -700,15 +820,12 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		// Update the last message.
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $m1->thread_id );
-		$request->set_query_params(
-			array(
-				'boz_field'  => $expected,
-			)
-		);
-		$response    = $this->server->dispatch( $request );
-		$update_data = $response->get_data();
+		$request->set_query_params( array( 'boz_field'  => $expected ) );
+		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
+
+		$update_data = $response->get_data();
 		$this->assertNotEmpty( $update_data );
 
 		$last_message = wp_list_filter( $update_data[0]['messages'], array( 'id' => $update_data[0]['message_id'] ) );
@@ -786,8 +903,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
 		$u3 = $this->factory->user->create();
-
-		$m = $this->bp_factory->message->create_and_get( array(
+		$m  = $this->bp_factory->message->create_and_get( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2, $u3 ),
 			'subject'    => 'Foo',
@@ -826,7 +942,6 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_prepare_add_links_to_response() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
-
 		$m1 = $this->bp_factory->message->create_and_get( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2 ),
