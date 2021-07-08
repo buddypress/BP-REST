@@ -58,6 +58,12 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			$notice_endpoint,
 			array(
+				'args' => array(
+					'id' => array(
+						'description' => __( 'A unique numeric ID for the Sitewide notice.', 'buddypress' ),
+						'type'        => 'integer',
+					),
+				),
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
@@ -86,7 +92,6 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			$dismiss_endpoint,
 			array(
-				'args'   => array(),
 				array(
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'dismiss_notice' ),
@@ -895,6 +900,8 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 
 		/**
 		 * Filters the collection query params.
+		 *
+		 * @since 9.0.0
 		 *
 		 * @param array $params Query params.
 		 */
