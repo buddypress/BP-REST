@@ -509,7 +509,17 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function dismiss_notice_permissions_check( $request ) {
-		$retval = $this->get_items_permissions_check( $request );
+		$retval  = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to dismiss notices.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
+
+		if ( is_user_logged_in() ) {
+			$retval = true;
+		}
 
 		/**
 		 * Filter the sitewide notices `dismiss_notice` permissions check.
