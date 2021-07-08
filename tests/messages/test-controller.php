@@ -70,7 +70,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
-		$request->set_query_params( array( 'user_id' => $u1 ) );
+		$request->set_param( 'user_id', $u1 );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -78,8 +78,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$data = current( $all_data );
-		$this->check_thread_data( $this->endpoint->get_thread_object( $data['id'] ), $data );
+		$this->check_thread_data( $this->endpoint->get_thread_object( $all_data[0]['id'], $u2 ), $all_data[0] );
 	}
 
 	/**
@@ -127,6 +126,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m->thread_id );
 
 		$request->set_param( 'context', 'view' );
+		$request->set_param( 'user_id', $u2 );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -134,12 +134,8 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		foreach ( $all_data as $data ) {
-			$this->check_thread_data(
-				$this->endpoint->get_thread_object( $data['id'] ),
-				$data
-			);
-		}
+		$data = current( $all_data );
+		$this->check_thread_data( $this->endpoint->get_thread_object( $data['id'], $u2 ), $data );
 	}
 
 	/**
@@ -158,7 +154,6 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->bp->set_current_user( $u3 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m->thread_id );
-
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
@@ -169,12 +164,33 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item_user_is_not_logged_in() {
-		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$u3 = $this->factory->user->create();
+		$m  = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m->thread_id );
 
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_invalid_id() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . REST_TESTS_IMPOSSIBLY_HIGH_NUMBER );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**

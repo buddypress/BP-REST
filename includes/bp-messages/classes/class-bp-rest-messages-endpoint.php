@@ -232,7 +232,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_item( $request ) {
-		$thread = $this->get_thread_object( $request->get_param( 'id' ), bp_loggedin_user_id() );
+		$user_id = bp_loggedin_user_id();
+		if ( ! empty( $request->get_param( 'user_id' ) ) ) {
+			$user_id = $request->get_param( 'user_id' );
+		}
+
+		$thread = $this->get_thread_object( $request->get_param( 'id' ), $user_id );
 		$retval = array(
 			$this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $thread, $request )
@@ -274,6 +279,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		$retval  = $error;
 		$user_id = bp_loggedin_user_id();
+		if ( ! empty( $request->get_param( 'user_id' ) ) ) {
+			$user_id = $request->get_param( 'user_id' );
+		}
 
 		if ( is_user_logged_in() ) {
 			$thread = $this->get_thread_object( $request->get_param( 'id' ), $user_id );
