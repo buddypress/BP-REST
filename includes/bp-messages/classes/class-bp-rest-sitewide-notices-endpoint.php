@@ -784,78 +784,80 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	public function get_item_schema() {
-		$schema = array(
-			'$schema'    => 'http://json-schema.org/draft-04/schema#',
-			'title'      => 'bp_sitewide_notices',
-			'type'       => 'object',
-			'properties' => array(
-				'id'        => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'A unique numeric ID for the sitewide notice.', 'buddypress' ),
-					'type'        => 'integer',
-				),
-				'subject'   => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Subject of the sitewide notice.', 'buddypress' ),
-					'type'        => 'object',
-					'arg_options' => array(
-						'sanitize_callback' => null,
-						'validate_callback' => null,
+		if ( is_null( $this->schema ) ) {
+			$this->schema = array(
+				'$schema'    => 'http://json-schema.org/draft-04/schema#',
+				'title'      => 'bp_sitewide_notices',
+				'type'       => 'object',
+				'properties' => array(
+					'id'        => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'A unique numeric ID for the sitewide notice.', 'buddypress' ),
+						'type'        => 'integer',
 					),
-					'properties'  => array(
-						'raw'      => array(
-							'description' => __( 'Title of the sitewide notice, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'edit' ),
-							'default'     => false,
+					'subject'   => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Subject of the sitewide notice.', 'buddypress' ),
+						'type'        => 'object',
+						'arg_options' => array(
+							'sanitize_callback' => null,
+							'validate_callback' => null,
 						),
-						'rendered' => array(
-							'description' => __( 'Title of the sitewide notice, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-							'readonly'    => true,
-							'default'     => false,
-						),
-					),
-				),
-				'message'   => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'Content of the sitewide notice.', 'buddypress' ),
-					'type'        => 'object',
-					'required'    => true,
-					'arg_options' => array(
-						'sanitize_callback' => null,
-						'validate_callback' => null,
-					),
-					'properties'  => array(
-						'raw'      => array(
-							'description' => __( 'Content for the sitewide notice, as it exists in the database.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'edit' ),
-						),
-						'rendered' => array(
-							'description' => __( 'HTML content for the sitewide notice, transformed for display.', 'buddypress' ),
-							'type'        => 'string',
-							'context'     => array( 'view', 'edit' ),
-							'readonly'    => true,
+						'properties'  => array(
+							'raw'      => array(
+								'description' => __( 'Title of the sitewide notice, as it exists in the database.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'edit' ),
+								'default'     => false,
+							),
+							'rendered' => array(
+								'description' => __( 'Title of the sitewide notice, transformed for display.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+								'readonly'    => true,
+								'default'     => false,
+							),
 						),
 					),
+					'message'   => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Content of the sitewide notice.', 'buddypress' ),
+						'type'        => 'object',
+						'required'    => true,
+						'arg_options' => array(
+							'sanitize_callback' => null,
+							'validate_callback' => null,
+						),
+						'properties'  => array(
+							'raw'      => array(
+								'description' => __( 'Content for the sitewide notice, as it exists in the database.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'edit' ),
+							),
+							'rendered' => array(
+								'description' => __( 'HTML content for the sitewide notice, transformed for display.', 'buddypress' ),
+								'type'        => 'string',
+								'context'     => array( 'view', 'edit' ),
+								'readonly'    => true,
+							),
+						),
+					),
+					'date'      => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( "The date of the sitewide notice, in the site's timezone.", 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'string',
+						'format'      => 'date-time',
+					),
+					'is_active' => array(
+						'context'     => array( 'edit' ),
+						'description' => __( 'Whether this notice is active or not.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'boolean',
+					),
 				),
-				'date'      => array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( "The date of the sitewide notice, in the site's timezone.", 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'string',
-					'format'      => 'date-time',
-				),
-				'is_active' => array(
-					'context'     => array( 'edit' ),
-					'description' => __( 'Whether this notice is active or not.', 'buddypress' ),
-					'readonly'    => true,
-					'type'        => 'boolean',
-				),
-			),
-		);
+			);
+		}
 
 		/**
 		 * Filters the notice schema.
@@ -864,7 +866,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param array $schema The endpoint schema.
 		 */
-		return apply_filters( 'bp_rest_sitewide_notices_schema', $this->add_additional_fields_schema( $schema ) );
+		return apply_filters( 'bp_rest_sitewide_notices_schema', $this->add_additional_fields_schema( $this->schema ) );
 	}
 
 	/**
