@@ -483,7 +483,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 
 		if ( ! empty( $blog->admin_user_id ) ) {
 			$links['user'] = array(
-				'href'       => rest_url( bp_rest_get_user_url( absint( $blog->admin_user_id ) ) ),
+				'href'       => bp_rest_get_object_url( absint( $blog->admin_user_id ), 'members' ),
 				'embeddable' => true,
 			);
 		}

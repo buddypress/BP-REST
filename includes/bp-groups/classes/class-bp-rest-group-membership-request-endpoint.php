@@ -775,7 +775,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base ),
 			),
 			'user'       => array(
-				'href'       => rest_url( bp_rest_get_user_url( $invite->user_id ) ),
+				'href'       => bp_rest_get_object_url( $invite->user_id, 'members' ),
 				'embeddable' => true,
 			),
 		);

@@ -465,7 +465,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 				'href' => rest_url( $base . $field_data->field_id ),
 			),
 			'user' => array(
-				'href'       => rest_url( bp_rest_get_user_url( $field_data->user_id ) ),
+				'href'       => bp_rest_get_object_url( $field_data->user_id, 'members' ),
 				'embeddable' => true,
 			),
 		);
