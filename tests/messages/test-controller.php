@@ -21,12 +21,12 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$this->server = rest_get_server();
 		}
 
-		$this->old_current_user = get_current_user_id();
+		// $this->old_current_user = get_current_user_id();
 	}
 
 	public function tearDown() {
 		parent::tearDown();
-		$this->bp->set_current_user( $this->old_current_user );
+		// $this->bp->set_current_user( $this->old_current_user );
 	}
 
 	public function test_register_routes() {
@@ -290,6 +290,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $m->thread_id ) );
 		$request->set_param( 'read', true );
+		$request->set_param( 'user_id', $u2 );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -411,6 +412,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->bp->set_current_user( $u2 );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $m->thread_id ) );
+		$request->set_query_params( array( 'user_id' => $u2 ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );

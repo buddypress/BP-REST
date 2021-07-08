@@ -46,14 +46,15 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array( 'user_id' => $this->user ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
 
+		$this->assertNotEmpty( $all_data );
 		$this->assertSame( $notification_id, $all_data[0]['id'] );
 	}
 

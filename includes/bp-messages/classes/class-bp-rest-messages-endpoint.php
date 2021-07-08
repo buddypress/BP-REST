@@ -437,10 +437,20 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		// Updated user id.
 		$updated_user_id = bp_loggedin_user_id();
+		if ( ! empty( $request->get_param( 'user_id' ) ) ) {
+			$updated_user_id = $request->get_param( 'user_id' );
+		}
 
 		// Mark thread as read.
 		if ( true === (bool) $request->get_param( 'read' ) ) {
 			messages_mark_thread_read( $thread->thread_id, $updated_user_id );
+			global $wpdb;
+
+			$bp     = buddypress();
+			// $retval = $wpdb->query( $wpdb->prepare( "UPDATE {$bp->messages->table_name_recipients} SET unread_count = 0 WHERE user_id = %d AND thread_id = %d", $updated_user_id, $thread->thread_id ) );
+
+			wp_cache_delete( 'thread_recipients_' . $thread->thread_id, 'bp_messages' );
+			wp_cache_delete( $updated_user_id, 'bp_messages_unread_count' );
 		}
 
 		// Mark thread as unread.
@@ -502,7 +512,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$response = rest_ensure_response( $retval );
 
 		/**
-		 * Fires after a message is updated via the REST API.
+		 * Fires after a thread or a message is updated via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
@@ -669,10 +679,18 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		}
 
 		// Check the user is one of the recipients.
-		$recipient_ids = wp_parse_id_list( wp_list_pluck( $thread->recipients, 'user_id' ) );
+		if ( ! in_array( $user_id, wp_parse_id_list( wp_list_pluck( $thread->get_recipients(), 'user_id' ) ), true ) ) {
+			return new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		}
 
 		// Delete a thread.
-		if ( ! in_array( $user_id, $recipient_ids, true ) || ! messages_delete_thread( $thread->thread_id, $user_id ) ) {
+		if ( false === messages_delete_thread( $thread->thread_id, $user_id ) ) {
 			return new WP_Error(
 				'bp_rest_messages_delete_thread_failed',
 				__( 'There was an error trying to delete the thread.', 'buddypress' ),
