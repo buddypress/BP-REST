@@ -723,6 +723,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'creator_id'         => bp_get_group_creator_id( $item ),
 			'parent_id'          => $item->parent_id,
 			'date_created'       => bp_rest_prepare_date_response( $item->date_created ),
+			'created_since'      => bp_core_time_since( $item->date_created ),
 			'description'        => array(
 				'raw'      => $item->description,
 				'rendered' => bp_get_group_description( $item ),
@@ -1222,6 +1223,13 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 						'readonly'    => true,
 						'type'        => 'string',
 						'format'      => 'date-time',
+					),
+					'created_since'      => array(
+						'context'     => array( 'view', 'edit', 'embed' ),
+						'description' => __( 'Time elapsed since the Group was created, in the site\'s timezone.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'string',
+						'default'     => '',
 					),
 					'types'              => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
