@@ -1016,7 +1016,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 17, count( $properties ) );
+		$this->assertEquals( 18, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'creator_id', $properties );
 		$this->assertArrayHasKey( 'name', $properties );
@@ -1026,6 +1026,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'status', $properties );
 		$this->assertArrayHasKey( 'enable_forum', $properties );
 		$this->assertArrayHasKey( 'date_created', $properties );
+		$this->assertArrayHasKey( 'created_since', $properties );
 		$this->assertArrayHasKey( 'admins', $properties );
 		$this->assertArrayHasKey( 'mods', $properties );
 		$this->assertArrayHasKey( 'types', $properties );
