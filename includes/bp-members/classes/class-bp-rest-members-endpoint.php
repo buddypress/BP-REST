@@ -488,21 +488,47 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'id'                     => $user->ID,
 			'name'                   => $user->display_name,
 			'user_login'             => $user->user_login,
-			'link'                   => bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login ),
-			'member_types'           => bp_get_member_type( $user->ID, false ),
 			'roles'                  => array(),
 			'capabilities'           => array(),
 			'extra_capabilities'     => array(),
 			'registered_date'        => '',
-			'xprofile'               => $this->xprofile_data( $user->ID ),
 			'friendship_status'      => false,
 			'friendship_status_slug' => '',
 		);
 
+		// Get fields to output for REST endpoint.
+		$fields = $request->get_param( '_fields' );
+
+		// If comma-delimited, explode into array.
+		if ( ! empty( $fields ) && ! is_array( $fields ) ) {
+			$fields = explode( ',', $fields );
+		}
+
+		$fields = array_flip( (array) $fields );
+
+		// Link.
+		if ( empty( $fields ) || ! empty( $fields['link'] ) ) {
+			$data['link'] = bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login );
+		}
+
+		// Member types.
+		if ( empty( $fields ) || ! empty( $fields['member_types'] ) ) {
+			$data['member_types'] = bp_get_member_type( $user->ID, false );
+		}
+
+		// Xprofile data.
+		if ( empty( $fields ) || ! empty( $fields['xprofile'] ) ) {
+			$data['xprofile'] = $this->xprofile_data( $user->ID );
+		}
+
+		// Populate extras.
 		if ( $request->get_param( 'populate_extras' ) ) {
-			$data['registered_since']          = bp_core_time_since( $user->user_registered );
-			$data['last_activity']['timediff'] = '';
-			$data['last_activity']['date']     = '';
+			$data['registered_since'] = bp_core_time_since( $user->user_registered );
+
+			$data['last_activity'] = array(
+				'timediff' => '',
+				'date'     => '',
+			);
 
 			if ( get_current_user_id() === $user->ID ) {
 				$right_now                         = gmdate( 'Y-m-d H:i:s', bp_core_current_time( true, 'timestamp' ) );
@@ -539,10 +565,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		// Friends related fields.
 		if ( bp_is_active( 'friends' ) && get_current_user_id() !== $user->ID ) {
-			$friendship_status = friends_check_friendship_status( get_current_user_id(), $user->ID );
+			if ( empty( $fields ) ||
+				( ! empty( $fields['friendship_status_slug'] ) || ! empty( $fields['friendship_status'] ) )
+			) {
+				$friendship_status = friends_check_friendship_status( get_current_user_id(), $user->ID );
 
-			$data['friendship_status_slug'] = $friendship_status;
-			$data['friendship_status']      = ( 'is_friend' === $friendship_status );
+				$data['friendship_status_slug'] = $friendship_status;
+				$data['friendship_status']      = ( 'is_friend' === $friendship_status );
+			}
 		}
 
 		if ( 'edit' === $context && current_user_can( 'list_users' ) ) {
@@ -553,12 +583,16 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		// The name used for that user in @-mentions.
-		if ( bp_is_active( 'activity' ) ) {
+		if ( bp_is_active( 'activity' ) &&
+			( empty( $fields ) || ! empty( $fields['mention_name'] ) )
+		) {
 			$data['mention_name'] = bp_activity_get_user_mentionname( $user->ID );
 		}
 
 		// Avatars.
-		if ( true === buddypress()->avatar->show_avatars ) {
+		if ( true === buddypress()->avatar->show_avatars &&
+			( empty( $fields ) || ! empty( $fields['avatar_urls'] ) )
+		) {
 			$data['avatar_urls'] = array(
 				'full'  => bp_core_fetch_avatar(
 					array(
