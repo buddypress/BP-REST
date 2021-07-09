@@ -86,7 +86,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		$dismiss_endpoint = '/' . $this->rest_base . '/dismiss/';
+		$dismiss_endpoint = '/' . $this->rest_base . '/dismiss';
 
 		register_rest_route(
 			$this->namespace,
@@ -682,21 +682,21 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 			'id'        => $notice->id,
 			'subject'   => array(
 				'raw'      => $notice->subject,
-				'rendered' => apply_filters( 'bp_get_sitewide_notice_subject', wp_staticize_emoji( $notice->subject ) ),
+				'rendered' => apply_filters( 'bp_get_message_notice_subject', wp_staticize_emoji( $notice->subject ) ),
 			),
 			'message'   => array(
 				'raw'      => $notice->message,
-				'rendered' => apply_filters( 'bp_get_sitewide_notice_content', wp_staticize_emoji( $notice->message ) ),
+				'rendered' => apply_filters( 'bp_get_message_notice_text', wp_staticize_emoji( $notice->message ) ),
 			),
 			'date'      => bp_rest_prepare_date_response( $notice->date_sent ),
 			'is_active' => $notice->is_active,
 		);
 
 		$context = $request->get_param( 'context' );
-		// @TODO: There must be something wrong here.
-		if ( empty( $context ) ) {
+		if ( ! $context ) {
 			$context = 'view';
 		}
+
 		$data     = $this->add_additional_fields_to_object( $data, $request );
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
