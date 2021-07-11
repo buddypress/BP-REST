@@ -51,12 +51,9 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		// (?P<id>[\d]+) is the placeholder for the notice ID.
-		$notice_endpoint = '/' . $this->rest_base . '/(?P<id>[\d]+)';
-
 		register_rest_route(
 			$this->namespace,
-			$notice_endpoint,
+			'/' . $this->rest_base . '/(?P<id>[\d]+)',
 			array(
 				'args' => array(
 					'id' => array(
@@ -86,11 +83,9 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		$dismiss_endpoint = '/' . $this->rest_base . '/dismiss';
-
 		register_rest_route(
 			$this->namespace,
-			$dismiss_endpoint,
+			'/' . $this->rest_base . '/dismiss',
 			array(
 				array(
 					'methods'             => WP_REST_Server::EDITABLE,
@@ -111,8 +106,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_items( $request ) {
-
-		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$context = $request->get_param( 'context' );
 
 		if ( 'edit' === $context && bp_current_user_can( 'bp_moderate' ) ) {
 
@@ -255,14 +249,14 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_Error|bool
 	 */
 	public function get_item_permissions_check( $request ) {
-
-		$retval = new WP_Error(
+		$error  = new WP_Error(
 			'bp_rest_authorization_required',
-			__( 'Sorry, you are not allowed to read notices.', 'buddypress' ),
+			__( 'Sorry, you are not allowed to see this notice.', 'buddypress' ),
 			array(
 				'status' => rest_authorization_required_code(),
 			)
 		);
+		$retval = $error;
 
 		if ( is_user_logged_in() ) {
 			$notice = $this->get_notice_object( $request->get_param( 'id' ) );
@@ -281,13 +275,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 					// Non-admin users can only see the active notice.
 					$is_active = isset( $notice->is_active ) ? $notice->is_active : false;
 					if ( ! $is_active ) {
-						$retval = new WP_Error(
-							'bp_rest_authorization_required',
-							__( 'Sorry, you are not allowed to see this notice.', 'buddypress' ),
-							array(
-								'status' => rest_authorization_required_code(),
-							)
-						);
+						$retval = $error;
 					} else {
 						$retval = true;
 					}
@@ -710,7 +698,6 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $notice, $request ) {
-
 		$data = array(
 			'id'        => $notice->id,
 			'subject'   => array(
@@ -948,7 +935,6 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return BP_Messages_Notice|WP_Error Object or WP_Error.
 	 */
 	protected function prepare_item_for_database( $request ) {
-
 		$schema        = $this->get_item_schema();
 		$notice_id     = $request->get_param( 'id' );
 		$prepared_item = $this->get_notice_object( $notice_id );

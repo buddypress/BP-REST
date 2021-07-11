@@ -368,29 +368,10 @@ class BP_Test_REST_Sitewide_Notices_Endpoint extends WP_Test_REST_Controller_Tes
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_not_exist() {
+	public function test_get_item_with_invalid_id() {
 		$this->bp->set_current_user( $this->user );
-		$tested = array(
-			'n1' => array(
-				'subject'   => 'bar',
-				'is_active' => 0,
-			),
-			'n2' => array(
-				'subject' => 'foo',
-			),
-		);
 
-		$created = $this->create_notice( $tested );
-
-		$n   = wp_filter_object_list( $created, array( 'is_active' => 1 ), 'and', 'id' );
-		$id  = current( $n );
-		$key = key( $n );
-
-		// Make it disappear!
-		$to_delete = new BP_Messages_Notice( $id );
-		$to_delete->delete();
-
-		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $id );
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . REST_TESTS_IMPOSSIBLY_HIGH_NUMBER );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
@@ -537,22 +518,10 @@ class BP_Test_REST_Sitewide_Notices_Endpoint extends WP_Test_REST_Controller_Tes
 	/**
 	 * @group update_item
 	 */
-	public function test_update_item_not_exist() {
+	public function test_update_item_with_invalid_id() {
 		$this->bp->set_current_user( $this->user );
-		$tested = array(
-			'n1' => array(
-				'subject' => 'Foo Bar',
-			),
-		);
 
-		$created = $this->create_notice( $tested );
-		$n = current( $created );
-
-		// Make it disappear!
-		$to_delete = new BP_Messages_Notice( $n->id );
-		$to_delete->delete();
-
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $n->id ) );
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$request->set_param( 'message', 'Ouch!' );
 		$response = $this->server->dispatch( $request );
 
@@ -611,22 +580,10 @@ class BP_Test_REST_Sitewide_Notices_Endpoint extends WP_Test_REST_Controller_Tes
 	/**
 	 * @group delete_item
 	 */
-	public function test_delete_item_not_exist() {
+	public function test_delete_item_with_invalid_id() {
 		$this->bp->set_current_user( $this->user );
-		$tested = array(
-			'n1' => array(
-				'subject' => 'Ouch!',
-			),
-		);
 
-		$created = $this->create_notice( $tested );
-		$n = current( $created );
-
-		// Make it disappear!
-		$to_delete = new BP_Messages_Notice( $n->id );
-		$to_delete->delete();
-
-		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $n->id ) );
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
