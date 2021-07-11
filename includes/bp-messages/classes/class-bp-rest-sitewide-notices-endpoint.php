@@ -315,6 +315,9 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		$subject = $request->get_param( 'subject' );
 		$message = $request->get_param( 'message' );
 		$success = messages_send_notice( $subject, $message );
@@ -388,24 +391,28 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		// Setting context.
 		$request->set_param( 'context', 'edit' );
 
-		$error = new WP_Error(
-			'bp_rest_sitewide_notices_update_failed',
-			__( 'There was an error trying to update the notice.', 'buddypress' ),
-			array(
-				'status' => 500,
-			)
-		);
-
 		// Check the notice exists.
 		$notice = $this->get_notice_object( $request->get_param( 'id' ) );
 		if ( ! $notice->id ) {
-			return $error;
+			return new WP_Error(
+				'bp_rest_invalid_id',
+				__( 'Sorry, this notice does not exist.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
 		}
 
 		// Update the notice.
 		$updated_notice = $this->prepare_item_for_database( $request );
 		if ( ! $updated_notice->save() ) {
-			return $error;
+			return new WP_Error(
+				'bp_rest_sitewide_notices_update_failed',
+				__( 'There was an error trying to update the notice.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
 		}
 
 		$fields_update = $this->update_additional_fields_for_object( $updated_notice, $request );
@@ -463,17 +470,30 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	public function dismiss_notice( $request ) {
 		// Mark the active notice as closed.
 		$notice    = BP_Messages_Notice::get_active();
-		$previous  = $this->prepare_item_for_response( $notice, $request );
 		$dismissed = false;
 
-		if ( is_user_logged_in() && ! empty( $notice->id ) ) {
-			$user_id        = bp_loggedin_user_id();
-			$closed_notices = (array) bp_get_user_meta( $user_id, 'closed_notices', true );
+		if ( ! $notice->id ) {
+			return new WP_Error(
+				'bp_rest_invalid_id',
+				__( 'Sorry, this notice does not exist.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
 
-			// Add the notice to the array of the user's closed notices.
-			$closed_notices[] = (int) $notice->id;
-			bp_update_user_meta( $user_id, 'closed_notices', array_map( 'absint', array_unique( $closed_notices ) ) );
+		// Get Previous active notice.
+		$previous = $this->prepare_item_for_response( $notice, $request );
 
+		// Get current user notices data.
+		$user_id        = bp_loggedin_user_id();
+		$closed_notices = (array) bp_get_user_meta( $user_id, 'closed_notices', true );
+		$closed_notices = array_filter( $closed_notices );
+
+		// Add the notice to the array of the user's closed notices.
+		$closed_notices[] = (int) $notice->id;
+
+		if ( bp_update_user_meta( $user_id, 'closed_notices', array_map( 'absint', array_unique( $closed_notices ) ) ) ) {
 			$dismissed = true;
 		}
 
@@ -541,8 +561,21 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ) {
+		// Setting context.
+		$request->set_param( 'context', 'edit' );
+
 		// Get the notice before it's deleted.
 		$notice   = $this->get_notice_object( $request->get_param( 'id' ) );
+		if ( ! $notice->id ) {
+			return new WP_Error(
+				'bp_rest_invalid_id',
+				__( 'Sorry, this notice does not exist.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
 		$previous = $this->prepare_item_for_response( $notice, $request );
 
 		// Delete a sitewide notice.
@@ -574,7 +607,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Response   $response The response data.
 		 * @param WP_REST_Request    $request  The request sent to the API.
 		 */
-		do_action( 'bp_rest_sitewide_notices_delete_item', $thread, $response, $request );
+		do_action( 'bp_rest_sitewide_notices_delete_item', $notice, $response, $request );
 
 		return $response;
 	}
@@ -689,7 +722,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 				'rendered' => apply_filters( 'bp_get_message_notice_text', wp_staticize_emoji( $notice->message ) ),
 			),
 			'date'      => bp_rest_prepare_date_response( $notice->date_sent ),
-			'is_active' => $notice->is_active,
+			'is_active' => (bool) $notice->is_active,
 		);
 
 		$context = $request->get_param( 'context' );
@@ -724,7 +757,13 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @return BP_Messages_Notice
 	 */
 	public function get_notice_object( $id ) {
-		return new BP_Messages_Notice( $id );
+		$notice = new BP_Messages_Notice( $id );
+
+		if ( ! $notice->date_sent ) {
+			$notice->id = null;
+		}
+
+		return $notice;
 	}
 
 	/**
