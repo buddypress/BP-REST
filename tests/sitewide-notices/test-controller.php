@@ -145,6 +145,91 @@ class BP_Test_REST_Sitewide_Notices_Endpoint extends WP_Test_REST_Controller_Tes
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_items_no_edit_access() {
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject' => 'foo',
+			),
+			'n2' => array(
+				'subject' => 'bar',
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+		$u1 = $this->factory->user->create();
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_forbidden', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_view_active() {
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject'   => 'foo',
+				'is_active' => 0,
+			),
+			'n2' => array(
+				'subject' => 'bar',
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+		$n   = wp_filter_object_list( $created, array( 'is_active' => 1 ), 'and', 'id' );
+		$key = key( $n );
+
+		$u1 = $this->factory->user->create();
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$data = $response->get_data();
+		$this->assertTrue( 1 === count( $data ), 'There should only be one active notice in the view context' );
+
+		$active_notice = current( $data );
+		$this->check_notice_data( $created[ $key ], $active_notice, 'view' );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_no_active() {
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject'   => 'foo',
+				'is_active' => 0,
+			),
+			'n2' => array(
+				'subject' => 'bar',
+				'is_active' => 0,
+			),
+		);
+
+		$u1 = $this->factory->user->create();
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$data = $response->get_data();
+		$this->assertTrue( 0 === count( $data ), 'There should be no active notices available' );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
@@ -245,42 +330,384 @@ class BP_Test_REST_Sitewide_Notices_Endpoint extends WP_Test_REST_Controller_Tes
 	}
 
 	/**
+	 * @group get_item
+	 */
+	public function test_get_item_view_active() {
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject'   => 'bar',
+				'is_active' => 0,
+			),
+			'n2' => array(
+				'subject' => 'foo',
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+
+		$n   = wp_filter_object_list( $created, array( 'is_active' => 1 ), 'and', 'id' );
+		$id  = current( $n );
+		$key = key( $n );
+
+		$u1 = $this->factory->user->create();
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $id );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
+
+		$this->check_notice_data( $created[ $key ], $data, 'view' );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_not_exist() {
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject'   => 'bar',
+				'is_active' => 0,
+			),
+			'n2' => array(
+				'subject' => 'foo',
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+
+		$n   = wp_filter_object_list( $created, array( 'is_active' => 1 ), 'and', 'id' );
+		$id  = current( $n );
+		$key = key( $n );
+
+		// Make it disappear!
+		$to_delete = new BP_Messages_Notice( $id );
+		$to_delete->delete();
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $id );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
+	}
+
+	/**
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		$this->markTestSkipped();
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->set_query_params(
+			array(
+				'subject' => 'Foo Bar',
+				'message' => 'Content',
+			)
+		);
+
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
+
+		$this->assertTrue( $data['is_active'] );
+		$this->assertSame( 'Content', $data['message']['raw'] );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_no_access() {
+		$u1 = $this->factory->user->create();
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->set_query_params(
+			array(
+				'subject' => 'Foo Bar',
+				'message' => 'Ouch!',
+			)
+		);
+
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_no_subject() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->set_query_params(
+			array(
+				'subject' => '',
+				'message' => 'Aïe!',
+			)
+		);
+
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_user_cannot_create_sitewide_notice', $response, 500 );
 	}
 
 	/**
 	 * @group update_item
 	 */
 	public function test_update_item() {
-		$this->markTestSkipped();
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject'   => 'Foo Bar',
+				'is_active' => 0,
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+		$n = current( $created );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $n->id ) );
+		$request->set_param( 'is_active', true );
+		$request->set_param( 'message', 'Yeah!' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		$this->assertNotEmpty( $data );
+		$this->assertTrue( $data['is_active'] );
+		$this->assertSame( 'Yeah!', $data['message']['raw'] );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_no_access() {
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject' => 'Foo Bar',
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+		$n = current( $created );
+
+		$u1 = $this->factory->user->create();
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $n->id ) );
+		$request->set_param( 'message', 'Ouch!' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_no_message() {
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject' => 'Foo Bar',
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+		$n = current( $created );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $n->id ) );
+		$request->set_param( 'message', '' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_sitewide_notices_update_failed', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_not_exist() {
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject' => 'Foo Bar',
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+		$n = current( $created );
+
+		// Make it disappear!
+		$to_delete = new BP_Messages_Notice( $n->id );
+		$to_delete->delete();
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $n->id ) );
+		$request->set_param( 'message', 'Ouch!' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
-		$this->markTestSkipped();
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject' => 'Foo Bar',
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+		$n = current( $created );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $n->id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		$this->assertNotEmpty( $data );
+		$this->assertTrue( $data['deleted'] );
+		$this->assertTrue( $data['previous']['subject']['raw'] === 'Foo Bar' );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_no_access() {
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject' => 'Ouch!',
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+		$n = current( $created );
+
+		$u1 = $this->factory->user->create();
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $n->id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_not_exist() {
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject' => 'Ouch!',
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+		$n = current( $created );
+
+		// Make it disappear!
+		$to_delete = new BP_Messages_Notice( $n->id );
+		$to_delete->delete();
+
+		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $n->id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**
 	 * @group dismiss_item
 	 */
 	public function test_dismiss_item() {
-		$this->markTestSkipped();
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject' => 'Taz',
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+		$n = current( $created );
+
+		$u1 = $this->factory->user->create();
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/dismiss' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		$this->assertNotEmpty( $data );
+		$this->assertTrue( $data['dismissed'] );
+		$this->assertTrue( $data['previous']['subject']['rendered'] === 'Taz' );
+		$this->assertContains( $n->id, bp_get_user_meta( $u1, 'closed_notices', true ) );
 	}
 
 	/**
-	 * @group prepare_links
+	 * @group dismiss_item
 	 */
-	public function test_prepare_add_links_to_response() {
-		$this->markTestSkipped();
+	public function test_dismiss_item_no_actives() {
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject'   => 'Taz',
+				'is_active' => 0,
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+
+		$u1 = $this->factory->user->create();
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/dismiss' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**
-	 * @group get_item
+	 * @group dismiss_item
+	 */
+	public function test_dismiss_item_not_logged_in() {
+		$this->bp->set_current_user( $this->user );
+		$tested = array(
+			'n1' => array(
+				'subject' => 'Taz',
+			),
+		);
+
+		$created = $this->create_notice( $tested );
+
+		$this->bp->set_current_user( 0 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/dismiss' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group prepare_item
 	 */
 	public function test_prepare_item() {
 		$this->markTestSkipped();
