@@ -565,7 +565,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		// Get the notice before it's deleted.
-		$notice   = $this->get_notice_object( $request->get_param( 'id' ) );
+		$notice = $this->get_notice_object( $request->get_param( 'id' ) );
 		if ( ! $notice->id ) {
 			return new WP_Error(
 				'bp_rest_invalid_id',
