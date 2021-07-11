@@ -957,14 +957,14 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 
 				$schema['properties']['site_public'] = array(
 					'context'     => array( 'edit' ),
-					'description' => __( 'Search engine visibility of the new user\'s  site.', 'buddypress' ),
+					'description' => __( 'Search engine visibility of the new user\'s site.', 'buddypress' ),
 					'type'        => 'boolean',
 					'default'     => true,
 				);
 
 				$schema['properties']['site_language'] = array(
 					'context'     => array( 'edit' ),
-					'description' => __( 'Language to use for the new user\'s  site.', 'buddypress' ),
+					'description' => __( 'Language to use for the new user\'s site.', 'buddypress' ),
 					'type'        => 'string',
 					'default'     => get_locale(),
 					'enum'        => array_merge( array( get_locale() ), $this->get_available_languages() ),
