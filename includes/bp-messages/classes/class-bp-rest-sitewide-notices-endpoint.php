@@ -457,8 +457,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 */
 	public function dismiss_notice( $request ) {
 		// Mark the active notice as closed.
-		$notice    = BP_Messages_Notice::get_active();
-		$dismissed = false;
+		$notice = BP_Messages_Notice::get_active();
 
 		if ( ! $notice->id ) {
 			return new WP_Error(
@@ -473,17 +472,8 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 		// Get Previous active notice.
 		$previous = $this->prepare_item_for_response( $notice, $request );
 
-		// Get current user notices data.
-		$user_id        = bp_loggedin_user_id();
-		$closed_notices = (array) bp_get_user_meta( $user_id, 'closed_notices', true );
-		$closed_notices = array_filter( $closed_notices );
-
-		// Add the notice to the array of the user's closed notices.
-		$closed_notices[] = (int) $notice->id;
-
-		if ( bp_update_user_meta( $user_id, 'closed_notices', array_map( 'absint', array_unique( $closed_notices ) ) ) ) {
-			$dismissed = true;
-		}
+		// Dismiss the active notice for the current user.
+		$dismissed = bp_messages_dismiss_sitewide_notice();
 
 		// Build the response.
 		$response = new WP_REST_Response();
