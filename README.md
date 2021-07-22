@@ -10,7 +10,7 @@ We have extensive documentation of each endpoint/components and their CRUD actio
 
 * PHP >= 5.6
 * WP >= 4.9
-* BuddyPress >= 6.0.0
+* BuddyPress >= 9.0.0
 
 ## Endpoints (Components) Supported
 
