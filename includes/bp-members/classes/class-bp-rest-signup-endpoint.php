@@ -888,7 +888,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 						'required'    => true,
 					),
 					'activation_key' => array(
-						'context'     => array( 'edit' ),
+						'context'     => array(), // The activation key is sent to the user via email.
 						'description' => __( 'Activation key of the signup.', 'buddypress' ),
 						'type'        => 'string',
 						'readonly'    => true,
