@@ -245,6 +245,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertSame( $signup[0]['user_email'], $params['user_email'] );
 		$this->assertSame( $signup[0]['user_name'], $params['user_name'] );
+		$this->assertTrue( ! isset( $signup[0]['activation_key'] ) || ! $signup[0]['activation_key'] );
 	}
 
 	/**
