@@ -88,10 +88,136 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$request->add_header( 'content-type', 'application/json' );
 
 		$params = $this->set_field_data();
+		$request->set_param( 'context', 'edit' );
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->check_create_field_response( $response );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_checkbox_item_param_as_string() {
+		$field_id = $this->bp_factory->xprofile_field->create(
+			[
+				'type'           => 'checkbox',
+				'field_group_id' => $this->group_id
+			]
+		);
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $field_id, $this->user ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data();
+		$request->set_param( 'context', 'edit' );
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
+
+		$this->assertEquals( $data[0]['value']['unserialized'], array( 'Field', 'Value' ) );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_checkbox_item_as_array() {
+		$field_id = $this->bp_factory->xprofile_field->create(
+			[
+				'type'           => 'checkbox',
+				'name'           => 'Test Field Name',
+				'field_group_id' => $this->group_id
+			]
+		);
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $field_id, $this->user ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data( [ 'value' => [ 'field', 'value' ] ] );
+		$request->set_param( 'context', 'edit' );
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
+
+		$this->assertEquals( $data[0]['value']['unserialized'], array( 'field', 'value' ) );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_textbox_item() {
+		$field_id = $this->bp_factory->xprofile_field->create(
+			[
+				'type'           => 'textbox',
+				'name'           => 'Test Field Name',
+				'field_group_id' => $this->group_id
+			]
+		);
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $field_id, $this->user ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data( [ 'value' => 'textbox field' ] );
+		$request->set_param( 'context', 'edit' );
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
+
+		$this->assertEquals( $data[0]['value']['unserialized'][0], 'textbox field' );
+		$this->assertEquals( $data[0]['value']['raw'], 'textbox field' );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_selectbox_item() {
+		$field_id = $this->bp_factory->xprofile_field->create(
+			[
+				'type'           => 'selectbox',
+				'name'           => 'Test Field Name',
+				'field_group_id' => $this->group_id
+			]
+		);
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $field_id, $this->user ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data( [ 'value' => [ 'select',  'box' ] ] );
+		$request->set_param( 'context', 'edit' );
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
+
+		$this->assertEquals( $data[0]['value']['unserialized'][0], 'select box' );
+		$this->assertEquals( $data[0]['value']['raw'], 'select box' );
 	}
 
 	/**
