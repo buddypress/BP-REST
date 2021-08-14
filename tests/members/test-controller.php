@@ -215,7 +215,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertNotEmpty( $all_data );
 
 		$this->assertTrue( 3 === count( $all_data ) );
-
 		$this->assertSame( $expected_types, wp_list_pluck( $all_data, 'member_types', 'id' ) );
 	}
 
@@ -235,7 +234,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
-
 		$this->check_get_user_response( $response );
 	}
 
@@ -274,8 +272,12 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$member = $response->get_data();
+		$this->assertNotEmpty( $member );
 
-		$this->assertEquals( bp_rest_prepare_date_response( $date_last_activity ), $member['last_activity']['date'] );
+		$this->assertEquals(
+			bp_rest_prepare_date_response( $date_last_activity, get_date_from_gmt( $date_last_activity ) ),
+			$member['last_activity']['date']
+		);
 		$this->assertEquals( $member['latest_update']['id'], $a1 );
 		$this->assertEquals( 1, $member['total_friend_count'] );
 
@@ -301,6 +303,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		$me = $response->get_data();
+		$this->assertNotEmpty( $me );
 
 		$this->assertEquals( 'right now', $me['last_activity']['timediff'] );
 
@@ -328,7 +331,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		buddypress()->avatar->show_avatars = true;
 
 		$this->assertEquals( 200, $response->get_status() );
-
 		$this->assertArrayNotHasKey( 'avatar_urls', $response->get_data() );
 	}
 
@@ -389,6 +391,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
 
 		$this->assertEquals( 'Test User', $data['name'] );
 		$this->check_add_edit_user_response( $response );
@@ -699,7 +702,11 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$this->assertEquals( (array) array_keys( $user->allcaps ), $data['capabilities'] );
 			$this->assertEquals( (array) array_keys( $user->caps ), $data['extra_capabilities'] );
 			$this->assertEquals( (array) array_values( $user->roles ), $data['roles'] );
-			$this->assertEquals( bp_rest_prepare_date_response( $user->user_registered ), $data['registered_date'] );
+			$this->assertEquals(
+				bp_rest_prepare_date_response( $user->user_registered, get_date_from_gmt( $user->user_registered ) ),
+				$data['registered_date']
+			);
+			$this->assertEquals( bp_rest_prepare_date_response( $user->user_registered ), $data['registered_date_gmt'] );
 		} else {
 			$this->assertArrayNotHasKey( 'roles', $data );
 			$this->assertArrayNotHasKey( 'capabilities', $data );
@@ -721,7 +728,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 19, count( $properties ) );
+		$this->assertEquals( 20, count( $properties ) );
 		$this->assertArrayHasKey( 'avatar_urls', $properties );
 		$this->assertArrayHasKey( 'capabilities', $properties );
 		$this->assertArrayHasKey( 'extra_capabilities', $properties );
@@ -730,6 +737,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'name', $properties );
 		$this->assertArrayHasKey( 'mention_name', $properties );
 		$this->assertArrayHasKey( 'registered_date', $properties );
+		$this->assertArrayHasKey( 'registered_date_gmt', $properties );
 		$this->assertArrayHasKey( 'registered_since', $properties );
 		$this->assertArrayHasKey( 'password', $properties );
 		$this->assertArrayHasKey( 'roles', $properties );

@@ -413,20 +413,21 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param  BP_XProfile_ProfileData $field_data XProfile field data object.
-	 * @param  WP_REST_Request         $request   Full data about the request.
+	 * @param  WP_REST_Request         $request    Full data about the request.
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $field_data, $request ) {
 		$data = array(
-			'id'           => $field_data->id,
-			'field_id'     => $field_data->field_id,
-			'user_id'      => $field_data->user_id,
-			'value'        => array(
+			'id'               => (int) $field_data->id,
+			'field_id'         => (int) $field_data->field_id,
+			'user_id'          => (int) $field_data->user_id,
+			'last_updated'     => bp_rest_prepare_date_response( $field_data->last_updated, get_date_from_gmt( $field_data->last_updated ) ),
+			'last_updated_gmt' => bp_rest_prepare_date_response( $field_data->last_updated ),
+			'value'            => array(
 				'raw'          => $field_data->value,
 				'unserialized' => $this->fields_endpoint->get_profile_field_unserialized_value( $field_data->value ),
 				'rendered'     => $this->fields_endpoint->get_profile_field_rendered_value( $field_data->value, $field_data->field_id ),
 			),
-			'last_updated' => bp_rest_prepare_date_response( $field_data->last_updated ),
 		);
 
 		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
@@ -434,6 +435,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
+		// Add prepare links.
 		$response->add_links( $this->prepare_links( $field_data ) );
 
 		/**
@@ -441,8 +443,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param WP_REST_Response      $response  The response data.
-		 * @param WP_REST_Request       $request   Request used to generate the response.
+		 * @param WP_REST_Response        $response   The response data.
+		 * @param WP_REST_Request         $request    Request used to generate the response.
 		 * @param BP_XProfile_ProfileData $field_data XProfile field data object.
 		 */
 		return apply_filters( 'bp_rest_xprofile_data_prepare_value', $response, $request, $field_data );
@@ -584,7 +586,15 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 					'last_updated' => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The date the field data was last updated, in the site\'s timezone.', 'buddypress' ),
-						'type'        => 'string',
+						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
+						'format'      => 'date-time',
+					),
+					'last_updated_gmt' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The date the field data was last updated, as GMT.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
 				),

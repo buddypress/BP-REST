@@ -62,7 +62,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		foreach ( $all_data as $data ) {
 			$group = $this->endpoint->get_group_object( $data['id'] );
-			$this->check_group_data( $group, $data, 'view', $response->get_links() );
+			$this->check_group_data( $group, $data, 'view' );
 		}
 	}
 
@@ -96,7 +96,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data     = $all_data;
 		foreach ( $all_data as $data ) {
 			$group = $this->endpoint->get_group_object( $data['id'] );
-			$this->check_group_data( $group, $data, 'view', $response->get_links() );
+			$this->check_group_data( $group, $data, 'view' );
 		}
 	}
 
@@ -250,7 +250,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$all_data = $response->get_data();
 
-		$this->check_group_data( $group, $all_data[0], 'view', $response->get_links() );
+		$this->check_group_data( $group, $all_data[0], 'view' );
 	}
 
 	/**
@@ -267,7 +267,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$all_data = $response->get_data();
 
-		$this->check_group_data( $group, $all_data[0], 'view', $response->get_links() );
+		$this->check_group_data( $group, $all_data[0], 'view' );
 	}
 
 	/**
@@ -304,7 +304,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$all_data = $response->get_data();
 
-		$this->check_group_data( $group, $all_data[0], 'view', $response->get_links() );
+		$this->check_group_data( $group, $all_data[0], 'view' );
 	}
 
 	/**
@@ -938,13 +938,17 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$all_data = $response->get_data();
 
-		$this->check_group_data( $group, $all_data[0], 'edit', $response->get_links() );
+		$this->check_group_data( $group, $all_data[0], 'edit' );
 	}
 
-	protected function check_group_data( $group, $data, $context, $links ) {
+	protected function check_group_data( $group, $data, $context ) {
 		$this->assertEquals( $group->id, $data['id'] );
 		$this->assertEquals( $group->creator_id, $data['creator_id'] );
-		$this->assertEquals( bp_rest_prepare_date_response( $group->date_created ), $data['date_created'] );
+		$this->assertEquals(
+			bp_rest_prepare_date_response( $group->date_created, get_date_from_gmt( $group->date_created ) ),
+			$data['date_created']
+		);
+		$this->assertEquals( bp_rest_prepare_date_response( $group->date_created ), $data['date_created_gmt'] );
 		$this->assertEquals( $group->enable_forum, $data['enable_forum'] );
 		$this->assertEquals( bp_get_group_permalink( $group ), $data['link'] );
 		$this->assertEquals( $group->name, $data['name'] );
@@ -958,7 +962,11 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		} else {
 			$this->assertEquals( $group->description, $data['description']['raw'] );
 			$this->assertEquals( $group->total_member_count, $data['total_member_count'] );
-			$this->assertEquals( bp_rest_prepare_date_response( $group->last_activity ), $data['last_activity'] );
+			$this->assertEquals(
+				bp_rest_prepare_date_response( $group->last_activity, get_date_from_gmt( $group->last_activity ) ),
+				$data['last_activity']
+			);
+			$this->assertEquals( bp_rest_prepare_date_response( $group->last_activity ), $data['last_activity_gmt'] );
 		}
 	}
 
@@ -972,7 +980,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data  = $response->get_data();
 		$group = $this->endpoint->get_group_object( $data['id'] );
 
-		$this->check_group_data( $group, $data, 'edit', $response->get_links() );
+		$this->check_group_data( $group, $data, 'edit' );
 	}
 
 	protected function set_group_data( $args = array() ) {
@@ -995,7 +1003,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data = $response->get_data();
 
 		$group = $this->endpoint->get_group_object( $data[0]['id'] );
-		$this->check_group_data( $group, $data[0], 'edit', $response->get_links() );
+		$this->check_group_data( $group, $data[0], 'edit' );
 	}
 
 	protected function check_create_group_response( $response ) {
@@ -1007,7 +1015,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data = $response->get_data();
 
 		$group = $this->endpoint->get_group_object( $data[0]['id'] );
-		$this->check_group_data( $group, $data[0], 'edit', $response->get_links() );
+		$this->check_group_data( $group, $data[0], 'edit' );
 	}
 
 	public function test_get_item_schema() {
@@ -1016,7 +1024,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 18, count( $properties ) );
+		$this->assertEquals( 20, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'creator_id', $properties );
 		$this->assertArrayHasKey( 'name', $properties );
@@ -1026,6 +1034,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'status', $properties );
 		$this->assertArrayHasKey( 'enable_forum', $properties );
 		$this->assertArrayHasKey( 'date_created', $properties );
+		$this->assertArrayHasKey( 'date_created_gmt', $properties );
 		$this->assertArrayHasKey( 'created_since', $properties );
 		$this->assertArrayHasKey( 'admins', $properties );
 		$this->assertArrayHasKey( 'mods', $properties );
@@ -1033,6 +1042,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'parent_id', $properties );
 		$this->assertArrayHasKey( 'total_member_count', $properties );
 		$this->assertArrayHasKey( 'last_activity', $properties );
+		$this->assertArrayHasKey( 'last_activity_gmt', $properties );
 		$this->assertArrayHasKey( 'last_activity_diff', $properties );
 	}
 

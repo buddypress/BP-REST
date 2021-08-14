@@ -905,7 +905,8 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 				'raw'      => $activity->content,
 				'rendered' => $this->render_item( $activity ),
 			),
-			'date'              => bp_rest_prepare_date_response( $activity->date_recorded ),
+			'date'              => bp_rest_prepare_date_response( $activity->date_recorded, get_date_from_gmt( $activity->date_recorded ) ),
+			'date_gmt'          => bp_rest_prepare_date_response( $activity->date_recorded ),
 			'id'                => $activity->id,
 			'link'              => bp_activity_get_permalink( $activity->id ),
 			'primary_item_id'   => $activity->item_id,
@@ -1370,8 +1371,16 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					),
 					'date'              => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
-						'description' => __( "The date the activity was published, in the site's timezone.", 'buddypress' ),
-						'type'        => 'string',
+						'description' => __( 'The date the activity was published, in the site\'s timezone.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
+						'format'      => 'date-time',
+					),
+					'date_gmt'              => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The date the activity was published, as GMT.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
 					'status'            => array(

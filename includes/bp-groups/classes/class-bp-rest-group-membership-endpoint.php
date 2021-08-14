@@ -707,12 +707,13 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		$data = array_merge(
 			$member_data,
 			array(
-				'group'         => (int) $group_member->group_id,
-				'is_mod'        => (bool) $group_member->is_mod,
-				'is_admin'      => (bool) $group_member->is_admin,
-				'is_banned'     => (bool) $group_member->is_banned,
-				'is_confirmed'  => (bool) $group_member->is_confirmed,
-				'date_modified' => bp_rest_prepare_date_response( $group_member->date_modified ),
+				'group'             => (int) $group_member->group_id,
+				'is_mod'            => (bool) $group_member->is_mod,
+				'is_admin'          => (bool) $group_member->is_admin,
+				'is_banned'         => (bool) $group_member->is_banned,
+				'is_confirmed'      => (bool) $group_member->is_confirmed,
+				'date_modified'     => bp_rest_prepare_date_response( $group_member->date_modified, get_date_from_gmt( $group_member->date_modified ) ),
+				'date_modified_gmt' => bp_rest_prepare_date_response( $group_member->date_modified ),
 			)
 		);
 
@@ -720,6 +721,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
+		// Add prepare links.
 		$response->add_links( $this->prepare_links( $group_member ) );
 
 		/**
@@ -729,7 +731,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param WP_REST_Response $response      The response data.
 		 * @param WP_REST_Request  $request       Request used to generate the response.
-		 * @param BP_Groups_Member $group_member  Group member object.
+		 * @param BP_Groups_Member $group_member  The group member object.
 		 */
 		return apply_filters( 'bp_rest_group_members_prepare_value', $response, $request, $group_member );
 	}
@@ -888,8 +890,17 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 
 			$schema['properties']['date_modified'] = array(
 				'context'     => array( 'view', 'edit' ),
-				'description' => __( "The date of the last time the membership of this user was modified, in the site's timezone.", 'buddypress' ),
-				'type'        => 'string',
+				'description' => __( 'The date of the last time the membership of this user was modified, in the site\'s timezone.', 'buddypress' ),
+				'readonly'    => true,
+				'type'        => array( 'string', 'null' ),
+				'format'      => 'date-time',
+			);
+
+			$schema['properties']['date_modified_gmt'] = array(
+				'context'     => array( 'view', 'edit' ),
+				'description' => __( 'The date of the last time the membership of this user was modified, as GMT.', 'buddypress' ),
+				'readonly'    => true,
+				'type'        => array( 'string', 'null' ),
 				'format'      => 'date-time',
 			);
 

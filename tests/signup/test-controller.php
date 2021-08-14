@@ -416,7 +416,11 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $signup->id, $data['id'] );
 		$this->assertEquals( $signup->user_login, $data['user_login'] );
 		$this->assertEquals( $signup->user_name, $data['user_name'] );
-		$this->assertEquals( bp_rest_prepare_date_response( $signup->registered ), $data['registered'] );
+		$this->assertEquals(
+			bp_rest_prepare_date_response( $signup->registered, get_date_from_gmt( $signup->registered ) ),
+			$data['registered']
+		);
+		$this->assertEquals( bp_rest_prepare_date_response( $signup->registered ), $data['registered_gmt'] );
 	}
 
 	public function test_get_item_schema() {
@@ -430,14 +434,16 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 9, count( $properties ) );
+		$this->assertEquals( 11, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'user_login', $properties );
 		$this->assertArrayHasKey( 'user_name', $properties );
 		$this->assertArrayHasKey( 'registered', $properties );
+		$this->assertArrayHasKey( 'registered_gmt', $properties );
 		$this->assertArrayHasKey( 'activation_key', $properties );
 		$this->assertArrayHasKey( 'user_email', $properties );
 		$this->assertArrayHasKey( 'date_sent', $properties );
+		$this->assertArrayHasKey( 'date_sent_gmt', $properties );
 		$this->assertArrayHasKey( 'count_sent', $properties );
 		$this->assertArrayHasKey( 'meta', $properties );
 	}
@@ -453,14 +459,16 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 13, count( $properties ) );
+		$this->assertEquals( 15, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'user_login', $properties );
 		$this->assertArrayHasKey( 'user_name', $properties );
 		$this->assertArrayHasKey( 'registered', $properties );
+		$this->assertArrayHasKey( 'registered_gmt', $properties );
 		$this->assertArrayHasKey( 'activation_key', $properties );
 		$this->assertArrayHasKey( 'user_email', $properties );
 		$this->assertArrayHasKey( 'date_sent', $properties );
+		$this->assertArrayHasKey( 'date_sent_gmt', $properties );
 		$this->assertArrayHasKey( 'count_sent', $properties );
 		$this->assertArrayHasKey( 'meta', $properties );
 		$this->assertArrayHasKey( 'site_language', $properties );

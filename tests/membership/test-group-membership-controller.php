@@ -557,8 +557,8 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	 * @group update_item
 	 */
 	public function test_group_admin_can_promote_member() {
-		$u1 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		$u2 = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
 
 		$g1 = $this->bp_factory->group->create( array(
 			'creator_id' => $u2,
@@ -570,8 +570,8 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u1 );
 		$request->set_query_params( array(
-			'action'   => 'promote',
-			'role'     => 'mod',
+			'action' => 'promote',
+			'role'   => 'mod',
 		) );
 
 		$request->set_param( 'context', 'edit' );
@@ -966,7 +966,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$this->assertEquals( $member_object->is_admin, (bool) $data['is_admin'] );
 		$this->assertEquals( $member_object->is_banned, (bool) $data['is_banned'] );
 		$this->assertEquals( $member_object->is_confirmed, (bool) $data['is_confirmed'] );
-		$this->assertEquals( bp_rest_prepare_date_response( $member_object->date_modified ), $data['date_modified'] );
+		$this->assertEquals( bp_rest_prepare_date_response( $member_object->date_modified ), $data['date_modified_gmt'] );
 	}
 
 	public function test_get_item_schema() {
@@ -980,7 +980,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 25, count( $properties ) );
+		$this->assertEquals( 27, count( $properties ) );
 		$this->assertArrayHasKey( 'avatar_urls', $properties );
 		$this->assertArrayHasKey( 'capabilities', $properties );
 		$this->assertArrayHasKey( 'extra_capabilities', $properties );
@@ -990,6 +990,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$this->assertArrayHasKey( 'name', $properties );
 		$this->assertArrayHasKey( 'mention_name', $properties );
 		$this->assertArrayHasKey( 'registered_date', $properties );
+		$this->assertArrayHasKey( 'registered_date_gmt', $properties );
 		$this->assertArrayHasKey( 'registered_since', $properties );
 		$this->assertArrayHasKey( 'password', $properties );
 		$this->assertArrayHasKey( 'roles', $properties );
@@ -1006,6 +1007,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$this->assertArrayHasKey( 'is_banned', $properties );
 		$this->assertArrayHasKey( 'is_confirmed', $properties );
 		$this->assertArrayHasKey( 'date_modified', $properties );
+		$this->assertArrayHasKey( 'date_modified_gmt', $properties );
 	}
 
 	public function test_context_param() {

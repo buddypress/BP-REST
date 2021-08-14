@@ -713,7 +713,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param BP_Groups_Group $item     Group object.
+	 * @param BP_Groups_Group $item     The group object.
 	 * @param WP_REST_Request $request  Full details about the request.
 	 * @return WP_REST_Response
 	 */
@@ -722,7 +722,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'id'                 => $item->id,
 			'creator_id'         => bp_get_group_creator_id( $item ),
 			'parent_id'          => $item->parent_id,
-			'date_created'       => bp_rest_prepare_date_response( $item->date_created ),
+			'date_created'       => bp_rest_prepare_date_response( $item->date_created, get_date_from_gmt( $item->date_created ) ),
+			'date_created_gmt'   => bp_rest_prepare_date_response( $item->date_created ),
 			'created_since'      => bp_core_time_since( $item->date_created ),
 			'description'        => array(
 				'raw'      => $item->description,
@@ -773,7 +774,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// If this is the 'edit' context or 'populate_extras' has been requested.
 		if ( 'edit' === $context || true === $request->get_param( 'populate_extras' ) ) {
 			$data['total_member_count'] = (int) $item->total_member_count;
-			$data['last_activity']      = bp_rest_prepare_date_response( $item->last_activity );
+			$data['last_activity']      = bp_rest_prepare_date_response( $item->last_activity, get_date_from_gmt( $item->last_activity ) );
+			$data['last_activity_gmt']  = bp_rest_prepare_date_response( $item->last_activity );
 			$data['last_activity_diff'] = bp_get_group_last_active( $item );
 		}
 
@@ -817,6 +819,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
+		// Add prepare links.
 		$response->add_links( $this->prepare_links( $item ) );
 
 		/**
@@ -826,7 +829,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param WP_REST_Response $response The response data.
 		 * @param WP_REST_Request  $request  Request used to generate the response.
-		 * @param BP_Groups_Group  $item     Group object.
+		 * @param BP_Groups_Group  $item     The group object.
 		 */
 		return apply_filters( 'bp_rest_groups_prepare_value', $response, $request, $item );
 	}
@@ -836,7 +839,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_REST_Request $request Request object.
+	 * @param WP_REST_Request $request Full details about the request.
 	 * @return stdClass|WP_Error
 	 */
 	protected function prepare_item_for_database( $request ) {
@@ -1219,9 +1222,16 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					),
 					'date_created'       => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
-						'description' => __( "The date the Group was created, in the site's timezone.", 'buddypress' ),
+						'description' => __( 'The date the Group was created, in the site\'s timezone.', 'buddypress' ),
 						'readonly'    => true,
-						'type'        => 'string',
+						'type'        => array( 'string', 'null' ),
+						'format'      => 'date-time',
+					),
+					'date_created_gmt'   => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The date the Group was created, as GMT.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
 					'created_since'      => array(
@@ -1267,14 +1277,21 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					),
 					'last_activity'      => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
-						'description' => __( "The date the Group was last active, in the site's timezone.", 'buddypress' ),
-						'type'        => 'string',
+						'description' => __( 'The date the Group was last active, in the site\'s timezone.', 'buddypress' ),
 						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
+						'format'      => 'date-time',
+					),
+					'last_activity_gmt'      => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The date the Group was last active, as GMT.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
 					'last_activity_diff'  => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
-						'description' => __( "The human diff time the Group was last active, in the site's timezone.", 'buddypress' ),
+						'description' => __( 'The human diff time the Group was last active, in the site\'s timezone.', 'buddypress' ),
 						'type'        => 'string',
 						'readonly'    => true,
 					),

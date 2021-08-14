@@ -910,7 +910,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param BP_Messages_Thread $thread  Thread object.
+	 * @param BP_Messages_Thread $thread  The thread object.
 	 * @param WP_REST_Request    $request Full details about the request.
 	 * @return WP_REST_Response
 	 */
@@ -921,9 +921,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		}
 
 		$data = array(
-			'id'             => $thread->thread_id,
-			'message_id'     => $thread->last_message_id,
-			'last_sender_id' => $thread->last_sender_id,
+			'id'             => (int) $thread->thread_id,
+			'message_id'     => (int) $thread->last_message_id,
+			'last_sender_id' => (int) $thread->last_sender_id,
 			'subject'        => array(
 				'raw'      => $thread->last_message_subject,
 				'rendered' => apply_filters( 'bp_get_message_thread_subject', wp_staticize_emoji( $thread->last_message_subject ) ),
@@ -936,9 +936,10 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				'raw'      => $thread->last_message_content,
 				'rendered' => apply_filters( 'bp_get_message_thread_content', wp_staticize_emoji( $thread->last_message_content ) ),
 			),
-			'date'           => bp_rest_prepare_date_response( $thread->last_message_date ),
+			'date'           => bp_rest_prepare_date_response( $thread->last_message_date, get_date_from_gmt( $thread->last_message_date ) ),
+			'date_gmt'       => bp_rest_prepare_date_response( $thread->last_message_date ),
 			'unread_count'   => ! empty( $thread->unread_count ) ? absint( $thread->unread_count ) : 0,
-			'sender_ids'     => $thread->sender_ids,
+			'sender_ids'     => (array) $thread->sender_ids,
 			'recipients'     => array(),
 			'messages'       => array(),
 		);
@@ -961,6 +962,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
+		// Add prepare links.
 		$response->add_links( $this->prepare_links( $thread ) );
 
 		/**
@@ -1012,8 +1014,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array              $links   The prepared links of the REST response.
-		 * @param BP_Messages_Thread $thread  Thread object.
+		 * @param array              $links  The prepared links of the REST response.
+		 * @param BP_Messages_Thread $thread The thread object.
 		 */
 		return apply_filters( 'bp_rest_messages_prepare_links', $links, $thread );
 	}
@@ -1267,11 +1269,18 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 							),
 						),
 					),
-					'date'                => array(
+					'date'            => array(
 						'context'     => array( 'view', 'edit' ),
-						'description' => __( "The date the latest message of the Thread, in the site's timezone.", 'buddypress' ),
+						'description' => __( 'Dat of the latest message of the Thread, in the site\'s timezone.', 'buddypress' ),
 						'readonly'    => true,
-						'type'        => 'string',
+						'type'        => array( 'string', 'null' ),
+						'format'      => 'date-time',
+					),
+					'date_gmt'        => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Dat of the latest message of the Thread, as GMT.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
 					'unread_count'        => array(

@@ -534,7 +534,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->check_activity_data( $activity, $all_data[0], 'view', $response->get_links() );
+		$this->check_activity_data( $activity, $all_data[0], 'view' );
 	}
 
 	/**
@@ -1414,7 +1414,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->check_activity_data( $activity, $all_data[0], 'edit', $response->get_links() );
+		$this->check_activity_data( $activity, $all_data[0], 'edit' );
 	}
 
 	/**
@@ -1493,7 +1493,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$GLOBALS['wp_rest_additional_fields'] = $registered_fields;
 	}
 
-	protected function check_activity_data( $activity, $data, $context, $links ) {
+	protected function check_activity_data( $activity, $data, $context ) {
 		$this->assertEquals( $activity->user_id, $data['user_id'] );
 		$this->assertEquals( $activity->component, $data['component'] );
 
@@ -1501,10 +1501,14 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 			$this->assertEquals( wpautop( $activity->content ), $data['content']['rendered'] );
 		} else {
 			$this->assertEquals( $activity->content, $data['content']['raw'] );
+			$this->assertEquals( bp_rest_prepare_date_response( $activity->date_recorded ), $data['date_gmt'] );
 		}
 
 		$this->assertEquals( $activity->type, $data['type'] );
-		$this->assertEquals( bp_rest_prepare_date_response( $activity->date_recorded ), $data['date'] );
+		$this->assertEquals(
+			bp_rest_prepare_date_response( $activity->date_recorded, get_date_from_gmt( $activity->date_recorded ) ),
+			$data['date']
+		);
 		$this->assertEquals( $activity->id, $data['id'] );
 		$this->assertEquals( bp_activity_get_permalink( $activity->id ), $data['link'] );
 		$this->assertEquals( $activity->item_id, $data['primary_item_id'] );
@@ -1523,7 +1527,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$data     = $response->get_data();
 		$activity = $this->endpoint->get_activity_object( $data['id'] );
-		$this->check_activity_data( $activity, $data, 'edit', $response->get_links() );
+		$this->check_activity_data( $activity, $data, 'edit' );
 	}
 
 	protected function set_activity_data( $args = array() ) {
@@ -1545,7 +1549,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data = $response->get_data();
 
 		$activity = $this->endpoint->get_activity_object( $data[0]['id'] );
-		$this->check_activity_data( $activity, $data[0], 'edit', $response->get_links() );
+		$this->check_activity_data( $activity, $data[0], 'edit' );
 	}
 
 	protected function check_create_activity_response( $response ) {
@@ -1557,7 +1561,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data = $response->get_data();
 
 		$activity = $this->endpoint->get_activity_object( $data[0]['id'] );
-		$this->check_activity_data( $activity, $data[0], 'edit', $response->get_links() );
+		$this->check_activity_data( $activity, $data[0], 'edit' );
 	}
 
 	public function test_get_item_schema() {
@@ -1566,7 +1570,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 16, count( $properties ) );
+		$this->assertEquals( 17, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'primary_item_id', $properties );
 		$this->assertArrayHasKey( 'secondary_item_id', $properties );
@@ -1577,6 +1581,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'title', $properties );
 		$this->assertArrayHasKey( 'content', $properties );
 		$this->assertArrayHasKey( 'date', $properties );
+		$this->assertArrayHasKey( 'date_gmt', $properties );
 		$this->assertArrayHasKey( 'status', $properties );
 		$this->assertArrayHasKey( 'comments', $properties );
 		$this->assertArrayHasKey( 'comment_count', $properties );

@@ -570,12 +570,13 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 5, count( $properties ) );
+		$this->assertEquals( 6, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'initiator_id', $properties );
 		$this->assertArrayHasKey( 'friend_id', $properties );
 		$this->assertArrayHasKey( 'is_confirmed', $properties );
 		$this->assertArrayHasKey( 'date_created', $properties );
+		$this->assertArrayHasKey( 'date_created_gmt', $properties );
 	}
 
 	public function test_context_param() {
@@ -627,6 +628,10 @@ class BP_Test_REST_Friends_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $friend->initiator_user_id, $data['initiator_id'] );
 		$this->assertEquals( $friend->friend_user_id, $data['friend_id'] );
 		$this->assertEquals( $friend->is_confirmed, $data['is_confirmed'] );
-		$this->assertEquals( bp_rest_prepare_date_response( $friend->date_created ), $data['date_created'] );
+		$this->assertEquals(
+			bp_rest_prepare_date_response( $friend->date_created, get_date_from_gmt( $friend->date_created ) ),
+			$data['date_created']
+		);
+		$this->assertEquals( bp_rest_prepare_date_response( $friend->date_created ), $data['date_created_gmt'] );
 	}
 }

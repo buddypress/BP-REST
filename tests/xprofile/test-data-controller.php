@@ -351,7 +351,11 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( $field_data->field_id, $data['field_id'] );
 		$this->assertEquals( $field_data->user_id, $data['user_id'] );
 		$this->assertEquals( (array) $field_data->value, $data['value']['unserialized'] );
-		$this->assertEquals( bp_rest_prepare_date_response( $field_data->last_updated ), $data['last_updated'] );
+		$this->assertEquals(
+			bp_rest_prepare_date_response( $field_data->last_updated, get_date_from_gmt( $field_data->last_updated ) ),
+			$data['last_updated']
+		);
+		$this->assertEquals( bp_rest_prepare_date_response( $field_data->last_updated ), $data['last_updated_gmt'] );
 	}
 
 	public function test_get_item_schema() {
@@ -360,12 +364,13 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 6, count( $properties ) );
+		$this->assertEquals( 7, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'field_id', $properties );
 		$this->assertArrayHasKey( 'user_id', $properties );
 		$this->assertArrayHasKey( 'value', $properties );
 		$this->assertArrayHasKey( 'last_updated', $properties );
+		$this->assertArrayHasKey( 'last_updated_gmt', $properties );
 	}
 
 	public function test_context_param() {

@@ -631,7 +631,7 @@ class BP_Test_REST_Sitewide_Notices_Endpoint extends WP_Test_REST_Controller_Tes
 			),
 		);
 
-		$created = $this->create_notice( $tested );
+		$this->create_notice( $tested );
 
 		$u1 = $this->factory->user->create();
 		$this->bp->set_current_user( $u1 );
@@ -653,7 +653,7 @@ class BP_Test_REST_Sitewide_Notices_Endpoint extends WP_Test_REST_Controller_Tes
 			),
 		);
 
-		$created = $this->create_notice( $tested );
+		$this->create_notice( $tested );
 
 		$this->bp->set_current_user( 0 );
 
@@ -681,7 +681,11 @@ class BP_Test_REST_Sitewide_Notices_Endpoint extends WP_Test_REST_Controller_Tes
 
 		$this->assertEquals( apply_filters( 'bp_get_message_notice_subject', wp_staticize_emoji( $notice->subject ) ), $data['subject']['rendered'] );
 		$this->assertEquals( apply_filters( 'bp_get_message_notice_text', wp_staticize_emoji( $notice->message ) ), $data['message']['rendered'] );
-		$this->assertEquals( bp_rest_prepare_date_response( $notice->date_sent ), $data['date'] );
+		$this->assertEquals(
+			bp_rest_prepare_date_response( $notice->date_sent, get_date_from_gmt( $notice->date_sent ) ),
+			$data['date']
+		);
+		$this->assertEquals( bp_rest_prepare_date_response( $notice->date_sent ), $data['date_gmt'] );
 	}
 
 	public function test_get_item_schema() {
@@ -690,11 +694,12 @@ class BP_Test_REST_Sitewide_Notices_Endpoint extends WP_Test_REST_Controller_Tes
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 5, count( $properties ) );
+		$this->assertEquals( 6, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'subject', $properties );
 		$this->assertArrayHasKey( 'message', $properties );
 		$this->assertArrayHasKey( 'date', $properties );
+		$this->assertArrayHasKey( 'date_gmt', $properties );
 		$this->assertArrayHasKey( 'is_active', $properties );
 	}
 

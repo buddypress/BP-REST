@@ -677,9 +677,10 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $signup, $request ) {
 		$data = array(
-			'id'         => $signup->id,
-			'user_login' => $signup->user_login,
-			'registered' => bp_rest_prepare_date_response( $signup->registered ),
+			'id'             => $signup->id,
+			'user_login'     => $signup->user_login,
+			'registered'     => bp_rest_prepare_date_response( $signup->registered, get_date_from_gmt( $signup->registered ) ),
+			'registered_gmt' => bp_rest_prepare_date_response( $signup->registered ),
 		);
 
 		// The user name is only available when the xProfile component is active.
@@ -692,7 +693,8 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		if ( 'edit' === $context ) {
 			$data['activation_key'] = $signup->activation_key;
 			$data['user_email']     = $signup->user_email;
-			$data['date_sent']      = bp_rest_prepare_date_response( $signup->date_sent );
+			$data['date_sent']      = bp_rest_prepare_date_response( $signup->date_sent, get_date_from_gmt( $signup->date_sent ) );
+			$data['date_sent_gmt']  = bp_rest_prepare_date_response( $signup->date_sent );
 			$data['count_sent']     = (int) $signup->count_sent;
 
 			if ( is_multisite() && $signup->domain && $signup->path && $signup->title ) {
@@ -896,14 +898,28 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 					'registered'     => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The registered date for the user, in the site\'s timezone.', 'buddypress' ),
-						'type'        => 'string',
+						'type'        => array( 'string', 'null' ),
+						'readonly'    => true,
+						'format'      => 'date-time',
+					),
+					'registered_gmt'     => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The registered date for the user, as GMT.', 'buddypress' ),
+						'type'        => array( 'string', 'null' ),
 						'readonly'    => true,
 						'format'      => 'date-time',
 					),
 					'date_sent'      => array(
 						'context'     => array( 'edit' ),
 						'description' => __( 'The date the activation email was sent to the user, in the site\'s timezone.', 'buddypress' ),
-						'type'        => 'string',
+						'type'        => array( 'string', 'null' ),
+						'readonly'    => true,
+						'format'      => 'date-time',
+					),
+					'date_sent_gmt'      => array(
+						'context'     => array( 'edit' ),
+						'description' => __( 'The date the activation email was sent to the user, as GMT.', 'buddypress' ),
+						'type'        => array( 'string', 'null' ),
 						'readonly'    => true,
 						'format'      => 'date-time',
 					),
