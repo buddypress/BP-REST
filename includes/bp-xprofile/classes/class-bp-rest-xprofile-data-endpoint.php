@@ -214,9 +214,9 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		 * For field types not supporting multiple values, join values in case
 		 * the submitted value was not an array.
 		 */
-		if ( ! $field->type_obj->supports_multiple_defaults ) {
+		if ( false === $field->type_obj->supports_multiple_defaults ) {
 			$value = implode( ' ', (array) $value );
-		} else {
+		} elseif ( is_string( $value ) ) {
 			$value = preg_split( '/[,]+/', $value );
 		}
 
@@ -255,9 +255,9 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		 *
 		 * @param BP_XProfile_Field       $field      The field object.
 		 * @param BP_XProfile_ProfileData $field_data The field data object.
-		 * @param WP_User                 $user      The user object.
-		 * @param WP_REST_Response        $response  The response data.
-		 * @param WP_REST_Request         $request   The request sent to the API.
+		 * @param WP_User                 $user       The user object.
+		 * @param WP_REST_Response        $response   The response data.
+		 * @param WP_REST_Request         $request    The request sent to the API.
 		 */
 		do_action( 'bp_rest_xprofile_data_save_item', $field, $field_data, $user, $response, $request );
 
@@ -375,10 +375,10 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		 * @since 0.1.0
 		 *
 		 * @param BP_XProfile_Field       $field       Deleted field object.
-		 * @param BP_XProfile_ProfileData  $field_data  Deleted field data object.
-		 * @param WP_User                $user       User object.
-		 * @param WP_REST_Response       $response   The response data.
-		 * @param WP_REST_Request        $request    The request sent to the API.
+		 * @param BP_XProfile_ProfileData $field_data  Deleted field data object.
+		 * @param WP_User                 $user        User object.
+		 * @param WP_REST_Response        $response    The response data.
+		 * @param WP_REST_Request         $request     The request sent to the API.
 		 */
 		do_action( 'bp_rest_xprofile_data_delete_item', $field, $field_data, $user, $response, $request );
 
