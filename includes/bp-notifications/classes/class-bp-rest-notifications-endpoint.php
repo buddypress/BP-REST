@@ -529,14 +529,15 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $notification, $request ) {
 		$data = array(
-			'id'                => $notification->id,
-			'user_id'           => $notification->user_id,
-			'item_id'           => $notification->item_id,
-			'secondary_item_id' => $notification->secondary_item_id,
+			'id'                => (int) $notification->id,
+			'user_id'           => (int) $notification->user_id,
+			'item_id'           => (int) $notification->item_id,
+			'secondary_item_id' => (int) $notification->secondary_item_id,
 			'component'         => $notification->component_name,
 			'action'            => $notification->component_action,
-			'date'              => bp_rest_prepare_date_response( $notification->date_notified ),
-			'is_new'            => $notification->is_new,
+			'date'              => bp_rest_prepare_date_response( $notification->date_notified, get_date_from_gmt( $notification->date_notified ) ),
+			'date_gmt'          => bp_rest_prepare_date_response( $notification->date_notified ),
+			'is_new'            => (int) $notification->is_new,
 		);
 
 		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
@@ -544,6 +545,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
+		// Add prepare links.
 		$response->add_links( $this->prepare_links( $notification ) );
 
 		/**
@@ -837,7 +839,15 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 					),
 					'date'              => array(
 						'description' => __( 'The date the notification was created, in the site\'s timezone.', 'buddypress' ),
-						'type'        => 'string',
+						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
+						'format'      => 'date-time',
+						'context'     => array( 'view', 'edit' ),
+					),
+					'date_gmt'          => array(
+						'description' => __( 'The date the notification was created, as GMT.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 						'context'     => array( 'view', 'edit' ),
 					),

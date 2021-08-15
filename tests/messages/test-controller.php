@@ -984,7 +984,11 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $thread->last_sender_id, $data['last_sender_id'] );
 		$this->assertEquals( apply_filters( 'bp_get_message_thread_subject', wp_staticize_emoji( $thread->last_message_subject ) ), $data['subject']['rendered'] );
 		$this->assertEquals( apply_filters( 'bp_get_message_thread_content', wp_staticize_emoji( $thread->last_message_content ) ), $data['message']['rendered'] );
-		$this->assertEquals( bp_rest_prepare_date_response( $thread->last_message_date ), $data['date'] );
+		$this->assertEquals(
+			bp_rest_prepare_date_response( $thread->last_message_date, get_date_from_gmt( $thread->last_message_date ) ),
+			$data['date']
+		);
+		$this->assertEquals( bp_rest_prepare_date_response( $thread->last_message_date ), $data['date_gmt'] );
 		$this->assertEquals( $thread->unread_count, $data['unread_count'] );
 		$this->assertEquals( $thread->sender_ids, $data['sender_ids'] );
 	}
@@ -995,12 +999,13 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 12, count( $properties ) );
+		$this->assertEquals( 13, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'message_id', $properties );
 		$this->assertArrayHasKey( 'last_sender_id', $properties );
 		$this->assertArrayHasKey( 'subject', $properties );
 		$this->assertArrayHasKey( 'date', $properties );
+		$this->assertArrayHasKey( 'date_gmt', $properties );
 		$this->assertArrayHasKey( 'unread_count', $properties );
 		$this->assertArrayHasKey( 'sender_ids', $properties );
 		$this->assertArrayHasKey( 'messages', $properties );

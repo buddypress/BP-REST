@@ -485,13 +485,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		$data = array(
-			'id'                     => $user->ID,
+			'id'                     => (int) $user->ID,
 			'name'                   => $user->display_name,
 			'user_login'             => $user->user_login,
 			'roles'                  => array(),
 			'capabilities'           => array(),
 			'extra_capabilities'     => array(),
-			'registered_date'        => '',
+			'registered_date'        => null,
+			'registered_date_gmt'    => null,
 			'friendship_status'      => false,
 			'friendship_status_slug' => '',
 		);
@@ -524,20 +525,22 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		// Populate extras.
 		if ( $request->get_param( 'populate_extras' ) ) {
 			$data['registered_since'] = bp_core_time_since( $user->user_registered );
-
-			$data['last_activity'] = array(
-				'timediff' => '',
-				'date'     => '',
+			$data['last_activity']    = array(
+				'timediff' => null,
+				'date'     => null,
+				'date_gmt' => null,
 			);
 
 			if ( get_current_user_id() === $user->ID ) {
 				$right_now                         = gmdate( 'Y-m-d H:i:s', bp_core_current_time( true, 'timestamp' ) );
 				$data['last_activity']['timediff'] = bp_core_time_since( $right_now );
-				$data['last_activity']['date']     = bp_rest_prepare_date_response( $right_now );
+				$data['last_activity']['date']     = bp_rest_prepare_date_response( $right_now, get_date_from_gmt( $right_now ) );
+				$data['last_activity']['date_gmt'] = bp_rest_prepare_date_response( $right_now );
 
 			} elseif ( $user->last_activity ) {
 				$data['last_activity']['timediff'] = bp_core_time_since( $user->last_activity );
-				$data['last_activity']['date']     = bp_rest_prepare_date_response( $user->last_activity );
+				$data['last_activity']['date']     = bp_rest_prepare_date_response( $user->last_activity, get_date_from_gmt( $user->last_activity ) );
+				$data['last_activity']['date_gmt'] = bp_rest_prepare_date_response( $user->last_activity );
 			}
 
 			if ( bp_is_active( 'activity' ) ) {
@@ -576,10 +579,11 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		if ( 'edit' === $context && current_user_can( 'list_users' ) ) {
-			$data['registered_date']    = bp_rest_prepare_date_response( $user->data->user_registered );
-			$data['roles']              = (array) array_values( $user->roles );
-			$data['capabilities']       = (array) array_keys( $user->allcaps );
-			$data['extra_capabilities'] = (array) array_keys( $user->caps );
+			$data['registered_date']     = bp_rest_prepare_date_response( $user->data->user_registered, get_date_from_gmt( $user->data->user_registered ) );
+			$data['registered_date_gmt'] = bp_rest_prepare_date_response( $user->data->user_registered );
+			$data['roles']               = (array) array_values( $user->roles );
+			$data['capabilities']        = (array) array_keys( $user->allcaps );
+			$data['extra_capabilities']  = (array) array_keys( $user->caps );
 		}
 
 		// The name used for that user in @-mentions.
@@ -888,8 +892,15 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'readonly'    => true,
 					),
 					'registered_date'    => array(
-						'description' => __( 'Registration date for the member.', 'buddypress' ),
-						'type'        => 'string',
+						'description' => __( 'Registration date for the member, in the site\'s timezone.', 'buddypress' ),
+						'type'        => array( 'string', 'null' ),
+						'format'      => 'date-time',
+						'context'     => array( 'edit' ),
+						'readonly'    => true,
+					),
+					'registered_date_gmt' => array(
+						'description' => __( 'Registration date for the member, as GMT.', 'buddypress' ),
+						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 						'context'     => array( 'edit' ),
 						'readonly'    => true,
@@ -953,11 +964,21 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'type'        => 'object',
 						'properties'  => array(
 							'timediff' => array(
-								'type' => 'string',
+								'description' => __( 'English-language representation of the date.', 'buddypress' ),
+								'type'        => 'string',
+								'readonly'    => true,
 							),
 							'date'     => array(
-								'type'   => 'string',
-								'format' => 'date-time',
+								'description' => __( 'Date in the site\'s timezone.', 'buddypress' ),
+								'type'        => array( 'string', 'null' ),
+								'readonly'    => true,
+								'format'      => 'date-time',
+							),
+							'date_gmt'  => array(
+								'description' => __( 'Date as GMT.', 'buddypress' ),
+								'type'        => array( 'string', 'null' ),
+								'readonly'    => true,
+								'format'      => 'date-time',
 							),
 						),
 						'format'      => 'date-time',

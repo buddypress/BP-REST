@@ -571,7 +571,11 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertEquals( $notification->secondary_item_id, $data['secondary_item_id'] );
 		$this->assertEquals( $notification->component_name, $data['component'] );
 		$this->assertEquals( $notification->component_action, $data['action'] );
-		$this->assertEquals( bp_rest_prepare_date_response( $notification->date_notified ), $data['date'] );
+		$this->assertEquals(
+			bp_rest_prepare_date_response( $notification->date_notified, get_date_from_gmt( $notification->date_notified ) ),
+			$data['date']
+		);
+		$this->assertEquals( bp_rest_prepare_date_response( $notification->date_notified ), $data['date_gmt'] );
 		$this->assertEquals( $notification->is_new, $data['is_new'] );
 	}
 
@@ -617,7 +621,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 8, count( $properties ) );
+		$this->assertEquals( 9, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'item_id', $properties );
 		$this->assertArrayHasKey( 'secondary_item_id', $properties );
@@ -625,6 +629,7 @@ class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testca
 		$this->assertArrayHasKey( 'component', $properties );
 		$this->assertArrayHasKey( 'action', $properties );
 		$this->assertArrayHasKey( 'date', $properties );
+		$this->assertArrayHasKey( 'date_gmt', $properties );
 		$this->assertArrayHasKey( 'is_new', $properties );
 	}
 

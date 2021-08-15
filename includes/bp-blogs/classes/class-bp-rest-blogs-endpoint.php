@@ -403,18 +403,19 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $blog, $request ) {
 		$data = array(
-			'id'              => absint( $blog->blog_id ),
-			'user_id'         => absint( $blog->admin_user_id ),
-			'name'            => apply_filters( 'bp_get_blog_name', $blog->name ),
-			'domain'          => (string) $blog->domain,
-			'path'            => (string) $blog->path,
-			'permalink'       => $this->get_blog_domain( $blog ),
-			'description'     => array(
+			'id'                => absint( $blog->blog_id ),
+			'user_id'           => absint( $blog->admin_user_id ),
+			'name'              => apply_filters( 'bp_get_blog_name', $blog->name ),
+			'domain'            => (string) $blog->domain,
+			'path'              => (string) $blog->path,
+			'permalink'         => $this->get_blog_permalink( $blog ),
+			'last_activity'     => bp_rest_prepare_date_response( $blog->last_activity, get_date_from_gmt( $blog->last_activity ) ),
+			'last_activity_gmt' => bp_rest_prepare_date_response( $blog->last_activity ),
+			'lastest_post_id'   => 0,
+			'description'       => array(
 				'raw'      => $blog->description,
 				'rendered' => apply_filters( 'bp_get_blog_description', $blog->description ),
 			),
-			'last_activity'   => bp_rest_prepare_date_response( $blog->last_activity ),
-			'lastest_post_id' => 0,
 		);
 
 		if ( ! empty( $blog->latest_post->ID ) ) {
@@ -517,7 +518,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 * @param stdClass $blog Blog object.
 	 * @return string
 	 */
-	protected function get_blog_domain( $blog ) {
+	protected function get_blog_permalink( $blog ) {
 
 		// Bail early.
 		if ( empty( $blog->domain ) && empty( $blog->path ) ) {
@@ -708,8 +709,16 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 					),
 					'last_activity' => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
-						'description' => __( "The last activity date from the blog, in the site's timezone.", 'buddypress' ),
-						'type'        => 'string',
+						'description' => __( 'The date of the last activity from the blog, in the site\'s timezone.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
+						'format'      => 'date-time',
+					),
+					'last_activity_gmt' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The date of the last activity from the blog, as GMT.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
 					'lastest_post_id' => array(

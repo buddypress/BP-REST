@@ -637,11 +637,12 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $friendship, $request ) {
 		$data = array(
-			'id'           => $friendship->id,
-			'initiator_id' => $friendship->initiator_user_id,
-			'friend_id'    => $friendship->friend_user_id,
-			'is_confirmed' => (bool) $friendship->is_confirmed,
-			'date_created' => bp_rest_prepare_date_response( $friendship->date_created ),
+			'id'               => (int) $friendship->id,
+			'initiator_id'     => (int) $friendship->initiator_user_id,
+			'friend_id'        => (int) $friendship->friend_user_id,
+			'is_confirmed'     => (bool) $friendship->is_confirmed,
+			'date_created'     => bp_rest_prepare_date_response( $friendship->date_created, get_date_from_gmt( $friendship->date_created ) ),
+			'date_created_gmt' => bp_rest_prepare_date_response( $friendship->date_created ),
 		);
 
 		$context  = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
@@ -842,9 +843,16 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 					),
 					'date_created' => array(
 						'context'     => array( 'view', 'edit' ),
-						'description' => __( "The date the friendship was created, in the site's timezone.", 'buddypress' ),
+						'description' => __( 'The date the friendship was created, in the site\'s timezone.', 'buddypress' ),
 						'readonly'    => true,
-						'type'        => 'string',
+						'type'        => array( 'string', 'null' ),
+						'format'      => 'date-time',
+					),
+					'date_created_gmt' => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'The date the friendship was created, as GMT.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
 				),

@@ -634,7 +634,11 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$this->assertEquals( $member_object->is_admin, (bool) $data['is_admin'] );
 		$this->assertEquals( $member_object->is_banned, (bool) $data['is_banned'] );
 		$this->assertEquals( $member_object->is_confirmed, (bool) $data['is_confirmed'] );
-		$this->assertEquals( bp_rest_prepare_date_response( $member_object->date_modified ), $data['date_modified'] );
+		$this->assertEquals(
+			bp_rest_prepare_date_response( $member_object->date_modified, get_date_from_gmt( $member_object->date_modified ) ),
+			$data['date_modified']
+		);
+		$this->assertEquals( bp_rest_prepare_date_response( $member_object->date_modified ), $data['date_modified_gmt'] );
 	}
 
 	public function test_get_item_schema() {
@@ -643,8 +647,10 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 6, count( $properties ) );
+		$this->assertEquals( 7, count( $properties ) );
 		$this->assertArrayHasKey( 'user_id', $properties );
+		$this->assertArrayHasKey( 'date_modified', $properties );
+		$this->assertArrayHasKey( 'date_modified_gmt', $properties );
 	}
 
 	public function test_context_param() {
