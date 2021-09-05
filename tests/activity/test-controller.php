@@ -1144,7 +1144,8 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$params = $this->set_activity_data(
 			array(
-				'content' => 'Updated random content',
+				'content'         => 'Updated random content',
+				'primary_item_id' => $g,
 			)
 		);
 		$request->set_body( wp_json_encode( $params ) );
@@ -1154,8 +1155,13 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->check_update_activity_response( $response );
 
 		$new_data = $response->get_data();
-		$new_data = $new_data[0];
+		$this->assertNotEmpty( $new_data );
 
+		$new_data = $new_data[0];
+		$activity = $this->endpoint->get_activity_object( $a );
+
+		$this->assertEquals( $g, $activity->item_id );
+		$this->assertEquals( $g, $new_data['primary_item_id'] );
 		$this->assertEquals( $a, $new_data['id'] );
 		$this->assertEquals( $params['content'], $new_data['content']['raw'] );
 	}
@@ -1547,6 +1553,7 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayNotHasKey( 'Location', $headers );
 
 		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
 
 		$activity = $this->endpoint->get_activity_object( $data[0]['id'] );
 		$this->check_activity_data( $activity, $data[0], 'edit' );

@@ -961,11 +961,15 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'user'    => array(
+		);
+
+		// Embed group creator if available.
+		if ( ! empty( $group->creator_id ) ) {
+			$links['user'] = array(
 				'href'       => bp_rest_get_object_url( $group->creator_id, 'members' ),
 				'embeddable' => true,
-			),
-		);
+			);
+		}
 
 		// Embed parent group if available.
 		if ( ! empty( $group->parent ) ) {
