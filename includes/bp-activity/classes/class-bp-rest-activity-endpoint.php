@@ -1040,13 +1040,13 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( ! empty( $schema['properties']['primary_item_id'] ) && ! empty( $request->get_param( 'primary_item_id' ) ) ) {
 			$item_id = (int) $request->get_param( 'primary_item_id' );
 
+			// Use a generic item ID.
+			$prepared_activity->item_id = $item_id;
+
 			// Set the group ID, used in the `groups_post_update` helper function only.
 			if ( bp_is_active( 'groups' ) && isset( $prepared_activity->component ) && buddypress()->groups->id === $prepared_activity->component ) {
 				$prepared_activity->group_id = $item_id;
 			}
-
-			// Use a generic item ID.
-			$prepared_activity->item_id = $item_id;
 		}
 
 		// Secondary Item ID.
