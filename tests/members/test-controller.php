@@ -219,6 +219,45 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_items_filtered_by_xprofile() {
+		$u = self::factory()->user->create();
+		$g = xprofile_insert_field_group( array(
+			'name'        => 'foo',
+			'description' => 'bar',
+		) );
+
+		$f = xprofile_insert_field( array(
+			'field_group_id' => $g,
+			'type'           => 'textbox',
+			'name'           => 'City',
+		) );
+
+		xprofile_set_field_data( $f, $u, 'Istanbul' );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'xprofile' => [
+				[
+					'field' => $f,
+					'value' => 'Istanbul',
+				]
+			],
+		) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$this->assertTrue( 1 === count( $all_data ) );
+		$this->assertSame( array( $u ), wp_list_pluck( $all_data, 'id' ) );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {

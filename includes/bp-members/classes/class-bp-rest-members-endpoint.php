@@ -1139,9 +1139,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		$params['xprofile'] = array(
 			'description'       => __( 'Limit results set to a certain XProfile field.', 'buddypress' ),
-			'default'           => '',
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_key',
+			'default'           => array(),
+			'type'              => 'array',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
