@@ -223,8 +223,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items_filtered_by_xprofile() {
-		$u = self::factory()->user->create();
-
+		$u = $this->bp_factory->user->create();
 		$g = $this->bp_factory->xprofile_group->create();
 		$f = $this->bp_factory->xprofile_field->create( [
 			'field_group_id' => $g,
