@@ -42,6 +42,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		buddypress()->members->types = array();
 
+		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Members_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/members';
@@ -223,25 +224,22 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 */
 	public function test_get_items_filtered_by_xprofile() {
 		$u = self::factory()->user->create();
-		$g = xprofile_insert_field_group( array(
-			'name'        => 'foo',
-			'description' => 'bar',
-		) );
 
-		$f = xprofile_insert_field( array(
+		$g = $this->bp_factory->xprofile_group->create();
+		$f = $this->bp_factory->xprofile_field->create( [
 			'field_group_id' => $g,
 			'type'           => 'textbox',
-			'name'           => 'City',
-		) );
+			'name'           => 'foo',
+		] );
 
-		xprofile_set_field_data( $f, $u, 'Istanbul' );
+		xprofile_set_field_data( $f, $u, 'bar' );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
 			'xprofile' => [
 				[
 					'field' => $f,
-					'value' => 'Istanbul',
+					'value' => 'bar',
 				]
 			],
 		) );
