@@ -157,7 +157,8 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items_extra() {
-		$this->bp->set_current_user( $this->user );
+		$u1 = $this->bp_factory->user->create();
+		$this->bp->set_current_user( $u1 );
 		$now = time();
 
 		$d1 = gmdate( 'Y-m-d H:i:s', $now - 10000 );
@@ -169,8 +170,8 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$a2 = $this->bp_factory->group->create( array( 'date_created' => $d2 ) );
 		$a3 = $this->bp_factory->group->create( array( 'date_created' => $d3 ) );
 
-		$u = $this->factory->user->create();
-		groups_join_group( $a3, $u );
+		$u2 = $this->bp_factory->user->create();
+		groups_join_group( $a3, $u2);
 
 		groups_update_groupmeta( $a1, 'last_activity', $d4 );
 
