@@ -223,22 +223,26 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items_filtered_by_xprofile() {
-		$u = $this->bp_factory->user->create();
-		$g = $this->bp_factory->xprofile_group->create();
-		$f = $this->bp_factory->xprofile_field->create( [
+		$u  = $this->bp_factory->user->create();
+		$u2 = $this->bp_factory->user->create();
+		$g  = $this->bp_factory->xprofile_group->create();
+		$f  = $this->bp_factory->xprofile_field->create( [
 			'field_group_id' => $g,
 			'type'           => 'textbox',
 			'name'           => 'foo',
 		] );
 
 		xprofile_set_field_data( $f, $u, 'bar' );
+		xprofile_set_field_data( $f, $u2, 'bar2' );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
 			'xprofile' => [
-				[
-					'field' => $f,
-					'value' => 'bar',
+				'args' => [
+					[
+						'field' => $f,
+						'value' => 'bar',
+					]
 				]
 			],
 		) );
