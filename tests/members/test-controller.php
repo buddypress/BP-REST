@@ -253,9 +253,12 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
-
 		$this->assertTrue( 1 === count( $all_data ) );
-		$this->assertSame( array( $u ), wp_list_pluck( $all_data, 'id' ) );
+
+		$user_ids = wp_list_pluck( $all_data, 'id' );
+
+		$this->assertFalse( in_array( $u2, $user_ids, true ) );
+		$this->assertSame( array( $u ), $user_ids );
 	}
 
 	/**
