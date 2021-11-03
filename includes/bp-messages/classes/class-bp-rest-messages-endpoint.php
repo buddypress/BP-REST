@@ -1269,14 +1269,14 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 							),
 						),
 					),
-					'date'            => array(
+					'date'                => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'Dat of the latest message of the Thread, in the site\'s timezone.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
-					'date_gmt'        => array(
+					'date_gmt'            => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'Dat of the latest message of the Thread, as GMT.', 'buddypress' ),
 						'readonly'    => true,

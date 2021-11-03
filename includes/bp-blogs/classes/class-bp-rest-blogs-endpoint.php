@@ -427,16 +427,16 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 			$data['avatar_urls'] = array(
 				'thumb' => bp_get_blog_avatar(
 					array(
-						'type'          => 'thumb',
-						'blog_id'       => $blog->blog_id,
-						'html'          => false,
+						'type'    => 'thumb',
+						'blog_id' => $blog->blog_id,
+						'html'    => false,
 					)
 				),
 				'full'  => bp_get_blog_avatar(
 					array(
-						'type'          => 'full',
-						'blog_id'       => $blog->blog_id,
-						'html'          => false,
+						'type'    => 'full',
+						'blog_id' => $blog->blog_id,
+						'html'    => false,
 					)
 				),
 			);
@@ -645,19 +645,19 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 				'title'      => 'bp_blogs',
 				'type'       => 'object',
 				'properties' => array(
-					'id'            => array(
+					'id'                => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'A unique numeric ID for the blog.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'integer',
 					),
-					'user_id'       => array(
+					'user_id'           => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'A unique numeric ID for the blog admin.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'integer',
 					),
-					'name'          => array(
+					'name'              => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The name of the blog.', 'buddypress' ),
 						'readonly'    => true,
@@ -666,14 +666,14 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
-					'permalink'     => array(
+					'permalink'         => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The permalink of the blog.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'string',
 						'format'      => 'uri',
 					),
-					'description'        => array(
+					'description'       => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The description of the blog.', 'buddypress' ),
 						'type'        => 'object',
@@ -695,19 +695,19 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 							),
 						),
 					),
-					'path'          => array(
+					'path'              => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The path of the blog.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'string',
 					),
-					'domain'        => array(
+					'domain'            => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The domain of the blog.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'string',
 					),
-					'last_activity' => array(
+					'last_activity'     => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The date of the last activity from the blog, in the site\'s timezone.', 'buddypress' ),
 						'readonly'    => true,
@@ -721,7 +721,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
-					'lastest_post_id' => array(
+					'lastest_post_id'   => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The latest post ID from the blog', 'buddypress' ),
 						'type'        => 'integer',

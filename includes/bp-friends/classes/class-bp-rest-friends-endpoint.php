@@ -684,11 +684,11 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'initiator'       => array(
+			'initiator'  => array(
 				'href'       => bp_rest_get_object_url( $friendship->initiator_user_id, 'members' ),
 				'embeddable' => true,
 			),
-			'friend'       => array(
+			'friend'     => array(
 				'href'       => bp_rest_get_object_url( $friendship->friend_user_id, 'members' ),
 				'embeddable' => true,
 			),
@@ -820,28 +820,28 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 				'title'      => 'bp_friends',
 				'type'       => 'object',
 				'properties' => array(
-					'id'           => array(
+					'id'               => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'Unique numeric identifier of the friendship.', 'buddypress' ),
 						'type'        => 'integer',
 					),
-					'initiator_id' => array(
+					'initiator_id'     => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The unique numeric identifier of the user who is requesting the Friendship.', 'buddypress' ),
 						'type'        => 'integer',
 					),
-					'friend_id'    => array(
+					'friend_id'        => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The unique numeric identifier of the user who is invited to agree to the Friendship request.', 'buddypress' ),
 						'type'        => 'integer',
 					),
-					'is_confirmed' => array(
+					'is_confirmed'     => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'Whether the friendship been confirmed/accepted.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'boolean',
 					),
-					'date_created' => array(
+					'date_created'     => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The date the friendship was created, in the site\'s timezone.', 'buddypress' ),
 						'readonly'    => true,

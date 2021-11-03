@@ -39,7 +39,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$this->namespace,
 			'/' . $this->rest_base . '/(?P<id>[\d]+)',
 			array(
-				'args' => array(
+				'args'   => array(
 					'id' => array(
 						'description' => __( 'Unique identifier for the member.', 'buddypress' ),
 						'type'        => 'integer',
@@ -855,13 +855,13 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 				'title'      => 'bp_members',
 				'type'       => 'object',
 				'properties' => array(
-					'id'                 => array(
+					'id'                     => array(
 						'description' => __( 'A unique numeric ID for the Member.', 'buddypress' ),
 						'type'        => 'integer',
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'readonly'    => true,
 					),
-					'name'               => array(
+					'name'                   => array(
 						'description' => __( 'Display name for the member.', 'buddypress' ),
 						'type'        => 'string',
 						'context'     => array( 'view', 'edit' ),
@@ -869,7 +869,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
-					'mention_name'       => array(
+					'mention_name'           => array(
 						'description' => __( 'The name used for that user in @-mentions.', 'buddypress' ),
 						'type'        => 'string',
 						'context'     => array( 'view', 'edit', 'embed' ),
@@ -878,14 +878,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						),
 						'readonly'    => true,
 					),
-					'link'               => array(
+					'link'                   => array(
 						'description' => __( 'Profile URL of the member.', 'buddypress' ),
 						'type'        => 'string',
 						'format'      => 'uri',
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'readonly'    => true,
 					),
-					'user_login'         => array(
+					'user_login'             => array(
 						'description' => __( 'An alphanumeric identifier for the Member.', 'buddypress' ),
 						'type'        => 'string',
 						'context'     => array( 'view', 'edit', 'embed' ),
@@ -894,7 +894,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 							'sanitize_callback' => array( $this, 'check_username' ),
 						),
 					),
-					'member_types'       => array(
+					'member_types'           => array(
 						'description' => __( 'Member types associated with the member.', 'buddypress' ),
 						'enum'        => bp_get_member_types(),
 						'type'        => 'array',
@@ -904,27 +904,27 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'readonly'    => true,
 					),
-					'registered_date'    => array(
+					'registered_date'        => array(
 						'description' => __( 'Registration date for the member, in the site\'s timezone.', 'buddypress' ),
 						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 						'context'     => array( 'edit' ),
 						'readonly'    => true,
 					),
-					'registered_date_gmt' => array(
+					'registered_date_gmt'    => array(
 						'description' => __( 'Registration date for the member, as GMT.', 'buddypress' ),
 						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 						'context'     => array( 'edit' ),
 						'readonly'    => true,
 					),
-					'registered_since'   => array(
+					'registered_since'       => array(
 						'description' => __( 'Elapsed time since the member registered.', 'buddypress' ),
 						'type'        => 'string',
 						'context'     => array( 'view', 'edit' ),
 						'readonly'    => true,
 					),
-					'password'           => array(
+					'password'               => array(
 						'description' => __( 'Password for the member (never included).', 'buddypress' ),
 						'type'        => 'string',
 						'context'     => array(), // Password is never displayed.
@@ -933,7 +933,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 							'sanitize_callback' => array( $this, 'check_user_password' ),
 						),
 					),
-					'roles'              => array(
+					'roles'                  => array(
 						'description' => __( 'Roles assigned to the member.', 'buddypress' ),
 						'type'        => 'array',
 						'context'     => array( 'edit' ),
@@ -941,25 +941,25 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 							'type' => 'string',
 						),
 					),
-					'capabilities'       => array(
+					'capabilities'           => array(
 						'description' => __( 'All capabilities assigned to the user.', 'buddypress' ),
 						'type'        => 'object',
 						'context'     => array( 'edit' ),
 						'readonly'    => true,
 					),
-					'extra_capabilities' => array(
+					'extra_capabilities'     => array(
 						'description' => __( 'Any extra capabilities assigned to the user.', 'buddypress' ),
 						'type'        => 'object',
 						'context'     => array( 'edit' ),
 						'readonly'    => true,
 					),
-					'xprofile'             => array(
+					'xprofile'               => array(
 						'description' => __( 'Member XProfile groups and its fields.', 'buddypress' ),
 						'type'        => 'array',
 						'context'     => array( 'view', 'edit' ),
 						'readonly'    => true,
 					),
-					'friendship_status'    => array(
+					'friendship_status'      => array(
 						'description' => __( 'Friendship relation with, current, logged in user.', 'buddypress' ),
 						'type'        => 'bool',
 						'context'     => array( 'view', 'edit', 'embed' ),
@@ -987,7 +987,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 								'readonly'    => true,
 								'format'      => 'date-time',
 							),
-							'date_gmt'  => array(
+							'date_gmt' => array(
 								'description' => __( 'Date as GMT.', 'buddypress' ),
 								'type'        => array( 'string', 'null' ),
 								'readonly'    => true,
