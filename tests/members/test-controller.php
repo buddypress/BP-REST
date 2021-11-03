@@ -42,6 +42,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		buddypress()->members->types = array();
 
+		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Members_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/members';
@@ -216,6 +217,163 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertTrue( 3 === count( $all_data ) );
 		$this->assertSame( $expected_types, wp_list_pluck( $all_data, 'member_types', 'id' ) );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_filtered_by_xprofile() {
+		$u  = $this->bp_factory->user->create();
+		$u2 = $this->bp_factory->user->create();
+		$g  = $this->bp_factory->xprofile_group->create();
+		$f  = $this->bp_factory->xprofile_field->create( [
+			'field_group_id' => $g,
+			'type'           => 'textbox',
+			'name'           => 'foo',
+		] );
+
+		xprofile_set_field_data( $f, $u, 'bar' );
+		xprofile_set_field_data( $f, $u2, 'bar2' );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'xprofile' => [
+				'args' => [
+					[
+						'field' => $f,
+						'value' => 'bar',
+					]
+				]
+			],
+		) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+		$this->assertTrue( 1 === count( $all_data ) );
+
+		$user_ids = wp_list_pluck( $all_data, 'id' );
+
+		$this->assertFalse( in_array( $u2, $user_ids, true ) );
+		$this->assertSame( array( $u ), $user_ids );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_filtered_by_xprofile_with_and_relation() {
+		$u  = $this->bp_factory->user->create();
+		$u2 = $this->bp_factory->user->create();
+
+		$g = $this->bp_factory->xprofile_group->create();
+
+		$f  = $this->bp_factory->xprofile_field->create( [
+			'field_group_id' => $g,
+			'type'           => 'textbox',
+			'name'           => 'foo',
+		] );
+		$f2 = $this->bp_factory->xprofile_field->create( [
+			'field_group_id' => $g,
+			'type'           => 'textbox',
+			'name'           => 'bar',
+		] );
+
+		xprofile_set_field_data( $f, $u, 'foo1' );
+		xprofile_set_field_data( $f2, $u, 'bar1' );
+
+		xprofile_set_field_data( $f, $u2, 'foo1' );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'xprofile' => [
+				'relation' => 'and',
+				'args' => [
+					[
+						'field' => $f,
+						'value' => 'foo1',
+					],
+					[
+						'field' => $f2,
+						'value' => 'bar1',
+					]
+				]
+			],
+		) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$user_ids = wp_list_pluck( $all_data, 'id' );
+
+		$this->assertNotEmpty( $all_data );
+		$this->assertTrue( 1 === count( $all_data ) );
+		$this->assertFalse( in_array( $u2, $user_ids, true ) );
+		$this->assertSame( array( $u ), $user_ids );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_items_filtered_by_xprofile_with_or_relation() {
+		$u  = $this->bp_factory->user->create();
+		$u2 = $this->bp_factory->user->create();
+		$u3 = $this->bp_factory->user->create();
+
+		$g = $this->bp_factory->xprofile_group->create();
+
+		$f  = $this->bp_factory->xprofile_field->create( [
+			'field_group_id' => $g,
+			'type'           => 'textbox',
+			'name'           => 'foo',
+		] );
+		$f2 = $this->bp_factory->xprofile_field->create( [
+			'field_group_id' => $g,
+			'type'           => 'textbox',
+			'name'           => 'bar',
+		] );
+
+		xprofile_set_field_data( $f, $u, 'foo1' );
+		xprofile_set_field_data( $f2, $u, 'bar1' );
+
+		xprofile_set_field_data( $f, $u2, 'foo2' );
+		xprofile_set_field_data( $f2, $u2, 'bar2' );
+
+		xprofile_set_field_data( $f, $u3, 'foo3' );
+		xprofile_set_field_data( $f2, $u3, 'bar3' );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'xprofile' => [
+				'relation' => 'or',
+				'args' => [
+					[
+						'field' => $f,
+						'value' => 'foo1',
+					],
+					[
+						'field' => $f2,
+						'value' => 'bar3',
+					]
+				]
+			],
+		) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$user_ids = wp_list_pluck( $all_data, 'id' );
+
+		$this->assertNotEmpty( $all_data );
+		$this->assertTrue( 2 === count( $all_data ) );
+		$this->assertFalse( in_array( $u2, $user_ids, true ) );
+		$this->assertSame( array( $u3, $u ), $user_ids );
 	}
 
 	/**

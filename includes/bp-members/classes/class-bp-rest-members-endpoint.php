@@ -126,7 +126,20 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			$args['include'] = false;
 		}
 
-		if ( empty( $request->get_param( 'xprofile' ) ) ) {
+		if ( isset( $args['xprofile_query']['args'] ) && is_array( $args['xprofile_query']['args'] ) ) {
+			$xprofile_query_args = $args['xprofile_query']['args'];
+
+			if ( isset( $args['xprofile_query']['relation'] ) ) {
+				$xprofile_query_args = array_merge(
+					array(
+						'relation' => $args['xprofile_query']['relation'],
+					),
+					$xprofile_query_args
+				);
+			}
+
+			$args['xprofile_query'] = $xprofile_query_args;
+		} else {
 			$args['xprofile_query'] = false;
 		}
 
@@ -1139,9 +1152,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		$params['xprofile'] = array(
 			'description'       => __( 'Limit results set to a certain XProfile field.', 'buddypress' ),
-			'default'           => '',
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_key',
+			'type'              => array( 'array', 'object' ),
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
