@@ -116,12 +116,16 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_items( $request ) {
 		$args = array(
-			'user_id'      => $request->get_param( 'user_id' ),
-			'box'          => $request->get_param( 'box' ),
-			'type'         => $request->get_param( 'type' ),
-			'page'         => $request->get_param( 'page' ),
-			'per_page'     => $request->get_param( 'per_page' ),
-			'search_terms' => $request->get_param( 'search' ),
+			'user_id'             => $request->get_param( 'user_id' ),
+			'box'                 => $request->get_param( 'box' ),
+			'type'                => $request->get_param( 'type' ),
+			'page'                => $request->get_param( 'page' ),
+			'per_page'            => $request->get_param( 'per_page' ),
+			'search_terms'        => $request->get_param( 'search' ),
+			'recipients_page'     => $request->get_param( 'recipients_page' ),
+			'recipients_per_page' => $request->get_param( 'recipients_per_page' ),
+			'messages_page'       => $request->get_param( 'messages_page' ),
+			'messages_per_page'   => $request->get_param( 'messages_per_page' ),
 		);
 
 		// Include the meta_query for starred messages.
@@ -950,7 +954,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		}
 
 		// Loop through recipients to prepare them for the response.
-		foreach ( $thread->get_recipients() as $recipient ) {
+		foreach ( $thread->recipients as $recipient ) {
 			$data['recipients'][ $recipient->user_id ] = $this->prepare_recipient_for_response( $recipient, $request );
 		}
 
@@ -1378,6 +1382,44 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'default'           => bp_loggedin_user_id(),
 			'type'              => 'integer',
 			'required'          => true,
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['recipients_page'] = array(
+			'description'       => __( 'Current page of the recipients collection.', 'buddypress' ),
+			'type'              => 'integer',
+			'default'           => 1,
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+			'minimum'           => 1,
+		);
+
+		$params['recipients_per_page'] = array(
+			'description'       => __( 'Maximum number of recipients to be returned in result set.', 'buddypress' ),
+			'type'              => 'integer',
+			'default'           => 10,
+			'minimum'           => 1,
+			'maximum'           => 100,
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['messages_page'] = array(
+			'description'       => __( 'Current page of the messages collection.', 'buddypress' ),
+			'type'              => 'integer',
+			'default'           => 1,
+			'sanitize_callback' => 'absint',
+			'validate_callback' => 'rest_validate_request_arg',
+			'minimum'           => 1,
+		);
+
+		$params['messages_per_page'] = array(
+			'description'       => __( 'Maximum number of messages to be returned in result set.', 'buddypress' ),
+			'type'              => 'integer',
+			'default'           => 10,
+			'minimum'           => 1,
+			'maximum'           => 100,
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
