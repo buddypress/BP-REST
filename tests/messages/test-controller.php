@@ -82,6 +82,67 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_items_and_paginate_messages_recipients() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$u3 = $this->factory->user->create();
+
+		$thread = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		$this->bp_factory->message->create( array(
+			'thread_id'  => $thread->thread_id,
+			'sender_id'  => $u2,
+			'recipients' => array( $u1 ),
+			'subject'    => 'Fooo',
+		) );
+
+		$thread2 = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u3 ),
+			'subject'    => 'Foo',
+		) );
+
+		$this->bp_factory->message->create( array(
+			'thread_id'  => $thread2->thread_id,
+			'sender_id'  => $u3,
+			'recipients' => array( $u1 ),
+			'subject'    => 'Fooo',
+		) );
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$request->set_query_params(
+			array(
+				'user_id'             => $u1,
+				'messages_per_page'   => 1,
+				'recipients_per_page' => 1,
+			)
+		);
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		// Messages.
+		$this->assertCount( 1, $all_data[0]['messages'] );
+		$this->assertCount( 1, $all_data[1]['messages'] );
+
+		// Recipients.
+		$this->assertCount( 1, $all_data[0]['recipients'] );
+		$this->assertCount( 1, $all_data[1]['recipients'] );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {
