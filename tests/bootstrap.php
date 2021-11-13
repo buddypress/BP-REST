@@ -8,6 +8,9 @@
 // Use WP PHPUnit.
 require_once dirname( dirname( __FILE__ ) ) . '/vendor/wp-phpunit/wp-phpunit/__loaded.php';
 
+// Setting PHPUnit polyfills.
+const WP_TESTS_PHPUNIT_POLYFILLS_PATH = __DIR__ . '/../vendor/yoast/phpunit-polyfills';
+
 // Define constants.
 require( dirname( __FILE__ ) . '/define-constants.php' );
 
