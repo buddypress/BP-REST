@@ -948,33 +948,33 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 				'title'      => 'bp_group_invites',
 				'type'       => 'object',
 				'properties' => array(
-					'id'            => array(
+					'id'                => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'A unique numeric ID for the BP Invitation object.', 'buddypress' ),
 						'type'        => 'integer',
 						'readonly'    => true,
 					),
-					'user_id'       => array(
+					'user_id'           => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The ID of the user who is invited to join the Group.', 'buddypress' ),
 						'type'        => 'integer',
 					),
-					'invite_sent'   => array(
+					'invite_sent'       => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'Whether the invite has been sent to the invitee.', 'buddypress' ),
 						'type'        => 'boolean',
 					),
-					'inviter_id'    => array(
+					'inviter_id'        => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The ID of the user who made the invite.', 'buddypress' ),
 						'type'        => 'integer',
 					),
-					'group_id'      => array(
+					'group_id'          => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The ID of the group to which the user has been invited.', 'buddypress' ),
 						'type'        => 'integer',
 					),
-					'date_modified' => array(
+					'date_modified'     => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The date the object was created or last updated, in the site\'s timezone.', 'buddypress' ),
 						'readonly'    => true,
@@ -988,14 +988,14 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
-					'type'          => array(
+					'type'              => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'Invitation or request.', 'buddypress' ),
 						'type'        => 'string',
 						'enum'        => array( 'invite', 'request' ),
 						'default'     => 'invite',
 					),
-					'message'       => array(
+					'message'           => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The raw and rendered versions for the content of the message.', 'buddypress' ),
 						'type'        => 'object',

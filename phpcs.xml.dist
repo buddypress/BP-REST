@@ -12,7 +12,7 @@
 	<config name="testVersion" value="5.6-"/>
 
 	<!-- Check against minimum WP version. -->
-	<config name="minimum_supported_wp_version" value="4.9"/>
+	<config name="minimum_supported_wp_version" value="5.4"/>
 
 	<!--
 	Pass some flags to PHPCS:
@@ -20,9 +20,6 @@
 	s flag: Show sniff codes in all reports.
 	-->
 	<arg value="ps" />
-
-	<!-- Enable colors in report -->
-	<arg name="colors"/>
 
 	<!-- Whenever possible, cache the scan results and re-use those for unchanged files on the next scan. -->
 	<arg name="cache" value=".phpcs/cache.json" />
@@ -44,10 +41,5 @@
 				<element value="buddypress" />
 			</property>
 		</properties>
-	</rule>
-
-	<!-- Allow array disalignment -->
-	<rule ref="WordPress">
-		<exclude name="WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned"/>
 	</rule>
 </ruleset>

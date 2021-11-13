@@ -1286,14 +1286,14 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
-					'last_activity_gmt'      => array(
+					'last_activity_gmt'  => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The date the Group was last active, as GMT.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
-					'last_activity_diff'  => array(
+					'last_activity_diff' => array(
 						'context'     => array( 'view', 'edit', 'embed' ),
 						'description' => __( 'The human diff time the Group was last active, in the site\'s timezone.', 'buddypress' ),
 						'type'        => 'string',

@@ -11,13 +11,15 @@
     "plugin"
   ],
   "devDependencies": {
-    "@wordpress/env": "^4.0.0"
+    "@wordpress/env": "^4.1.2"
   },
   "engines": {
     "node": ">=14.15.0",
     "npm": ">=6.14.8"
   },
   "scripts": {
+    "preinstall": "npx check-node-version --package",
+    "prewp-env": "npx check-node-version --package",
     "wp-env": "wp-env",
     "phpunit": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/phpunit.xml.dist'",
     "phpunit:mu": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/tests/multisite.xml'"

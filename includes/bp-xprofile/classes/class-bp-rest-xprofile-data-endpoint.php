@@ -534,25 +534,25 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 				'title'      => 'bp_xprofile_data',
 				'type'       => 'object',
 				'properties' => array(
-					'id'           => array(
+					'id'               => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'A unique numeric ID for the profile data.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'integer',
 					),
-					'field_id'     => array(
+					'field_id'         => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The ID of the field the data is from.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'integer',
 					),
-					'user_id'      => array(
+					'user_id'          => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The ID of the user the field data is from.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'integer',
 					),
-					'value'        => array(
+					'value'            => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The value of the field data.', 'buddypress' ),
 						'type'        => 'object',
@@ -583,7 +583,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 							),
 						),
 					),
-					'last_updated' => array(
+					'last_updated'     => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The date the field data was last updated, in the site\'s timezone.', 'buddypress' ),
 						'readonly'    => true,

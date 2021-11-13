@@ -902,7 +902,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 						'readonly'    => true,
 						'format'      => 'date-time',
 					),
-					'registered_gmt'     => array(
+					'registered_gmt' => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The registered date for the user, as GMT.', 'buddypress' ),
 						'type'        => array( 'string', 'null' ),
@@ -916,7 +916,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 						'readonly'    => true,
 						'format'      => 'date-time',
 					),
-					'date_sent_gmt'      => array(
+					'date_sent_gmt'  => array(
 						'context'     => array( 'edit' ),
 						'description' => __( 'The date the activation email was sent to the user, as GMT.', 'buddypress' ),
 						'type'        => array( 'string', 'null' ),

@@ -55,7 +55,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			'/' . $this->rest_base . '/(?P<id>[\d]+)',
 			array(
-				'args' => array(
+				'args'   => array(
 					'id' => array(
 						'description' => __( 'A unique numeric ID for the Sitewide notice.', 'buddypress' ),
 						'type'        => 'integer',
@@ -873,7 +873,7 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 						'type'        => array( 'string', 'null' ),
 						'format'      => 'date-time',
 					),
-					'date_gmt'      => array(
+					'date_gmt'  => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'The date of the sitewide notice, as GMT.', 'buddypress' ),
 						'readonly'    => true,

@@ -69,7 +69,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 					'args'                => array(
-						'user_id' => array(
+						'user_id'          => array(
 							'description'       => __( 'Required if you want to load a specific user\'s data.', 'buddypress' ),
 							'default'           => 0,
 							'type'              => 'integer',
@@ -766,7 +766,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'collection' => array(
 				'href' => rest_url( $base ),
 			),
-			'group' => array(
+			'group'      => array(
 				'href'       => rest_url( $group_base . $field->group_id ),
 				'embeddable' => true,
 			),
@@ -1058,7 +1058,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 						'type'        => 'string',
 						'enum'        => array_keys( bp_xprofile_get_visibility_levels() ),
 					),
-					'options'  => array(
+					'options'           => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'Options of the profile field.', 'buddypress' ),
 						'type'        => 'array',
