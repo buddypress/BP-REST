@@ -70,12 +70,10 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
 					'args'                => array(
 						'value' => array(
-							'description' => __( 'The value(s) for the field data.', 'buddypress' ),
-							'required'    => true,
-							'type'        => 'array',
-							'items'       => array(
-								'type' => 'string',
-							),
+							'description'       => __( 'The value(s) for the field data.', 'buddypress' ),
+							'required'          => true,
+							'type'              => 'string',
+							'validate_callback' => 'rest_validate_request_arg',
 						),
 					),
 				),
@@ -214,9 +212,9 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 		 * For field types not supporting multiple values, join values in case
 		 * the submitted value was not an array.
 		 */
-		if ( false === $field->type_obj->supports_multiple_defaults ) {
+		if ( false === (bool) $field->type_obj->supports_multiple_defaults ) {
 			$value = implode( ' ', (array) $value );
-		} elseif ( is_string( $value ) ) {
+		} elseif ( ! empty( $value ) && is_string( $value ) ) {
 			$value = preg_split( '/[,]+/', $value );
 		}
 
@@ -230,10 +228,10 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Get Field data.
+		// Get field data.
 		$field_data = $this->get_xprofile_field_data_object( $field->id, $user->ID );
 
-		// Create Additional fields.
+		// Add additional fields.
 		$fields_update = $this->update_additional_fields_for_object( $field_data, $request );
 
 		if ( is_wp_error( $fields_update ) ) {
@@ -466,11 +464,14 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 			'self' => array(
 				'href' => rest_url( $base . $field_data->field_id ),
 			),
-			'user' => array(
+		);
+
+		if ( ! empty( $field_data->user_id ) ) {
+			$links['user'] = array(
 				'href'       => bp_rest_get_object_url( $field_data->user_id, 'members' ),
 				'embeddable' => true,
-			),
-		);
+			);
+		}
 
 		/**
 		 * Filter links prepared for the REST response.

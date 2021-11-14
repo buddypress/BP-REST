@@ -98,11 +98,29 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	/**
 	 * @group update_item
 	 */
-	public function test_update_checkbox_item_param_as_string() {
+	public function test_update_checkbox() {
 		$field_id = $this->bp_factory->xprofile_field->create(
 			[
 				'type'           => 'checkbox',
 				'field_group_id' => $this->group_id
+			]
+		);
+
+		xprofile_insert_field(
+			[
+				'field_group_id' => $this->group_id,
+				'parent_id'      => $field_id,
+				'type'           => 'option',
+				'name'           => 'Field',
+			]
+		);
+
+		xprofile_insert_field(
+			[
+				'field_group_id' => $this->group_id,
+				'parent_id'      => $field_id,
+				'type'           => 'option',
+				'name'           => 'Value',
 			]
 		);
 
@@ -122,18 +140,44 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$data = $response->get_data();
 		$this->assertNotEmpty( $data );
 
-		$this->assertEquals( $data[0]['value']['unserialized'], array( 'Field', 'Value' ) );
+		$this->assertEquals( $data[0]['value']['unserialized'], [ 'Field', 'Value' ] );
 	}
 
 	/**
 	 * @group update_item
 	 */
-	public function test_update_checkbox_item_as_array() {
+	public function test_update_multiselectbox() {
 		$field_id = $this->bp_factory->xprofile_field->create(
 			[
-				'type'           => 'checkbox',
-				'name'           => 'Test Field Name',
+				'type'           => 'multiselectbox',
 				'field_group_id' => $this->group_id
+			]
+		);
+
+		xprofile_insert_field(
+			[
+				'field_group_id' => $this->group_id,
+				'parent_id'      => $field_id,
+				'type'           => 'option',
+				'name'           => 'Option 1',
+			]
+		);
+
+		xprofile_insert_field(
+			[
+				'field_group_id' => $this->group_id,
+				'parent_id'      => $field_id,
+				'type'           => 'option',
+				'name'           => 'Option 2',
+			]
+		);
+
+		xprofile_insert_field(
+			[
+				'field_group_id' => $this->group_id,
+				'parent_id'      => $field_id,
+				'type'           => 'option',
+				'name'           => 'Option 3',
 			]
 		);
 
@@ -142,7 +186,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $field_id, $this->user ) );
 		$request->add_header( 'content-type', 'application/json' );
 
-		$params = $this->set_field_data( [ 'value' => [ 'field', 'value' ] ] );
+		$params = $this->set_field_data( [ 'value' => 'Option 1,Option 2' ] );
 		$request->set_param( 'context', 'edit' );
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
@@ -153,17 +197,88 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$data = $response->get_data();
 		$this->assertNotEmpty( $data );
 
-		$this->assertEquals( $data[0]['value']['unserialized'], array( 'field', 'value' ) );
+		$this->assertEquals( $data[0]['value']['unserialized'], [ 'Option 1', 'Option 2' ] );
 	}
 
 	/**
 	 * @group update_item
 	 */
-	public function test_update_textbox_item() {
+	public function test_update_multiselectbox_with_invalid_item() {
+		$field_id = $this->bp_factory->xprofile_field->create(
+			[
+				'type'           => 'multiselectbox',
+				'field_group_id' => $this->group_id
+			]
+		);
+
+		xprofile_insert_field(
+			[
+				'field_group_id' => $this->group_id,
+				'parent_id'      => $field_id,
+				'type'           => 'option',
+				'name'           => 'Option 1',
+			]
+		);
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $field_id, $this->user ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data( [ 'value' => 'option 1' ] );
+		$request->set_param( 'context', 'edit' );
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_user_cannot_save_xprofile_data', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_multiselectbox_with_empty_value() {
+		$field_id = $this->bp_factory->xprofile_field->create(
+			[
+				'type'           => 'multiselectbox',
+				'field_group_id' => $this->group_id
+			]
+		);
+
+		xprofile_insert_field(
+			[
+				'field_group_id' => $this->group_id,
+				'parent_id'      => $field_id,
+				'type'           => 'option',
+				'name'           => 'Option 1',
+			]
+		);
+
+		xprofile_set_field_data( $field_id, $this->user, 'Option 1' );
+
+		$this->bp->set_current_user( $this->user );
+
+		// Clear selected options.
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $field_id, $this->user ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data( [ 'value' => '' ] );
+		$request->set_param( 'context', 'edit' );
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
+
+		$this->assertEquals( $data[0]['value']['unserialized'], [] );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_textbox() {
 		$field_id = $this->bp_factory->xprofile_field->create(
 			[
 				'type'           => 'textbox',
-				'name'           => 'Test Field Name',
 				'field_group_id' => $this->group_id
 			]
 		);
@@ -184,14 +299,14 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$data = $response->get_data();
 		$this->assertNotEmpty( $data );
 
-		$this->assertEquals( $data[0]['value']['unserialized'][0], 'textbox field' );
+		$this->assertEquals( $data[0]['value']['unserialized'][0], $params['value'] );
 		$this->assertEquals( $data[0]['value']['raw'], 'textbox field' );
 	}
 
 	/**
 	 * @group update_item
 	 */
-	public function test_update_selectbox_item() {
+	public function test_update_selectbox() {
 		$field_id = $this->bp_factory->xprofile_field->create(
 			[
 				'type'           => 'selectbox',
@@ -200,12 +315,21 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 			]
 		);
 
+		xprofile_insert_field(
+			[
+				'field_group_id' => $this->group_id,
+				'parent_id'      => $field_id,
+				'type'           => 'option',
+				'name'           => 'select box',
+			]
+		);
+
 		$this->bp->set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $field_id, $this->user ) );
 		$request->add_header( 'content-type', 'application/json' );
 
-		$params = $this->set_field_data( [ 'value' => [ 'select',  'box' ] ] );
+		$params = $this->set_field_data( [ 'value' => 'select box' ] );
 		$request->set_param( 'context', 'edit' );
 		$request->set_body( wp_json_encode( $params ) );
 		$response = $this->server->dispatch( $request );
@@ -227,8 +351,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
 		$request->add_header( 'content-type', 'application/json' );
 
-		$params = $this->set_field_data();
-		$request->set_body( wp_json_encode( $params ) );
+		$request->set_body( wp_json_encode( $this->set_field_data() ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
@@ -238,14 +361,31 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group update_item
 	 */
 	public function test_update_item_user_without_permission() {
-		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u = $this->factory->user->create();
 		$this->bp->set_current_user( $u );
 
 		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
 		$request->add_header( 'content-type', 'application/json' );
 
-		$params = $this->set_field_data();
-		$request->set_body( wp_json_encode( $params ) );
+		$request->set_body( wp_json_encode( $this->set_field_data() ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_update_item_user_without_permission_with_param() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		$this->bp->set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $u2 ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$request->set_body( wp_json_encode( $this->set_field_data() ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
@@ -444,6 +584,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 		$response = $this->server->dispatch( $request );
 
 		$create_data = $response->get_data();
+		$this->assertNotEmpty( $create_data );
 		$this->assertTrue( $expected === $create_data[0]['foo_metadata_key'] );
 	}
 
@@ -468,9 +609,12 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	}
 
 	protected function set_field_data( $args = array() ) {
-		return wp_parse_args( $args, array(
-			'value' => 'Field Value',
-		) );
+		return wp_parse_args(
+			$args,
+			[
+				'value' => 'Field,Value',
+			]
+		);
 	}
 
 	protected function check_field_data( $field_data, $data ) {
