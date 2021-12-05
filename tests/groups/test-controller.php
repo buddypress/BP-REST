@@ -90,7 +90,8 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data     = $all_data;
 
 		$this->assertCount( 2, wp_list_pluck( $data, 'id' ) );
-		$this->assertSame( [ 'public', 'hidden' ], wp_list_pluck( $data, 'status' ) );
+		$this->assertTrue( in_array( 'hidden', wp_list_pluck( $data, 'status' ), true ) );
+		$this->assertTrue( in_array( 'public', wp_list_pluck( $data, 'status' ), true ) );
 	}
 
 	/**
@@ -125,7 +126,8 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$data     = $all_data;
 
 		$this->assertCount( 2, wp_list_pluck( $data, 'id' ) );
-		$this->assertSame( [ 'private', 'hidden' ], wp_list_pluck( $data, 'status' ) );
+		$this->assertTrue( in_array( 'hidden', wp_list_pluck( $data, 'status' ), true ) );
+		$this->assertTrue( in_array( 'private', wp_list_pluck( $data, 'status' ), true ) );
 	}
 
 	/**
