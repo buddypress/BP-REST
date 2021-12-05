@@ -70,7 +70,7 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
 					'args'                => array(
 						'value' => array(
-							'description'       => __( 'The value(s) for the field data.', 'buddypress' ),
+							'description'       => __( 'The value(s) (comma separated list of values needs to be used in case of multiple values) for the field data.', 'buddypress' ),
 							'required'          => true,
 							'type'              => 'string',
 							'validate_callback' => 'rest_validate_request_arg',
