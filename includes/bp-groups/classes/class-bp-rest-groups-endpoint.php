@@ -142,8 +142,8 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'meta_query'   => $request->get_param( 'meta' ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 			'group_type'   => $request->get_param( 'group_type' ),
 			'show_hidden'  => $request->get_param( 'show_hidden' ),
-			'per_page'     => $request->get_param( 'per_page' ),
 			'status'       => $request->get_param( 'status' ),
+			'per_page'     => $request->get_param( 'per_page' ),
 			'page'         => $request->get_param( 'page' ),
 		);
 
@@ -1393,7 +1393,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		$params['user_id'] = array(
-			'description'       => __( 'Pass a user_id to limit to only Groups that this user is a member of.', 'buddypress' ),
+			'description'       => __( 'Pass a user ID to limit to only Groups that this user is a member of.', 'buddypress' ),
 			'default'           => 0,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
