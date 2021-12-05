@@ -92,7 +92,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertCount( 2, wp_list_pluck( $data, 'id' ) );
 		$this->assertTrue( in_array( 'public', $status, true ) );
-		$this->assertTrue( in_array( 'private', $status, true ) );
+		$this->assertTrue( in_array( 'hidden', $status, true ) );
 	}
 
 	/**
