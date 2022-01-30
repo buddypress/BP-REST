@@ -4,7 +4,7 @@ Donate link:       https://buddypress.org
 Requires at least: 4.9
 Tested up to:      5.6
 Requires PHP:      5.6
-Stable tag:        0.6.0
+Stable tag:        0.7.0
 License:           GPLv2
 License URI:       http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,9 @@ Access your BuddyPress site's data through an easy-to-use HTTP REST API.
 2. Activate BP-REST through the 'Plugins' menu in WordPress.
 
 == Changelog ==
+
+= 0.6.0 =
+* Inclusion in BuddyPress 10.0.0
 
 = 0.5.0 =
 * Inclusion in BuddyPress 9.0.0
