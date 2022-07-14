@@ -5,11 +5,13 @@
  * @package BP_REST
  */
 
-// Use WP PHPUnit.
-require_once dirname( dirname( __FILE__ ) ) . '/vendor/wp-phpunit/wp-phpunit/__loaded.php';
-
 // Setting PHPUnit polyfills.
 const WP_TESTS_PHPUNIT_POLYFILLS_PATH = __DIR__ . '/../vendor/yoast/phpunit-polyfills';
+
+// Use WP PHPUnit.
+if ( defined( 'BP_REST_API_BP_USE_WP_ENV_TESTS' ) ) {
+	require_once dirname( dirname( __FILE__ ) ) . '/vendor/wp-phpunit/wp-phpunit/__loaded.php';
+}
 
 // Define constants.
 require( dirname( __FILE__ ) . '/define-constants.php' );
