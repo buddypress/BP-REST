@@ -11,7 +11,7 @@
     "plugin"
   ],
   "devDependencies": {
-    "@wordpress/env": "^4.1.2"
+    "@wordpress/env": "^4.7.0"
   },
   "engines": {
     "node": ">=14.15.0",
@@ -21,7 +21,7 @@
     "preinstall": "npx check-node-version --package",
     "prewp-env": "npx check-node-version --package",
     "wp-env": "wp-env",
-    "phpunit": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/phpunit.xml.dist'",
-    "phpunit:mu": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/tests/multisite.xml'"
+    "phpunit": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/tests/env.xml'",
+    "phpunit:mu": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/tests/env.multisite.xml'"
   }
 }

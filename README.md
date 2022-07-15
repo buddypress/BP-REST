@@ -8,8 +8,8 @@ We have extensive documentation of each endpoint/components and their CRUD actio
 
 ## System Requirements (relevant for CI tests only)
 
-* PHP >= 7.5
-* WP >= 5.8
+* PHP >= 5.6
+* WP >= 5.7
 * BuddyPress >= Latest
 
 ## Installation

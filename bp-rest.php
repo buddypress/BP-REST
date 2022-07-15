@@ -7,11 +7,11 @@
  * Author URI: https://buddypress.org/
  * Version: 0.7.0
  * Text Domain: buddypress
- * Requires at least: 5.4
- * Tested up to: 5.9
+ * Requires at least: 5.7
+ * Tested up to: 6.0
  * Requires PHP: 5.6
- * License: GPLv2
- * License URI: http://www.gnu.org/licenses/gpl-2.0.html
+ * License: GNU General Public License v2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  *
  * @package BuddyPress
  * @since 0.1.0
