@@ -11,6 +11,9 @@ defined( 'ABSPATH' ) || exit;
 /**
  * BuddyPress Members endpoints.
  *
+ * /members/
+ * /members/{id}
+ *
  * @since 0.1.0
  */
 class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
@@ -477,6 +480,59 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 * @param WP_User          $user     WP_User object.
 		 */
 		return apply_filters( 'bp_rest_members_prepare_value', $response, $request, $user );
+	}
+
+	/**
+	 * Prepares links for the user request.
+	 *
+	 * @since 11.0.0
+	 *
+	 * @param WP_User $user User object.
+	 * @return array
+	 */
+	protected function prepare_links( $user ) {
+		$base  = sprintf( '/%1$s/%2$s/', $this->namespace, $this->rest_base );
+		$url   = $base . $user->ID;
+		$links = array(
+			'self'       => array(
+				'href' => rest_url( $url ),
+			),
+			'collection' => array(
+				'href' => rest_url( $base ),
+			),
+		);
+
+		// Actions.
+		if ( is_user_logged_in() ) {
+			if ( bp_is_active( 'friends' ) ) {
+				$friends_component = buddypress()->friends->id;
+
+				$links['bp-action-create-friendship'] = array(
+					'href' => rest_url( sprintf( '/%1$s/%2$s/', $this->namespace, $friends_component ) ),
+				);
+
+				$links['bp-action-manage-friendship'] = array(
+					'href' => bp_rest_get_object_url( $user->ID, $friends_component ),
+				);
+			}
+
+			if ( bp_is_active( 'messages' ) ) {
+				$links['bp-action-create-thread'] = array(
+					'href'    => rest_url( sprintf( '/%1$s/%2$s/', $this->namespace, buddypress()->messages->id ) ),
+					'user_id' => $user->ID,
+				);
+			}
+		}
+
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 11.0.0
+		 *
+		 * @param array   $links The prepared links of the REST response.
+		 * @param WP_User $user  The User object.
+		 */
+		return apply_filters( 'bp_rest_member_prepare_links', $links, $user );
 	}
 
 	/**

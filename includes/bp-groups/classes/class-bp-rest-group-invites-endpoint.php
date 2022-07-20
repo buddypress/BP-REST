@@ -825,7 +825,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param BP_Invitation $invite Invite object.
-	 * @return array Links for the given plugin.
+	 * @return array
 	 */
 	protected function prepare_links( $invite ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );

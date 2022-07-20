@@ -671,7 +671,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param BP_Friends_Friendship $friendship Friendship item.
-	 * @return array Links for the given plugin.
+	 * @return array
 	 */
 	protected function prepare_links( $friendship ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );

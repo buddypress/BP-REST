@@ -737,7 +737,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			'types'              => bp_groups_get_group_type( $item->id, false ),
 			'admins'             => array(),
 			'mods'               => array(),
-			'total_member_count' => null,
+			'total_member_count' => 0,
 			'last_activity'      => null,
 			'last_activity_diff' => null,
 		);
