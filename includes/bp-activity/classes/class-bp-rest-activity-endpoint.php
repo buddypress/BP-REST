@@ -1032,6 +1032,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$prepared_activity->component = buddypress()->activity->id;
 		}
 
+		// Activity date.
+		if ( ! empty( $activity->date_recorded ) ) {
+			$prepared_activity->recorded_time = $activity->date_recorded;
+		}
+
 		// Activity Item ID.
 		if ( ! empty( $schema['properties']['primary_item_id'] ) && ! empty( $request->get_param( 'primary_item_id' ) ) ) {
 			$item_id = (int) $request->get_param( 'primary_item_id' );

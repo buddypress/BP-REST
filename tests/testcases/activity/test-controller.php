@@ -1119,6 +1119,30 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group update_item
 	 */
+	public function test_update_item_but_keep_date_the_same() {
+		$activity_date = '1968-12-25 01:23:45';
+		$activity_id   = $this->bp_factory->activity->create( [ 'recorded_time' => $activity_date ] );
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $activity_id ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+
+		$response         = $this->server->dispatch( $request );
+		$new_data         = $response->get_data()[0];
+		$updated_activity = $this->endpoint->get_activity_object( $new_data['id'] );
+
+		// Dates should match.
+		$this->assertEquals( $activity_date, $updated_activity->date_recorded );
+	}
+
+	/**
+	 * @group update_item
+	 */
 	public function test_update_item_posted_in_a_group() {
 		$this->bp->set_current_user( $this->user );
 
