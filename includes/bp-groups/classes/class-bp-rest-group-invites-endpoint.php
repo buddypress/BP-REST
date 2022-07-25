@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
  * Group Invites endpoints.
  *
  * Use /groups/{group_id}/invites
- * Use /groups/{group_id}/invites/{user_id}
+ * Use /groups/{group_id}/invites/{invite_id}
  *
  * @since 0.1.0
  */
@@ -81,11 +81,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 					'args'                => array(
-						'context' => $this->get_context_param(
-							array(
-								'default' => 'view',
-							)
-						),
+						'context' => $this->get_context_param( array( 'default' => 'view' ) ),
 					),
 				),
 				array(

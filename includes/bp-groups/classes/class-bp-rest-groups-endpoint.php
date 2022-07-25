@@ -66,11 +66,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 					'args'                => array(
-						'context'         => $this->get_context_param(
-							array(
-								'default' => 'view',
-							)
-						),
+						'context'         => $this->get_context_param( array( 'default' => 'view' ) ),
 						'populate_extras' => array(
 							'description'       => __( 'Whether to fetch extra BP data about the returned group.', 'buddypress' ),
 							'context'           => array( 'view', 'edit' ),
@@ -951,9 +947,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return array
 	 */
 	protected function prepare_links( $group ) {
-		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-
-		// Entity meta.
+		$base  = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
 		$links = array(
 			'self'       => array(
 				'href' => rest_url( $base . $group->id ),
@@ -979,13 +973,74 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 			);
 		}
 
+		// Actions.
+
+		$user_id = bp_loggedin_user_id();
+
+		if ( is_user_logged_in() && false === bp_group_is_user_banned( $group->id, $user_id ) ) {
+			$membership_namespace = "{$this->rest_base}/membership-requests";
+			$request_id           = groups_check_for_membership_request( $user_id, $group->id );
+			$is_group_member      = $group->is_member;
+
+			switch ( true ) {
+				// The logged in user is not a member of a private group, action to: request a membership.
+				case 'private' === $group->status && false === $is_group_member:
+					$links['bp-action-group-membership-request-membership'] = array(
+						'href'     => rest_url( sprintf( '/%1$s/%2$s/', $this->namespace, $membership_namespace ) ),
+						'group_id' => $group->id,
+						'user_id'  => $user_id,
+					);
+					break;
+
+				// The logged in user already requested a membership to the group, action to: withdraw the request.
+				case is_numeric( $request_id ):
+					$links['bp-action-group-membership-withdraw-request'] = array(
+						'href' => bp_rest_get_object_url( $request_id, $membership_namespace ),
+					);
+					break;
+
+				// The logged in user is a member of the group, action to: leave.
+				case true === $is_group_member:
+					$links['bp-action-group-leave'] = array(
+						'href' => bp_rest_get_object_url( $user_id, "{$this->rest_base}/{$group->id}/members" ),
+					);
+					break;
+
+				// The logged in user is not a member of a public group, action to: join.
+				case 'public' === $group->status && false === $is_group_member:
+					$links['bp-action-group-join'] = array(
+						'href'     => rest_url( sprintf( '/%1$s/%2$s/', $this->namespace, "{$this->rest_base}/{$group->id}/members" ) ),
+						'group_id' => $group->id,
+						'user_id'  => $user_id,
+					);
+					break;
+
+				// The logged in user is invited to join the group, actions to: accept and reject invite.
+				case true === $group->is_invited:
+					$invites_class = new BP_Groups_Invitation_Manager();
+					$ids           = $invites_class->get_invitations(
+						array(
+							'user_id' => $user_id,
+							'item_id' => $group->id,
+							'fields'  => 'ids',
+						)
+					);
+
+					$invite_action = array( 'href' => bp_rest_get_object_url( $ids[0], "{$this->rest_base}/{$group->id}/invites" ) );
+
+					$links['bp-action-group-accept-invite'] = $invite_action;
+					$links['bp-action-group-reject-invite'] = $invite_action;
+					break;
+			}
+		}
+
 		/**
 		 * Filter links prepared for the REST response.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array           $links  The prepared links of the REST response.
-		 * @param BP_Groups_Group $group  Group object.
+		 * @param array           $links The prepared links of the REST response.
+		 * @param BP_Groups_Group $group Group object.
 		 */
 		return apply_filters( 'bp_rest_groups_prepare_links', $links, $group );
 	}

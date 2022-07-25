@@ -670,7 +670,7 @@ class BP_REST_Friends_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 6.0.0
 	 *
-	 * @param BP_Friends_Friendship $friendship Friendship item.
+	 * @param BP_Friends_Friendship $friendship Friendship object.
 	 * @return array
 	 */
 	protected function prepare_links( $friendship ) {

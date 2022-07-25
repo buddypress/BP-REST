@@ -13,7 +13,6 @@ defined( 'ABSPATH' ) || exit;
  *
  * Use /groups/{group_id}/membership-request
  * Use /groups/membership-request/{request_id}
- * Use /groups/{group_id}/membership-request/{user_id}
  *
  * @since 0.1.0
  */
@@ -91,11 +90,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 					'args'                => array(
-						'context' => $this->get_context_param(
-							array(
-								'default' => 'view',
-							)
-						),
+						'context' => $this->get_context_param( array( 'default' => 'view' ) ),
 					),
 				),
 				array(
