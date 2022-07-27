@@ -77,11 +77,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 					'args'                => array(
-						'context' => $this->get_context_param(
-							array(
-								'default' => 'view',
-							)
-						),
+						'context' => $this->get_context_param( array( 'default' => 'view' ) ),
 					),
 				),
 				array(
@@ -1106,6 +1102,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			),
 		);
 
+		// Embeds.
 		if ( ! empty( $activity->user_id ) ) {
 			$links['user'] = array(
 				'href'       => bp_rest_get_object_url( absint( $activity->user_id ), 'members' ),
@@ -1116,12 +1113,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( 'activity_comment' === $activity->type ) {
 			$links['up'] = array(
 				'href' => rest_url( $url ),
-			);
-		}
-
-		if ( bp_activity_can_favorite() ) {
-			$links['favorite'] = array(
-				'href' => rest_url( $url . '/favorite' ),
 			);
 		}
 
@@ -1153,6 +1144,18 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					)
 				),
 			);
+		}
+
+		// Actions.
+		if ( is_user_logged_in() && bp_activity_can_favorite() ) {
+			$favorite_action = array(
+				'href'        => rest_url( $url . '/favorite' ),
+				'activity_id' => $activity->id,
+			);
+
+			// Will be deprecated.
+			$links['favorite']           = $favorite_action;
+			$links['bp-action-favorite'] = $favorite_action;
 		}
 
 		/**

@@ -11,6 +11,10 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Messages endpoints.
  *
+ * /messages/
+ * /messages/{id}
+ * /messages/{thread_id}
+ *
  * @since 0.1.0
  */
 class BP_REST_Messages_Endpoint extends WP_REST_Controller {
@@ -987,7 +991,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param BP_Messages_Thread $thread  Thread object.
-	 * @return array Links for the given thread.
+	 * @return array
 	 */
 	protected function prepare_links( $thread ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
@@ -1003,7 +1007,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		);
 
 		// Add star links for each message of the thread.
-		if ( bp_is_active( 'messages', 'star' ) ) {
+		if ( is_user_logged_in() && bp_is_active( 'messages', 'star' ) ) {
 			$starred_base = $base . bp_get_messages_starred_slug() . '/';
 
 			foreach ( $thread->messages as $message ) {
