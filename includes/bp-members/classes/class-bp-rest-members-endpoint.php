@@ -535,8 +535,10 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 			if (
 				bp_is_active( 'messages' )
-				&& true === wp_validate_boolean( $user_data['friendship_status'] )
-				&& buddypress()->messages->autocomplete_all === false
+				&& (
+					true === wp_validate_boolean( $user_data['friendship_status'] )
+					|| buddypress()->messages->autocomplete_all === true
+				)
 			) {
 				$links['bp-action-create-thread'] = array(
 					'href'    => rest_url( sprintf( '/%1$s/%2$s/', $this->namespace, buddypress()->messages->id ) ),

@@ -1147,19 +1147,15 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// Actions.
-
-		if ( bp_activity_can_favorite() ) {
+		if ( is_user_logged_in() && bp_activity_can_favorite() ) {
 			$favorite_action = array(
 				'href'        => rest_url( $url . '/favorite' ),
 				'activity_id' => $activity->id,
 			);
 
 			// Will be deprecated.
-			$links['favorite'] = $favorite_action;
-
-			if ( is_user_logged_in() ) {
-				$links['bp-action-favorite'] = $favorite_action;
-			}
+			$links['favorite']           = $favorite_action;
+			$links['bp-action-favorite'] = $favorite_action;
 		}
 
 		/**

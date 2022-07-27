@@ -980,7 +980,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		if ( is_user_logged_in() && false === bp_group_is_user_banned( $group->id, $user_id ) ) {
 			$membership_namespace = "{$this->rest_base}/membership-requests";
 			$request_id           = groups_check_for_membership_request( $user_id, $group->id );
-			$is_group_member      = $group->is_member;
+			$is_group_member      = wp_validate_boolean( $group->is_member );
 
 			switch ( true ) {
 				// The logged in user is not a member of a private group, action to: request a membership.
