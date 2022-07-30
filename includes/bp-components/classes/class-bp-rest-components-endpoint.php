@@ -159,7 +159,6 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
-		return true;
 		$retval = new WP_Error(
 			'bp_rest_authorization_required',
 			__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
