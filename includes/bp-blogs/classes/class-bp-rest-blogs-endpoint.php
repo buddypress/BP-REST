@@ -489,7 +489,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		// Embed latest blog post.
+		// Embed the latest blog post.
 		if ( ! empty( $blog->latest_post->ID ) ) {
 			$links['post'] = array(
 				'embeddable' => true,

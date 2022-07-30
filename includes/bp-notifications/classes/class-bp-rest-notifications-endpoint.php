@@ -638,7 +638,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param BP_Notifications_Notification $notification Notification item.
-	 * @return array Links for the given plugin.
+	 * @return array
 	 */
 	protected function prepare_links( $notification ) {
 		$base = sprintf( '/%1$s/%2$s/', $this->namespace, $this->rest_base );

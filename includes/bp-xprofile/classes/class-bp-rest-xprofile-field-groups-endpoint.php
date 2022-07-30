@@ -656,7 +656,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array            $links The prepared links of the REST response.
+		 * @param array             $links The prepared links of the REST response.
 		 * @param BP_XProfile_Group $group XProfile field group object.
 		 */
 		return apply_filters( 'bp_rest_xprofile_field_groups_prepare_links', $links, $group );

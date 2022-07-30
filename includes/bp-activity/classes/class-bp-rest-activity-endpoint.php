@@ -77,11 +77,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 					'args'                => array(
-						'context' => $this->get_context_param(
-							array(
-								'default' => 'view',
-							)
-						),
+						'context' => $this->get_context_param( array( 'default' => 'view' ) ),
 					),
 				),
 				array(
@@ -914,6 +910,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'status'            => $activity->is_spam ? 'spam' : 'published',
 			'title'             => $activity->action,
 			'type'              => $activity->type,
+			'hidden'            => (bool) $activity->hide_sitewide,
 			'favorited'         => in_array( $activity->id, $this->get_user_favorites(), true ),
 		);
 
@@ -1074,8 +1071,19 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// Activity Sitewide visibility.
-		if ( ! empty( $schema['properties']['hidden'] ) && ! empty( $request->get_param( 'hidden' ) ) ) {
-			$prepared_activity->hide_sitewide = (bool) $request->get_param( 'hidden' );
+		if ( ! empty( $schema['properties']['hidden'] ) ) {
+			$is_hidden = $request->get_param( 'hidden' );
+
+			if ( ! is_null( $is_hidden ) ) {
+				$is_hidden = wp_validate_boolean( $is_hidden );
+			} elseif ( isset( $activity->hide_sitewide ) ) {
+				$is_hidden = (bool) $activity->hide_sitewide;
+			} elseif ( bp_is_active( 'groups' ) && isset( $prepared_activity->item_id, $prepared_activity->component ) && $prepared_activity->item_id && buddypress()->groups->id === $prepared_activity->component ) {
+				$group     = bp_get_group_by( 'id', $prepared_activity->item_id );
+				$is_hidden = isset( $group->status ) && 'public' !== $group->status;
+			}
+
+			$prepared_activity->hide_sitewide = $is_hidden;
 		}
 
 		/**
@@ -1111,6 +1119,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			),
 		);
 
+		// Embeds.
 		if ( ! empty( $activity->user_id ) ) {
 			$links['user'] = array(
 				'href'       => bp_rest_get_object_url( absint( $activity->user_id ), 'members' ),
@@ -1121,12 +1130,6 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		if ( 'activity_comment' === $activity->type ) {
 			$links['up'] = array(
 				'href' => rest_url( $url ),
-			);
-		}
-
-		if ( bp_activity_can_favorite() ) {
-			$links['favorite'] = array(
-				'href' => rest_url( $url . '/favorite' ),
 			);
 		}
 
@@ -1158,6 +1161,18 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 					)
 				),
 			);
+		}
+
+		// Actions.
+		if ( is_user_logged_in() && bp_activity_can_favorite() ) {
+			$favorite_action = array(
+				'href'        => rest_url( $url . '/favorite' ),
+				'activity_id' => $activity->id,
+			);
+
+			// Will be deprecated.
+			$links['favorite']           = $favorite_action;
+			$links['bp-action-favorite'] = $favorite_action;
 		}
 
 		/**

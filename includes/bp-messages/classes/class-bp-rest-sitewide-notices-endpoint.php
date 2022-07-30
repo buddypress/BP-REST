@@ -651,8 +651,8 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 9.0.0
 	 *
-	 * @param BP_Messages_Notice $notice  Notice object.
-	 * @return array Links for the given notice.
+	 * @param BP_Messages_Notice $notice Notice object.
+	 * @return array
 	 */
 	protected function prepare_links( $notice ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );

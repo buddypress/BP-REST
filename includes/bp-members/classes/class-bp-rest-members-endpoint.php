@@ -11,6 +11,9 @@ defined( 'ABSPATH' ) || exit;
 /**
  * BuddyPress Members endpoints.
  *
+ * /members/
+ * /members/{id}
+ *
  * @since 0.1.0
  */
 class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
@@ -460,7 +463,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
-		$response->add_links( $this->prepare_links( $user ) );
+		$response->add_links( $this->prepare_links( $user, $data ) );
 
 		// Update current user's last activity.
 		if ( strpos( $request->get_route(), 'members/me' ) !== false && get_current_user_id() === $user->ID ) {
@@ -480,12 +483,88 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
+	 * Prepares links for the user request.
+	 *
+	 * @since 11.0.0
+	 *
+	 * @param WP_User $user      User object.
+	 * @param array   $user_data User data.
+	 * @return array
+	 */
+	protected function prepare_links( $user, $user_data = array() ) {
+		$base  = sprintf( '/%1$s/%2$s/', $this->namespace, $this->rest_base );
+		$links = array(
+			'self'       => array(
+				'href' => rest_url( $base . $user->ID ),
+			),
+			'collection' => array(
+				'href' => rest_url( $base ),
+			),
+		);
+
+		// Actions.
+
+		if ( is_user_logged_in() ) {
+			if ( bp_is_active( 'friends' ) ) {
+				$friends_component = buddypress()->friends->id;
+				$friends_action    = array( 'href' => bp_rest_get_object_url( $user->ID, $friends_component ) );
+
+				switch ( $user_data['friendship_status_slug'] ) {
+					case 'not_friends':
+						$links['bp-action-add-friendship'] = array(
+							'href'         => rest_url( sprintf( '/%1$s/%2$s/', $this->namespace, $friends_component ) ),
+							'initiator_id' => bp_loggedin_user_id(),
+							'friend_id'    => $user->ID,
+						);
+						break;
+
+					case 'is_friend':
+						$links['bp-action-delete-friendship'] = $friends_action;
+						break;
+
+					case 'pending':
+						$links['bp-action-cancel-friendship-request'] = $friends_action;
+						break;
+
+					case 'awaiting_response':
+						$links['bp-action-accept-friendship-request'] = $friends_action;
+						$links['bp-action-reject-friendship-request'] = $friends_action;
+						break;
+				}
+			}
+
+			if (
+				bp_is_active( 'messages' )
+				&& (
+					true === wp_validate_boolean( $user_data['friendship_status'] )
+					|| buddypress()->messages->autocomplete_all === true
+				)
+			) {
+				$links['bp-action-create-thread'] = array(
+					'href'    => rest_url( sprintf( '/%1$s/%2$s/', $this->namespace, buddypress()->messages->id ) ),
+					'user_id' => $user->ID,
+				);
+			}
+		}
+
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @since 11.0.0
+		 *
+		 * @param array   $links The prepared links of the REST response.
+		 * @param WP_User $user  The User object.
+		 */
+		return apply_filters( 'bp_rest_member_prepare_links', $links, $user );
+	}
+
+	/**
 	 * Method to facilitate fetching of user data.
 	 *
 	 * This was abstracted to be used in other BuddyPress endpoints.
 	 *
 	 * @since 0.1.0
-	 * @since 7.0.0 Add the $request parameter.
+	 * @since 7.0.0 Add the `$request` parameter.
 	 *
 	 * @param WP_User         $user    User object.
 	 * @param string          $context The context of the request. Defaults to 'view'.

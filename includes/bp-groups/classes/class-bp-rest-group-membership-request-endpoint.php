@@ -13,7 +13,6 @@ defined( 'ABSPATH' ) || exit;
  *
  * Use /groups/{group_id}/membership-request
  * Use /groups/membership-request/{request_id}
- * Use /groups/{group_id}/membership-request/{user_id}
  *
  * @since 0.1.0
  */
@@ -91,11 +90,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 					'args'                => array(
-						'context' => $this->get_context_param(
-							array(
-								'default' => 'view',
-							)
-						),
+						'context' => $this->get_context_param( array( 'default' => 'view' ) ),
 					),
 				),
 				array(
@@ -760,7 +755,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param BP_Invitation $invite Invite object.
-	 * @return array Links for the given plugin.
+	 * @return array
 	 */
 	protected function prepare_links( $invite ) {
 		$base = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
