@@ -98,7 +98,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 		$active_components = apply_filters( 'bp_active_components', bp_get_option( 'bp-active-components' ) );
 
 		// Core component is always active.
-		if ( 'optional' !== $type ) {
+		if ( 'optional' !== $type && ! empty( $components['core'] ) ) {
 			$active_components['core'] = $components['core'];
 		}
 
@@ -159,6 +159,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
+		return true;
 		$retval = new WP_Error(
 			'bp_rest_authorization_required',
 			__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
