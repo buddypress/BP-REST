@@ -99,7 +99,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 
 		// Core component is always active.
 		if ( 'optional' !== $type && ! empty( $components['core'] ) ) {
-			$active_components['core'] = $components['core'];
+			$active_components['core'] = '1';
 		}
 
 		// Inactive components.
@@ -108,7 +108,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 		$current_components = array();
 		switch ( $args['status'] ) {
 			case 'all':
-				foreach ( $components as $name => $labels ) {
+				foreach ( array_keys( $components ) as $name ) {
 					$current_components[] = $this->get_component_info( $name );
 				}
 				break;
