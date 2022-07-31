@@ -1119,6 +1119,31 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group update_item
 	 */
+	public function test_update_item_but_keep_date_the_same() {
+		$activity_date = '1968-12-25 01:23:45';
+		$activity_id   = $this->bp_factory->activity->create( [ 'recorded_time' => $activity_date ] );
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $activity_id ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_activity_data();
+		$request->set_body( wp_json_encode( $params ) );
+		$request->set_param( 'context', 'edit' );
+
+		$response         = $this->server->dispatch( $request );
+		$new_data         = $response->get_data()[0];
+		$updated_activity = $this->endpoint->get_activity_object( $new_data['id'] );
+
+		// Dates should match.
+		$this->assertEquals( $activity_date, $updated_activity->date_recorded );
+	}
+
+	/**
+	 * @group update_item
+	 * @group PR448
+	 */
 	public function test_update_item_posted_in_a_group() {
 		$this->bp->set_current_user( $this->user );
 
@@ -1129,17 +1154,18 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 			)
 		);
 
-		$a = $this->bp_factory->activity->create(
+		$a = $this->bp_factory->activity->create_and_get(
 			array(
-				'user_id'   => $this->user,
-				'component' => buddypress()->groups->id,
-				'type'      => 'activity_update',
-				'item_id'   => $g,
-				'content'   => 'Random content',
+				'user_id'       => $this->user,
+				'component'     => buddypress()->groups->id,
+				'type'          => 'activity_update',
+				'item_id'       => $g,
+				'content'       => 'Random content',
+				'hide_sitewide' => true, // Private and hidden Group activities are hidden.
 			)
 		);
 
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $a ) );
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $a->id ) );
 		$request->add_header( 'content-type', 'application/json' );
 
 		$params = $this->set_activity_data(
@@ -1158,11 +1184,12 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertNotEmpty( $new_data );
 
 		$new_data = $new_data[0];
-		$activity = $this->endpoint->get_activity_object( $a );
+		$activity = $this->endpoint->get_activity_object( $a->id );
 
 		$this->assertEquals( $g, $activity->item_id );
 		$this->assertEquals( $g, $new_data['primary_item_id'] );
-		$this->assertEquals( $a, $new_data['id'] );
+		$this->assertEquals( $a->id, $new_data['id'] );
+		$this->assertSame( (bool) $a->hide_sitewide, $new_data['hidden'], 'Private and hidden group activities should remain hidden' );
 		$this->assertEquals( $params['content'], $new_data['content']['raw'] );
 	}
 

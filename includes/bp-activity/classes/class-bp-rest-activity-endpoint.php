@@ -910,6 +910,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'status'            => $activity->is_spam ? 'spam' : 'published',
 			'title'             => $activity->action,
 			'type'              => $activity->type,
+			'hidden'            => (bool) $activity->hide_sitewide,
 			'favorited'         => in_array( $activity->id, $this->get_user_favorites(), true ),
 		);
 
@@ -1032,6 +1033,11 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			$prepared_activity->component = buddypress()->activity->id;
 		}
 
+		// Activity date.
+		if ( ! empty( $activity->date_recorded ) ) {
+			$prepared_activity->recorded_time = $activity->date_recorded;
+		}
+
 		// Activity Item ID.
 		if ( ! empty( $schema['properties']['primary_item_id'] ) && ! empty( $request->get_param( 'primary_item_id' ) ) ) {
 			$item_id = (int) $request->get_param( 'primary_item_id' );
@@ -1065,8 +1071,19 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// Activity Sitewide visibility.
-		if ( ! empty( $schema['properties']['hidden'] ) && ! empty( $request->get_param( 'hidden' ) ) ) {
-			$prepared_activity->hide_sitewide = (bool) $request->get_param( 'hidden' );
+		if ( ! empty( $schema['properties']['hidden'] ) ) {
+			$is_hidden = $request->get_param( 'hidden' );
+
+			if ( ! is_null( $is_hidden ) ) {
+				$is_hidden = wp_validate_boolean( $is_hidden );
+			} elseif ( isset( $activity->hide_sitewide ) ) {
+				$is_hidden = (bool) $activity->hide_sitewide;
+			} elseif ( bp_is_active( 'groups' ) && isset( $prepared_activity->item_id, $prepared_activity->component ) && $prepared_activity->item_id && buddypress()->groups->id === $prepared_activity->component ) {
+				$group     = bp_get_group_by( 'id', $prepared_activity->item_id );
+				$is_hidden = isset( $group->status ) && 'public' !== $group->status;
+			}
+
+			$prepared_activity->hide_sitewide = $is_hidden;
 		}
 
 		/**
