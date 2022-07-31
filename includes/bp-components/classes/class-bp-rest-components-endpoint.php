@@ -95,7 +95,7 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 		$components = bp_core_get_components( $type );
 
 		// Active components.
-		$active_components = apply_filters( 'bp_active_components', bp_get_option( 'bp-active-components' ) );
+		$active_components = (array) apply_filters( 'bp_active_components', bp_get_option( 'bp-active-components' ) );
 
 		// Core component is always active.
 		if ( 'optional' !== $type && ! empty( $components['core'] ) ) {
