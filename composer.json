@@ -22,15 +22,18 @@
     "source": "https://buddypress.trac.wordpress.org/browser/",
     "wiki": "https://codex.buddypress.org/"
   },
+  "repositories": [
+    {
+      "url": "https://github.com/buddypress/bp-coding-standards.git",
+      "type": "git"
+    }
+  ],
   "require": {
     "composer/installers": "^1.10.0",
     "php": ">=5.6.0"
   },
   "require-dev": {
-    "squizlabs/php_codesniffer" : "^3.5.4",
-    "phpcompatibility/phpcompatibility-wp": "^2.1.0",
-    "dealerdirect/phpcodesniffer-composer-installer": "^0.7.1",
-    "wp-coding-standards/wpcs": "*",
+    "buddypress/bp-coding-standards": "dev-trunk",
     "phpunit/phpunit": "^7.5",
     "wp-phpunit/wp-phpunit": "^6.0",
     "yoast/phpunit-polyfills": "^1.0"

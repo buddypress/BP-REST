@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9f6c4bb2fca5a80afd2a656f3c0960a7",
+    "content-hash": "6bb79ef793961257a8c82a0453516031",
     "packages": [
         {
             "name": "composer/installers",
@@ -159,6 +159,46 @@
         }
     ],
     "packages-dev": [
+        {
+            "name": "buddypress/bp-coding-standards",
+            "version": "dev-trunk",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/buddypress/bp-coding-standards.git",
+                "reference": "00b535f8b7bd31a98fb6d151ef43a25efa016022"
+            },
+            "require": {
+                "dealerdirect/phpcodesniffer-composer-installer": "^0.7.1",
+                "php": ">=5.6",
+                "phpcompatibility/phpcompatibility-wp": "^2.1.0",
+                "squizlabs/php_codesniffer": "^3.5.5",
+                "wp-coding-standards/wpcs": "^2.3.0"
+            },
+            "default-branch": true,
+            "type": "phpcodesniffer-standard",
+            "license": [
+                "GPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "BuddyPress Community",
+                    "homepage": "https://buddypress.org/about/"
+                }
+            ],
+            "description": "PHP_CodeSniffer rules (sniffs) to enforce BuddyPress minimum coding conventions",
+            "homepage": "https://github.com/buddypress/bp-coding-standards",
+            "keywords": [
+                "buddypress",
+                "phpcs",
+                "standards",
+                "wordPress"
+            ],
+            "support": {
+                "issues": "https://github.com/buddypress/bp-coding-standards/issues",
+                "source": "https://github.com/buddypress/bp-coding-standards"
+            },
+            "time": "2022-08-07T20:23:18+00:00"
+        },
         {
             "name": "dealerdirect/phpcodesniffer-composer-installer",
             "version": "v0.7.2",
@@ -2242,7 +2282,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "buddypress/bp-coding-standards": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
