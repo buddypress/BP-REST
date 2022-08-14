@@ -11,7 +11,7 @@
     "plugin"
   ],
   "devDependencies": {
-    "@wordpress/env": "^5.1.0"
+    "@wordpress/env": "^5.0.0"
   },
   "engines": {
     "node": ">=14.15.0",
