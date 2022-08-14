@@ -1,17 +1,18 @@
 <?php
 /**
- * Plugin Name: BuddyPress REST API
- * Plugin URI: https://buddypress.org
- * Description: BuddyPress extension for WordPress' JSON-based REST API.
- * Author: The BuddyPress Community
- * Author URI: https://buddypress.org/
- * Version: 0.7.0
- * Text Domain: buddypress
+ * Plugin Name:       BuddyPress RESTful API
+ * Plugin URI:        https://buddypress.org
+ * Description:       Access your BuddyPress site's data through an easy-to-use HTTP REST API.
+ * Author:            The BuddyPress Community
+ * Author URI:        https: //buddypress.org/
+ * Version:           0.7.0
+ * Text Domain:       buddypress
+ * Domain Path:       /languages/
  * Requires at least: 5.7
- * Tested up to: 6.0
- * Requires PHP: 5.6
- * License: GNU General Public License v2 or later
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Tested up to:      6.0
+ * Requires PHP:      5.6
+ * License:           GNU General Public License v2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  *
  * @package BuddyPress
  * @since 0.1.0

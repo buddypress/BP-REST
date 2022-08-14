@@ -1,5 +1,7 @@
 # BuddyPress RESTful API
 
+[![Project Status: Active.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+
 Access your BuddyPress site's data through an easy-to-use HTTP REST API.
 
 ## Documentation
@@ -14,7 +16,7 @@ We have extensive documentation of each endpoint/components and their CRUD actio
 
 ## Installation
 
-Drop this plugin in the wp-content/plugins directory and activate it. You need at least [WordPress 5.4](https://wordpress.org/download/) and [BuddyPress](https://buddypress.org/download/) to use the plugin.
+Drop this plugin in the wp-content/plugins directory and activate it. You need at least [WordPress 5.7](https://wordpress.org/download/) and [BuddyPress](https://buddypress.org/download/) to use the plugin.
 
 ## About
 

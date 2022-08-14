@@ -1,11 +1,12 @@
 {
   "name": "buddypress/bp-rest",
-  "description": "REST API endpoints for BuddyPress",
-  "type": "library",
+  "description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
+  "type": "wordpress-plugin",
   "keywords": [
     "bp-rest",
     "bp-rest-api",
     "buddypress",
+    "rest",
     "plugin"
   ],
   "homepage": "https://buddypress.org",
