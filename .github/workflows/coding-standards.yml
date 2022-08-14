@@ -1,6 +1,9 @@
 name: Coding Standards
 
-on: pull_request
+on:
+  pull_request:
+  push:
+    branches: [ master ]
 
 jobs:
   phpcs:
@@ -28,19 +31,11 @@ jobs:
           tools: composer:v2
           coverage: none
 
-      - name: Log information
-        run: |
-          echo "$GITHUB_REF"
-          echo "$GITHUB_EVENT_NAME"
-          git --version
-          php --version
-          composer --version
-
       - name: Validate Composer
         run: composer validate --strict
 
       - name: Install dependencies
-        uses: ramsey/composer-install@v1
+        uses: ramsey/composer-install@v2
         with:
           composer-options: "--ignore-platform-reqs"
 

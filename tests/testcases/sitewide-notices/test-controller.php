@@ -9,8 +9,8 @@
 class BP_Test_REST_Sitewide_Notices_Endpoint extends WP_Test_REST_Controller_Testcase {
 	protected $last_inserted_notice_id;
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Sitewide_Notices_Endpoint();
@@ -31,8 +31,8 @@ class BP_Test_REST_Sitewide_Notices_Endpoint extends WP_Test_REST_Controller_Tes
 		add_action( 'messages_notice_after_save', array( $this, 'set_last_inserted_notice_id' ), 10, 1 );
 	}
 
-	public function tearDown() {
-		parent::tearDown();
+	public function tear_down() {
+		parent::tear_down();
 		$this->bp->set_current_user( $this->old_current_user );
 
 		remove_action( 'messages_notice_before_save', array( $this, 'filter_update_last_active_query' ), 10, 0 );
