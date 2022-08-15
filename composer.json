@@ -1,11 +1,12 @@
 {
   "name": "buddypress/bp-rest",
-  "description": "REST API endpoints for BuddyPress",
-  "type": "library",
+  "description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
+  "type": "wordpress-plugin",
   "keywords": [
     "bp-rest",
     "bp-rest-api",
     "buddypress",
+    "rest",
     "plugin"
   ],
   "homepage": "https://buddypress.org",
@@ -34,7 +35,6 @@
   },
   "require-dev": {
     "buddypress/bp-coding-standards": "dev-trunk",
-    "phpunit/phpunit": "^7.5",
     "wp-phpunit/wp-phpunit": "^6.0",
     "yoast/phpunit-polyfills": "^1.0"
   },

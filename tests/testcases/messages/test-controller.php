@@ -8,8 +8,8 @@
  */
 class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Messages_Endpoint();
@@ -22,8 +22,8 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		}
 	}
 
-	public function tearDown() {
-		parent::tearDown();
+	public function tear_down() {
+		parent::tear_down();
 	}
 
 	public function test_register_routes() {

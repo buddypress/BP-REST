@@ -15,7 +15,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 */
 	protected $signup_allowed;
 
-	public function setUp() {
+	public function set_up() {
 
 		if ( is_multisite() ) {
 			$this->signup_allowed = get_site_option( 'registration' );
@@ -25,7 +25,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			bp_update_option( 'users_can_register', 1 );
 		}
 
-		parent::setUp();
+		parent::set_up();
 
 		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Signup_Endpoint();
@@ -46,14 +46,14 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		}
 	}
 
-	public function tearDown() {
+	public function tear_down() {
 		if ( is_multisite() ) {
 			update_site_option( 'registration', $this->signup_allowed );
 		} else {
 			bp_update_option( 'users_can_register', $this->signup_allowed );
 		}
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	public function test_register_routes() {

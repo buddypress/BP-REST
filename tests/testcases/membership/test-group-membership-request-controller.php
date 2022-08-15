@@ -8,8 +8,8 @@
  */
 class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Controller_Testcase {
 
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Group_Membership_Request_Endpoint();
@@ -46,8 +46,8 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 		$this->old_current_user = get_current_user_id();
 	}
 
-	public function tearDown() {
-		parent::tearDown();
+	public function tear_down() {
+		parent::tear_down();
 		$this->bp->set_current_user( $this->old_current_user );
 	}
 
