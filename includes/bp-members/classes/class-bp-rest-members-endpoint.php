@@ -943,7 +943,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 					'name'                   => array(
 						'description' => __( 'Display name for the member.', 'buddypress' ),
 						'type'        => 'string',
-						'context'     => array( 'view', 'edit' ),
+						'context'     => array( 'view', 'edit', 'embed' ),
 						'arg_options' => array(
 							'sanitize_callback' => 'sanitize_text_field',
 						),
