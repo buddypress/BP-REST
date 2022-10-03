@@ -1215,17 +1215,21 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		$retval  = false;
 
 		if ( ! is_null( $component ) ) {
-			// If activity is from a group, do an extra cap check.
-			if ( ! $retval && ! empty( $item_id ) && bp_is_active( $component ) && buddypress()->groups->id === $component ) {
-				// Group admins and mods have access as well.
-				if ( groups_is_user_admin( $user_id, $item_id ) || groups_is_user_mod( $user_id, $item_id ) ) {
-					$retval = true;
-
-					// User is a member of the group.
-				} elseif ( (bool) groups_is_user_member( $user_id, $item_id ) ) {
-					$retval = true;
-				}
+			// If activity is from a group, check the user is a confirmed member/admin or mod of the group.
+			if ( 'groups' === $component && bp_is_active( 'groups' ) && ! empty( $item_id ) ) {
+				$retval = (bool) groups_is_user_member( $user_id, $item_id );
 			}
+
+			/**
+			 * Filter here to manage hidden activity for the component.
+			 *
+			 * @since 0.7.0
+			 *
+			 * @param bool   $retval    True to show hidden activities. False otherwise.
+			 * @param string $component The component name/ID.
+			 * @param int    $user_id   The current user ID.
+			 */
+			$retval = apply_filters( 'bp_rest_activity_show_hidden', $retval, $component, $user_id );
 		}
 
 		// Moderators as well.
