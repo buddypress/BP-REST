@@ -360,6 +360,90 @@ class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_items
 	 */
+	public function test_get_private_group_items_for_mod() {
+		$component = buddypress()->groups->id;
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$this->bp->set_current_user( $this->user );
+
+		$g1 = $this->bp_factory->group->create( array(
+			'status'     => 'hidden',
+			'creator_id' => $this->user,
+		) );
+
+		groups_join_group( $g1, $u );
+		groups_promote_member( $u, $g1, 'mod' );
+
+		$a1 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          => 'activity_update',
+			'user_id'       => $this->user,
+			'item_id'       => $g1,
+			'hide_sitewide' => true,
+		) );
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'type'      => 'activity_update',
+			'group_id'  => $g1,
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertContains( $a1, $a_ids );
+	}
+
+	/**
+	 * @group get_items
+	 */
+	public function test_get_private_group_items_for_admin() {
+		$component = buddypress()->groups->id;
+
+		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$this->bp->set_current_user( $this->user );
+
+		$g2 = $this->bp_factory->group->create( array(
+			'status'     => 'private',
+			'creator_id' => $this->user,
+		) );
+
+		groups_join_group( $g2, $u );
+		groups_promote_member( $u, $g2, 'admin' );
+
+		$a2 = $this->bp_factory->activity->create( array(
+			'component'     => $component,
+			'type'          =>'activity_update',
+			'user_id'       => $this->user,
+			'item_id'       => $g2,
+			'hide_sitewide' => true,
+		) );
+
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'type'      => 'activity_update',
+			'group_id'  => $g2,
+		) );
+
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+		$a_ids = wp_list_pluck( $response->get_data(), 'id' );
+
+		$this->assertContains( $a2, $a_ids );
+	}
+
+	/**
+	 * @group get_items
+	 */
 	public function test_get_private_group_items_with_group_id_param_without_access() {
 		$component = buddypress()->groups->id;
 
