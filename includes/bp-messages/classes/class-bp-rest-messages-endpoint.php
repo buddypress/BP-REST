@@ -959,7 +959,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		// Loop through recipients to prepare them for the response.
 		foreach ( $thread->recipients as $recipient ) {
-			$data['recipients'][ $recipient->user_id ] = $this->prepare_recipient_for_response( $recipient, $request );
+			$data['recipients'][] = $this->prepare_recipient_for_response( $recipient, $request );
 		}
 
 		// Pluck starred message ids.
