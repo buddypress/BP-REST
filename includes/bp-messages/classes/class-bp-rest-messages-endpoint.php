@@ -929,27 +929,29 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		}
 
 		$data = array(
-			'id'             => (int) $thread->thread_id,
-			'message_id'     => (int) $thread->last_message_id,
-			'last_sender_id' => (int) $thread->last_sender_id,
-			'subject'        => array(
+			'id'               => (int) $thread->thread_id,
+			'message_id'       => (int) $thread->last_message_id,
+			'last_sender_id'   => (int) $thread->last_sender_id,
+			'subject'          => array(
 				'raw'      => $thread->last_message_subject,
 				'rendered' => apply_filters( 'bp_get_message_thread_subject', wp_staticize_emoji( $thread->last_message_subject ) ),
 			),
-			'excerpt'        => array(
+			'excerpt'          => array(
 				'raw'      => $excerpt,
 				'rendered' => apply_filters( 'bp_get_message_thread_excerpt', $excerpt ),
 			),
-			'message'        => array(
+			'message'          => array(
 				'raw'      => $thread->last_message_content,
 				'rendered' => apply_filters( 'bp_get_message_thread_content', wp_staticize_emoji( $thread->last_message_content ) ),
 			),
-			'date'           => bp_rest_prepare_date_response( $thread->last_message_date, get_date_from_gmt( $thread->last_message_date ) ),
-			'date_gmt'       => bp_rest_prepare_date_response( $thread->last_message_date ),
-			'unread_count'   => ! empty( $thread->unread_count ) ? absint( $thread->unread_count ) : 0,
-			'sender_ids'     => (array) $thread->sender_ids,
-			'recipients'     => array(),
-			'messages'       => array(),
+			'date'             => bp_rest_prepare_date_response( $thread->last_message_date, get_date_from_gmt( $thread->last_message_date ) ),
+			'date_gmt'         => bp_rest_prepare_date_response( $thread->last_message_date ),
+			'unread_count'     => ! empty( $thread->unread_count ) ? absint( $thread->unread_count ): 0,
+			'sender_ids'       => (array) $thread->sender_ids,
+			'recipients'       => array(),
+			'recipients_count' => (int) $thread->recipients_count,
+			'messages'         => array(),
+			'messages_count'   => (int) $thread->messages_count,
 		);
 
 		// Loop through messages to prepare them for the response.
@@ -1299,7 +1301,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 					),
 					'sender_ids'          => array(
 						'context'     => array( 'view', 'edit' ),
-						'description' => __( 'The list of user IDs for all messages in the Thread.', 'buddypress' ),
+						'description' => __( 'The list of sender/user IDs in the Thread.', 'buddypress' ),
 						'readonly'    => true,
 						'type'        => 'array',
 						'items'       => array(
@@ -1314,6 +1316,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 							'type' => 'object',
 						),
 					),
+					'recipients_count'    => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Total count of recipients in the Thread.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
+					),
 					'messages'            => array(
 						'context'     => array( 'view', 'edit' ),
 						'description' => __( 'List of message objects for the thread.', 'buddypress' ),
@@ -1322,6 +1330,12 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 						'items'       => array(
 							'type' => 'object',
 						),
+					),
+					'messages_count'      => array(
+						'context'     => array( 'view', 'edit' ),
+						'description' => __( 'Total count of messages in the Thread.', 'buddypress' ),
+						'readonly'    => true,
+						'type'        => 'integer',
 					),
 					'starred_message_ids' => array(
 						'context'     => array( 'view', 'edit' ),
