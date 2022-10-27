@@ -75,11 +75,16 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
+		$data  = $response->get_data();
+		$a_ids = wp_list_pluck( $data, 'id' );
+
+		$a_ids = wp_list_pluck( $data, 'id' );
+
+		$this->assertCount( 1, $a_ids );
+		$this->assertCount( 1, $data[0]['messages'] );
 
 		// Check the thread data for the requested user id => `$u1` (see at line 74 ^^).
-		$this->check_thread_data( $this->endpoint->get_thread_object( $all_data[0]['id'], $u1 ), $all_data[0] );
+		$this->check_thread_data( $this->endpoint->get_thread_object( $data[0]['id'], $u1 ), $data[0] );
 	}
 
 	/**
@@ -374,8 +379,8 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertNotEmpty( $data );
 		$this->assertFalse( (bool) $data['unread_count'] );
-		$this->assertFalse( (bool) $data['recipients'][ $u1 ]['unread_count'] );
-		$this->assertFalse( (bool) $data['recipients'][ $u2 ]['unread_count'] );
+		$this->assertFalse( (bool) $data['recipients'][0]['unread_count'] );
+		$this->assertFalse( (bool) $data['recipients'][1]['unread_count'] );
 	}
 
 	/**
@@ -408,8 +413,14 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertNotEmpty( $data );
 		$this->assertTrue( (bool) $data['unread_count'] );
-		$this->assertFalse( (bool) $data['recipients'][ $u1 ]['unread_count'] );
-		$this->assertTrue( (bool) $data['recipients'][ $u2 ]['unread_count'] );
+
+		foreach ( $data['recipients'] as $recipient ) {
+			if ( $recipient['user_id'] === $u1 ) {
+				$this->assertFalse( (bool) $recipient['unread_count'] );
+			} else {
+				$this->assertTrue( (bool) $recipient['unread_count'] );
+			}
+		}
 	}
 
 	/**
@@ -981,8 +992,9 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$get_data   = $response->get_data();
 		$recipients = $get_data[0]['recipients'];
 
-		foreach( array( $u1, $u2, $u3 ) as $user_id ) {
-			$this->assertEquals( esc_url( bp_core_get_user_domain( $user_id ) ), $recipients[ $user_id  ]['user_link'] );
+		foreach( $recipients as $recipient ) {
+			$user_id = $recipient['user_id'];
+			$this->assertEquals( esc_url( bp_core_get_user_domain( $user_id ) ), $recipient['user_link'] );
 
 			foreach ( array( 'full', 'thumb' ) as $type ) {
 				$expected['user_avatars'][ $type ] = bp_core_fetch_avatar(
@@ -993,7 +1005,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 					)
 				);
 
-				$this->assertEquals( $expected['user_avatars'][ $type ], $recipients[ $user_id ]['user_avatars'][ $type ] );
+				$this->assertEquals( $expected['user_avatars'][ $type ], $recipient['user_avatars'][ $type ] );
 			}
 		}
 	}
