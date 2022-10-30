@@ -466,7 +466,8 @@ class BP_REST_Components_Endpoint extends WP_REST_Controller {
 					break;
 				case 'blogs':
 					$features = array(
-						'site_icon' => bp_is_active( 'blogs', 'site-icon' ),
+						'site_icon'       => bp_is_active( 'blogs', 'site-icon' ),
+						'sites_directory' => is_multisite(),
 					);
 					break;
 				case 'messages':
