@@ -24,7 +24,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 		$this->group_id = $this->bp_factory->group->create( array(
 			'name'        => 'Group Test',
 			'description' => 'Group Description',
-			'creator_id'  => $this->user,
+			'creator_id'  => $this->user_id,
 		) );
 
 		if ( ! $this->server ) {
