@@ -78,7 +78,8 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		$this->check_thread_data( $this->endpoint->get_thread_object( $all_data[0]['id'], $u2 ), $all_data[0] );
+		// Check the thread data for the requested user id => `$u1` (see at line 74 ^^).
+		$this->check_thread_data( $this->endpoint->get_thread_object( $all_data[0]['id'], $u1 ), $all_data[0] );
 	}
 
 	/**
