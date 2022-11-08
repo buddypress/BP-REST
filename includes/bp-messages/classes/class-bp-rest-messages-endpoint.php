@@ -872,10 +872,16 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return array                     The recipient data for the REST response.
 	 */
 	public function prepare_recipient_for_response( $recipient, $request ) {
-		$data = array(
-			'id'        => (int) $recipient->id,
-			'user_id'   => (int) $recipient->user_id,
-			'user_link' => esc_url( bp_core_get_user_domain( $recipient->user_id ) ),
+		$user_info = get_userdata( (int) $recipient->user_id );
+		$data      = array(
+			'id'           => (int) $recipient->id,
+			'is_deleted'   => (int) $recipient->is_deleted,
+			'name'         => (string) $user_info->display_name,
+			'sender_only'  => (int) $recipient->sender_only,
+			'thread_id'    => (int) $recipient->thread_id,
+			'unread_count' => (int) $recipient->unread_count,
+			'user_id'      => (int) $recipient->user_id,
+			'user_link'    => esc_url( bp_core_get_user_domain( $recipient->user_id ) ),
 		);
 
 		// Fetch the user avatar urls (Full & thumb).
@@ -890,16 +896,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				);
 			}
 		}
-
-		$data = array_merge(
-			$data,
-			array(
-				'thread_id'    => (int) $recipient->thread_id,
-				'unread_count' => (int) $recipient->unread_count,
-				'sender_only'  => (int) $recipient->sender_only,
-				'is_deleted'   => (int) $recipient->is_deleted,
-			)
-		);
 
 		/**
 		 * Filter a recipient value returned from the API.
