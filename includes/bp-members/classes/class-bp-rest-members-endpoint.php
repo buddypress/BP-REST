@@ -406,45 +406,71 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	}
 
 	/**
-	 * Deleting the current user is not implemented into this endpoint.
-	 *
-	 * This action is specific to the User Settings endpoint.
+	 * Checks if a given request has access to delete the current user.
 	 *
 	 * @since 0.1.0
+	 * @since 0.7.0 Do implement this method.
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_Error                WP_Error object to inform it's not implemented.
+	 * @return true|WP_Error True if the request has access to delete the item, WP_Error object otherwise.
 	 */
 	public function delete_current_item_permissions_check( $request ) {
-		return new WP_Error(
-			'bp_rest_invalid_method',
-			/* translators: %s: transport method name */
-			sprintf( __( '\'%s\' Transport Method not implemented.', 'buddypress' ), $request->get_method() ),
-			array(
-				'status' => 405,
-			)
-		);
+		$request['id'] = get_current_user_id();
+
+		if ( bp_disable_account_deletion() ) {
+			return parent::delete_item_permissions_check( $request );
+		}
+
+		return true;
 	}
 
 	/**
-	 * Deleting the current user is not implemented into this endpoint.
-	 *
-	 * This action is specific to the User Settings endpoint.
+	 * Deletes the current user.
 	 *
 	 * @since 0.1.0
+	 * @since 0.7.0 Do implement this method.
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return WP_Error                WP_Error to inform it's not implemented.
+	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
 	 */
 	public function delete_current_item( $request ) {
-		return new WP_Error(
-			'bp_rest_invalid_method',
-			/* translators: %s: transport method name */
-			sprintf( __( '\'%s\' Transport method not implemented.', 'buddypress' ), $request->get_method() ),
+		$request->set_param( 'context', 'edit' );
+
+		$user = bp_rest_get_user( get_current_user_id() );
+
+		if ( ! $user instanceof WP_User ) {
+			$retval = new WP_Error(
+				'bp_rest_member_invalid_id',
+				__( 'Invalid member ID.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		$previous = $this->prepare_item_for_response( $user, $request );
+		$result   = bp_core_delete_account();;
+
+		if ( ! $result ) {
+			return new WP_Error(
+				'bp_rest_members_cannot_delete',
+				__( 'Your account cannot be deleted.', 'buddypress' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$response = new WP_REST_Response();
+		$response->set_data(
 			array(
-				'status' => 405,
+				'deleted'  => true,
+				'previous' => $previous->get_data(),
 			)
 		);
+
+		/* this action is documented in wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php */
+		do_action( 'rest_delete_user', $user, $response, $request );
+
+		return $response;
 	}
 
 	/**
