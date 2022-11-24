@@ -811,6 +811,30 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_current_item() {
+		$u = $this->factory->user->create( array( 'display_name' => 'Deleted User' ) );
+		$current_user = get_current_user_id();
+		$this->bp->set_current_user( $u );
+
+		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/me' );
+		$request->set_param( 'force', true );
+		$request->set_param( 'reassign', false );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
+
+		$this->assertTrue( $data['deleted'] );
+		$this->assertEquals( 'Deleted User', $data['previous']['name'] );
+
+		$this->bp->set_current_user( $u );
+	}
+
 	public function test_prepare_item() {
 		$this->bp->set_current_user( self::$user );
 
