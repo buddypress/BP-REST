@@ -449,7 +449,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		$previous = $this->prepare_item_for_response( $user, $request );
-		$result   = bp_core_delete_account();;
+		$result   = bp_core_delete_account();
 
 		if ( ! $result ) {
 			return new WP_Error(
