@@ -415,13 +415,27 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @return true|WP_Error True if the request has access to delete the item, WP_Error object otherwise.
 	 */
 	public function delete_current_item_permissions_check( $request ) {
-		$request['id'] = get_current_user_id();
+		$retval = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed delete your account.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
 
-		if ( bp_disable_account_deletion() ) {
-			return parent::delete_item_permissions_check( $request );
+		if ( ! bp_disable_account_deletion() ) {
+			$retval = true;
 		}
 
-		return true;
+		/**
+		 * Filter the members `delete_current_item` permissions check.
+		 *
+		 * @since 0.7.0
+		 *
+		 * @param true|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_members_delete_current_item_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -439,7 +453,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		$user = bp_rest_get_user( get_current_user_id() );
 
 		if ( ! $user instanceof WP_User ) {
-			$retval = new WP_Error(
+			return new WP_Error(
 				'bp_rest_member_invalid_id',
 				__( 'Invalid member ID.', 'buddypress' ),
 				array(
