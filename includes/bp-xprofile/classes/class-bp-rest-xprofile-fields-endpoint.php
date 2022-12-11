@@ -137,6 +137,11 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			$args['member_type'] = false;
 		}
 
+		$include_groups = $request->get_param( 'include_groups' );
+		if ( $include_groups && ! $args['profile_group_id'] ) {
+			$args['profile_group_id'] = $include_groups;
+		}
+
 		/**
 		 * Filter the query arguments for the request.
 		 *
@@ -1166,6 +1171,15 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'default'           => false,
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['include_groups'] = array(
+			'description'       => __( 'Ensure result set inludes specific profile field groups.', 'buddypress' ),
+			'default'           => array(),
+			'type'              => 'array',
+			'items'             => array( 'type' => 'integer' ),
+			'sanitize_callback' => 'bp_rest_sanitize_string_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
