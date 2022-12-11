@@ -66,6 +66,37 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	/**
 	 * @group get_items
 	 */
+	public function test_get_items_include_groups() {
+		$this->bp->set_current_user( $this->user );
+
+		$g1 = $this->bp_factory->xprofile_group->create();
+		$g2 = $this->bp_factory->xprofile_group->create();
+		$this->bp_factory->xprofile_group->create_many( 3 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$request->set_param( 'include_groups', array( $g1, $g2 ) );
+		$response = $this->server->dispatch( $request );
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		foreach ( $all_data as $data ) {
+			$field_group = $this->endpoint->get_xprofile_field_group_object( $data['id'] );
+			$this->check_group_data( $field_group, $data, 'view', $response->get_links() );
+		}
+
+		$group_ids = wp_list_pluck( $all_data, 'id' );
+		sort( $group_ids );
+		$this->assertSame( $group_ids, array( $g1, $g2 ) );
+	}
+
+	/**
+	 * @group get_items
+	 */
 	public function test_get_items_publicly() {
 		$this->bp_factory->xprofile_group->create_many( 5 );
 
