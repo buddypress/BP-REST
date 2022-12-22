@@ -85,6 +85,34 @@ class BP_Test_REST_XProfile_Fields_Endpoint extends WP_Test_REST_Controller_Test
 	}
 
 	/**
+	 * @group get_items
+	 */
+	public function test_get_items_include_groups() {
+		$g1 = $this->bp_factory->xprofile_group->create();
+		$g2 = $this->bp_factory->xprofile_group->create();
+		$this->bp_factory->xprofile_field->create_many( 3, [ 'field_group_id' => $g1 ] );
+		$this->bp_factory->xprofile_field->create_many( 2, [ 'field_group_id' => $g2 ] );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'include_groups', array( $g2 ) );
+		$response = $this->server->dispatch( $request );
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
+
+		$this->check_field_data(
+			$this->endpoint->get_xprofile_field_object( $data[0]['id'] ),
+			$data[0]
+		);
+
+		$this->assertEmpty( wp_filter_object_list( $data, array( 'group_id' => $g1 ) ) );
+		$this->assertTrue( 2 === count( wp_filter_object_list( $data, array( 'group_id' => $g2 ) ) ) );
+	}
+
+	/**
 	 * @group get_item
 	 */
 	public function test_get_item() {

@@ -166,9 +166,9 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			$args['exclude_groups'] = false;
 		}
 
-		$include_groups = $request->get_param( 'include_groups' );
-		if ( $include_groups && ! $args['profile_group_id'] ) {
-			$args['profile_group_id'] = $include_groups;
+		$include = $request->get_param( 'include' );
+		if ( $include && ! $args['profile_group_id'] ) {
+			$args['profile_group_id'] = $include;
 		}
 
 		/**
@@ -866,12 +866,12 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
-		$params['include_groups'] = array(
+		$params['include'] = array(
 			'description'       => __( 'Ensure result set inludes specific profile field groups.', 'buddypress' ),
 			'default'           => array(),
 			'type'              => 'array',
 			'items'             => array( 'type' => 'integer' ),
-			'sanitize_callback' => 'bp_rest_sanitize_string_list',
+			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
@@ -880,7 +880,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			'default'           => array(),
 			'type'              => 'array',
 			'items'             => array( 'type' => 'integer' ),
-			'sanitize_callback' => 'bp_rest_sanitize_string_list',
+			'sanitize_callback' => 'wp_parse_id_list',
 			'validate_callback' => 'rest_validate_request_arg',
 		);
 
