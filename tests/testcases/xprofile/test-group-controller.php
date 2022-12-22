@@ -75,7 +75,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
-		$request->set_param( 'include', array( $g1, $g2 ) );
+		$request->set_param( 'include_groups', array( $g1, $g2 ) );
 		$response = $this->server->dispatch( $request );
 		$this->assertNotInstanceOf( 'WP_Error', $response );
 
