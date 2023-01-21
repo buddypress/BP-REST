@@ -5,11 +5,11 @@
  * Description:       Access your BuddyPress site's data through an easy-to-use HTTP REST API.
  * Author:            The BuddyPress Community
  * Author URI:        https: //buddypress.org/
- * Version:           0.7.0
+ * Version:           0.8.0
  * Text Domain:       buddypress
  * Domain Path:       /languages/
  * Requires at least: 5.7
- * Tested up to:      6.0
+ * Tested up to:      6.1
  * Requires PHP:      5.6
  * License:           GNU General Public License v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
