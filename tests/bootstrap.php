@@ -10,6 +10,10 @@ const WP_TESTS_PHPUNIT_POLYFILLS_PATH = __DIR__ . '/../vendor/yoast/phpunit-poly
 
 // Use WP PHPUnit.
 if ( defined( 'BP_REST_API_BP_USE_WP_ENV_TESTS' ) ) {
+	// wp-env setup.
+	define( 'WP_TESTS_CONFIG_FILE_PATH', dirname( __FILE__ ) . '/env-wp-phpunit-config.php' );
+	define( 'WP_TESTS_CONFIG_PATH', WP_TESTS_CONFIG_FILE_PATH );
+
 	require_once dirname( dirname( __FILE__ ) ) . '/vendor/wp-phpunit/wp-phpunit/__loaded.php';
 }
 
