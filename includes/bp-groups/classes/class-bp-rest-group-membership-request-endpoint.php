@@ -820,6 +820,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 
 			$args['message']['type']        = 'string';
 			$args['message']['description'] = __( 'The optional message to send to the invited user.', 'buddypress' );
+			$args['message']['default']     = '';
 			$args['group_id']['required']   = true;
 			$args['user_id']['default']     = bp_loggedin_user_id();
 

@@ -7,6 +7,13 @@
  * @group signup
  */
 class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
+	protected $bp_factory;
+	protected $endpoint;
+	protected $bp;
+	protected $endpoint_url;
+	protected $user;
+	protected $signup_id;
+	protected $server;
 
 	/**
 	 * Signup allowed.

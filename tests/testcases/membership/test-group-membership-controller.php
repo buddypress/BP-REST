@@ -7,6 +7,14 @@
  * @group group-membership
  */
 class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Testcase {
+	protected $bp_factory;
+	protected $endpoint;
+	protected $bp;
+	protected $endpoint_url;
+	protected $user;
+	protected $group_id;
+	protected $server;
+	protected $old_current_user;
 	protected $search_terms;
 
 	public function set_up() {

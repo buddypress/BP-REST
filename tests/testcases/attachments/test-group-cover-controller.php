@@ -7,6 +7,14 @@
  * @group group-cover
  */
 class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Controller_Testcase {
+	protected $bp_factory;
+	protected $endpoint;
+	protected $bp;
+	protected $endpoint_url;
+	protected $image_file;
+	protected $user_id;
+	protected $group_id;
+	protected $server;
 
 	public function set_up() {
 		parent::set_up();

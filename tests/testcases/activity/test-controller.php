@@ -7,6 +7,14 @@
  * @group activity
  */
 class BP_Test_REST_Activity_Endpoint extends WP_Test_REST_Controller_Testcase {
+	protected $bp_factory;
+	protected $endpoint;
+	protected $bp;
+	protected $endpoint_url;
+	protected $activity_id;
+	protected $user;
+	protected $server;
+	protected $old_current_user;
 
 	public function set_up() {
 		parent::set_up();

@@ -141,7 +141,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			'fields'            => 'all',
 			'show_hidden'       => false,
 			'update_meta_cache' => true,
-			'filter'            => false,
+			'filter'            => array(),
 		);
 
 		if ( empty( $args['display_comments'] ) || 'false' === $args['display_comments'] ) {
