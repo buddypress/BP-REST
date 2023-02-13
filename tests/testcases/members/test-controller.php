@@ -7,6 +7,11 @@
  * @group members
  */
 class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
+	protected $bp_factory;
+	protected $endpoint;
+	protected $bp;
+	protected $endpoint_url;
+	protected $server;
 
 	protected static $user;
 	protected static $site;

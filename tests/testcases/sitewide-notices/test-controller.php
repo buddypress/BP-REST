@@ -7,6 +7,13 @@
  * @group notices
  */
 class BP_Test_REST_Sitewide_Notices_Endpoint extends WP_Test_REST_Controller_Testcase {
+	protected $bp_factory;
+	protected $endpoint;
+	protected $bp;
+	protected $endpoint_url;
+	protected $user;
+	protected $old_current_user;
+	protected $server;
 	protected $last_inserted_notice_id;
 
 	public function set_up() {

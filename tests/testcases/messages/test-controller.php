@@ -7,6 +7,12 @@
  * @group messages
  */
 class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
+	protected $bp_factory;
+	protected $endpoint;
+	protected $bp;
+	protected $endpoint_url;
+	protected $user;
+	protected $server;
 
 	public function set_up() {
 		parent::set_up();

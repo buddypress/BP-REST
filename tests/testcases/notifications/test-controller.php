@@ -7,6 +7,13 @@
  * @group notifications
  */
 class BP_Test_REST_Notifications_Endpoint extends WP_Test_REST_Controller_Testcase {
+	protected $bp_factory;
+	protected $endpoint;
+	protected $bp;
+	protected $endpoint_url;
+	protected $user;
+	protected $notification_id;
+	protected $server;
 
 	public function set_up() {
 		parent::set_up();

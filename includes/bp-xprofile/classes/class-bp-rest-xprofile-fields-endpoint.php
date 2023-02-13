@@ -894,7 +894,8 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		$key  = 'get_item';
 
 		if ( WP_REST_Server::CREATABLE === $method || WP_REST_Server::EDITABLE === $method ) {
-			$args['description']['type'] = 'string';
+			$args['description']['type']    = 'string';
+			$args['description']['default'] = '';
 			unset( $args['description']['properties'] );
 
 			// Add specific properties to the edit context.

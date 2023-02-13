@@ -901,6 +901,7 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 			$key                            = 'create_item';
 			$args['message']['type']        = 'string';
 			$args['message']['description'] = __( 'The optional message to send to the invited user.', 'buddypress' );
+			$args['message']['default']     = '';
 			$args['send_invite']            = $args['invite_sent'];
 			$args['inviter_id']['default']  = bp_loggedin_user_id();
 			$args['group_id']['required']   = true;
