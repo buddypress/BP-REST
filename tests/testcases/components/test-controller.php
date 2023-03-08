@@ -149,6 +149,27 @@ class BP_Test_REST_Components_Endpoint extends WP_Test_REST_Controller_Testcase 
 	/**
 	 * @group get_items
 	 */
+	public function test_get_items_active_component_features() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$this->assertNotEmpty( $all_data );
+
+		$members_info = wp_list_filter( $all_data, array( 'name' => 'members' ) );
+		$members_info = reset( $members_info );
+
+		$this->assertTrue( $members_info['features']['avatar'] );
+	}
+
+	/**
+	 * @group get_items
+	 */
 	public function test_get_items_inactive_component_features() {
 		$this->bp->set_current_user( $this->user );
 
