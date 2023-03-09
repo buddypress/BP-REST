@@ -956,7 +956,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$this->assertArrayHasKey( 'full', $data['avatar_urls'] );
 		$this->assertArrayHasKey( 'member_types', $data );
 		$this->assertEquals(
-			bp_core_get_user_domain( $data['id'], $user->user_nicename, $user->user_login ),
+			bp_members_get_user_url( $data['id'] ),
 			$data['link']
 		);
 

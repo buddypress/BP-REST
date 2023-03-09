@@ -1000,7 +1000,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		foreach( $recipients as $recipient ) {
 			$user_id = $recipient['user_id'];
-			$this->assertEquals( esc_url( bp_core_get_user_domain( $user_id ) ), $recipient['user_link'] );
+			$this->assertEquals( esc_url( bp_members_get_user_url( $user_id ) ), $recipient['user_link'] );
 
 			foreach ( array( 'full', 'thumb' ) as $type ) {
 				$expected['user_avatars'][ $type ] = bp_core_fetch_avatar(
