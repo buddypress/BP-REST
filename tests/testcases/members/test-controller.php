@@ -881,7 +881,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'friendship_status', $data );
 		$this->assertArrayHasKey( 'friendship_status_slug', $data );
 		$this->assertEquals(
-			bp_core_get_user_domain( $data['id'], $user->user_nicename, $user->user_login ),
+			bp_members_get_user_url( $data['id'] ),
 			$data['link']
 		);
 

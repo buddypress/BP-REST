@@ -641,7 +641,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 
 		// Link.
 		if ( empty( $fields ) || ! empty( $fields['link'] ) ) {
-			$data['link'] = bp_core_get_user_domain( $user->ID, $user->user_nicename, $user->user_login );
+			$data['link'] = bp_members_get_user_url( $user->ID );
 		}
 
 		// Member types.

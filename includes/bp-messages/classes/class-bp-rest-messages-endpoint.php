@@ -881,7 +881,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'thread_id'    => (int) $recipient->thread_id,
 			'unread_count' => (int) $recipient->unread_count,
 			'user_id'      => (int) $recipient->user_id,
-			'user_link'    => esc_url( bp_core_get_user_domain( $recipient->user_id ) ),
+			'user_link'    => esc_url( bp_members_get_user_url( $recipient->user_id ) ),
 		);
 
 		// Fetch the user avatar urls (Full & thumb).
