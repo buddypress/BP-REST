@@ -726,7 +726,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'rendered' => bp_get_group_description( $item ),
 			),
 			'enable_forum'       => bp_group_is_forum_enabled( $item ),
-			'link'               => bp_get_group_permalink( $item ),
+			'link'               => bp_get_group_url( $item ),
 			'name'               => bp_get_group_name( $item ),
 			'slug'               => bp_get_group_slug( $item ),
 			'status'             => bp_get_group_status( $item ),
