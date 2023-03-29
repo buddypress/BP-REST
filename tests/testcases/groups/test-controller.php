@@ -1078,7 +1078,7 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		);
 		$this->assertEquals( bp_rest_prepare_date_response( $group->date_created ), $data['date_created_gmt'] );
 		$this->assertEquals( $group->enable_forum, $data['enable_forum'] );
-		$this->assertEquals( bp_get_group_permalink( $group ), $data['link'] );
+		$this->assertEquals( bp_get_group_url( $group ), $data['link'] );
 		$this->assertEquals( $group->name, $data['name'] );
 		$this->assertEquals( $group->slug, $data['slug'] );
 		$this->assertEquals( $group->status, $data['status'] );

@@ -526,7 +526,7 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 		}
 
 		if ( empty( $blog->domain ) && ! empty( $blog->path ) ) {
-			return bp_get_root_domain() . $blog->path;
+			return bp_get_root_url() . $blog->path;
 		}
 
 		$protocol  = is_ssl() ? 'https://' : 'http://';
