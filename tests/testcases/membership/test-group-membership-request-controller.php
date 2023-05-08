@@ -314,7 +314,7 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 	}
 
 	/**
-	 * @group tst
+	 * @group create_item
 	 */
 	public function test_create_item_as_subscriber() {
 		$u = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -619,36 +619,6 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 	 */
 	public function test_prepare_item() {
 		$this->markTestSkipped();
-	}
-
-	protected function check_user_data( $user, $data, $member_object ) {
-		$this->assertEquals( $user->ID, $data['id'] );
-		$this->assertEquals( $user->display_name, $data['name'] );
-		$this->assertEquals( $user->user_login, $data['user_login'] );
-		$this->assertArrayHasKey( 'avatar_urls', $data );
-		$this->assertArrayHasKey( 'thumb', $data['avatar_urls'] );
-		$this->assertArrayHasKey( 'full', $data['avatar_urls'] );
-		$this->assertArrayHasKey( 'member_types', $data );
-		$this->assertEquals(
-			bp_core_get_user_domain( $data['id'], $user->user_nicename, $user->user_login ),
-			$data['link']
-		);
-		$this->assertArrayNotHasKey( 'roles', $data );
-		$this->assertArrayNotHasKey( 'capabilities', $data );
-		$this->assertArrayNotHasKey( 'extra_capabilities', $data );
-		$this->assertArrayHasKey( 'xprofile', $data );
-		$this->assertArrayNotHasKey( 'registered_date', $data );
-
-		// Checking extra.
-		$this->assertEquals( $member_object->is_mod, (bool) $data['is_mod'] );
-		$this->assertEquals( $member_object->is_admin, (bool) $data['is_admin'] );
-		$this->assertEquals( $member_object->is_banned, (bool) $data['is_banned'] );
-		$this->assertEquals( $member_object->is_confirmed, (bool) $data['is_confirmed'] );
-		$this->assertEquals(
-			bp_rest_prepare_date_response( $member_object->date_modified, get_date_from_gmt( $member_object->date_modified ) ),
-			$data['date_modified']
-		);
-		$this->assertEquals( bp_rest_prepare_date_response( $member_object->date_modified ), $data['date_modified_gmt'] );
 	}
 
 	public function test_get_item_schema() {
