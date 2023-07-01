@@ -1062,8 +1062,8 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $thread->thread_id, $data['id'] );
 		$this->assertEquals( $thread->last_message_id, $data['message_id'] );
 		$this->assertEquals( $thread->last_sender_id, $data['last_sender_id'] );
-		$this->assertEquals( apply_filters( 'bp_get_message_thread_subject', wp_staticize_emoji( $thread->last_message_subject ) ), $data['subject']['rendered'] );
-		$this->assertEquals( apply_filters( 'bp_get_message_thread_content', wp_staticize_emoji( $thread->last_message_content ) ), $data['message']['rendered'] );
+		$this->assertEquals( apply_filters( 'bp_get_message_thread_subject', $thread->last_message_subject ), $data['subject']['rendered'] );
+		$this->assertEquals( apply_filters( 'bp_get_message_thread_content', $thread->last_message_content ), $data['message']['rendered'] );
 		$this->assertEquals(
 			bp_rest_prepare_date_response( $thread->last_message_date, get_date_from_gmt( $thread->last_message_date ) ),
 			$data['date']
