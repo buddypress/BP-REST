@@ -938,7 +938,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			),
 			'message'        => array(
 				'raw'      => $thread->last_message_content,
-				'rendered' => apply_filters( 'bp_get_message_thread_content',$thread->last_message_content ),
+				'rendered' => apply_filters( 'bp_get_message_thread_content', $thread->last_message_content ),
 			),
 			'date'           => bp_rest_prepare_date_response( $thread->last_message_date, get_date_from_gmt( $thread->last_message_date ) ),
 			'date_gmt'       => bp_rest_prepare_date_response( $thread->last_message_date ),
