@@ -213,19 +213,20 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return true|WP_Error
+	 * @return boolean
 	 */
 	public function get_items_permissions_check( $request ) {
+		$retval = bp_current_user_can( 'bp_view', array( 'bp_component' => 'xprofile' ) );
 
 		/**
 		 * Filter the XProfile fields groups `get_items` permissions check.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param true|WP_Error   $retval  Returned value.
+		 * @param boolean         $retval  Whether the user has access to xprofile field groups.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_xprofile_field_groups_get_items_permissions_check', true, $request );
+		return apply_filters( 'bp_rest_xprofile_field_groups_get_items_permissions_check', $retval, $request );
 	}
 
 	/**

@@ -131,41 +131,51 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 */
 	public function get_item_permissions_check( $request ) {
 		$retval = new WP_Error(
-			'bp_rest_hidden_profile_field',
-			__( 'Sorry, the profile field value is not viewable for this user.', 'buddypress' ),
+			'bp_rest_authorization_required',
+			__( 'Sorry, you cannot view the extended profile information.', 'buddypress' ),
 			array(
-				'status' => 403,
+				'status' => rest_authorization_required_code(),
 			)
 		);
 
-		// Check the field exists.
-		$field = $this->get_xprofile_field_object( $request->get_param( 'field_id' ) );
-
-		if ( empty( $field->id ) ) {
+		if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'xprofile' ) ) ) {
 			$retval = new WP_Error(
-				'bp_rest_invalid_id',
-				__( 'Invalid field ID.', 'buddypress' ),
+				'bp_rest_hidden_profile_field',
+				__( 'Sorry, the profile field value is not viewable for this user.', 'buddypress' ),
 				array(
-					'status' => 404,
+					'status' => 403,
 				)
 			);
-		} else {
-			$user = bp_rest_get_user( $request->get_param( 'user_id' ) );
 
-			if ( ! $user instanceof WP_User ) {
+			// Check the field exists.
+			$field = $this->get_xprofile_field_object( $request->get_param( 'field_id' ) );
+
+			if ( empty( $field->id ) ) {
 				$retval = new WP_Error(
-					'bp_rest_member_invalid_id',
-					__( 'Invalid member ID.', 'buddypress' ),
+					'bp_rest_invalid_id',
+					__( 'Invalid field ID.', 'buddypress' ),
 					array(
 						'status' => 404,
 					)
 				);
 			} else {
-				// Check the user can view this field value.
-				$hidden_user_fields = bp_xprofile_get_hidden_fields_for_user( $user->ID );
+				$user = bp_rest_get_user( $request->get_param( 'user_id' ) );
 
-				if ( ! in_array( $field->id, $hidden_user_fields, true ) ) {
-					$retval = true;
+				if ( ! $user instanceof WP_User ) {
+					$retval = new WP_Error(
+						'bp_rest_member_invalid_id',
+						__( 'Invalid member ID.', 'buddypress' ),
+						array(
+							'status' => 404,
+						)
+					);
+				} else {
+					// Check the user can view this field value.
+					$hidden_user_fields = bp_xprofile_get_hidden_fields_for_user( $user->ID );
+
+					if ( ! in_array( $field->id, $hidden_user_fields, true ) ) {
+						$retval = true;
+					}
 				}
 			}
 		}
