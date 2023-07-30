@@ -204,7 +204,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return boolean
+	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
 		$retval = bp_current_user_can( 'bp_view', array( 'bp_component' => 'groups' ) );
@@ -214,7 +214,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param boolean         $retval  Whether the user has access to groups component items.
+		 * @param true|WP_Error   $retval  Whether the user has access to groups component items.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_groups_get_items_permissions_check', $retval, $request );
@@ -1070,11 +1070,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	protected function can_see( $group ) {
-
-		if ( ! bp_current_user_can( 'bp_view', array( 'bp_component' => 'groups' ) ) ) {
-			return false;
-		}
-
 		// If it is not a hidden group, user can see it.
 		if ( 'hidden' !== $group->status ) {
 			return true;

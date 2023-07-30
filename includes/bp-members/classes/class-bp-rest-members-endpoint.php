@@ -198,7 +198,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return boolean
+	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
 		$retval = bp_current_user_can( 'bp_view', array( 'bp_component' => 'members' ) );
@@ -208,7 +208,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param boolean         $retval  Whether the user has access to members component items.
+		 * @param true|WP_Error   $retval  Whether the user has access to members component items.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_members_get_items_permissions_check', $retval, $request );

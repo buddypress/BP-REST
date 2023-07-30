@@ -186,7 +186,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return boolean
+	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
 		$retval = bp_current_user_can( 'bp_view', array( 'bp_component' => 'xprofile' ) );
@@ -196,7 +196,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param boolean         $retval  Whether the user has access to xprofile fields.
+		 * @param true|WP_Error   $retval  Whether the user has access to xprofile fields.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_xprofile_fields_get_items_permissions_check', $retval, $request );
@@ -265,7 +265,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
-	 * @return boolean
+	 * @return true|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
 		$retval = bp_current_user_can( 'bp_view', array( 'bp_component' => 'xprofile' ) );
@@ -275,7 +275,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param boolean         $retval  Whether the user has access to xprofile fields.
+		 * @param true|WP_Error   $retval  Whether the user has access to xprofile fields.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_xprofile_fields_get_item_permissions_check', $retval, $request );
