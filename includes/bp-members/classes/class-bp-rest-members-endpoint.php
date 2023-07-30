@@ -287,7 +287,6 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			}
 		}
 
-
 		/**
 		 * Filter the members `get_item` permissions check.
 		 *

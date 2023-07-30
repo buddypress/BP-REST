@@ -271,7 +271,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		);
 
 		if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'groups' ) ) ) {
-			$group  = $this->get_group_object( $request );
+			$group = $this->get_group_object( $request );
 
 			if ( empty( $group->id ) ) {
 				$retval = new WP_Error(
