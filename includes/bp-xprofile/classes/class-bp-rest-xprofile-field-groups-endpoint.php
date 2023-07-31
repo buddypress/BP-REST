@@ -216,7 +216,17 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
-		$retval = bp_current_user_can( 'bp_view', array( 'bp_component' => 'xprofile' ) );
+		$retval = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
+
+		if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'xprofile' ) ) ) {
+			$retval = true;
+		}
 
 		/**
 		 * Filter the XProfile fields groups `get_items` permissions check.
