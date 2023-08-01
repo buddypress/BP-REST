@@ -169,17 +169,27 @@ class BP_REST_Attachments_Group_Avatar_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		$retval      = new WP_Error(
-			'bp_rest_group_invalid_id',
-			__( 'Invalid group ID.', 'buddypress' ),
+		$retval = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you cannot view group details.', 'buddypress' ),
 			array(
-				'status' => 404,
+				'status' => rest_authorization_required_code(),
 			)
 		);
-		$this->group = $this->groups_endpoint->get_group_object( $request );
 
-		if ( false !== $this->group ) {
-			$retval = true;
+		if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'groups' ) ) ) {
+			$retval      = new WP_Error(
+				'bp_rest_group_invalid_id',
+				__( 'Invalid group ID.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+			$this->group = $this->groups_endpoint->get_group_object( $request );
+
+			if ( false !== $this->group ) {
+				$retval = true;
+			}
 		}
 
 		/**

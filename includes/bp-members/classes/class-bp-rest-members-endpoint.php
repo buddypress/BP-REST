@@ -198,19 +198,20 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Full details about the request.
-	 * @return true
+	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
+		$retval = bp_current_user_can( 'bp_view', array( 'bp_component' => 'members' ) );
 
 		/**
 		 * Filter the members `get_items` permissions check.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param true            $retval  Returned value.
+		 * @param true|WP_Error   $retval  Whether the user has access to members component items.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_members_get_items_permissions_check', true, $request );
+		return apply_filters( 'bp_rest_members_get_items_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -258,30 +259,32 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			)
 		);
 
-		$user = bp_rest_get_user( $request->get_param( 'id' ) );
+		if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'members' ) ) ) {
+			$user = bp_rest_get_user( $request->get_param( 'id' ) );
 
-		if ( ! $user instanceof WP_User ) {
-			$retval = new WP_Error(
-				'bp_rest_member_invalid_id',
-				__( 'Invalid member ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		} elseif ( 'edit' === $request->get_param( 'context' ) ) {
-			if ( get_current_user_id() === $user->ID || bp_current_user_can( 'list_users' ) ) {
-				$retval = true;
-			} else {
+			if ( ! $user instanceof WP_User ) {
 				$retval = new WP_Error(
-					'bp_rest_authorization_required',
-					__( 'Sorry, you are not allowed to view members with the edit context.', 'buddypress' ),
+					'bp_rest_member_invalid_id',
+					__( 'Invalid member ID.', 'buddypress' ),
 					array(
-						'status' => rest_authorization_required_code(),
+						'status' => 404,
 					)
 				);
+			} elseif ( 'edit' === $request->get_param( 'context' ) ) {
+				if ( get_current_user_id() === $user->ID || bp_current_user_can( 'list_users' ) ) {
+					$retval = true;
+				} else {
+					$retval = new WP_Error(
+						'bp_rest_authorization_required',
+						__( 'Sorry, you are not allowed to view members with the edit context.', 'buddypress' ),
+						array(
+							'status' => rest_authorization_required_code(),
+						)
+					);
+				}
+			} else {
+				$retval = true;
 			}
-		} else {
-			$retval = true;
 		}
 
 		/**

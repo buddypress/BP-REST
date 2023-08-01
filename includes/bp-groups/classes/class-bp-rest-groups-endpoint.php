@@ -207,16 +207,27 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
+		$retval = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
+
+		if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'groups' ) ) ) {
+			$retval = true;
+		}
 
 		/**
 		 * Filter the groups `get_items` permissions check.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param true $value True.
+		 * @param true|WP_Error   $retval  Whether the user has access to groups component items.
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
-		return apply_filters( 'bp_rest_groups_get_items_permissions_check', true, $request );
+		return apply_filters( 'bp_rest_groups_get_items_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -268,18 +279,21 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 				'status' => rest_authorization_required_code(),
 			)
 		);
-		$group  = $this->get_group_object( $request );
 
-		if ( empty( $group->id ) ) {
-			$retval = new WP_Error(
-				'bp_rest_group_invalid_id',
-				__( 'Invalid group ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		} elseif ( $this->can_see( $group ) ) {
-			$retval = true;
+		if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'groups' ) ) ) {
+			$group = $this->get_group_object( $request );
+
+			if ( empty( $group->id ) ) {
+				$retval = new WP_Error(
+					'bp_rest_group_invalid_id',
+					__( 'Invalid group ID.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			} elseif ( $this->can_see( $group ) ) {
+				$retval = true;
+			}
 		}
 
 		/**
@@ -1066,7 +1080,6 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @return bool
 	 */
 	protected function can_see( $group ) {
-
 		// If it is not a hidden group, user can see it.
 		if ( 'hidden' !== $group->status ) {
 			return true;

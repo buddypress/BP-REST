@@ -197,18 +197,20 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 				'status' => rest_authorization_required_code(),
 			)
 		);
-		$group  = $this->groups_endpoint->get_group_object( $request->get_param( 'group_id' ) );
 
-		if ( empty( $group->id ) ) {
-			$retval = new WP_Error(
-				'bp_rest_group_invalid_id',
-				__( 'Invalid group ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		} elseif ( bp_current_user_can( 'bp_moderate' ) || 'public' === $group->status || groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) {
-			$retval = true;
+		if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'groups' ) ) ) {
+			$group = $this->groups_endpoint->get_group_object( $request->get_param( 'group_id' ) );
+			if ( empty( $group->id ) ) {
+				$retval = new WP_Error(
+					'bp_rest_group_invalid_id',
+					__( 'Invalid group ID.', 'buddypress' ),
+					array(
+						'status' => 404,
+					)
+				);
+			} elseif ( bp_current_user_can( 'bp_moderate' ) || 'public' === $group->status || groups_is_user_member( bp_loggedin_user_id(), $group->id ) ) {
+				$retval = true;
+			}
 		}
 
 		/**

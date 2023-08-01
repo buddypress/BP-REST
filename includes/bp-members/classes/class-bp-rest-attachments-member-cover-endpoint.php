@@ -150,17 +150,27 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		$retval     = new WP_Error(
-			'bp_rest_member_invalid_id',
-			__( 'Invalid member ID.', 'buddypress' ),
+		$retval = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you cannot view member details.', 'buddypress' ),
 			array(
-				'status' => 404,
+				'status' => rest_authorization_required_code(),
 			)
 		);
-		$this->user = bp_rest_get_user( $request->get_param( 'user_id' ) );
 
-		if ( $this->user instanceof WP_User ) {
-			$retval = true;
+		if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'members' ) ) ) {
+			$retval     = new WP_Error(
+				'bp_rest_member_invalid_id',
+				__( 'Invalid member ID.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+			$this->user = bp_rest_get_user( $request->get_param( 'user_id' ) );
+
+			if ( $this->user instanceof WP_User ) {
+				$retval = true;
+			}
 		}
 
 		/**
