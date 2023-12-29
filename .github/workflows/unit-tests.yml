@@ -16,9 +16,9 @@ jobs:
         wp_version: ['master']
         include:
           - php: '8.0'
-            wp_version: '6.2'
+            wp_version: '6.4'
           - php: '7.4'
-            wp_version: '6.2'
+            wp_version: '6.4'
           - php: '7.4'
             wp_version: '5.8'
     env:
@@ -33,7 +33,7 @@ jobs:
           access_token: ${{ github.token }}
 
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Check Gitignored files
         run: if [[ ! -z $(git ls-files -i --exclude-standard) ]]; then exit 1; fi

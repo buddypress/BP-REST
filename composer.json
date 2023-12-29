@@ -1,53 +1,55 @@
 {
-  "name": "buddypress/bp-rest",
-  "description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
-  "type": "wordpress-plugin",
-  "keywords": [
-    "bp-rest",
-    "bp-rest-api",
-    "buddypress",
-    "rest",
-    "plugin"
-  ],
-  "homepage": "https://buddypress.org",
-  "license": "GPL-2.0-or-later",
-  "authors": [ {
-    "name": "BuddyPress Community",
-    "homepage": "https://buddypress.org/about/"
-  } ],
-  "support": {
-    "forum": "https://buddypress.org/support/",
-    "docs": "https://codex.buddypress.org/",
-    "issues": "https://buddypress.trac.wordpress.org/",
-    "rss": "https://buddypress.org/feed/",
-    "source": "https://buddypress.trac.wordpress.org/browser/",
-    "wiki": "https://codex.buddypress.org/"
-  },
-  "repositories": [
-    {
-      "url": "https://github.com/buddypress/bp-coding-standards.git",
-      "type": "git"
-    }
-  ],
-  "require": {
-    "composer/installers": "^1.10.0",
-    "php": ">=5.6.0"
-  },
-  "require-dev": {
-    "buddypress/bp-coding-standards": "dev-trunk",
-    "wp-phpunit/wp-phpunit": "^6.2",
-    "yoast/phpunit-polyfills": "^1.0"
-  },
-  "scripts": {
-    "phpcs" : "phpcs . --basepath=.",
-    "phpcbf": "phpcbf . --basepath=.",
-    "phpunit": "phpunit",
-    "phpunit:mu": "phpunit -c tests/multisite.xml"
-  },
-  "config": {
-    "allow-plugins": {
-      "composer/installers": true,
-      "dealerdirect/phpcodesniffer-composer-installer": true
-    }
-  }
+	"name": "buddypress/bp-rest",
+	"description": "Access your BuddyPress site's data through an easy-to-use HTTP REST API.",
+	"type": "wordpress-plugin",
+	"keywords": [
+		"bp-rest",
+		"bp-rest-api",
+		"buddypress",
+		"rest",
+		"plugin"
+	],
+	"homepage": "https://buddypress.org",
+	"license": "GPL-2.0-or-later",
+	"authors": [
+		{
+			"name": "BuddyPress Community",
+			"homepage": "https://buddypress.org/about/"
+		}
+	],
+	"support": {
+		"forum": "https://buddypress.org/support/",
+		"docs": "https://codex.buddypress.org/",
+		"issues": "https://buddypress.trac.wordpress.org/",
+		"rss": "https://buddypress.org/feed/",
+		"source": "https://buddypress.trac.wordpress.org/browser/",
+		"wiki": "https://codex.buddypress.org/"
+	},
+	"repositories": [
+		{
+			"url": "https://github.com/buddypress/bp-coding-standards.git",
+			"type": "git"
+		}
+	],
+	"require": {
+		"composer/installers": "^1.10.0",
+		"php": ">=5.6.0"
+	},
+	"require-dev": {
+		"buddypress/bp-coding-standards": "dev-trunk",
+		"wp-phpunit/wp-phpunit": "^6.4",
+		"yoast/phpunit-polyfills": "^1.0"
+	},
+	"scripts": {
+		"phpcs": "phpcs . --basepath=.",
+		"phpcbf": "phpcbf . --basepath=.",
+		"phpunit": "phpunit",
+		"phpunit:mu": "phpunit -c tests/multisite.xml"
+	},
+	"config": {
+		"allow-plugins": {
+			"composer/installers": true,
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		}
+	}
 }

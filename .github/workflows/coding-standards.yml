@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: ['8.0']
+        php: ['8.2']
 
     steps:
       - name: Cancel previous runs of this workflow (pull requests only)
@@ -22,7 +22,7 @@ jobs:
           access_token: ${{ github.token }}
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
