@@ -1,27 +1,27 @@
 {
-  "name": "buddypress",
-  "description": "REST API endpoints for BuddyPress",
-  "homepage": "https://buddypress.org",
-  "license": "GPL-2.0-or-later",
-  "author": "BuddyPress Community",
-  "keywords": [
-    "bp-rest",
-    "bp-rest-api",
-    "buddypress",
-    "plugin"
-  ],
-  "devDependencies": {
-    "@wordpress/env": "^5.6.0"
-  },
-  "engines": {
-    "node": ">=14.15.0",
-    "npm": ">=6.14.8"
-  },
-  "scripts": {
-    "preinstall": "npx check-node-version --package",
-    "prewp-env": "npx check-node-version --package",
-    "wp-env": "wp-env",
-    "phpunit": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/tests/env.xml'",
-    "phpunit:mu": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/tests/env.multisite.xml'"
-  }
+	"name": "buddypress",
+	"description": "REST API endpoints for BuddyPress",
+	"homepage": "https://buddypress.org",
+	"license": "GPL-2.0-or-later",
+	"author": "BuddyPress Community",
+	"keywords": [
+		"bp-rest",
+		"bp-rest-api",
+		"buddypress",
+		"plugin"
+	],
+	"devDependencies": {
+		"@wordpress/env": "^5.6.0"
+	},
+	"engines": {
+		"node": ">=14.15.0",
+		"npm": ">=6.14.8"
+	},
+	"scripts": {
+		"preinstall": "npx check-node-version --package",
+		"prewp-env": "npx check-node-version --package",
+		"wp-env": "wp-env",
+		"phpunit": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/tests/env.xml'",
+		"phpunit:mu": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/tests/env.multisite.xml'"
+	}
 }

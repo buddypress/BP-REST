@@ -4,7 +4,7 @@ Donate link:       https://buddypress.org
 Requires at least: 5.8
 Tested up to:      6.4
 Requires PHP:      5.6
-Stable tag:        0.8.0
+Stable tag:        0.9.0
 License:           GNU General Public License v2 or later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 
