@@ -1079,7 +1079,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 	 * @param  BP_Groups_Group $group Group object.
 	 * @return bool
 	 */
-	protected function can_see( $group ) {
+	public function can_see( $group ) {
 		// If it is not a hidden group, user can see it.
 		if ( 'hidden' !== $group->status ) {
 			return true;
