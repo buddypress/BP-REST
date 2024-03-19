@@ -87,7 +87,7 @@ jobs:
         if: ${{ success() || failure() }}
 
       - name: Running multisite unit tests
-        run: npm run test-php-multiste
+        run: npm run test-php-multisite
         if: ${{ success() || failure() }}
 
       - name: Stop Docker environment
