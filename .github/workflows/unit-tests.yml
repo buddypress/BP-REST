@@ -45,6 +45,11 @@ jobs:
           tools: composer:v2
           coverage: none
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '>=20.10.0'
+
       - name: Install Composer dependencies
         uses: ramsey/composer-install@v2
         with:
@@ -64,7 +69,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: Validate node modules
-        run: if [[ -f package.json ]]; then npm audit --audit-level=high --production --cache ~/.npm; fi
+        run: if [[ -f package.json ]]; then npm audit --audit-level=high --omit=dev --cache ~/.npm; fi
 
       - name: Install node modules
         run: npm ci --cache ~/.npm
