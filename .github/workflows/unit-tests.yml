@@ -20,7 +20,7 @@ jobs:
           - php: '7.4'
             wp_version: '6.4'
           - php: '7.4'
-            wp_version: '5.8'
+            wp_version: '6.1'
     env:
       WP_ENV_PHP_VERSION: ${{ matrix.php }}
       WP_VERSION: ${{ matrix.wp_version }}
@@ -28,12 +28,12 @@ jobs:
     steps:
       - name: Cancel previous runs of this workflow (pull requests only)
         if: ${{ github.event_name == 'pull_request' }}
-        uses: styfle/cancel-workflow-action@0.12.0
+        uses: styfle/cancel-workflow-action@0.12.1
         with:
           access_token: ${{ github.token }}
 
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check Gitignored files
         run: if [[ ! -z $(git ls-files -i --exclude-standard) ]]; then exit 1; fi
@@ -45,19 +45,18 @@ jobs:
           tools: composer:v2
           coverage: none
 
-      - name: Install Composer dependencies
-        uses: ramsey/composer-install@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          composer-options: "--ignore-platform-reqs"
+          node-version: '>=20.10.0'
 
-      - name: Adapt WP PHPUnit version for WP < 6.1
-        run: |
-          if [ ${{ env.WP_VERSION }} == '5.8' ]; then
-            composer require wp-phpunit/wp-phpunit:6.0 --dev --ignore-platform-reqs
-          fi
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v3
+        with:
+          composer-options: "--ignore-platform-reqs --optimize-autoloader"
 
       - name: Cache node modules
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         env:
           cache-name: cache-node-modules
         with:
@@ -70,7 +69,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: Validate node modules
-        run: if [[ -f package.json ]]; then npm audit --audit-level=high --production --cache ~/.npm; fi
+        run: if [[ -f package.json ]]; then npm audit --audit-level=high --omit=dev --cache ~/.npm; fi
 
       - name: Install node modules
         run: npm ci --cache ~/.npm
@@ -84,11 +83,11 @@ jobs:
           npm run wp-env start -- --update
 
       - name: Running single site unit tests
-        run: npm run phpunit
+        run: npm run test-php
         if: ${{ success() || failure() }}
 
       - name: Running multisite unit tests
-        run: npm run phpunit:mu
+        run: npm run test-php-multisite
         if: ${{ success() || failure() }}
 
       - name: Stop Docker environment
