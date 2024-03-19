@@ -83,11 +83,11 @@ jobs:
           npm run wp-env start -- --update
 
       - name: Running single site unit tests
-        run: npm run phpunit
+        run: npm run test-php
         if: ${{ success() || failure() }}
 
       - name: Running multisite unit tests
-        run: npm run phpunit:mu
+        run: npm run test-php-multiste
         if: ${{ success() || failure() }}
 
       - name: Stop Docker environment
