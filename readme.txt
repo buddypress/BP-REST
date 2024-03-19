@@ -1,7 +1,7 @@
 === BP-REST ===
 Contributors:      The BuddyPress Community
 Donate link:       https://buddypress.org
-Requires at least: 5.8
+Requires at least: 6.1
 Tested up to:      6.4
 Requires PHP:      5.6
 Stable tag:        0.9.0

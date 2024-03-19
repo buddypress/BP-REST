@@ -10,13 +10,13 @@ We have extensive documentation of each endpoint/components and their CRUD actio
 
 ## System Requirements (relevant for CI tests only)
 
-* PHP >= 5.6
-* WP >= 5.8
+* PHP >= 7.4
+* WP >= 6.1
 * BuddyPress >= Latest
 
 ## Installation
 
-Drop this plugin in the wp-content/plugins directory and activate it. You need at least [WordPress 5.8](https://wordpress.org/download/) and [BuddyPress](https://buddypress.org/download/) to use the plugin.
+Drop this plugin in the wp-content/plugins directory and activate it. You need at least [WordPress 6.1](https://wordpress.org/download/) and [BuddyPress](https://buddypress.org/download/) to use the plugin.
 
 ## About
 
