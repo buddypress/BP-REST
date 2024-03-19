@@ -25,6 +25,12 @@
 		"source": "https://buddypress.trac.wordpress.org/browser/",
 		"wiki": "https://codex.buddypress.org/"
 	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true,
+			"composer/installers": true
+		}
+	},
 	"require": {
 		"php": ">=5.6.0"
 	},
@@ -33,15 +39,10 @@
 		"yoast/phpunit-polyfills": "^1.0"
 	},
 	"scripts": {
-		"phpcs": "phpcs . --basepath=.",
-		"phpcbf": "phpcbf . --basepath=.",
-		"phpunit": "phpunit",
-		"phpunit:mu": "phpunit -c tests/multisite.xml"
-	},
-	"config": {
-		"allow-plugins": {
-			"dealerdirect/phpcodesniffer-composer-installer": true,
-			"composer/installers": true
-		}
+		"test": "@php ./vendor/phpunit/phpunit/phpunit",
+		"test_multi": "@php ./vendor/phpunit/phpunit/phpunit -c tests/multisite.xml",
+		"phpunit": "@test",
+		"phpcs": "@php ./vendor/bin/phpcs . --basepath=.",
+		"phpcbf": "@php ./vendor/bin/phpcbf . --basepath=."
 	}
 }

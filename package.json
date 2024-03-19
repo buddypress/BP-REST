@@ -24,7 +24,7 @@
 		"preinstall": "npx check-node-version --package",
 		"prewp-env": "npx check-node-version --package",
 		"wp-env": "wp-env",
-		"phpunit": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/tests/env.xml'",
-		"phpunit:mu": "npm run wp-env run phpunit 'php /var/www/html/wp-content/plugins/BP-REST/vendor/phpunit/phpunit/phpunit -c /var/www/html/wp-content/plugins/BP-REST/tests/env.multisite.xml'"
+		"test-php": "npm run wp-env run cli -- --env-cwd=wp-content/plugins/BP-REST/ composer test",
+		"test-php-multisite": "npm run wp-env run cli -- --env-cwd=wp-content/plugins/BP-REST composer test_multi"
 	}
 }
