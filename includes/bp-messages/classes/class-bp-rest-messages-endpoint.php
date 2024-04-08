@@ -875,8 +875,8 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		$display_name = '';
 		$user_info    = get_userdata( (int) $recipient->user_id );
 
-		if ( $user_info instanceof WP_User ) {
-			$display_name = $user_info->display_name;
+		if ( $user_info instanceof WP_User && ! empty( $user_info->display_name ) ) {
+			$display_name = (string) $user_info->display_name;
 		}
 
 		$data      = array(
