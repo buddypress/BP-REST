@@ -314,6 +314,49 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 
 	/**
 	 * @group update_item
+	 *
+	 * @ticket https://buddypress.trac.wordpress.org/ticket/9127
+	 */
+	public function test_update_textbox_with_apostrophe_value() {
+		$field_id = $this->bp_factory->xprofile_field->create(
+			[
+				'type'           => 'textbox',
+				'field_group_id' => $this->group_id,
+				'value'          => 'textbox field',
+			]
+		);
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $field_id, $this->user ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data( [ 'value' => "I don't travel often" ] );
+		$request->set_param( 'context', 'edit' );
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$data = $response->get_data();
+
+		$this->assertNotEmpty( $data );
+		$this->assertEquals( $data[0]['value']['raw'], "I don't travel often" );
+
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $field_id, $this->user ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data( [ 'value' => "I don\\'t travel often" ] );
+		$request->set_param( 'context', 'edit' );
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$data = $response->get_data();
+
+		$this->assertNotEmpty( $data );
+		$this->assertEquals( $data[0]['value']['raw'], "I don't travel often" );
+	}
+
+	/**
+	 * @group update_item
 	 */
 	public function test_update_selectbox() {
 		$field_id = $this->bp_factory->xprofile_field->create(
