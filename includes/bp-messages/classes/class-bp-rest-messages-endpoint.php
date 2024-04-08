@@ -879,7 +879,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			$display_name = (string) $user_info->display_name;
 		}
 
-		$data      = array(
+		$data = array(
 			'id'           => (int) $recipient->id,
 			'is_deleted'   => (int) $recipient->is_deleted,
 			'name'         => $display_name,
