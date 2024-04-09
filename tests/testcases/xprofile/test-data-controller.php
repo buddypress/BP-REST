@@ -283,6 +283,108 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 
 	/**
 	 * @group update_item
+	 *
+	 * @ticket https://buddypress.trac.wordpress.org/ticket/9127
+	 */
+	public function test_update_multiselectbox_with_apostrophe_value() {
+		$field_id = $this->bp_factory->xprofile_field->create(
+			[
+				'type'           => 'multiselectbox',
+				'field_group_id' => $this->group_id
+			]
+		);
+		xprofile_insert_field(
+			[
+				'field_group_id' => $this->group_id,
+				'parent_id'      => $field_id,
+				'type'           => 'option',
+				'name'           => 'Option 1',
+			]
+		);
+
+		xprofile_insert_field(
+			[
+				'field_group_id' => $this->group_id,
+				'parent_id'      => $field_id,
+				'type'           => 'option',
+				'name'           => "I don't travel often",
+			]
+		);
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $field_id, $this->user ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data( [ 'value' => "I don\'t travel often" ] );
+
+		$request->set_param( 'context', 'edit' );
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
+
+		$this->assertEquals( $data[0]['value']['unserialized'], [ "I don\'t travel often" ] );
+		$this->assertEquals( $data[0]['value']['raw'], "a:1:{i:0;s:21:\"I don\\'t travel often\";}" );
+	}
+
+	/**
+	 * @group update_item
+	 *
+	 * @ticket https://buddypress.trac.wordpress.org/ticket/9127
+	 */
+	public function test_update_checkbox_with_apostrophe_value() {
+		$field_id = $this->bp_factory->xprofile_field->create(
+			[
+				'type'           => 'checkbox',
+				'field_group_id' => $this->group_id
+			]
+		);
+		xprofile_insert_field(
+			[
+				'field_group_id' => $this->group_id,
+				'parent_id'      => $field_id,
+				'type'           => 'option',
+				'name'           => 'Option 1',
+			]
+		);
+
+		xprofile_insert_field(
+			[
+				'field_group_id' => $this->group_id,
+				'parent_id'      => $field_id,
+				'type'           => 'option',
+				'name'           => "I don't travel often",
+			]
+		);
+
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/data/%d', $field_id, $this->user ) );
+		$request->add_header( 'content-type', 'application/json' );
+
+		$params = $this->set_field_data( [ 'value' => "I don\'t travel often" ] );
+
+		$request->set_param( 'context', 'edit' );
+		$request->set_body( wp_json_encode( $params ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertNotInstanceOf( 'WP_Error', $response );
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertNotEmpty( $data );
+
+		$this->assertEquals( $data[0]['value']['unserialized'], [ "I don\'t travel often" ] );
+		$this->assertEquals( $data[0]['value']['raw'], "a:1:{i:0;s:21:\"I don\\'t travel often\";}" );
+	}
+
+	/**
+	 * @group update_item
 	 */
 	public function test_update_textbox() {
 		$field_id = $this->bp_factory->xprofile_field->create(
