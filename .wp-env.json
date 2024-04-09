@@ -1,6 +1,6 @@
 {
   "core": "WordPress/WordPress#master",
-  "plugins": ["buddypress/buddypress#master", "."],
+  "plugins": ["buddypress/buddypress#feature/9127", "."],
   "config": {
     "WP_DEBUG": true,
     "SCRIPT_DEBUG": true
