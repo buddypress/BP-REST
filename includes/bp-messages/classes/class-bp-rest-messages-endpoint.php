@@ -872,11 +872,17 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 * @return array                     The recipient data for the REST response.
 	 */
 	public function prepare_recipient_for_response( $recipient, $request ) {
-		$user_info = get_userdata( (int) $recipient->user_id );
-		$data      = array(
+		$display_name = '';
+		$user_info    = get_userdata( (int) $recipient->user_id );
+
+		if ( $user_info instanceof WP_User && ! empty( $user_info->display_name ) ) {
+			$display_name = (string) $user_info->display_name;
+		}
+
+		$data = array(
 			'id'           => (int) $recipient->id,
 			'is_deleted'   => (int) $recipient->is_deleted,
-			'name'         => (string) $user_info->display_name,
+			'name'         => $display_name,
 			'sender_only'  => (int) $recipient->sender_only,
 			'thread_id'    => (int) $recipient->thread_id,
 			'unread_count' => (int) $recipient->unread_count,
