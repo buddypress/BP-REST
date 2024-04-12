@@ -91,7 +91,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			'/' . $this->rest_base . '/resend/(?P<id>[\w-]+)',
 			array(
-				'args'   => array(
+				'args' => array(
 					'id' => array(
 						'description' => __( 'Identifier for the signup. Can be a signup ID, an email address, or an activation key.', 'buddypress' ),
 						'type'        => 'string',
@@ -695,7 +695,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$request->set_param( 'context', 'edit' );
 
 		$signup_id = $request->get_param( 'id' );
-		$send      = \BP_Signup::resend( [ $signup_id ] );
+		$send      = \BP_Signup::resend( array( $signup_id ) );
 
 		if ( ! empty( $send['errors'] ) ) {
 			return new WP_Error(
@@ -707,7 +707,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			);
 		}
 
-		$response = rest_ensure_response( [ 'sent' => true ] );
+		$response = rest_ensure_response( array( 'sent' => true ) );
 
 		/**
 		 * Fires after an activation email was (re)sent via the REST API.
