@@ -13,6 +13,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * Use /signup
  * Use /signup/{id}
+ * Use /signup/resend/{id}
  * Use /signup/activate/{id}
  *
  * @since 6.0.0
@@ -108,6 +109,28 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 				'schema' => array( $this, 'get_item_schema' ),
 			)
 		);
+
+		// Register the resend route.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/resend/(?P<id>[\w-]+)',
+			array(
+				'args' => array(
+					'id' => array(
+						'description' => __( 'Identifier for the signup. Can be a signup ID, an email address, or an activation key.', 'buddypress' ),
+						'type'        => 'string',
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( $this, 'signup_resend_activation_email' ),
+					'permission_callback' => array( $this, 'signup_resend_activation_email_permissions_check' ),
+					'args'                => array(
+						'context' => $this->get_context_param( array( 'default' => 'edit' ) ),
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -178,16 +201,16 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
-		$error  = new WP_Error(
+		$retval = new WP_Error(
 			'bp_rest_authorization_required',
 			__( 'Sorry, you are not authorized to perform this action.', 'buddypress' ),
 			array(
 				'status' => rest_authorization_required_code(),
 			)
 		);
-		$retval = $error;
 
 		$capability = 'edit_users';
+
 		if ( is_multisite() ) {
 			$capability = 'manage_network_users';
 		}
@@ -202,8 +225,6 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			);
 		} elseif ( bp_current_user_can( $capability ) ) {
 			$retval = true;
-		} else {
-			$retval = $error;
 		}
 
 		/**
@@ -660,6 +681,78 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		 * @param WP_REST_Request $request The request sent to the API.
 		 */
 		return apply_filters( 'bp_rest_signup_activate_item_permissions_check', $retval, $request );
+	}
+
+	/**
+	 * Resend the activation email.
+	 *
+	 * @since 9.0.0
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function signup_resend_activation_email( $request ) {
+		$request->set_param( 'context', 'edit' );
+
+		$signup_id = $request->get_param( 'id' );
+		$send      = \BP_Signup::resend( array( $signup_id ) );
+
+		if ( ! empty( $send['errors'] ) ) {
+			return new WP_Error(
+				'bp_rest_signup_resend_activation_email_fail',
+				__( 'Your account has already been activated.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		$response = rest_ensure_response( array( 'sent' => true ) );
+
+		/**
+		 * Fires after an activation email was (re)sent via the REST API.
+		 *
+		 * @since 9.0.0
+		 *
+		 * @param WP_REST_Response $response The response data.
+		 * @param WP_REST_Request  $request  The request sent to the API.
+		 */
+		do_action( 'bp_rest_signup_resend_activation_email', $response, $request );
+
+		return $response;
+	}
+
+	/**
+	 * Check if a given request has access to resend the activation email.
+	 *
+	 * @since 9.0.0
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 * @return true|WP_Error
+	 */
+	public function signup_resend_activation_email_permissions_check( $request ) {
+		$retval = true;
+		$signup = $this->get_signup_object( $request->get_param( 'id' ) );
+
+		if ( empty( $signup ) ) {
+			$retval = new WP_Error(
+				'bp_rest_invalid_id',
+				__( 'Invalid signup id.', 'buddypress' ),
+				array(
+					'status' => 404,
+				)
+			);
+		}
+
+		/**
+		 * Filter the signup resend activation email permissions check.
+		 *
+		 * @since 9.0.0
+		 *
+		 * @param true|WP_Error   $retval  Returned value.
+		 * @param WP_REST_Request $request The request sent to the API.
+		 */
+		return apply_filters( 'bp_rest_signup_resend_activation_email_permissions_check', $retval, $request );
 	}
 
 	/**
