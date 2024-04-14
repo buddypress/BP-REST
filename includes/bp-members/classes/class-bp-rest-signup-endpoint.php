@@ -86,28 +86,6 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		// Register the resend route.
-		register_rest_route(
-			$this->namespace,
-			'/' . $this->rest_base . '/resend/(?P<id>[\w-]+)',
-			array(
-				'args' => array(
-					'id' => array(
-						'description' => __( 'Identifier for the signup. Can be a signup ID, an email address, or an activation key.', 'buddypress' ),
-						'type'        => 'string',
-					),
-				),
-				array(
-					'methods'             => WP_REST_Server::EDITABLE,
-					'callback'            => array( $this, 'signup_resend_activation_email' ),
-					'permission_callback' => array( $this, 'signup_resend_activation_email_permissions_check' ),
-					'args'                => array(
-						'context' => $this->get_context_param( array( 'default' => 'edit' ) ),
-					),
-				),
-			)
-		);
-
 		// Register the activate route.
 		register_rest_route(
 			$this->namespace,
@@ -129,6 +107,28 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 					),
 				),
 				'schema' => array( $this, 'get_item_schema' ),
+			)
+		);
+
+		// Register the resend route.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/resend/(?P<id>[\w-]+)',
+			array(
+				'args' => array(
+					'id' => array(
+						'description' => __( 'Identifier for the signup. Can be a signup ID, an email address, or an activation key.', 'buddypress' ),
+						'type'        => 'string',
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( $this, 'signup_resend_activation_email' ),
+					'permission_callback' => array( $this, 'signup_resend_activation_email_permissions_check' ),
+					'args'                => array(
+						'context' => $this->get_context_param( array( 'default' => 'edit' ) ),
+					),
+				),
 			)
 		);
 	}

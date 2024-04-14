@@ -74,6 +74,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\w-]+)', $routes );
 		$this->assertCount( 2, $routes[ $this->endpoint_url . '/(?P<id>[\w-]+)' ] );
 		$this->assertCount( 1, $routes[ $this->endpoint_url . '/activate/(?P<activation_key>[\w-]+)' ] );
+		$this->assertCount( 1, $routes[ $this->endpoint_url . '/resend/(?P<id>[\w-]+)' ] );
 	}
 
 	/**
@@ -92,11 +93,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
-		$request->set_query_params(
-			array(
-				'include' => $s1,
-			)
-		);
+		$request->set_query_params( array( 'include' => $s1 ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -365,6 +362,52 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
+	/**
+	 * @group resend_item
+	 */
+	public function test_resend_activation_email() {
+		$s1 = $this->create_signup();
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/resend/%d', $s1 ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$this->assertTrue( $all_data['sent'] );
+	}
+
+	/**
+	 * @group resend_item
+	 */
+	public function test_resend_activation_email_to_active_signup() {
+		if ( is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$signup_id = $this->create_signup();
+		$signup    = new BP_Signup( $signup_id );
+
+		bp_core_activate_signup( $signup->activation_key );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/resend/%d', $signup_id ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_signup_resend_activation_email_fail', $response, 500 );
+	}
+
+	/**
+	 * @group resend_item
+	 */
+	public function test_resend_activation_email_invalid_signup_id() {
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/resend/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
+	}
+
 	public function test_prepare_item() {
 
 		if ( is_multisite() ) {
@@ -400,7 +443,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	protected function create_signup() {
-		$signup = BP_Signup::add(
+		return BP_Signup::add(
 			array(
 				'user_login'     => 'user' . wp_rand( 1, 20 ),
 				'user_email'     => sprintf( 'user%d@example.com', wp_rand( 1, 20 ) ),
@@ -413,10 +456,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 				),
 			)
 		);
-
-		$s = new BP_Signup( $signup );
-
-		return $s->id;
 	}
 
 	protected function check_signup_data( $signup, $data ) {
