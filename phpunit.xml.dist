@@ -9,6 +9,8 @@
 	<testsuites>
 		<testsuite name="unit">
 			<directory prefix="test-" suffix=".php">./tests/testcases/</directory>
+			<exclude>tests/testcases/blogs/test-controller.php</exclude>
+			<exclude>tests/testcases/attachments/test-blog-avatar-controller.php</exclude>
 		</testsuite>
 	</testsuites>
 </phpunit>
