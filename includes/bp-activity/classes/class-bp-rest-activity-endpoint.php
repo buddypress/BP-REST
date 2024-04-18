@@ -1149,7 +1149,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		}
 
 		// Embed Blog.
-		if ( bp_is_active( 'blogs' ) && buddypress()->blogs->id === $activity->component && ! empty( $activity->item_id ) ) {
+		if ( is_multisite() && bp_is_active( 'blogs' ) && buddypress()->blogs->id === $activity->component && ! empty( $activity->item_id ) ) {
 			$links['blog'] = array(
 				'embeddable' => true,
 				'href'       => rest_url(
