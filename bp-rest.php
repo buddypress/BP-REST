@@ -86,7 +86,7 @@ function bp_rest() {
 		$controller->register_routes();
 	}
 
-	if ( bp_is_active( 'blogs' ) ) {
+	if ( is_multisite() && bp_is_active( 'blogs' ) ) {
 		require_once dirname( __FILE__ ) . '/includes/bp-blogs/classes/class-bp-rest-blogs-endpoint.php';
 		$controller = new BP_REST_Blogs_Endpoint();
 		$controller->register_routes();

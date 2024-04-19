@@ -692,7 +692,7 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 		}
 
 		// Embed Blog.
-		if ( bp_is_active( 'blogs' ) && buddypress()->blogs->id === $notification->component_name && ! empty( $notification->item_id ) ) {
+		if ( is_multisite() && bp_is_active( 'blogs' ) && buddypress()->blogs->id === $notification->component_name && ! empty( $notification->item_id ) ) {
 			$links['blog'] = array(
 				'embeddable' => true,
 				'href'       => rest_url(
