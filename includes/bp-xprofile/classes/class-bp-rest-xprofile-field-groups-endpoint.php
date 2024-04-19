@@ -152,6 +152,7 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 			'exclude_groups'         => $request->get_param( 'exclude_groups' ),
 			'exclude_fields'         => $request->get_param( 'exclude_fields' ),
 			'update_meta_cache'      => $request->get_param( 'update_meta_cache' ),
+			'signup_fields_only'     => $request->get_param( 'signup_fields_only' ),
 		);
 
 		if ( empty( $request->get_param( 'member_type' ) ) ) {
@@ -855,6 +856,14 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 
 		$params['fetch_fields'] = array(
 			'description'       => __( 'Whether to fetch the fields for each group.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['signup_fields_only'] = array(
+			'description'       => __( 'Whether to only return signup fields.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',
