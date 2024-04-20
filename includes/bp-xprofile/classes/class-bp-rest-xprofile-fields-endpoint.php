@@ -130,6 +130,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'exclude_groups'         => $request->get_param( 'exclude_groups' ),
 			'exclude_fields'         => $request->get_param( 'exclude_fields' ),
 			'update_meta_cache'      => $request->get_param( 'update_meta_cache' ),
+			'signup_fields_only'     => $request->get_param( 'signup_fields_only' ),
 			'fetch_fields'           => true,
 		);
 
@@ -152,8 +153,13 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		 */
 		$args = apply_filters( 'bp_rest_xprofile_fields_get_items_query_args', $args, $request );
 
-		// Actually, query it.
-		$field_groups = bp_xprofile_get_groups( $args );
+		/**
+		 * Actually, query it.
+		 *
+		 * Let's not use `bp_xprofile_get_groups`, since `BP_XProfile_Data_Template` handles signup fields better.
+		 */
+		$template_query = new BP_XProfile_Data_Template( $args );
+		$field_groups   = (array) $template_query->groups;
 
 		$retval = array();
 		foreach ( $field_groups as $group ) {
@@ -167,11 +173,11 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 		$response = rest_ensure_response( $retval );
 
 		/**
-		 * Fires after a list of field are fetched via the REST API.
+		 * Fires after a list of XProfile group fields are fetched via the REST API.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array            $field_groups  Fetched field groups.
+		 * @param array            $field_groups Fetched field groups.
 		 * @param WP_REST_Response $response     The response data.
 		 * @param WP_REST_Request  $request      The request sent to the API.
 		 */
@@ -736,7 +742,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 			'is_default_option' => (bool) $field->is_default_option,
 		);
 
-		if ( ! empty( $request->get_param( 'fetch_visibility_level' ) ) ) {
+		if ( ! empty( $request->get_param( 'fetch_visibility_level' ) && ! empty( $field->visibility_level ) ) ) {
 			$data['visibility_level'] = $field->visibility_level;
 		}
 
@@ -783,7 +789,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 */
 	protected function prepare_links( $field ) {
 		$base       = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$group_base = sprintf( '/%s/%s/', $this->namespace, '/xprofile/groups/' );
+		$group_base = sprintf( '/%s/%s/', $this->namespace, '/xprofile/groups' );
 
 		// Entity meta.
 		$links = array(
@@ -1183,6 +1189,14 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 
 		$params['fetch_field_data'] = array(
 			'description'       => __( 'Whether to fetch data for each field. Requires a $user_id.', 'buddypress' ),
+			'default'           => false,
+			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
+			'validate_callback' => 'rest_validate_request_arg',
+		);
+
+		$params['signup_fields_only'] = array(
+			'description'       => __( 'Whether to only return signup fields.', 'buddypress' ),
 			'default'           => false,
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',

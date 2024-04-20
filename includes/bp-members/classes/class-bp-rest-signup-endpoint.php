@@ -338,7 +338,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		// Init the signup meta.
 		$meta = array();
 
-		// Init Some Multisite specific variables.
+		// Init some Multisite specific variables.
 		$domain     = '';
 		$path       = '';
 		$site_title = '';
@@ -402,11 +402,76 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		// Hash and store the password.
 		$meta['password'] = wp_hash_password( $password );
 
-		$user_name = $request->get_param( 'user_name' );
-		if ( $user_name ) {
-			$meta['field_1']           = $user_name;
-			$meta['profile_field_ids'] = 1;
+		$signup_field_data = $request->get_param( 'signup_field_data' );
+		$profile_field_ids = array();
+
+		// Store the profile field data.
+		if ( bp_is_active( 'xprofile' ) && ! empty( $signup_field_data ) ) {
+			foreach ( (array) $signup_field_data as $field_data ) {
+				$field_id         = $field_data['field_id'];
+				$field_value      = $field_data['value'];
+				$field_visibility = $field_data['visibility'];
+
+				$field = xprofile_get_field( $field_id );
+
+				if ( ! $field instanceof BP_XProfile_Field ) {
+					continue;
+				}
+
+				$profile_field_ids[] = $field_id;
+				$field_value         = array_map( 'trim', explode( ', ', $field_value ) );
+
+				if ( false === (bool) $field->type_obj->supports_multiple_defaults ) {
+					$field_value = reset( $field_value );
+				}
+
+				/**
+				 * Handle datebox field values.
+				 *
+				 * We expect a date in the format 'Y-m-d'.
+				 */
+				if ( 'datebox' === $field->type ) {
+					// @todo update to use `gmdate` when BP core does it too.
+					$field_value = date( 'Y-m-d H:i:s', strtotime( $field_value ) ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+				}
+
+				if ( ! empty( $field_value ) ) {
+					$meta[ 'field_' . $field_id ] = $field_value;
+				}
+
+				if ( ! empty( $field_visibility ) ) {
+					$meta[ 'field_' . $field_id . '_visibility' ] = $field_visibility;
+				}
+			}
 		}
+
+		/**
+		 * If not using the XProfile signup fields,
+		 * save the user name using the legacy field.
+		 *
+		 * This will be deprecated in v2 of the API.
+		 */
+		$fullname_field_id = bp_xprofile_fullname_field_id();
+		$user_name         = $request->get_param( 'user_name' );
+		if ( ! empty( $user_name ) && ! isset( $meta[ 'field_' . $fullname_field_id ] ) ) {
+			$meta[ 'field_' . $fullname_field_id ] = $user_name;
+			$profile_field_ids[]                   = $fullname_field_id;
+		}
+
+		$profile_field_ids = array_unique( wp_parse_id_list( $profile_field_ids ) );
+
+		if ( ! in_array( $fullname_field_id, $profile_field_ids, true ) ) {
+			return new WP_Error(
+				'bp_rest_signup_no_name_field',
+				__( 'The Name field is required.', 'buddypress' ),
+				array(
+					'status' => 500,
+				)
+			);
+		}
+
+		// Store the profile field ID's in meta.
+		$meta['profile_field_ids'] = implode( ',', $profile_field_ids );
 
 		if ( is_multisite() ) {
 			// On Multisite, use the WordPress way to generate the activation key.
@@ -422,6 +487,13 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		} else {
 			$activation_key = wp_generate_password( 32, false );
 		}
+
+		/**
+		 * Filters the user meta used for signup.
+		 *
+		 * @param array $meta Array of user meta to add to signup.
+		 */
+		$meta = apply_filters( 'bp_signup_usermeta', $meta );
 
 		/**
 		 * Allow plugins to add their signup meta specific to the BP REST API.
@@ -766,13 +838,13 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 */
 	public function prepare_item_for_response( $signup, $request ) {
 		$data = array(
-			'id'             => $signup->id,
+			'id'             => (int) $signup->id,
 			'user_login'     => $signup->user_login,
 			'registered'     => bp_rest_prepare_date_response( $signup->registered, get_date_from_gmt( $signup->registered ) ),
 			'registered_gmt' => bp_rest_prepare_date_response( $signup->registered ),
 		);
 
-		// The user name is only available when the xProfile component is active.
+		// The user name is only available when the XProfile component is active.
 		if ( isset( $signup->user_name ) ) {
 			$data['user_name'] = $signup->user_name;
 		}
@@ -780,11 +852,10 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$context = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
 
 		if ( 'edit' === $context ) {
-			$data['activation_key'] = $signup->activation_key;
-			$data['user_email']     = $signup->user_email;
-			$data['date_sent']      = bp_rest_prepare_date_response( $signup->date_sent, get_date_from_gmt( $signup->date_sent ) );
-			$data['date_sent_gmt']  = bp_rest_prepare_date_response( $signup->date_sent );
-			$data['count_sent']     = (int) $signup->count_sent;
+			$data['user_email']    = $signup->user_email;
+			$data['date_sent']     = bp_rest_prepare_date_response( $signup->date_sent, get_date_from_gmt( $signup->date_sent ) );
+			$data['date_sent_gmt'] = bp_rest_prepare_date_response( $signup->date_sent );
+			$data['count_sent']    = (int) $signup->count_sent;
 
 			if ( is_multisite() && $signup->domain && $signup->path && $signup->title ) {
 				if ( is_subdomain_install() ) {
@@ -831,7 +902,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 *
 	 * @param int $identifier Signup identifier.
-	 * @return BP_Signup|bool
+	 * @return BP_Signup|false
 	 */
 	public function get_signup_object( $identifier ) {
 		if ( is_numeric( $identifier ) ) {
@@ -906,7 +977,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 6.0.0
 	 *
-	 * @param string $method Optional. HTTP method of the request.
+	 * @param string $method HTTP method of the request. Default is WP_REST_Server::CREATABLE.
 	 * @return array Endpoint arguments.
 	 */
 	public function get_endpoint_args_for_item_schema( $method = WP_REST_Server::CREATABLE ) {
@@ -923,6 +994,45 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 				'context'     => array(), // Password is never displayed.
 				'required'    => true,
 			);
+
+			if ( bp_is_active( 'xprofile' ) ) {
+				$args['signup_field_data'] = array(
+					'description' => __( 'The XProfile field data for the new user.', 'buddypress' ),
+					'type'        => 'array',
+					'context'     => array( 'edit' ),
+					// @todo Make it required in v2 of the API.
+					'required'    => false,
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'field_id'   => array(
+								'description'       => __( 'The XProfile field ID.', 'buddypress' ),
+								'required'          => true,
+								'type'              => 'integer',
+								'sanitize_callback' => 'absint',
+								'validate_callback' => 'rest_validate_request_arg',
+							),
+							'value'      => array(
+								'description'       => __( 'The value(s) (comma separated list of values needs to be used in case of multiple values) for the field data.', 'buddypress' ),
+								'default'           => '',
+								'required'          => false,
+								'type'              => 'string',
+								'sanitize_callback' => 'sanitize_text_field',
+								'validate_callback' => 'rest_validate_request_arg',
+							),
+							'visibility' => array(
+								'description'       => __( 'The visibility for the XProfile field.', 'buddypress' ),
+								'required'          => false,
+								'default'           => 'public',
+								'type'              => 'string',
+								'sanitize_callback' => 'sanitize_text_field',
+								'validate_callback' => 'rest_validate_request_arg',
+								'enum'              => array_keys( bp_xprofile_get_visibility_levels() ),
+							),
+						),
+					),
+				);
+			}
 
 			/**
 			 * We do not need the meta for the create item method
@@ -1021,14 +1131,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 					'meta'           => array(
 						'context'     => array( 'edit' ),
 						'description' => __( 'The signup meta information', 'buddypress' ),
-						'type'        => 'object',
-						'properties'  => array(
-							'password' => array(
-								'description' => __( 'Password for the new user (never included).', 'buddypress' ),
-								'type'        => 'string',
-								'context'     => array(), // Password is never displayed.
-							),
-						),
+						'type'        => array( 'object', 'null' ),
 					),
 				),
 			);
@@ -1038,7 +1141,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 					'context'     => array( 'view', 'edit' ),
 					'description' => __( 'The new user\'s full name.', 'buddypress' ),
 					'type'        => 'string',
-					'required'    => true,
+					'required'    => false,
 					'arg_options' => array(
 						'sanitize_callback' => 'sanitize_text_field',
 					),
@@ -1103,7 +1206,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 
 		$params['number'] = array(
 			'description'       => __( 'Total number of signups to return.', 'buddypress' ),
-			'default'           => 1,
+			'default'           => 10,
 			'type'              => 'integer',
 			'sanitize_callback' => 'absint',
 			'validate_callback' => 'rest_validate_request_arg',

@@ -182,11 +182,16 @@ class BP_REST_XProfile_Field_Groups_Endpoint extends WP_REST_Controller {
 		 */
 		$args = apply_filters( 'bp_rest_xprofile_field_groups_get_items_query_args', $args, $request );
 
-		// Actually, query it.
-		$field_groups = bp_xprofile_get_groups( $args );
+		/**
+		 * Actually, query it.
+		 *
+		 * Let's not use `bp_xprofile_get_groups`, since `BP_XProfile_Data_Template` handles signup fields better.
+		 */
+		$template_query = new BP_XProfile_Data_Template( $args );
+		$field_groups   = (array) $template_query->groups;
 
 		$retval = array();
-		foreach ( (array) $field_groups as $item ) {
+		foreach ( $field_groups as $item ) {
 			$retval[] = $this->prepare_response_for_collection(
 				$this->prepare_item_for_response( $item, $request )
 			);

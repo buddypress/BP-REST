@@ -245,11 +245,97 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$signup = $response->get_data();
+		$signup = current( $response->get_data() );
 
-		$this->assertSame( $signup[0]['user_email'], $params['user_email'] );
-		$this->assertSame( $signup[0]['user_name'], $params['user_name'] );
-		$this->assertTrue( ! isset( $signup[0]['activation_key'] ) || ! $signup[0]['activation_key'] );
+		$this->assertSame( $signup['user_email'], $params['user_email'] );
+		$this->assertSame( $signup['user_name'], $params['user_name'] );
+		$this->assertTrue( ! isset( $signup['activation_key'] ) );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_with_signup_field() {
+		$g1 = $this->bp_factory->xprofile_group->create();
+
+		$f1 = $this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'type'           => 'textbox',
+				'name'           => 'field1',
+			]
+		);
+
+		$f2 = $this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'type'           => 'checkbox',
+				'name'           => 'field2',
+			]
+		);
+
+		$this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'parent_id'      => $f2,
+				'type'           => 'option',
+				'name'           => 'Option 1',
+			]
+		);
+
+		$this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'parent_id'      => $f2,
+				'type'           => 'option',
+				'name'           => 'Option 2',
+			]
+		);
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
+
+		$params = $this->set_signup_data(
+			array(
+				'signup_field_data' => array(
+					array(
+						'field_id'   => $f1,
+						'value'      => 'Field 1 Value',
+						'visibility' => 'public'
+					),
+					array(
+						'field_id'   => $f2,
+						'value'      => 'Option 1, Option 2',
+						'visibility' => 'public'
+					),
+				),
+			)
+		);
+		$request->set_body_params( $params );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$signup = current( $response->get_data() );
+
+		$this->assertSame( $signup['user_email'], $params['user_email'] );
+		$this->assertSame( $signup['user_name'], $params['user_name'] );
+
+		// Check the textbox field.
+		$this->assertSame( $signup['meta'][ 'field_' . $f1 ], $params['signup_field_data'][0]['value'] );
+		$this->assertSame( $signup['meta'][ 'field_' . $f1 . '_visibility' ], $params['signup_field_data'][0]['visibility'] );
+
+		// Check the checkbox field.
+		$this->assertSame( $signup['meta'][ 'field_' . $f2 ], array_map( 'trim', explode( ', ', $params['signup_field_data'][1]['value'] ) ) );
+		$this->assertSame( $signup['meta'][ 'field_' . $f2 . '_visibility' ], $params['signup_field_data'][1]['visibility'] );
+
+		$field_ids = wp_parse_id_list( explode( ',', $signup['meta']['profile_field_ids'] ) );
+
+		$this->assertCount( 3, $field_ids );
+		$this->assertContains( bp_xprofile_fullname_field_id(), $field_ids );
+		$this->assertContains( $f1, $field_ids );
+		$this->assertContains( $f2, $field_ids );
 	}
 
 	/**
@@ -268,7 +354,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
-	 * @group update_item
 	 * @group activate_item
 	 */
 	public function test_update_item() {
@@ -286,7 +371,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
-	 * @group update_item
+	 * @group activate_item
 	 */
 	public function test_update_item_invalid_invalid_activation_key() {
 		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/activate/%s', 'randomkey' ) );
@@ -430,6 +515,12 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->check_signup_data( $signup, $all_data[0] );
 	}
 
+	/**
+	 * Set up signup data.
+	 *
+	 * @param array $args Signup data.
+	 * @return array
+	 */
 	protected function set_signup_data( $args = array() ) {
 		return wp_parse_args(
 			$args,
