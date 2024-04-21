@@ -185,6 +185,42 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_item
 	 */
+	public function test_get_item_messages() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$m  = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+			'content'    => 'Content',
+		) );
+
+		// create a reply.
+		$message_id = $this->bp_factory->message->create( array(
+			'sender_id'  => $u2,
+			'thread_id'  => $m->thread_id,
+			'recipients' => array( $u1 ),
+			'content'    => 'Bar',
+		) );
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m->thread_id );
+		$request->set_param( 'context', 'view' );
+		$request->set_param( 'messages_per_page', 1 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = current( $response->get_data() );
+
+		$this->assertCount( 1, $all_data['messages'] );
+		$this->assertSame( $message_id, $all_data['messages'][0]['id'] );
+	}
+
+	/**
+	 * @group get_item
+	 */
 	public function test_get_item_admin_access() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
@@ -231,6 +267,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertSame( 403, $response->get_status() );
 	}
 
 	/**
@@ -239,7 +276,8 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_item_user_is_not_logged_in() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
-		$u3 = $this->factory->user->create();
+		$this->factory->user->create();
+
 		$m  = $this->bp_factory->message->create_and_get( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2 ),
@@ -252,6 +290,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertSame( 401, $response->get_status() );
 	}
 
 	/**
