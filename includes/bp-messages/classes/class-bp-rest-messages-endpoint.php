@@ -12,8 +12,8 @@ defined( 'ABSPATH' ) || exit;
  * Messages endpoints.
  *
  * /messages/
- * /messages/{id}
  * /messages/{thread_id}
+ * /messages//starred{message_id}
  *
  * @since 0.1.0
  */
@@ -62,15 +62,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			$thread_endpoint,
 			array(
-				'args'   => array(
-					'id' => array(
-						'description'       => __( 'ID of the thread.', 'buddypress' ),
-						'type'              => 'integer',
-						'required'          => true,
-						'sanitize_callback' => 'absint',
-						'validate_callback' => 'rest_validate_request_arg',
-					),
-				),
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
@@ -102,12 +93,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 				$this->namespace,
 				$starred_endpoint,
 				array(
-					'args'   => array(
-						'id' => array(
-							'description' => __( 'ID of one of the message of the Thread.', 'buddypress' ),
-							'type'        => 'integer',
-						),
-					),
 					array(
 						'methods'             => WP_REST_Server::EDITABLE,
 						'callback'            => array( $this, 'update_starred' ),
@@ -681,6 +666,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		);
 
 		if ( is_user_logged_in() ) {
+			// The id here is for the message id.
 			$thread_id = messages_get_message_thread_id( $request->get_param( 'id' ) );
 
 			if ( messages_check_thread_access( $thread_id ) ) {

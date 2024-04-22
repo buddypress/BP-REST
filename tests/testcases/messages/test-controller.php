@@ -185,7 +185,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_messages() {
+	public function test_get_thread_messages_paginated() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
 		$m  = $this->bp_factory->message->create_and_get( array(
@@ -193,6 +193,14 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 			'recipients' => array( $u2 ),
 			'subject'    => 'Foo',
 			'content'    => 'Content',
+		) );
+
+		// create several messages.
+		$this->bp_factory->message->create_many( 10, array(
+			'thread_id'  => $m->thread_id,
+			'sender_id'  => $u2,
+			'recipients' => array( $u1 ),
+			'content'    => 'Bar',
 		) );
 
 		// create a reply.
@@ -215,6 +223,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$all_data = current( $response->get_data() );
 
 		$this->assertCount( 1, $all_data['messages'] );
+		$this->assertSame( $m->thread_id, $all_data['messages'][0]['thread_id'] );
 		$this->assertSame( $message_id, $all_data['messages'][0]['id'] );
 	}
 
