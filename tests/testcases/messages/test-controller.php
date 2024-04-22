@@ -220,6 +220,10 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 200, $response->get_status() );
 
+		$headers = $response->get_headers();
+		$this->assertEquals( 12, $headers['X-WP-Total'] );
+		$this->assertEquals( 12, $headers['X-WP-TotalPages'] );
+
 		$all_data = current( $response->get_data() );
 
 		$this->assertCount( 1, $all_data['messages'] );

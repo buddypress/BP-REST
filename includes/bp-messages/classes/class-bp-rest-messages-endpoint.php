@@ -239,14 +239,13 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			'recipients_per_page' => $request->get_param( 'recipients_per_page' ),
 			'page'                => $request->get_param( 'messages_page' ),
 			'per_page'            => $request->get_param( 'messages_per_page' ),
+			'order'               => $request->get_param( 'order' ),
+			'user_id'             => $request->get_param( 'user_id' ),
 		);
 
-		$user_id = bp_loggedin_user_id();
-		if ( ! empty( $request->get_param( 'user_id' ) ) ) {
-			$user_id = $request->get_param( 'user_id' );
+		if ( empty( $args['user_id'] ) ) {
+			$args['user_id'] = bp_loggedin_user_id();
 		}
-
-		$args['user_id'] = $user_id;
 
 		/**
 		 * Filter the query arguments for the request.
@@ -258,7 +257,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 
 		$thread = new BP_Messages_Thread(
 			$request->get_param( 'id' ),
-			$request->get_param( 'order' ),
+			'ASC', // not used.
 			$args
 		);
 
@@ -269,6 +268,7 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 		);
 
 		$response = rest_ensure_response( $retval );
+		$response = bp_rest_response_add_total_headers( $response, $thread->messages_total_count, $args['per_page'] );
 
 		/**
 		 * Fires after a thread is fetched via the REST API.
