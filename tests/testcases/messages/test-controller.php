@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Messages Endpoint Tests.
  *
@@ -700,12 +701,71 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->bp->set_current_user( $u2 );
 
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . bp_get_messages_starred_slug() . '/' . $m->id );
-		$request->add_header( 'content-type', 'application/json' );
 		$response = $this->server->dispatch( $request );
-		$data     = $response->get_data();
-		$data     = reset( $data );
+		$data     = current( $response->get_data() );
 
 		$this->assertFalse( $data['is_starred'] );
+	}
+
+	/**
+	 * @group starred
+	 */
+	public function test_update_starred_user_is_not_logged_in() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		// Init a thread.
+		$m = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . bp_get_messages_starred_slug() . '/' . $m->id );
+
+		$this->assertErrorResponse(
+			'bp_rest_authorization_required',
+			$this->server->dispatch( $request ),
+			rest_authorization_required_code()
+		);
+	}
+
+	/**
+	 * @group starred
+	 */
+	public function test_update_starred_user_with_no_access() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$u3 = $this->factory->user->create();
+
+		// Init a thread.
+		$m = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		$this->bp->set_current_user( $u3 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . bp_get_messages_starred_slug() . '/' . $m->id );
+
+		$this->assertErrorResponse(
+			'bp_rest_authorization_required',
+			$this->server->dispatch( $request ),
+			rest_authorization_required_code()
+		);
+	}
+
+	/**
+	 * @group starred
+	 */
+	public function test_update_starred_using_invalid_id() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . bp_get_messages_starred_slug() . '/' . REST_TESTS_IMPOSSIBLY_HIGH_NUMBER );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	public function update_additional_field( $value, $data, $attribute ) {
