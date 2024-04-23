@@ -118,10 +118,8 @@ class BP_REST_Notifications_Endpoint extends WP_REST_Controller {
 
 		if ( ! empty( $args['user_ids'] ) ) {
 			$args['user_id'] = $args['user_ids'];
-		} else {
-			if ( empty( $args['user_id'] ) ) {
+		} elseif ( empty( $args['user_id'] ) ) {
 				$args['user_id'] = bp_loggedin_user_id();
-			}
 		}
 
 		if ( empty( $request->get_param( 'component_name' ) ) ) {

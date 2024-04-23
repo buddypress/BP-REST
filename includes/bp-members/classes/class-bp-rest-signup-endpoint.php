@@ -471,16 +471,14 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 				/** This action is documented in wp-includes/ms-functions.php */
 				do_action( 'after_signup_user', $signup->user_login, $signup->user_email, $signup->activation_key, $signup->meta );
 			}
-		} else {
 			/** This filter is documented in bp-members/bp-members-functions.php */
-			if ( apply_filters( 'bp_core_signup_send_activation_key', true, false, $signup->user_email, $signup->activation_key, $signup->meta ) ) {
-				$salutation = $signup->user_login;
-				if ( isset( $signup->user_name ) && $signup->user_name ) {
-					$salutation = $signup->user_name;
-				}
-
-				bp_core_signup_send_validation_email( false, $signup->user_email, $signup->activation_key, $salutation );
+		} elseif ( apply_filters( 'bp_core_signup_send_activation_key', true, false, $signup->user_email, $signup->activation_key, $signup->meta ) ) {
+			$salutation = $signup->user_login;
+			if ( isset( $signup->user_name ) && $signup->user_name ) {
+				$salutation = $signup->user_name;
 			}
+
+			bp_core_signup_send_validation_email( false, $signup->user_email, $signup->activation_key, $salutation );
 		}
 
 		$retval = array(

@@ -50,118 +50,118 @@ function bp_rest() {
 		return;
 	}
 
-	require_once dirname( __FILE__ ) . '/includes/bp-components/classes/class-bp-rest-components-endpoint.php';
+	require_once __DIR__ . '/includes/bp-components/classes/class-bp-rest-components-endpoint.php';
 	$controller = new BP_REST_Components_Endpoint();
 	$controller->register_routes();
 
 	if ( bp_is_active( 'members' ) ) {
-		require_once dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-members-endpoint.php';
+		require_once __DIR__ . '/includes/bp-members/classes/class-bp-rest-members-endpoint.php';
 		$controller = new BP_REST_Members_Endpoint();
 		$controller->register_routes();
 
-		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
+		require_once __DIR__ . '/includes/bp-attachments/classes/trait-attachments.php';
 
 		// Support Member's Avatar.
-		require_once dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-attachments-member-avatar-endpoint.php';
+		require_once __DIR__ . '/includes/bp-members/classes/class-bp-rest-attachments-member-avatar-endpoint.php';
 		$controller = new BP_REST_Attachments_Member_Avatar_Endpoint();
 		$controller->register_routes();
 
 		// Support Member's Cover.
 		if ( bp_is_active( 'members', 'cover_image' ) ) {
-			require_once dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-attachments-member-cover-endpoint.php';
+			require_once __DIR__ . '/includes/bp-members/classes/class-bp-rest-attachments-member-cover-endpoint.php';
 			$controller = new BP_REST_Attachments_Member_Cover_Endpoint();
 			$controller->register_routes();
 		}
 
 		if ( bp_get_signup_allowed() ) {
-			require_once dirname( __FILE__ ) . '/includes/bp-members/classes/class-bp-rest-signup-endpoint.php';
+			require_once __DIR__ . '/includes/bp-members/classes/class-bp-rest-signup-endpoint.php';
 			$controller = new BP_REST_Signup_Endpoint();
 			$controller->register_routes();
 		}
 	}
 
 	if ( bp_is_active( 'activity' ) ) {
-		require_once dirname( __FILE__ ) . '/includes/bp-activity/classes/class-bp-rest-activity-endpoint.php';
+		require_once __DIR__ . '/includes/bp-activity/classes/class-bp-rest-activity-endpoint.php';
 		$controller = new BP_REST_Activity_Endpoint();
 		$controller->register_routes();
 	}
 
 	if ( is_multisite() && bp_is_active( 'blogs' ) ) {
-		require_once dirname( __FILE__ ) . '/includes/bp-blogs/classes/class-bp-rest-blogs-endpoint.php';
+		require_once __DIR__ . '/includes/bp-blogs/classes/class-bp-rest-blogs-endpoint.php';
 		$controller = new BP_REST_Blogs_Endpoint();
 		$controller->register_routes();
 
 		// Support to Blog Avatar.
 		if ( bp_is_active( 'blogs', 'site-icon' ) ) {
-			require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
-			require_once dirname( __FILE__ ) . '/includes/bp-blogs/classes/class-bp-rest-attachments-blog-avatar-endpoint.php';
+			require_once __DIR__ . '/includes/bp-attachments/classes/trait-attachments.php';
+			require_once __DIR__ . '/includes/bp-blogs/classes/class-bp-rest-attachments-blog-avatar-endpoint.php';
 			$controller = new BP_REST_Attachments_Blog_Avatar_Endpoint();
 			$controller->register_routes();
 		}
 	}
 
 	if ( bp_is_active( 'xprofile' ) ) {
-		require_once dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-fields-endpoint.php';
+		require_once __DIR__ . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-fields-endpoint.php';
 		$controller = new BP_REST_XProfile_Fields_Endpoint();
 		$controller->register_routes();
 
-		require_once dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-field-groups-endpoint.php';
+		require_once __DIR__ . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-field-groups-endpoint.php';
 		$controller = new BP_REST_XProfile_Field_Groups_Endpoint();
 		$controller->register_routes();
 
-		require_once dirname( __FILE__ ) . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-data-endpoint.php';
+		require_once __DIR__ . '/includes/bp-xprofile/classes/class-bp-rest-xprofile-data-endpoint.php';
 		$controller = new BP_REST_XProfile_Data_Endpoint();
 		$controller->register_routes();
 	}
 
 	if ( bp_is_active( 'groups' ) ) {
-		require_once dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-groups-endpoint.php';
+		require_once __DIR__ . '/includes/bp-groups/classes/class-bp-rest-groups-endpoint.php';
 		$controller = new BP_REST_Groups_Endpoint();
 		$controller->register_routes();
 
-		require_once dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-group-membership-endpoint.php';
+		require_once __DIR__ . '/includes/bp-groups/classes/class-bp-rest-group-membership-endpoint.php';
 		$controller = new BP_REST_Group_Membership_Endpoint();
 		$controller->register_routes();
 
-		require_once dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-group-invites-endpoint.php';
+		require_once __DIR__ . '/includes/bp-groups/classes/class-bp-rest-group-invites-endpoint.php';
 		$controller = new BP_REST_Group_Invites_Endpoint();
 		$controller->register_routes();
 
-		require_once dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-group-membership-request-endpoint.php';
+		require_once __DIR__ . '/includes/bp-groups/classes/class-bp-rest-group-membership-request-endpoint.php';
 		$controller = new BP_REST_Group_Membership_Request_Endpoint();
 		$controller->register_routes();
 
-		require_once dirname( __FILE__ ) . '/includes/bp-attachments/classes/trait-attachments.php';
-		require_once dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-attachments-group-avatar-endpoint.php';
+		require_once __DIR__ . '/includes/bp-attachments/classes/trait-attachments.php';
+		require_once __DIR__ . '/includes/bp-groups/classes/class-bp-rest-attachments-group-avatar-endpoint.php';
 		$controller = new BP_REST_Attachments_Group_Avatar_Endpoint();
 		$controller->register_routes();
 
 		// Support to Group Cover.
 		if ( bp_is_active( 'groups', 'cover_image' ) ) {
-			require_once dirname( __FILE__ ) . '/includes/bp-groups/classes/class-bp-rest-attachments-group-cover-endpoint.php';
+			require_once __DIR__ . '/includes/bp-groups/classes/class-bp-rest-attachments-group-cover-endpoint.php';
 			$controller = new BP_REST_Attachments_Group_Cover_Endpoint();
 			$controller->register_routes();
 		}
 	}
 
 	if ( bp_is_active( 'messages' ) ) {
-		require_once dirname( __FILE__ ) . '/includes/bp-messages/classes/class-bp-rest-messages-endpoint.php';
+		require_once __DIR__ . '/includes/bp-messages/classes/class-bp-rest-messages-endpoint.php';
 		$controller = new BP_REST_Messages_Endpoint();
 		$controller->register_routes();
 
-		require_once dirname( __FILE__ ) . '/includes/bp-messages/classes/class-bp-rest-sitewide-notices-endpoint.php';
+		require_once __DIR__ . '/includes/bp-messages/classes/class-bp-rest-sitewide-notices-endpoint.php';
 		$controller = new BP_REST_Sitewide_Notices_Endpoint();
 		$controller->register_routes();
 	}
 
 	if ( bp_is_active( 'notifications' ) ) {
-		require_once dirname( __FILE__ ) . '/includes/bp-notifications/classes/class-bp-rest-notifications-endpoint.php';
+		require_once __DIR__ . '/includes/bp-notifications/classes/class-bp-rest-notifications-endpoint.php';
 		$controller = new BP_REST_Notifications_Endpoint();
 		$controller->register_routes();
 	}
 
 	if ( bp_is_active( 'friends' ) ) {
-		require_once dirname( __FILE__ ) . '/includes/bp-friends/classes/class-bp-rest-friends-endpoint.php';
+		require_once __DIR__ . '/includes/bp-friends/classes/class-bp-rest-friends-endpoint.php';
 		$controller = new BP_REST_Friends_Endpoint();
 		$controller->register_routes();
 	}
