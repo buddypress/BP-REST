@@ -506,18 +506,16 @@ class BP_REST_Group_Invites_Endpoint extends WP_REST_Controller {
 							'status' => 404,
 						)
 					);
-				} else {
-					if ( bp_current_user_can( 'bp_moderate' ) || bp_loggedin_user_id() === $inviter_id_arg ) {
+				} elseif ( bp_current_user_can( 'bp_moderate' ) || bp_loggedin_user_id() === $inviter_id_arg ) {
 						$retval = true;
-					} else {
-						$retval = new WP_Error(
-							'bp_rest_group_invite_cannot_create_item',
-							__( 'Sorry, you are not allowed to create the invitation as requested.', 'buddypress' ),
-							array(
-								'status' => rest_authorization_required_code(),
-							)
-						);
-					}
+				} else {
+					$retval = new WP_Error(
+						'bp_rest_group_invite_cannot_create_item',
+						__( 'Sorry, you are not allowed to create the invitation as requested.', 'buddypress' ),
+						array(
+							'status' => rest_authorization_required_code(),
+						)
+					);
 				}
 			}
 		}

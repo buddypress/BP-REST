@@ -880,19 +880,19 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_User         $object  The WordPress user object.
+	 * @param WP_User         $user    The WordPress user object.
 	 * @param WP_REST_Request $request Full details about the request.
 	 * @return bool|WP_Error True on success, WP_Error object if a field cannot be updated.
 	 */
-	protected function update_additional_fields_for_object( $object, $request ) {
-		if ( ! isset( $object->data ) ) {
+	protected function update_additional_fields_for_object( $user, $request ) {
+		if ( ! isset( $user->data ) ) {
 			return new WP_Error(
 				'invalid_user',
 				__( 'The data for the user was not found.', 'buddypress' )
 			);
 		}
 
-		$member     = $object->data;
+		$member     = $user->data;
 		$member->id = $member->ID;
 
 		return parent::update_additional_fields_for_object( $member, $request );
