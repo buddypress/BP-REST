@@ -789,7 +789,7 @@ class BP_REST_XProfile_Fields_Endpoint extends WP_REST_Controller {
 	 */
 	protected function prepare_links( $field ) {
 		$base       = sprintf( '/%s/%s/', $this->namespace, $this->rest_base );
-		$group_base = sprintf( '/%s/%s/', $this->namespace, '/xprofile/groups' );
+		$group_base = sprintf( '/%s/%s/', $this->namespace, 'xprofile/groups' );
 
 		// Entity meta.
 		$links = array(

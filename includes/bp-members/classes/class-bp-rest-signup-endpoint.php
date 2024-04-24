@@ -325,9 +325,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			return new WP_Error(
 				'bp_rest_signup_validation_failed',
 				$signup_validation['errors']->get_error_message(),
-				array(
-					'status' => 500,
-				)
+				array( 'status' => 500 )
 			);
 		}
 
@@ -402,76 +400,100 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		// Hash and store the password.
 		$meta['password'] = wp_hash_password( $password );
 
+		// Get signup data.
 		$signup_field_data = $request->get_param( 'signup_field_data' );
-		$profile_field_ids = array();
 
 		// Store the profile field data.
 		if ( bp_is_active( 'xprofile' ) && ! empty( $signup_field_data ) ) {
-			foreach ( (array) $signup_field_data as $field_data ) {
-				$field_id         = $field_data['field_id'];
-				$field_value      = $field_data['value'];
-				$field_visibility = $field_data['visibility'];
+			$profile_field_ids = array();
+			$args              = array(
+				'signup_fields_only' => true,
+				'fetch_fields'       => true,
+			);
 
-				$field = xprofile_get_field( $field_id );
+			/**
+			 * Get signup fields.
+			 *
+			 * Let's not use `bp_xprofile_get_groups`, since `BP_XProfile_Data_Template` handles signup fields better.
+			 */
+			$template_query = new BP_XProfile_Data_Template( $args );
+			$signup_group   = $template_query->groups[0];
 
-				if ( ! $field instanceof BP_XProfile_Field ) {
+			foreach ( $signup_group->fields as $field ) {
+
+				// Skip field if it's already in the profile field IDs.
+				if ( in_array( $field->id, $profile_field_ids, true ) ) {
 					continue;
 				}
 
-				$profile_field_ids[] = $field_id;
-				$field_value         = array_map( 'trim', explode( ', ', $field_value ) );
+				foreach ( (array) $signup_field_data as $field_data ) {
+					$field_id         = (int) $field_data['field_id'];
+					$field_value      = $field_data['value'];
+					$field_visibility = 'public';
 
-				if ( false === (bool) $field->type_obj->supports_multiple_defaults ) {
-					$field_value = reset( $field_value );
+					if ( isset( $field_data['visibility'] ) ) {
+						$field_visibility = $field_data['visibility'];
+					}
+
+					if ( $field_id !== $field->id ) {
+						continue;
+					}
+
+					if ( (bool) $field->is_required && empty( $field_value ) ) {
+						return new WP_Error(
+							'bp_rest_signup_field_required',
+							sprintf(
+								/* translators: %s: Field name. */
+								__( 'The %s field, and its value, are required.', 'buddypress' ),
+								$field->name
+							),
+							array( 'status' => 500 )
+						);
+					}
+
+					$profile_field_ids[] = $field_id;
+					$field_value         = array_map( 'trim', explode( ', ', $field_value ) );
+
+					if ( false === (bool) $field->type_obj->supports_multiple_defaults ) {
+						$field_value = reset( $field_value );
+					}
+
+					if ( ! empty( $field_value ) ) {
+						/**
+						 * Handle datebox field values.
+						 *
+						 * We expect a date in the format 'Y-m-d'.
+						 */
+						if ( 'datebox' === $field->type_obj->name ) {
+							// @todo update to use `gmdate` when BP core does it too.
+							$field_value = date( 'Y-m-d H:i:s', strtotime( $field_value ) ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
+						}
+
+						$meta[ 'field_' . $field_id ] = $field_value;
+					}
+
+					if ( ! empty( $field_visibility ) ) {
+						$meta[ 'field_' . $field_id . '_visibility' ] = $field_visibility;
+					}
 				}
 
-				/**
-				 * Handle datebox field values.
-				 *
-				 * We expect a date in the format 'Y-m-d'.
-				 */
-				if ( 'datebox' === $field->type ) {
-					// @todo update to use `gmdate` when BP core does it too.
-					$field_value = date( 'Y-m-d H:i:s', strtotime( $field_value ) ); // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date
-				}
-
-				if ( ! empty( $field_value ) ) {
-					$meta[ 'field_' . $field_id ] = $field_value;
-				}
-
-				if ( ! empty( $field_visibility ) ) {
-					$meta[ 'field_' . $field_id . '_visibility' ] = $field_visibility;
+				// Check if the required field is filled.
+				if ( ! in_array( $field->id, $profile_field_ids, true ) && (bool) $field->is_required ) {
+					return new WP_Error(
+						'bp_rest_signup_field_required',
+						sprintf(
+							/* translators: %s: Field name. */
+							__( 'The %s field is required.', 'buddypress' ),
+							$field->name
+						),
+						array( 'status' => 500 )
+					);
 				}
 			}
+
+			// Store the profile field ID's in meta.
+			$meta['profile_field_ids'] = implode( ',', array_unique( wp_parse_id_list( $profile_field_ids ) ) );
 		}
-
-		/**
-		 * If not using the XProfile signup fields,
-		 * save the user name using the legacy field.
-		 *
-		 * This will be deprecated in v2 of the API.
-		 */
-		$fullname_field_id = bp_xprofile_fullname_field_id();
-		$user_name         = $request->get_param( 'user_name' );
-		if ( ! empty( $user_name ) && ! isset( $meta[ 'field_' . $fullname_field_id ] ) ) {
-			$meta[ 'field_' . $fullname_field_id ] = $user_name;
-			$profile_field_ids[]                   = $fullname_field_id;
-		}
-
-		$profile_field_ids = array_unique( wp_parse_id_list( $profile_field_ids ) );
-
-		if ( ! in_array( $fullname_field_id, $profile_field_ids, true ) ) {
-			return new WP_Error(
-				'bp_rest_signup_no_name_field',
-				__( 'The Name field is required.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
-		}
-
-		// Store the profile field ID's in meta.
-		$meta['profile_field_ids'] = implode( ',', $profile_field_ids );
 
 		if ( is_multisite() ) {
 			// On Multisite, use the WordPress way to generate the activation key.
@@ -882,6 +904,8 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$data     = $this->filter_response_by_context( $data, $context );
 		$response = rest_ensure_response( $data );
 
+		$response->add_links( $this->prepare_links( $signup ) );
+
 		/**
 		 * Filter the signup response returned from the API.
 		 *
@@ -892,6 +916,46 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		 * @param BP_Signup         $signup   Signup object.
 		 */
 		return apply_filters( 'bp_rest_signup_prepare_value', $response, $request, $signup );
+	}
+
+	/**
+	 * Prepares links for the signup request.
+	 *
+	 * @param BP_Signup $signup The signup object.
+	 * @return array
+	 */
+	protected function prepare_links( $signup ) {
+		$base  = sprintf( '/%1$s/%2$s/', $this->namespace, $this->rest_base );
+		$links = array(
+			'self'       => array(
+				'href' => rest_url( $base . (int) $signup->id ),
+			),
+			'collection' => array(
+				'href' => rest_url( $base ),
+			),
+		);
+
+		if ( is_user_logged_in() && bp_is_active( 'xprofile' ) && ! empty( $signup->meta['profile_field_ids'] ) ) {
+			$xprofile_field_ids = explode( ',', $signup->meta['profile_field_ids'] );
+			$xprofile_field_ids = wp_parse_id_list( $xprofile_field_ids );
+
+			foreach ( $xprofile_field_ids as $field_id ) {
+				$xprofile_field_base = sprintf( '%1$s/%2$s/', $this->namespace, buddypress()->profile->id . '/fields' );
+
+				$links[ $field_id ] = array(
+					'href'       => rest_url( $xprofile_field_base . $field_id ),
+					'embeddable' => true,
+				);
+			}
+		}
+
+		/**
+		 * Filter links prepared for the REST response.
+		 *
+		 * @param array     $links  The prepared links of the REST response.
+		 * @param BP_Signup $signup The signup object.
+		 */
+		return apply_filters( 'bp_rest_signup_prepare_links', $links, $signup );
 	}
 
 	/**
@@ -995,12 +1059,11 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 
 			if ( bp_is_active( 'xprofile' ) ) {
 				$args['signup_field_data'] = array(
-					'description' => __( 'The XProfile field data for the new user.', 'buddypress' ),
-					'type'        => 'array',
-					'context'     => array( 'edit' ),
-					// @todo Make it required in v2 of the API.
-					'required'    => false,
-					'items'       => array(
+					'description'       => __( 'The XProfile field data for the new user.', 'buddypress' ),
+					'type'              => 'array',
+					'context'           => array( 'edit' ),
+					'required'          => true,
+					'items'             => array(
 						'type'       => 'object',
 						'properties' => array(
 							'field_id'   => array(
@@ -1029,6 +1092,13 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 							),
 						),
 					),
+					'validate_callback' => static function ( $data ) {
+						if ( ! is_array( $data ) || empty( $data ) ) {
+							return false;
+						}
+
+						return $data;
+					},
 				);
 			}
 
@@ -1134,15 +1204,13 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 				),
 			);
 
+			// This will be fully removed in V2.
 			if ( bp_is_active( 'xprofile' ) ) {
 				$schema['properties']['user_name'] = array(
-					'context'     => array( 'view', 'edit' ),
-					'description' => __( 'The new user\'s full name.', 'buddypress' ),
+					'context'     => array(),
+					'description' => __( 'The new user\'s full name. (Deprecated)', 'buddypress' ),
 					'type'        => 'string',
-					'required'    => false,
-					'arg_options' => array(
-						'sanitize_callback' => 'sanitize_text_field',
-					),
+					'readonly'    => true,
 				);
 			}
 
