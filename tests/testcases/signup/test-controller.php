@@ -39,6 +39,10 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			)
 		);
 
+		if ( is_multisite() ) {
+			grant_super_admin( $this->user );
+		}
+
 		$this->signup_id = $this->create_signup();
 
 		if ( ! $this->server ) {
@@ -74,8 +78,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		$this->skipWithMultisite();
-
 		$this->bp->set_current_user( $this->user );
 
 		$s1     = $this->create_signup();
@@ -96,8 +98,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_paginated_items() {
-		$this->skipWithMultisite();
-
 		$this->bp->set_current_user( $this->user );
 
 		$s1 = $this->create_signup();
@@ -614,8 +614,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
-		$this->skipWithMultisite();
-
 		$this->bp->set_current_user( $this->user );
 
 		$signup = $this->endpoint->get_signup_object( $this->signup_id );
@@ -642,11 +640,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		if ( is_multisite() ) {
-			$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 403 );
-		} else {
-			$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
-		}
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -694,8 +688,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group resend_item
 	 */
 	public function test_resend_acivation_email_to_active_signup() {
-		$this->skipWithMultisite();
-
 		$signup_id = $this->create_signup();
 		$signup    = new BP_Signup( $signup_id );
 
@@ -704,7 +696,15 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/resend/%d', $signup_id ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_signup_resend_activation_email_fail', $response, 500 );
+		if ( is_multisite() ) {
+			$this->assertEquals( 200, $response->get_status() );
+
+			$all_data = $response->get_data();
+
+			$this->assertTrue( $all_data['sent'] );
+		} else {
+			$this->assertErrorResponse( 'bp_rest_signup_resend_activation_email_fail', $response, 500 );
+		}
 	}
 
 	/**
@@ -719,8 +719,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function test_prepare_item() {
-		$this->skipWithMultisite();
-
 		$this->bp->set_current_user( $this->user );
 
 		$signup = $this->endpoint->get_signup_object( $this->signup_id );
@@ -780,14 +778,17 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function test_get_item_schema() {
-		$this->skipWithMultisite();
-
 		$request    = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', $this->signup_id ) );
 		$response   = $this->server->dispatch( $request );
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
-		$this->assertEquals( 11, count( $properties ) );
+		if ( is_multisite() ) {
+			$this->assertEquals( 15, count( $properties ) );
+		} else {
+			$this->assertEquals( 11, count( $properties ) );
+		}
+
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'user_login', $properties );
 		$this->assertArrayHasKey( 'registered', $properties );
@@ -798,32 +799,13 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'date_sent_gmt', $properties );
 		$this->assertArrayHasKey( 'count_sent', $properties );
 		$this->assertArrayHasKey( 'meta', $properties );
-	}
 
-	public function test_get_item_multisite_schema() {
-		$this->skipWithoutMultisite();
-
-		$request    = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', $this->signup_id ) );
-		$response   = $this->server->dispatch( $request );
-		$data       = $response->get_data();
-		$properties = $data['schema']['properties'];
-
-		$this->assertCount( 15, $properties );
-		$this->assertArrayHasKey( 'id', $properties );
-		$this->assertArrayHasKey( 'user_login', $properties );
-		$this->assertArrayHasKey( 'user_name', $properties );
-		$this->assertArrayHasKey( 'registered', $properties );
-		$this->assertArrayHasKey( 'registered_gmt', $properties );
-		$this->assertArrayHasKey( 'activation_key', $properties );
-		$this->assertArrayHasKey( 'user_email', $properties );
-		$this->assertArrayHasKey( 'date_sent', $properties );
-		$this->assertArrayHasKey( 'date_sent_gmt', $properties );
-		$this->assertArrayHasKey( 'count_sent', $properties );
-		$this->assertArrayHasKey( 'meta', $properties );
-		$this->assertArrayHasKey( 'site_language', $properties );
-		$this->assertArrayHasKey( 'site_public', $properties );
-		$this->assertArrayHasKey( 'site_title', $properties );
-		$this->assertArrayHasKey( 'site_name', $properties );
+		if ( is_multisite() ) {
+			$this->assertArrayHasKey( 'site_language', $properties );
+			$this->assertArrayHasKey( 'site_public', $properties );
+			$this->assertArrayHasKey( 'site_title', $properties );
+			$this->assertArrayHasKey( 'site_name', $properties );
+		}
 	}
 
 	public function test_context_param() {

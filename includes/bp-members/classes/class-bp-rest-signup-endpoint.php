@@ -204,9 +204,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$retval = new WP_Error(
 			'bp_rest_authorization_required',
 			__( 'Sorry, you are not authorized to perform this action.', 'buddypress' ),
-			array(
-				'status' => rest_authorization_required_code(),
-			)
+			array( 'status' => rest_authorization_required_code() )
 		);
 
 		$capability = 'edit_users';
@@ -219,9 +217,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to perform this action.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
+				array( 'status' => rest_authorization_required_code() )
 			);
 		} elseif ( bp_current_user_can( $capability ) ) {
 			$retval = true;
