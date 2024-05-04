@@ -14,21 +14,14 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	protected $user;
 	protected $signup_id;
 	protected $server;
-
-	/**
-	 * Signup allowed.
-	 *
-	 * @var bool
-	 */
 	protected $signup_allowed;
 
 	public function set_up() {
-
 		if ( is_multisite() ) {
 			$this->signup_allowed = get_site_option( 'registration' );
 			update_site_option( 'registration', 'all' );
 		} else {
-			bp_get_option( 'users_can_register' );
+			$this->signup_allowed = bp_get_option( 'users_can_register' );
 			bp_update_option( 'users_can_register', 1 );
 		}
 
@@ -45,6 +38,10 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 				'user_login' => 'admin_user',
 			)
 		);
+
+		if ( is_multisite() ) {
+			grant_super_admin( $this->user );
+		}
 
 		$this->signup_id = $this->create_signup();
 
@@ -74,18 +71,13 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\w-]+)', $routes );
 		$this->assertCount( 2, $routes[ $this->endpoint_url . '/(?P<id>[\w-]+)' ] );
 		$this->assertCount( 1, $routes[ $this->endpoint_url . '/activate/(?P<activation_key>[\w-]+)' ] );
-		$this->assertCount( 1, $routes[ $this->endpoint_url . '/resend/(?P<id>[\w-]+)' ] );
+		$this->assertCount( 1, $routes[ $this->endpoint_url . '/resend' ] );
 	}
 
 	/**
 	 * @group get_items
 	 */
 	public function test_get_items() {
-
-		if ( is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
 		$this->bp->set_current_user( $this->user );
 
 		$s1     = $this->create_signup();
@@ -106,11 +98,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_paginated_items() {
-
-		if ( is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
 		$this->bp->set_current_user( $this->user );
 
 		$s1 = $this->create_signup();
@@ -167,17 +154,12 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item() {
-
-		if ( is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
 		$this->bp->set_current_user( $this->user );
 
 		$signup = $this->endpoint->get_signup_object( $this->signup_id );
 		$this->assertEquals( $this->signup_id, $signup->id );
 
-		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%s', $this->signup_id ) );
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $this->signup_id ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
 
@@ -191,15 +173,10 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_item
 	 */
-	public function test_get_item_invalid_signup_id() {
-
-		if ( is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
+	public function test_get_item_with_invalid_signup_id() {
 		$this->bp->set_current_user( $this->user );
 
-		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%s', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
@@ -236,7 +213,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 */
 	public function test_create_item() {
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
-		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
 
 		$params = $this->set_signup_data();
 		$request->set_body_params( $params );
@@ -245,11 +221,352 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 200, $response->get_status() );
 
-		$signup = $response->get_data();
+		$signup = current( $response->get_data() );
 
-		$this->assertSame( $signup[0]['user_email'], $params['user_email'] );
-		$this->assertSame( $signup[0]['user_name'], $params['user_name'] );
-		$this->assertTrue( ! isset( $signup[0]['activation_key'] ) || ! $signup[0]['activation_key'] );
+		$this->assertSame( $signup['user_login'], $params['user_login'] );
+		$this->assertSame( $signup['user_email'], $params['user_email'] );
+		$this->assertTrue( ! isset( $signup['activation_key'] ) );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_with_signup_fields() {
+		$g1 = $this->bp_factory->xprofile_group->create();
+
+		$f1 = $this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'type'           => 'textbox',
+				'name'           => 'field1',
+			]
+		);
+
+		$f2 = $this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'type'           => 'checkbox',
+				'name'           => 'field2',
+			]
+		);
+
+		bp_xprofile_update_field_meta( $f1, 'signup_position', 2 );
+		bp_xprofile_update_field_meta( $f2, 'signup_position', 3 );
+
+		$this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'parent_id'      => $f2,
+				'type'           => 'option',
+				'name'           => 'Option 1',
+			]
+		);
+
+		$this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'parent_id'      => $f2,
+				'type'           => 'option',
+				'name'           => 'Option 2',
+			]
+		);
+
+		$fullname_field_id = bp_xprofile_fullname_field_id();
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+
+		$params = $this->set_signup_data(
+			array(
+				'signup_field_data' => array(
+					array(
+						'field_id'   => $f1,
+						'value'      => 'Field 1 Value',
+						'visibility' => 'public'
+					),
+					array(
+						'field_id'   => $f2,
+						'value'      => 'Option 2, Option 1,',
+						'visibility' => 'public'
+					),
+					array(
+						'field_id'   => $fullname_field_id,
+						'value'      => 'New User',
+						'visibility' => 'public',
+					),
+				),
+			)
+		);
+		$request->set_body_params( $params );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$signup = current( $response->get_data() );
+
+		$this->assertSame( $signup['user_email'], $params['user_email'] );
+
+		// Check the textbox field.
+		$this->assertSame( $signup['meta'][ 'field_' . $f1 ], $params['signup_field_data'][0]['value'] );
+		$this->assertSame( $signup['meta'][ 'field_' . $f1 . '_visibility' ], $params['signup_field_data'][0]['visibility'] );
+
+		// Check the checkbox field.
+		$this->assertSame( $signup['meta'][ 'field_' . $f2 ], array_map( 'trim', explode( ', ', $params['signup_field_data'][1]['value'] ) ) );
+		$this->assertSame( $signup['meta'][ 'field_' . $f2 . '_visibility' ], $params['signup_field_data'][1]['visibility'] );
+
+		$field_ids = wp_parse_id_list( explode( ',', $signup['meta']['profile_field_ids'] ) );
+
+		$this->assertCount( 3, $field_ids );
+		$this->assertContains( $fullname_field_id, $field_ids );
+		$this->assertContains( $f1, $field_ids );
+		$this->assertContains( $f2, $field_ids );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_without_the_required_field_name_field() {
+		$g1 = $this->bp_factory->xprofile_group->create();
+
+		$f1 = $this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'type'           => 'textbox',
+				'name'           => 'field1',
+			]
+		);
+
+		$f2 = $this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'type'           => 'checkbox',
+				'name'           => 'field2',
+			]
+		);
+
+		bp_xprofile_update_field_meta( $f1, 'signup_position', 2 );
+		bp_xprofile_update_field_meta( $f2, 'signup_position', 3 );
+
+		$this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'parent_id'      => $f2,
+				'type'           => 'option',
+				'name'           => 'Option 1',
+			]
+		);
+
+		$this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'parent_id'      => $f2,
+				'type'           => 'option',
+				'name'           => 'Option 2',
+			]
+		);
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+
+		$params = $this->set_signup_data(
+			array(
+				'signup_field_data' => array(
+					array(
+						'field_id'   => $f1,
+						'value'      => 'Field 1 Value',
+						'visibility' => 'public'
+					),
+					array(
+						'field_id'   => $f2,
+						'value'      => 'Option 1, Option 2',
+						'visibility' => 'public'
+					),
+				),
+			)
+		);
+
+		$request->set_body_params( $params );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_signup_field_required', $response, 500 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_without_a_custom_required_field_name_field() {
+		$g1 = $this->bp_factory->xprofile_group->create();
+
+		$f1 = $this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'type'           => 'textbox',
+				'name'           => 'field1',
+				'is_required'    => true,
+			]
+		);
+
+		$f2 = $this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'type'           => 'checkbox',
+				'name'           => 'field2',
+			]
+		);
+
+		bp_xprofile_update_field_meta( $f1, 'signup_position', 2 );
+		bp_xprofile_update_field_meta( $f2, 'signup_position', 3 );
+
+		$this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'parent_id'      => $f2,
+				'type'           => 'option',
+				'name'           => 'Option 1',
+			]
+		);
+
+		$this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'parent_id'      => $f2,
+				'type'           => 'option',
+				'name'           => 'Option 2',
+			]
+		);
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+
+		$params = $this->set_signup_data(
+			array(
+				'signup_field_data' => array(
+					// Missing the required field.
+					array(
+						'field_id'   => $f2,
+						'value'      => 'Option 1, Option 2',
+						'visibility' => 'public'
+					),
+					array(
+						'field_id'   => bp_xprofile_fullname_field_id(),
+						'value'      => 'Test User',
+						'visibility' => 'public',
+					),
+				),
+			)
+		);
+
+		$request->set_body_params( $params );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_signup_field_required', $response, 500 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_a_custom_required_field_name_field_value_missing() {
+		$g1 = $this->bp_factory->xprofile_group->create();
+
+		$f1 = $this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'type'           => 'textbox',
+				'name'           => 'field1',
+				'is_required'    => true,
+			]
+		);
+
+		$f2 = $this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'type'           => 'checkbox',
+				'name'           => 'field2',
+			]
+		);
+
+		bp_xprofile_update_field_meta( $f1, 'signup_position', 2 );
+		bp_xprofile_update_field_meta( $f2, 'signup_position', 3 );
+
+		$this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'parent_id'      => $f2,
+				'type'           => 'option',
+				'name'           => 'Option 1',
+			]
+		);
+
+		$this->bp_factory->xprofile_field->create(
+			[
+				'field_group_id' => $g1,
+				'parent_id'      => $f2,
+				'type'           => 'option',
+				'name'           => 'Option 2',
+			]
+		);
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+
+		$params = $this->set_signup_data(
+			array(
+				'signup_field_data' => array(
+					array(
+						'field_id' => $f1,
+						'value'    => '', // <-- missing value.
+					),
+					array(
+						'field_id' => $f2,
+						'value'    => 'Option 1, Option 2',
+					),
+					array(
+						'field_id' => bp_xprofile_fullname_field_id(),
+						'value'    => 'Test User',
+					),
+				),
+			)
+		);
+
+		$request->set_body_params( $params );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_signup_field_required', $response, 500 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_without_the_default_required_field_value() {
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$data    = array(
+			array(
+				'field_id'   => bp_xprofile_fullname_field_id(),
+				'value'      => '',
+				'visibility' => 'public',
+			),
+		);
+
+		$params = $this->set_signup_data( array( 'signup_field_data' => $data ) );
+		$request->set_body_params( $params );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_signup_field_required', $response, 500 );
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_without_the_signup_field_data_param() {
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+
+		$params = $this->set_signup_data( array( 'signup_field_data' => array() ) );
+		$request->set_body_params( $params );
+		$request->set_param( 'context', 'edit' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'rest_invalid_param', $response, 400 );
 	}
 
 	/**
@@ -257,7 +574,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 */
 	public function test_create_item_unauthorized_password() {
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
-		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
 
 		$params = $this->set_signup_data( array( 'password' => '\\Antislash' ) );
 		$request->set_body_params( $params );
@@ -268,7 +584,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
-	 * @group update_item
 	 * @group activate_item
 	 */
 	public function test_update_item() {
@@ -286,7 +601,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
-	 * @group update_item
+	 * @group activate_item
 	 */
 	public function test_update_item_invalid_invalid_activation_key() {
 		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/activate/%s', 'randomkey' ) );
@@ -299,11 +614,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
-
-		if ( is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
 		$this->bp->set_current_user( $this->user );
 
 		$signup = $this->endpoint->get_signup_object( $this->signup_id );
@@ -330,11 +640,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		if ( is_multisite() ) {
-			$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 403 );
-		} else {
-			$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
-		}
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	/**
@@ -366,9 +672,11 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group resend_item
 	 */
 	public function test_resend_activation_email() {
-		$s1 = $this->create_signup();
+		$signup_id = $this->create_signup();
 
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/resend/%d', $s1 ) );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/resend' );
+		$request->set_param( 'id', $signup_id );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -381,27 +689,34 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group resend_item
 	 */
-	public function test_resend_activation_email_to_active_signup() {
-		if ( is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
+	public function test_resend_acivation_email_to_active_signup() {
 		$signup_id = $this->create_signup();
 		$signup    = new BP_Signup( $signup_id );
 
 		bp_core_activate_signup( $signup->activation_key );
 
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/resend/%d', $signup_id ) );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/resend' );
+		$request->set_param( 'id', $signup_id );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_signup_resend_activation_email_fail', $response, 500 );
+		if ( is_multisite() ) {
+			$this->assertEquals( 200, $response->get_status() );
+
+			$all_data = $response->get_data();
+
+			$this->assertTrue( $all_data['sent'] );
+		} else {
+			$this->assertErrorResponse( 'bp_rest_signup_resend_activation_email_fail', $response, 500 );
+		}
 	}
 
 	/**
 	 * @group resend_item
 	 */
 	public function test_resend_activation_email_invalid_signup_id() {
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/resend/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/resend' );
+		$request->set_param( 'id', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER );
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
@@ -409,11 +724,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function test_prepare_item() {
-
-		if ( is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
 		$this->bp->set_current_user( $this->user );
 
 		$signup = $this->endpoint->get_signup_object( $this->signup_id );
@@ -434,10 +744,16 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		return wp_parse_args(
 			$args,
 			array(
-				'user_login'     => 'newnuser',
-				'user_name'      => 'New User',
-				'user_email'     => 'new.user@example.com',
-				'password'       => 'password',
+				'user_login'        => 'newnuser',
+				'user_email'        => 'new.user@example.com',
+				'password'          => 'password',
+				'signup_field_data' => array(
+					array(
+						'field_id'   => bp_xprofile_fullname_field_id(),
+						'value'      => 'New User',
+						'visibility' => 'public',
+					),
+				),
 			)
 		);
 	}
@@ -450,9 +766,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 				'registered'     => bp_core_current_time(),
 				'activation_key' => wp_generate_password( 32, false ),
 				'meta'           => array(
-					'field_1'  => 'Foo Bar',
-					'meta1'    => 'meta2',
-					'password' => wp_generate_password( 12, false ),
+					'field_1' => 'Foo Bar',
 				),
 			)
 		);
@@ -461,7 +775,6 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	protected function check_signup_data( $signup, $data ) {
 		$this->assertEquals( $signup->id, $data['id'] );
 		$this->assertEquals( $signup->user_login, $data['user_login'] );
-		$this->assertEquals( $signup->user_name, $data['user_name'] );
 		$this->assertEquals(
 			bp_rest_prepare_date_response( $signup->registered, get_date_from_gmt( $signup->registered ) ),
 			$data['registered']
@@ -470,20 +783,19 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function test_get_item_schema() {
+		$request    = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', $this->signup_id ) );
+		$response   = $this->server->dispatch( $request );
+		$data       = $response->get_data();
+		$properties = $data['schema']['properties'];
 
 		if ( is_multisite() ) {
-			$this->markTestSkipped();
+			$this->assertEquals( 15, count( $properties ) );
+		} else {
+			$this->assertEquals( 11, count( $properties ) );
 		}
 
-		$request    = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', $this->signup_id ) );
-		$response   = $this->server->dispatch( $request );
-		$data       = $response->get_data();
-		$properties = $data['schema']['properties'];
-
-		$this->assertEquals( 11, count( $properties ) );
 		$this->assertArrayHasKey( 'id', $properties );
 		$this->assertArrayHasKey( 'user_login', $properties );
-		$this->assertArrayHasKey( 'user_name', $properties );
 		$this->assertArrayHasKey( 'registered', $properties );
 		$this->assertArrayHasKey( 'registered_gmt', $properties );
 		$this->assertArrayHasKey( 'activation_key', $properties );
@@ -492,35 +804,13 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( 'date_sent_gmt', $properties );
 		$this->assertArrayHasKey( 'count_sent', $properties );
 		$this->assertArrayHasKey( 'meta', $properties );
-	}
 
-	public function test_get_item_multisite_schema() {
-
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
+		if ( is_multisite() ) {
+			$this->assertArrayHasKey( 'site_language', $properties );
+			$this->assertArrayHasKey( 'site_public', $properties );
+			$this->assertArrayHasKey( 'site_title', $properties );
+			$this->assertArrayHasKey( 'site_name', $properties );
 		}
-
-		$request    = new WP_REST_Request( 'OPTIONS', sprintf( $this->endpoint_url . '/%d', $this->signup_id ) );
-		$response   = $this->server->dispatch( $request );
-		$data       = $response->get_data();
-		$properties = $data['schema']['properties'];
-
-		$this->assertEquals( 15, count( $properties ) );
-		$this->assertArrayHasKey( 'id', $properties );
-		$this->assertArrayHasKey( 'user_login', $properties );
-		$this->assertArrayHasKey( 'user_name', $properties );
-		$this->assertArrayHasKey( 'registered', $properties );
-		$this->assertArrayHasKey( 'registered_gmt', $properties );
-		$this->assertArrayHasKey( 'activation_key', $properties );
-		$this->assertArrayHasKey( 'user_email', $properties );
-		$this->assertArrayHasKey( 'date_sent', $properties );
-		$this->assertArrayHasKey( 'date_sent_gmt', $properties );
-		$this->assertArrayHasKey( 'count_sent', $properties );
-		$this->assertArrayHasKey( 'meta', $properties );
-		$this->assertArrayHasKey( 'site_language', $properties );
-		$this->assertArrayHasKey( 'site_public', $properties );
-		$this->assertArrayHasKey( 'site_title', $properties );
-		$this->assertArrayHasKey( 'site_name', $properties );
 	}
 
 	public function test_context_param() {

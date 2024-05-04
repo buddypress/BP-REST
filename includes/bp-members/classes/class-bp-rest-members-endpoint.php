@@ -714,11 +714,14 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 		}
 
 		if ( 'edit' === $context && current_user_can( 'list_users' ) ) {
-			$data['registered_date']     = bp_rest_prepare_date_response( $user->data->user_registered, get_date_from_gmt( $user->data->user_registered ) );
-			$data['registered_date_gmt'] = bp_rest_prepare_date_response( $user->data->user_registered );
-			$data['roles']               = (array) array_values( $user->roles );
-			$data['capabilities']        = (array) array_keys( $user->allcaps );
-			$data['extra_capabilities']  = (array) array_keys( $user->caps );
+			if ( isset( $user->data ) ) {
+				$data['registered_date']     = bp_rest_prepare_date_response( $user->data->user_registered, get_date_from_gmt( $user->data->user_registered ) );
+				$data['registered_date_gmt'] = bp_rest_prepare_date_response( $user->data->user_registered );
+			}
+
+			$data['roles']              = isset( $user->roles ) ? array_values( (array) $user->roles ) : array();
+			$data['capabilities']       = isset( $user->allcaps ) ? array_keys( (array) $user->allcaps ) : array();
+			$data['extra_capabilities'] = isset( $user->caps ) ? array_keys( (array) $user->caps ) : array();
 		}
 
 		// The name used for that user in @-mentions.

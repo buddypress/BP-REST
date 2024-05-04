@@ -344,7 +344,8 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 				'field_group_id' => $this->group_id
 			]
 		);
-		xprofile_insert_field(
+
+		$this->bp_factory->xprofile_field->create(
 			[
 				'field_group_id' => $this->group_id,
 				'parent_id'      => $field_id,
@@ -353,7 +354,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 			]
 		);
 
-		xprofile_insert_field(
+		$this->bp_factory->xprofile_field->create(
 			[
 				'field_group_id' => $this->group_id,
 				'parent_id'      => $field_id,
@@ -469,7 +470,7 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 			]
 		);
 
-		xprofile_insert_field(
+		$this->bp_factory->xprofile_field->create(
 			[
 				'field_group_id' => $this->group_id,
 				'parent_id'      => $field_id,
