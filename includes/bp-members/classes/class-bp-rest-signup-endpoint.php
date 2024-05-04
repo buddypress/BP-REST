@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * Use /signup
  * Use /signup/{id}
- * Use /signup/resend/{id}
+ * Use /signup/resend/
  * Use /signup/activate/{id}
  *
  * @since 6.0.0
@@ -91,13 +91,6 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			$this->namespace,
 			'/' . $this->rest_base . '/activate/(?P<activation_key>[\w-]+)',
 			array(
-				'args'   => array(
-					'activation_key' => array(
-						'description' => __( 'Activation key of the signup.', 'buddypress' ),
-						'type'        => 'string',
-						'required'    => true,
-					),
-				),
 				array(
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'activate_item' ),
@@ -113,12 +106,13 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		// Register the resend route.
 		register_rest_route(
 			$this->namespace,
-			'/' . $this->rest_base . '/resend/(?P<id>[\w-]+)',
+			'/' . $this->rest_base . '/resend',
 			array(
 				'args' => array(
 					'id' => array(
 						'description' => __( 'Identifier for the signup. Can be a signup ID, an email address, or an activation key.', 'buddypress' ),
 						'type'        => 'string',
+						'required'    => true,
 					),
 				),
 				array(
@@ -959,7 +953,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 *
 	 * @since 6.0.0
 	 *
-	 * @param int $identifier Signup identifier.
+	 * @param int|string $identifier Signup identifier.
 	 * @return BP_Signup|false
 	 */
 	public function get_signup_object( $identifier ) {
