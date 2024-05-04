@@ -13,8 +13,8 @@ defined( 'ABSPATH' ) || exit;
  *
  * Use /signup
  * Use /signup/{id}
- * Use /signup/resend/
- * Use /signup/activate/{id}
+ * Use /signup/resend
+ * Use /signup/activate/{activation_key}
  *
  * @since 6.0.0
  */
@@ -62,8 +62,9 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			array(
 				'args'   => array(
 					'id' => array(
-						'description' => __( 'Identifier for the signup. Can be a signup ID, an email address, or an activation key.', 'buddypress' ),
-						'type'        => 'string',
+						'description'       => __( 'Identifier for the signup. Can be a signup ID, an email address, or an activation key.', 'buddypress' ),
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
 				array(
@@ -110,9 +111,10 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			array(
 				'args' => array(
 					'id' => array(
-						'description' => __( 'Identifier for the signup. Can be a signup ID, an email address, or an activation key.', 'buddypress' ),
-						'type'        => 'string',
-						'required'    => true,
+						'description'       => __( 'Identifier for the signup. Can be a signup ID, an email address, or an activation key.', 'buddypress' ),
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+						'required'          => true,
 					),
 				),
 				array(
@@ -391,10 +393,10 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$meta['password'] = wp_hash_password( $password );
 
 		// Get signup data.
-		$signup_field_data = $request->get_param( 'signup_field_data' );
+		$signup_field_data = (array) $request->get_param( 'signup_field_data' );
 
 		// Store the profile field data.
-		if ( bp_is_active( 'xprofile' ) && ! empty( $signup_field_data ) ) {
+		if ( bp_is_active( 'xprofile' ) ) {
 			$profile_field_ids = array();
 			$args              = array(
 				'signup_fields_only' => true,
@@ -416,7 +418,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 					continue;
 				}
 
-				foreach ( (array) $signup_field_data as $field_data ) {
+				foreach ( $signup_field_data as $field_data ) {
 					$field_id         = (int) $field_data['field_id'];
 					$field_value      = $field_data['value'];
 					$field_visibility = 'public';

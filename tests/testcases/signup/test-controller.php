@@ -71,7 +71,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertArrayHasKey( $this->endpoint_url . '/(?P<id>[\w-]+)', $routes );
 		$this->assertCount( 2, $routes[ $this->endpoint_url . '/(?P<id>[\w-]+)' ] );
 		$this->assertCount( 1, $routes[ $this->endpoint_url . '/activate/(?P<activation_key>[\w-]+)' ] );
-		$this->assertCount( 1, $routes[ $this->endpoint_url . '/resend/(?P<id>[\w-]+)' ] );
+		$this->assertCount( 1, $routes[ $this->endpoint_url . '/resend' ] );
 	}
 
 	/**
@@ -672,9 +672,11 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group resend_item
 	 */
 	public function test_resend_activation_email() {
-		$s1 = $this->create_signup();
+		$signup_id = $this->create_signup();
 
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/resend/%d', $s1 ) );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/resend' );
+		$request->set_param( 'id', $signup_id );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -693,7 +695,9 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		bp_core_activate_signup( $signup->activation_key );
 
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/resend/%d', $signup_id ) );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/resend' );
+		$request->set_param( 'id', $signup_id );
+		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
 		if ( is_multisite() ) {
@@ -711,7 +715,8 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group resend_item
 	 */
 	public function test_resend_activation_email_invalid_signup_id() {
-		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/resend/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/resend' );
+		$request->set_param( 'id', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER );
 		$request->set_param( 'context', 'edit' );
 		$response = $this->server->dispatch( $request );
 
