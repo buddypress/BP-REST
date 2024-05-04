@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Messages Endpoint Tests.
  *
@@ -185,6 +186,55 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_item
 	 */
+	public function test_get_thread_messages_paginated() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$m  = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+			'content'    => 'Content',
+		) );
+
+		// create several messages.
+		$this->bp_factory->message->create_many( 10, array(
+			'thread_id'  => $m->thread_id,
+			'sender_id'  => $u2,
+			'recipients' => array( $u1 ),
+			'content'    => 'Bar',
+		) );
+
+		// create a reply.
+		$message_id = $this->bp_factory->message->create( array(
+			'sender_id'  => $u2,
+			'thread_id'  => $m->thread_id,
+			'recipients' => array( $u1 ),
+			'content'    => 'Bar',
+		) );
+
+		$this->bp->set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m->thread_id );
+		$request->set_param( 'context', 'view' );
+		$request->set_param( 'messages_per_page', 1 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$headers = $response->get_headers();
+		$this->assertEquals( 12, $headers['X-WP-Total'] );
+		$this->assertEquals( 12, $headers['X-WP-TotalPages'] );
+
+		$all_data = current( $response->get_data() );
+
+		$this->assertCount( 1, $all_data['messages'] );
+		$this->assertSame( $m->thread_id, $all_data['messages'][0]['thread_id'] );
+		$this->assertSame( $message_id, $all_data['messages'][0]['id'] );
+	}
+
+	/**
+	 * @group get_item
+	 */
 	public function test_get_item_admin_access() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
@@ -231,6 +281,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertSame( 403, $response->get_status() );
 	}
 
 	/**
@@ -239,7 +290,8 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_item_user_is_not_logged_in() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
-		$u3 = $this->factory->user->create();
+		$this->factory->user->create();
+
 		$m  = $this->bp_factory->message->create_and_get( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2 ),
@@ -252,6 +304,7 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertSame( 401, $response->get_status() );
 	}
 
 	/**
@@ -700,12 +753,71 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->bp->set_current_user( $u2 );
 
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . bp_get_messages_starred_slug() . '/' . $m->id );
-		$request->add_header( 'content-type', 'application/json' );
 		$response = $this->server->dispatch( $request );
-		$data     = $response->get_data();
-		$data     = reset( $data );
+		$data     = current( $response->get_data() );
 
 		$this->assertFalse( $data['is_starred'] );
+	}
+
+	/**
+	 * @group starred
+	 */
+	public function test_update_starred_user_is_not_logged_in() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		// Init a thread.
+		$m = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . bp_get_messages_starred_slug() . '/' . $m->id );
+
+		$this->assertErrorResponse(
+			'bp_rest_authorization_required',
+			$this->server->dispatch( $request ),
+			rest_authorization_required_code()
+		);
+	}
+
+	/**
+	 * @group starred
+	 */
+	public function test_update_starred_user_with_no_access() {
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$u3 = $this->factory->user->create();
+
+		// Init a thread.
+		$m = $this->bp_factory->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		$this->bp->set_current_user( $u3 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . bp_get_messages_starred_slug() . '/' . $m->id );
+
+		$this->assertErrorResponse(
+			'bp_rest_authorization_required',
+			$this->server->dispatch( $request ),
+			rest_authorization_required_code()
+		);
+	}
+
+	/**
+	 * @group starred
+	 */
+	public function test_update_starred_using_invalid_id() {
+		$this->bp->set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . bp_get_messages_starred_slug() . '/' . REST_TESTS_IMPOSSIBLY_HIGH_NUMBER );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_invalid_id', $response, 404 );
 	}
 
 	public function update_additional_field( $value, $data, $attribute ) {
