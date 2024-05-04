@@ -929,7 +929,7 @@ class BP_REST_Groups_Endpoint extends WP_REST_Controller {
 		// Remove group type(s).
 		if ( isset( $prepared_group->group_id ) && ! empty( $request->get_param( 'remove_types' ) ) ) {
 			array_map(
-				function( $type ) use ( $prepared_group ) {
+				function ( $type ) use ( $prepared_group ) {
 					bp_groups_remove_group_type( $prepared_group->group_id, $type );
 				},
 				$request->get_param( 'remove_types' )

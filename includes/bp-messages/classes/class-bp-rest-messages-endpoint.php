@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * /messages/
  * /messages/{thread_id}
- * /messages//starred{message_id}
+ * /messages/starred/{message_id}
  *
  * @since 0.1.0
  */
@@ -584,17 +584,6 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 	 */
 	public function update_starred( $request ) {
 		$message = $this->get_message_object( $request->get_param( 'id' ) );
-
-		if ( empty( $message->id ) ) {
-			return new WP_Error(
-				'bp_rest_invalid_id',
-				__( 'Sorry, this message does not exist.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		}
-
 		$user_id = bp_loggedin_user_id();
 		$result  = false;
 		$action  = 'star';
@@ -665,9 +654,24 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		if ( is_user_logged_in() ) {
-			// The id here is for the message id.
-			$thread_id = messages_get_message_thread_id( $request->get_param( 'id' ) );
+		if ( ! is_user_logged_in() ) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to star/unstar a message.', 'buddypress' ),
+				array(
+					'status' => rest_authorization_required_code(),
+				)
+			);
+		} else {
+			$thread_id = messages_get_message_thread_id( $request->get_param( 'id' ) ); // This is a message id.
+
+			if ( empty( $thread_id ) ) {
+				return new WP_Error(
+					'bp_rest_invalid_id',
+					__( 'Sorry, the thread of this message does not exist.', 'buddypress' ),
+					array( 'status' => 404 )
+				);
+			}
 
 			if ( messages_check_thread_access( $thread_id ) ) {
 				$retval = true;
