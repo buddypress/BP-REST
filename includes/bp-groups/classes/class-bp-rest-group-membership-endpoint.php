@@ -390,11 +390,11 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$user         = bp_rest_get_user( $request->get_param( 'user_id' ) );
-		$group        = $this->groups_endpoint->get_group_object( $request->get_param( 'group_id' ) );
-		$action       = $request->get_param( 'action' );
-		$role         = $request->get_param( 'role' );
-		$group_id     = $group->id;
+		$user     = bp_rest_get_user( $request->get_param( 'user_id' ) );
+		$group    = $this->groups_endpoint->get_group_object( $request->get_param( 'group_id' ) );
+		$action   = $request->get_param( 'action' );
+		$role     = $request->get_param( 'role' );
+		$group_id = $group->id;
 
 		if ( 'promote' === $action ) {
 			if ( ! groups_promote_member( $user->ID, $group_id, $role, bp_loggedin_user_id() ) ) {
