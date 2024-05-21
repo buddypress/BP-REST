@@ -70,6 +70,21 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_items
 	 */
+	public function test_get_items_with_support_for_the_community_visibility() {
+		toggle_component_visibility();
+
+		$this->bp_factory->group->create_many( 3 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_items
+	 */
 	public function test_get_items_including_hidden_groups() {
 		$u  = $this->factory->user->create();
 		$g1 = $this->bp_factory->group->create();
@@ -379,6 +394,21 @@ class BP_Test_REST_Group_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$all_data = $response->get_data();
 
 		$this->check_group_data( $group, $all_data[0], 'view' );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_unauthenticated_with_support_for_the_community_visibility() {
+		toggle_component_visibility();
+
+		$group = $this->endpoint->get_group_object( $this->group_id );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $group->id ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**

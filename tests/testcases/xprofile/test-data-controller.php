@@ -76,6 +76,20 @@ class BP_Test_REST_XProfile_Data_Endpoint extends WP_Test_REST_Controller_Testca
 	/**
 	 * @group get_item
 	 */
+	public function test_get_item_with_support_for_the_community_visibility() {
+		toggle_component_visibility();
+
+		xprofile_set_field_data( $this->field_id, $this->user, 'foo' );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/data/%d', $this->field_id, $this->user ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_item
+	 */
 	public function test_get_item_hidden_for_user() {
 		$f = $this->bp_factory->xprofile_field->create( array( 'field_group_id' => $this->group_id ) );
 		xprofile_set_field_data( $f, $this->user, 'bar' );

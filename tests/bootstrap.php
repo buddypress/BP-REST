@@ -44,3 +44,23 @@ require_once WP_TESTS_DIR . '/includes/testcase-rest-controller.php';
 echo "Loading BuddyPress testcases...\n";
 require_once BP_TESTS_DIR . '/includes/testcase.php';
 require_once BP_TESTS_DIR . '/includes/testcase-emails.php';
+
+/**
+ * Set component visibility.
+ *
+ * @param bool $visibility Visibility.
+ */
+function toggle_component_visibility( $visibility = true ) {
+	$visibility = $visibility ? 'members' : 'anyone';
+
+	update_option(
+		'_bp_community_visibility',
+		array(
+			'global'   => $visibility,
+			'activity' => $visibility,
+			'members'  => $visibility,
+			'groups'   => $visibility,
+			'blogs'    => $visibility,
+		)
+	);
+}

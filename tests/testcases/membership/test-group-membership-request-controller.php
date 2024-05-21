@@ -105,6 +105,30 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 	/**
 	 * @group get_items
 	 */
+	public function test_get_items_with_support_for_the_community_visibility() {
+		toggle_component_visibility();
+
+		$u   = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u2  = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$u3  = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		groups_send_membership_request( array( 'group_id' => $this->group_id, 'user_id' => $u ) );
+		groups_send_membership_request( array( 'group_id' => $this->group_id, 'user_id' => $u2 ) );
+		groups_send_membership_request( array( 'group_id' => $this->group_id, 'user_id' => $u3 ) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $this->group_id,
+		) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_items
+	 */
 	public function test_get_items_as_group_admin() {
 		$u   = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$u2  = $this->factory->user->create( array( 'role' => 'subscriber' ) );
@@ -243,6 +267,22 @@ class BP_Test_REST_Group_Membership_Request_Endpoint extends WP_Test_REST_Contro
 
 		$accepted = groups_is_user_member( $u, $this->group_id );
 		$this->assertFalse( $accepted );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_with_support_for_the_community_visibility() {
+		toggle_component_visibility();
+
+		$u          = $this->factory->user->create( array( 'role'       => 'subscriber' ) );
+		$request_id = groups_send_membership_request( array( 'group_id' => $this->group_id, 'user_id' => $u ) );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/'. $request_id );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**

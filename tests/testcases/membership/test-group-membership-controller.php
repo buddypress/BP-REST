@@ -156,6 +156,28 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	/**
 	 * @group get_items
 	 */
+	public function test_get_items_with_support_for_the_community_visibility() {
+		toggle_component_visibility();
+
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+
+		$g1 = $this->bp_factory->group->create( array(
+			'creator' => $u1,
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . $g1 . '/members' );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_items
+	 */
 	public function test_get_paginated_items() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();

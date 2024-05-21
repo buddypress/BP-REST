@@ -80,6 +80,19 @@ class BP_Test_REST_Attachments_Member_Avatar_Endpoint extends WP_Test_REST_Contr
 	/**
 	 * @group get_item
 	 */
+	public function test_get_item_with_support_for_the_community_visibility() {
+		toggle_component_visibility();
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_item
+	 */
 	public function test_get_item_publicly() {
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->user_id ) );
 		$request->set_param( 'context', 'view' );

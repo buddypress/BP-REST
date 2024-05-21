@@ -16,7 +16,6 @@ defined( 'ABSPATH' ) || exit;
  * @since 6.0.0
  */
 class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
-
 	use BP_REST_Attachments;
 
 	/**
@@ -167,9 +166,7 @@ class BP_REST_Attachments_Group_Cover_Endpoint extends WP_REST_Controller {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
 				__( 'Invalid group ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
+				array( 'status' => 404 )
 			);
 
 			$this->group = $this->groups_endpoint->get_group_object( $request );
