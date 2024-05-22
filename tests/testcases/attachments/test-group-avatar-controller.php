@@ -7,7 +7,6 @@
  * @group group-avatar
  */
 class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Controller_Testcase {
-	protected $bp_factory;
 	protected $endpoint;
 	protected $bp;
 	protected $endpoint_url;
@@ -15,22 +14,20 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	protected $user_id;
 	protected $group_id;
 	protected $server;
-	protected $old_current_user;
 
 	public function set_up() {
 		parent::set_up();
 
-		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Attachments_Group_Avatar_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->groups->id . '/';
 		$this->image_file    = __DIR__ . '/assets/test-image.jpg';
 
-		$this->user_id = $this->bp_factory->user->create( array(
+		$this->user_id = $this->bp::factory()->user->create( array(
 			'role' => 'administrator',
 		) );
 
-		$this->group_id = $this->bp_factory->group->create( array(
+		$this->group_id = $this->bp::factory()->group->create( array(
 			'name'        => 'Group Test',
 			'description' => 'Group Description',
 			'creator_id'  => $this->user_id,
@@ -39,13 +36,6 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
 		}
-
-		$this->old_current_user = get_current_user_id();
-	}
-
-	public function tear_down() {
-		parent::tear_down();
-		$this->bp->set_current_user( $this->old_current_user );
 	}
 
 	public function test_register_routes() {
@@ -68,7 +58,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
 		$request->set_param( 'context', 'view' );
@@ -129,7 +119,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$reset_files = $_FILES;
 		$reset_post = $_POST;
 
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		add_filter( 'pre_move_uploaded_file', array( $this, 'copy_file' ), 10, 3 );
 		add_filter( 'bp_core_avatar_dimension', array( $this, 'return_100' ), 10, 1 );
@@ -196,7 +186,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 		$reset_files = $_FILES;
 		$reset_post  = $_POST;
 
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		// Disabling group avatar upload.
 		add_filter( 'bp_disable_group_avatar_uploads', '__return_true' );
@@ -225,7 +215,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item_empty_image() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
@@ -245,9 +235,9 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item_invalid_group() {
-		$u1 = $this->bp_factory->user->create();
+		$u1 = $this->bp::factory()->user->create();
 
-		$this->bp->set_current_user( $u1 );
+		$this->bp::set_current_user( $u1 );
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/avatar', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -272,7 +262,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group delete_item
 	 */
 	public function test_delete_item_failed() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
@@ -293,7 +283,7 @@ class BP_Test_REST_Attachments_Group_Avatar_Endpoint extends WP_Test_REST_Contro
 	 * @group delete_item
 	 */
 	public function test_delete_item_invalid_group() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/avatar', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );

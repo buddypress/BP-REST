@@ -7,7 +7,6 @@
  * @group members
  */
 class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
-	protected $bp_factory;
 	protected $endpoint;
 	protected $bp;
 	protected $endpoint_url;
@@ -47,7 +46,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		buddypress()->members->types = array();
 
-		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Members_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/members';
@@ -74,9 +72,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
-		$u3 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -103,9 +101,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_items_with_support_for_the_community_visibility() {
 		toggle_component_visibility();
 
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
-		$u3 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -121,13 +119,13 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items_extra() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
-		$u3 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
 
 		// Set current user.
 		$current_user = get_current_user_id();
-		$this->bp->set_current_user( $u2 );
+		$this->bp::set_current_user( $u2 );
 
 		// u2 is the only one to have a latest_update.
 		$a1 = bp_activity_post_update(
@@ -143,7 +141,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		// u1 is the only one to have a last activity
 		bp_update_user_last_activity( $u1, $date_last_activity );
 
-		$this->bp->set_current_user( $current_user );
+		$this->bp::set_current_user( $current_user );
 
 		// u1 and u3 are friends.
 		friends_add_friend( $u1, $u3, true );
@@ -178,10 +176,10 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_paginated_items() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
-		$u3 = $this->factory->user->create();
-		$u4 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+		$u4 = static::factory()->user->create();
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -211,9 +209,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items_with_types() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
-		$u3 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
 
 		bp_register_member_type( 'foo' );
 		bp_register_member_type( 'bar' );
@@ -248,10 +246,10 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items_filtered_by_xprofile() {
-		$u  = $this->bp_factory->user->create();
-		$u2 = $this->bp_factory->user->create();
-		$g  = $this->bp_factory->xprofile_group->create();
-		$f  = $this->bp_factory->xprofile_field->create( [
+		$u  = $this->bp::factory()->user->create();
+		$u2 = $this->bp::factory()->user->create();
+		$g  = $this->bp::factory()->xprofile_group->create();
+		$f  = $this->bp::factory()->xprofile_field->create( [
 			'field_group_id' => $g,
 			'type'           => 'textbox',
 			'name'           => 'foo',
@@ -290,17 +288,17 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items_filtered_by_xprofile_with_and_relation() {
-		$u  = $this->bp_factory->user->create();
-		$u2 = $this->bp_factory->user->create();
+		$u  = $this->bp::factory()->user->create();
+		$u2 = $this->bp::factory()->user->create();
 
-		$g = $this->bp_factory->xprofile_group->create();
+		$g = $this->bp::factory()->xprofile_group->create();
 
-		$f  = $this->bp_factory->xprofile_field->create( [
+		$f  = $this->bp::factory()->xprofile_field->create( [
 			'field_group_id' => $g,
 			'type'           => 'textbox',
 			'name'           => 'foo',
 		] );
-		$f2 = $this->bp_factory->xprofile_field->create( [
+		$f2 = $this->bp::factory()->xprofile_field->create( [
 			'field_group_id' => $g,
 			'type'           => 'textbox',
 			'name'           => 'bar',
@@ -345,18 +343,18 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items_filtered_by_xprofile_with_or_relation() {
-		$u  = $this->bp_factory->user->create();
-		$u2 = $this->bp_factory->user->create();
-		$u3 = $this->bp_factory->user->create();
+		$u  = $this->bp::factory()->user->create();
+		$u2 = $this->bp::factory()->user->create();
+		$u3 = $this->bp::factory()->user->create();
 
-		$g = $this->bp_factory->xprofile_group->create();
+		$g = $this->bp::factory()->xprofile_group->create();
 
-		$f  = $this->bp_factory->xprofile_field->create( [
+		$f  = $this->bp::factory()->xprofile_field->create( [
 			'field_group_id' => $g,
 			'type'           => 'textbox',
 			'name'           => 'foo',
 		] );
-		$f2 = $this->bp_factory->xprofile_field->create( [
+		$f2 = $this->bp::factory()->xprofile_field->create( [
 			'field_group_id' => $g,
 			'type'           => 'textbox',
 			'name'           => 'bar',
@@ -405,7 +403,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		$u = $this->factory->user->create();
+		$u = static::factory()->user->create();
 
 		// Register and set member types.
 		bp_register_member_type( 'foo' );
@@ -426,7 +424,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_item_with_support_for_the_community_visibility() {
 		toggle_component_visibility();
 
-		$u = $this->factory->user->create();
+		$u = static::factory()->user->create();
 
 		// Register and set member types.
 		bp_register_member_type( 'foo' );
@@ -444,12 +442,12 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item_extras() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
 
 		// Set current user.
 		$current_user = get_current_user_id();
-		$this->bp->set_current_user( $u1 );
+		$this->bp::set_current_user( $u1 );
 
 		$a1 = bp_activity_post_update(
 			array(
@@ -484,7 +482,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertEquals( $member['latest_update']['id'], $a1 );
 		$this->assertEquals( 1, $member['total_friend_count'] );
 
-		$this->bp->set_current_user( $current_user );
+		$this->bp::set_current_user( $current_user );
 	}
 
 	/**
@@ -493,7 +491,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_get_item_me_extras() {
 		// Set current user.
 		$current_user = get_current_user_id();
-		$this->bp->set_current_user( self::$user );
+		$this->bp::set_current_user( self::$user );
 
 		$request  = new WP_REST_Request( 'GET', $this->endpoint_url . '/me' );
 		$request->set_query_params(
@@ -510,7 +508,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		$this->assertEquals( 'right now', $me['last_activity']['timediff'] );
 
-		$this->bp->set_current_user( $current_user );
+		$this->bp::set_current_user( $current_user );
 	}
 
 	/**
@@ -518,7 +516,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group avatar
 	 */
 	public function test_get_item_without_avatar() {
-		$u = $this->factory->user->create();
+		$u = static::factory()->user->create();
 
 		// Register and set member types.
 		bp_register_member_type( 'foo' );
@@ -551,7 +549,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$GLOBALS['wp_rest_server']->override_by_default = false;
 
 		$request    = new WP_REST_Request( 'OPTIONS', $this->endpoint_url );
-		$response   = rest_get_server()->dispatch( $request );
+		$response   = $this->server->dispatch( $request );
 		$data       = $response->get_data();
 		$properties = $data['schema']['properties'];
 
@@ -574,10 +572,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item() {
-
-		if ( is_multisite() ) {
-			$this->markTestSkipped();
-		}
+		$this->skipWithMultisite();
 
 		$this->allow_user_to_manage_multisite();
 
@@ -604,8 +599,8 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item_without_permission() {
-		$u = $this->factory->user->create();
-		$this->bp->set_current_user( $u );
+		$u = static::factory()->user->create();
+		$this->bp::set_current_user( $u );
 
 		$params = array(
 			'password'   => 'testpassword',
@@ -626,7 +621,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group update_item
 	 */
 	public function test_update_item() {
-		$u = $this->factory->user->create( array(
+		$u = static::factory()->user->create( array(
 			'email' => 'test@example.com',
 			'name'  => 'User Name',
 		) );
@@ -655,7 +650,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group update_item
 	 */
 	public function test_update_item_user_not_logged_in() {
-		$u = $this->factory->user->create();
+		$u = static::factory()->user->create();
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
 		$request->set_param( 'username', 'test_json_user' );
@@ -668,7 +663,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group update_item
 	 */
 	public function test_update_item_invalid_id() {
-		$this->bp->set_current_user( self::$user );
+		$this->bp::set_current_user( self::$user );
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
@@ -687,10 +682,10 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group update_item
 	 */
 	public function test_update_item_without_permission() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
 
-		$this->bp->set_current_user( $u1 );
+		$this->bp::set_current_user( $u1 );
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u2 ) );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
@@ -708,17 +703,14 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group update_item
 	 */
 	public function test_update_item_types() {
+		$this->skipWithMultisite();
 
-		if ( is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
-		$u = $this->factory->user->create( array(
+		$u = static::factory()->user->create( array(
 			'email' => 'member@type.com',
 			'name'  => 'User Name',
 		) );
 
-		$this->bp->set_current_user( self::$user );
+		$this->bp::set_current_user( self::$user );
 		bp_register_member_type( 'membertypeone' );
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
@@ -737,12 +729,12 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group update_item
 	 */
 	public function test_update_item_member_type_as_regular_user() {
-		$u = $this->factory->user->create( array(
+		$u = static::factory()->user->create( array(
 			'email' => 'member@type.com',
 			'name'  => 'User Name',
 		) );
 
-		$this->bp->set_current_user( $u );
+		$this->bp::set_current_user( $u );
 		bp_register_member_type( 'membertypeone' );
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $u ) );
@@ -760,7 +752,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group update_item
 	 */
 	public function test_update_item_member_type_as_admin_user() {
-		$this->bp->set_current_user( self::$user );
+		$this->bp::set_current_user( self::$user );
 		bp_register_member_type( 'membertypeone' );
 		bp_register_member_type( 'membertypetwo' );
 
@@ -782,12 +774,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
+		$this->skipWithMultisite();
 
-		if ( is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
-		$u = $this->factory->user->create( array( 'display_name' => 'Deleted User' ) );
+		$u = static::factory()->user->create( array( 'display_name' => 'Deleted User' ) );
 
 		$this->allow_user_to_manage_multisite();
 
@@ -795,12 +784,6 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$request->set_param( 'force', true );
 		$request->set_param( 'reassign', false );
 		$response = $this->server->dispatch( $request );
-
-		// Not implemented in multisite.
-		if ( is_multisite() ) {
-			$this->assertErrorResponse( 'bp_rest_authorization_required_code', $response, 501 );
-			return;
-		}
 
 		$this->assertEquals( 200, $response->get_status() );
 
@@ -815,7 +798,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item_invalid_id() {
-		$this->bp->set_current_user( self::$user );
+		$this->bp::set_current_user( self::$user );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$request->set_param( 'force', true );
@@ -829,7 +812,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item_user_not_logged_in() {
-		$u = $this->factory->user->create();
+		$u = static::factory()->user->create();
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $u ) );
 		$request->set_param( 'force', true );
@@ -843,10 +826,10 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item_without_permission() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
 
-		$this->bp->set_current_user( $u1 );
+		$this->bp::set_current_user( $u1 );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $u2 ) );
 		$request->set_param( 'force', true );
@@ -860,9 +843,9 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_current_item() {
-		$u = $this->factory->user->create( array( 'display_name' => 'Deleted User' ) );
+		$u = static::factory()->user->create( array( 'display_name' => 'Deleted User' ) );
 		$current_user = get_current_user_id();
-		$this->bp->set_current_user( $u );
+		$this->bp::set_current_user( $u );
 
 		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/me' );
 		$request->set_param( 'force', true );
@@ -877,11 +860,11 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$this->assertTrue( $data['deleted'] );
 		$this->assertEquals( 'Deleted User', $data['previous']['name'] );
 
-		$this->bp->set_current_user( $u );
+		$this->bp::set_current_user( $u );
 	}
 
 	public function test_prepare_item() {
-		$this->bp->set_current_user( self::$user );
+		$this->bp::set_current_user( self::$user );
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'context', 'view' );
@@ -942,7 +925,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	protected function allow_user_to_manage_multisite() {
-		$this->bp->set_current_user( self::$user );
+		$this->bp::set_current_user( self::$user );
 
 		if ( is_multisite() ) {
 			update_site_option( 'site_admins', array( wp_get_current_user()->user_login ) );
@@ -1033,10 +1016,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group additional_fields
 	 */
 	public function test_additional_fields() {
-
-		if ( is_multisite() ) {
-			$this->markTestSkipped();
-		}
+		$this->skipWithMultisite();
 
 		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
 
@@ -1097,7 +1077,7 @@ class BP_Test_REST_Members_Endpoint extends WP_Test_REST_Controller_Testcase {
 			),
 		) );
 
-		$u = $this->factory->user->create( array(
+		$u = static::factory()->user->create( array(
 			'email' => 'test@example.com',
 			'name'  => 'User Name',
 		) );

@@ -7,7 +7,6 @@
  * @group group-invites
  */
 class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testcase {
-	protected $bp_factory;
 	protected $endpoint;
 	protected $bp;
 	protected $endpoint_url;
@@ -20,16 +19,15 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	public function set_up() {
 		parent::set_up();
 
-		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Group_Invites_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->groups->id . '/invites';
-		$this->user         = $this->factory->user->create( array(
+		$this->user         = static::factory()->user->create( array(
 			'role'       => 'administrator',
 			'user_email' => 'admin@example.com',
 		) );
 
-		$this->group_id = $this->bp_factory->group->create( array(
+		$this->group_id = $this->bp::factory()->group->create( array(
 			'name'        => 'Group Test',
 			'description' => 'Group Description',
 			'status'      => 'private',
@@ -37,11 +35,11 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		) );
 
 		// Create a group with a group admin that is not a site admin.
-		$this->g1admin = $this->factory->user->create( array(
+		$this->g1admin = static::factory()->user->create( array(
 			'role'       => 'subscriber',
 			'user_email' => 'sub@example.com',
 		) );
-		$this->g1 = $this->bp_factory->group->create( array(
+		$this->g1 = $this->bp::factory()->group->create( array(
 			'name'        => 'Group Test 1',
 			'description' => 'Group Description 1',
 			'status'      => 'private',
@@ -72,16 +70,16 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
-		$u3 = $this->factory->user->create();
-		$u4 = $this->factory->user->create();
-		$u5 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+		$u4 = static::factory()->user->create();
+		$u5 = static::factory()->user->create();
 
 		$this->populate_group_with_invites( [ $u1, $u2, $u3, $u4 ], $this->group_id );
 
 		// As site admin
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
 			'group_id' => $this->group_id,
@@ -105,10 +103,10 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	public function test_get_items_with_support_for_the_community_visibility() {
 		toggle_component_visibility();
 
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
-		$u3 = $this->factory->user->create();
-		$u4 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+		$u4 = static::factory()->user->create();
 
 		$this->populate_group_with_invites( [ $u1, $u2, $u3, $u4 ], $this->group_id );
 
@@ -126,17 +124,17 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_items
 	 */
 	public function test_get_items_as_group_admin() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
-		$u3 = $this->factory->user->create();
-		$u4 = $this->factory->user->create();
-		$u5 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+		$u4 = static::factory()->user->create();
+		$u5 = static::factory()->user->create();
 
 		$this->populate_group_with_invites( [ $u1, $u2, $u3, $u5 ], $this->g1 );
 		// Red herring
 		$this->populate_group_with_invites( [ $u4 ], $this->group_id );
 
-		$this->bp->set_current_user( $this->g1admin );
+		$this->bp::set_current_user( $this->g1admin );
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
 			'group_id' => $this->g1,
@@ -158,8 +156,8 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_items
 	 */
 	public function test_get_items_as_user() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
 
 		$inv1 = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -181,7 +179,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'send_invite' => 1,
 		) );
 
-		$this->bp->set_current_user( $u1 );
+		$this->bp::set_current_user( $u1 );
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
 			'user_id' => $u1,
@@ -203,12 +201,12 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_items
 	 */
 	public function test_get_items_as_inviter() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
-		$u3 = $this->factory->user->create();
-		$u4 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+		$u4 = static::factory()->user->create();
 
-		$this->bp->add_user_to_group( $u4, $this->g1 );
+		$this->bp::add_user_to_group( $u4, $this->g1 );
 
 		groups_invite_user( array(
 			'user_id'     => $u1,
@@ -230,7 +228,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'send_invite' => 1,
 		) );
 
-		$this->bp->set_current_user( $u4 );
+		$this->bp::set_current_user( $u4 );
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
 			'inviter_id'               => $u4,
@@ -252,7 +250,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_items
 	 */
 	public function test_get_items_user_not_logged_in() {
-		$this->bp->set_current_user( 0 );
+		$this->bp::set_current_user( 0 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -268,8 +266,8 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_items
 	 */
 	public function test_get_items_without_permission() {
-		$u1 = $this->factory->user->create();
-		$this->bp->set_current_user( $u1 );
+		$u1 = static::factory()->user->create();
+		$this->bp::set_current_user( $u1 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -285,7 +283,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		$u1 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
 
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -294,7 +292,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'send_invite' => 1,
 		) );
 
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $invite_id ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -310,7 +308,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	public function test_get_item_with_support_for_the_community_visibility() {
 		toggle_component_visibility();
 
-		$u1 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
 
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -330,7 +328,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_item
 	 */
 	public function test_get_item_as_user() {
-		$u1 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
 
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -339,7 +337,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'send_invite' => 1,
 		) );
 
-		$this->bp->set_current_user( $u1 );
+		$this->bp::set_current_user( $u1 );
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $invite_id ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -353,7 +351,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group get_item
 	 */
 	public function test_get_item_as_inviter() {
-		$u1 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
 
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -362,7 +360,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'send_invite' => 1,
 		) );
 
-		$this->bp->set_current_user( $this->g1admin );
+		$this->bp::set_current_user( $this->g1admin );
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $invite_id ) );
 		$request->set_param( 'context', 'view' );
 		$response = $this->server->dispatch( $request );
@@ -376,9 +374,9 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		$u1 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
 
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -401,9 +399,9 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group create_item
 	 */
 	public function test_create_item_as_group_admin() {
-		$u1 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
 
-		$this->bp->set_current_user( $this->g1admin );
+		$this->bp::set_current_user( $this->g1admin );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -428,7 +426,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 */
 	public function test_inviter_cannot_invite_member_to_group_if_already_member() {
 		// $this->user is a creator of the group.
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -445,9 +443,9 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group create_item
 	 */
 	public function test_create_item_user_not_logged_in() {
-		$u = $this->factory->user->create();
+		$u = static::factory()->user->create();
 
-		$this->bp->set_current_user( 0 );
+		$this->bp::set_current_user( 0 );
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params( array(
 			'user_id'    => $u,
@@ -463,7 +461,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group create_item
 	 */
 	public function test_create_item_invalid_member_id() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -480,9 +478,9 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group create_item
 	 */
 	public function test_create_item_invalid_inviter_id() {
-		$u = $this->factory->user->create();
+		$u = static::factory()->user->create();
 
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -499,9 +497,9 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group create_item
 	 */
 	public function test_create_item_invalid_group_id() {
-		$u = $this->factory->user->create();
+		$u = static::factory()->user->create();
 
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -519,10 +517,10 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group create_item
 	 */
 	public function test_create_item_without_permission() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
 
-		$this->bp->set_current_user( $u2 );
+		$this->bp::set_current_user( $u2 );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->set_query_params( array(
@@ -539,7 +537,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group update_item
 	 */
 	public function test_update_item() {
-		$u1 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
 
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -548,7 +546,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'send_invite' => 1,
 		) );
 
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $invite_id );
 		$response = $this->server->dispatch( $request );
@@ -564,7 +562,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group update_item
 	 */
 	public function test_update_item_as_invitee() {
-		$u1 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
 			'group_id'    => $this->group_id,
@@ -572,7 +570,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'send_invite' => 1,
 		) );
 
-		$this->bp->set_current_user( $u1 );
+		$this->bp::set_current_user( $u1 );
 
 		$request  = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $invite_id );
 		$response = $this->server->dispatch( $request );
@@ -588,7 +586,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group update_item
 	 */
 	public function test_update_item_invalid_id() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request  = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . REST_TESTS_IMPOSSIBLY_HIGH_NUMBER );
 		$response = $this->server->dispatch( $request );
@@ -600,7 +598,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group update_item
 	 */
 	public function test_update_item_user_not_logged_in() {
-		$u1 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
 
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -608,7 +606,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'inviter_id'  => $this->user,
 			'send_invite' => 1,
 		) );
-		$this->bp->set_current_user( 0 );
+		$this->bp::set_current_user( 0 );
 		$request  = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $invite_id );
 		$response = $this->server->dispatch( $request );
 
@@ -619,8 +617,8 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group update_item
 	 */
 	public function test_update_item_without_permission() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
 
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -629,7 +627,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'send_invite' => 1,
 		) );
 
-		$this->bp->set_current_user( $u2 );
+		$this->bp::set_current_user( $u2 );
 
 		$request  = new WP_REST_Request( 'PUT', $this->endpoint_url . '/' . $invite_id );
 		$response = $this->server->dispatch( $request );
@@ -641,7 +639,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
-		$u1 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
 			'group_id'    => $this->group_id,
@@ -650,7 +648,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		) );
 
 		// Delete as site admin.
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $invite_id );
 		$response = $this->server->dispatch( $request );
@@ -666,7 +664,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group delete_item
 	 */
 	public function test_delete_item_as_user() {
-		$u1 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
 
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -675,7 +673,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'send_invite' => 1,
 		) );
 
-		$this->bp->set_current_user( $u1 );
+		$this->bp::set_current_user( $u1 );
 
 		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $invite_id );
 		$response = $this->server->dispatch( $request );
@@ -691,12 +689,12 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group delete_item
 	 */
 	public function test_delete_item_as_inviter() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
 
-		$this->bp->add_user_to_group( $u2, $this->g1 );
+		$this->bp::add_user_to_group( $u2, $this->g1 );
 
-		$this->bp->set_current_user( $u2 );
+		$this->bp::set_current_user( $u2 );
 
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -719,12 +717,12 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group delete_item
 	 */
 	public function test_delete_item_as_group_admin() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
 
-		$this->bp->add_user_to_group( $u2, $this->g1 );
+		$this->bp::add_user_to_group( $u2, $this->g1 );
 
-		$this->bp->set_current_user( $u2 );
+		$this->bp::set_current_user( $u2 );
 
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -733,7 +731,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'send_invite' => 1,
 		) );
 
-		$this->bp->set_current_user( $this->g1admin );
+		$this->bp::set_current_user( $this->g1admin );
 
 		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $invite_id );
 		$response = $this->server->dispatch( $request );
@@ -748,7 +746,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group delete_item
 	 */
 	public function test_delete_item_user_not_logged_in() {
-		$u1 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
 
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -756,7 +754,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'inviter_id'  => $this->user,
 			'send_invite' => 1,
 		) );
-		$this->bp->set_current_user( 0 );
+		$this->bp::set_current_user( 0 );
 		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $invite_id );
 		$request->set_query_params( array(
 			'user_id'    => $u1,
@@ -771,8 +769,8 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group delete_item
 	 */
 	public function test_delete_item_without_permission() {
-		$u1 = $this->factory->user->create();
-		$u2 = $this->factory->user->create();
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
 
 		$invite_id = groups_invite_user( array(
 			'user_id'     => $u1,
@@ -780,7 +778,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 			'inviter_id'  => $this->user,
 			'send_invite' => 1,
 		) );
-		$this->bp->set_current_user( $u2 );
+		$this->bp::set_current_user( $u2 );
 
 		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $invite_id );
 		$request->set_query_params( array(
@@ -796,7 +794,7 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	 * @group update_item
 	 */
 	public function test_delete_item_invalid_id() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . REST_TESTS_IMPOSSIBLY_HIGH_NUMBER );
 		$response = $this->server->dispatch( $request );

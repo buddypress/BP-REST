@@ -7,7 +7,6 @@
  * @group blogs
  */
 class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
-	protected $bp_factory;
 	protected $endpoint;
 	protected $bp;
 	protected $endpoint_url;
@@ -17,21 +16,16 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function set_up() {
 		parent::set_up();
 
-		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Blogs_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->blogs->id;
-		$this->admin        = $this->factory->user->create( array(
+		$this->admin        = static::factory()->user->create( array(
 			'role' => 'administrator',
 		) );
 
 		if ( ! $this->server ) {
 			$this->server = rest_get_server();
 		}
-	}
-
-	public function tear_down() {
-		parent::tear_down();
 	}
 
 	public function test_register_routes() {
@@ -50,13 +44,11 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
+		$this->skipWithoutMultisite();
 
-		$this->bp->set_current_user( $this->admin );
+		$this->bp::set_current_user( $this->admin );
 
-		$this->bp_factory->blog->create_many( 2 );
+		$this->bp::factory()->blog->create_many( 2 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -77,13 +69,11 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
+		$this->skipWithoutMultisite();
 
-		$this->bp->set_current_user( $this->admin );
+		$this->bp::set_current_user( $this->admin );
 
-		$blog_id = $this->bp_factory->blog->create(
+		$blog_id = $this->bp::factory()->blog->create(
 			array( 'title' => 'The Foo Bar Blog' )
 		);
 
@@ -109,7 +99,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		toggle_component_visibility();
 
-		$blog_id = $this->bp_factory->blog->create(
+		$blog_id = $this->bp::factory()->blog->create(
 			array( 'title' => 'The Foo Bar Blog' )
 		);
 
@@ -125,9 +115,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item_invalid_blog_id() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
+		$this->skipWithoutMultisite();
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -139,13 +127,11 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_embedded_latest_post_from_blog_using_subdirectory() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
+		$this->skipWithoutMultisite();
 
-		$this->bp->set_current_user( $this->admin );
+		$this->bp::set_current_user( $this->admin );
 
-		$blog_id = $this->bp_factory->blog->create(
+		$blog_id = $this->bp::factory()->blog->create(
 			[
 				'title'  => 'The Foo Bar Blog',
 				'domain' => 'foo-bar',
@@ -155,8 +141,8 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		switch_to_blog( $blog_id );
 
-		$this->factory->post->create();
-		$latest_post = $this->factory->post->create();
+		static::factory()->post->create();
+		$latest_post = static::factory()->post->create();
 		$permalink   = get_permalink( $latest_post );
 		$title       = get_the_title( $latest_post );
 
@@ -186,14 +172,12 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_embedded_latest_post_from_blog_using_subdomain() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
+		$this->skipWithoutMultisite();
 
-		$this->bp->set_current_user( $this->admin );
+		$this->bp::set_current_user( $this->admin );
 
 		$subdomain = 'cool-site.foo-bar';
-		$blog_id   = $this->bp_factory->blog->create(
+		$blog_id   = $this->bp::factory()->blog->create(
 			[
 				'title'  => 'The Foo Bar Blog',
 				'domain' => $subdomain,
@@ -203,8 +187,8 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		switch_to_blog( $blog_id );
 
-		$this->factory->post->create();
-		$latest_post = $this->factory->post->create();
+		static::factory()->post->create();
+		$latest_post = static::factory()->post->create();
 		$permalink   = get_permalink( $latest_post );
 		$title       = get_the_title( $latest_post );
 
@@ -235,9 +219,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
+		$this->skipWithoutMultisite();
 
 		$old_settings = $settings = buddypress()->site_options;
 
@@ -248,7 +230,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$settings['registration'] = 'blog';
 		buddypress()->site_options = $settings;
 
-		$this->bp->set_current_user( $this->admin );
+		$this->bp::set_current_user( $this->admin );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
@@ -271,9 +253,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item_user_not_logged_in() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
+		$this->skipWithoutMultisite();
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
@@ -290,9 +270,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item_signup_disabled() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
+		$this->skipWithoutMultisite();
 
 		$old_settings = $settings = buddypress()->site_options;
 
@@ -303,7 +281,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 		$settings['registration'] = 'none';
 		buddypress()->site_options = $settings;
 
-		$this->bp->set_current_user( $this->admin );
+		$this->bp::set_current_user( $this->admin );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
@@ -322,11 +300,9 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item_without_required_field() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
+		$this->skipWithoutMultisite();
 
-		$this->bp->set_current_user( $this->admin );
+		$this->bp::set_current_user( $this->admin );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
@@ -386,9 +362,7 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group additional_fields
 	 */
 	public function test_get_additional_fields() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
+		$this->skipWithoutMultisite();
 
 		$registered_fields = $GLOBALS['wp_rest_additional_fields'];
 
@@ -401,10 +375,10 @@ class BP_Test_REST_Blogs_Endpoint extends WP_Test_REST_Controller_Testcase {
 			),
 		) );
 
-		$u = $this->bp_factory->user->create();
-		$this->bp->set_current_user( $u );
+		$u = $this->bp::factory()->user->create();
+		$this->bp::set_current_user( $u );
 
-		$blog_id = $this->bp_factory->blog->create(
+		$blog_id = $this->bp::factory()->blog->create(
 			array(
 				'title'   => 'The Foo Bar Blog',
 				'user_id' => $u,
