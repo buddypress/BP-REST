@@ -260,6 +260,17 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ) {
+		$retval = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not allowed to perform this action.', 'buddypress' ),
+			array(
+				'status' => rest_authorization_required_code(),
+			)
+		);
+
+		if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'activity' ) ) ) {
+			$retval = true;
+		}
 
 		/**
 		 * Filter the activity `get_items` permissions check.
@@ -269,7 +280,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 		 * @param true|WP_Error   $retval  Returned value.
 		 * @param WP_REST_Request $request Full data about the request.
 		 */
-		return apply_filters( 'bp_rest_activity_get_items_permissions_check', true, $request );
+		return apply_filters( 'bp_rest_activity_get_items_permissions_check', $retval, $request );
 	}
 
 	/**
@@ -332,7 +343,7 @@ class BP_REST_Activity_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		if ( $this->can_see( $request ) ) {
+		if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'activity' ) ) && $this->can_see( $request ) ) {
 			$retval = true;
 		}
 

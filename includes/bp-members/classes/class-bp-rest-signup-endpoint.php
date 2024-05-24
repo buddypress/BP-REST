@@ -203,11 +203,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 			array( 'status' => rest_authorization_required_code() )
 		);
 
-		$capability = 'edit_users';
-
-		if ( is_multisite() ) {
-			$capability = 'manage_network_users';
-		}
+		$capability = is_multisite() ? 'manage_network_users' : 'edit_users';
 
 		if ( ! is_user_logged_in() ) {
 			$retval = new WP_Error(
@@ -272,7 +268,23 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_item_permissions_check( $request ) {
-		$retval = $this->get_items_permissions_check( $request );
+		$retval = new WP_Error(
+			'bp_rest_authorization_required',
+			__( 'Sorry, you are not authorized to perform this action.', 'buddypress' ),
+			array( 'status' => rest_authorization_required_code() )
+		);
+
+		$capability = is_multisite() ? 'manage_network_users' : 'edit_users';
+
+		if ( ! is_user_logged_in() ) {
+			$retval = new WP_Error(
+				'bp_rest_authorization_required',
+				__( 'Sorry, you need to be logged in to perform this action.', 'buddypress' ),
+				array( 'status' => rest_authorization_required_code() )
+			);
+		} elseif ( bp_current_user_can( $capability ) ) {
+			$retval = true;
+		}
 
 		if ( ! is_wp_error( $retval ) ) {
 			$signup = $this->get_signup_object( $request->get_param( 'id' ) );
@@ -281,9 +293,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 				$retval = new WP_Error(
 					'bp_rest_invalid_id',
 					__( 'Invalid signup id.', 'buddypress' ),
-					array(
-						'status' => 404,
-					)
+					array( 'status' => 404 )
 				);
 			}
 		}

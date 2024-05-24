@@ -14,7 +14,6 @@ defined( 'ABSPATH' ) || exit;
  * @since 0.1.0
  */
 class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
-
 	use BP_REST_Attachments;
 
 	/**
@@ -162,7 +161,7 @@ class BP_REST_Attachments_Member_Avatar_Endpoint extends WP_REST_Controller {
 	public function get_item_permissions_check( $request ) {
 		$retval = new WP_Error(
 			'bp_rest_authorization_required',
-			__( 'Sorry, you cannot view member details.', 'buddypress' ),
+			__( 'Sorry, you are not authorized to perform this action.', 'buddypress' ),
 			array(
 				'status' => rest_authorization_required_code(),
 			)

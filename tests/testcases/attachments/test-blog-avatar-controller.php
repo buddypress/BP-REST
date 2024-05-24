@@ -76,6 +76,20 @@ class BP_Test_REST_Attachments_Blog_Avatar_Endpoint extends WP_Test_REST_Control
 	/**
 	 * @group get_item
 	 */
+	public function test_get_item_with_support_for_the_community_visibility() {
+		toggle_component_visibility();
+
+		$blog_id = $this->bp_factory->blog->create();
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '%d/avatar', $blog_id ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_item
+	 */
 	public function test_get_item_site_icon() {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped();

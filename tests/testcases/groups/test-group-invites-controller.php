@@ -102,6 +102,29 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 	/**
 	 * @group get_items
 	 */
+	public function test_get_items_with_support_for_the_community_visibility() {
+		toggle_component_visibility();
+
+		$u1 = $this->factory->user->create();
+		$u2 = $this->factory->user->create();
+		$u3 = $this->factory->user->create();
+		$u4 = $this->factory->user->create();
+
+		$this->populate_group_with_invites( [ $u1, $u2, $u3, $u4 ], $this->group_id );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
+		$request->set_query_params( array(
+			'group_id' => $this->group_id,
+		) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_invites_cannot_get_items', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group get_items
+	 */
 	public function test_get_items_as_group_admin() {
 		$u1 = $this->factory->user->create();
 		$u2 = $this->factory->user->create();
@@ -279,6 +302,28 @@ class BP_Test_REST_Group_Invites_Endpoint extends WP_Test_REST_Controller_Testca
 		$all_data = $response->get_data();
 
 		$this->assertEquals( $u1, $all_data['user_id'] );
+	}
+
+	/**
+	 * @group get_item
+	 */
+	public function test_get_item_with_support_for_the_community_visibility() {
+		toggle_component_visibility();
+
+		$u1 = $this->factory->user->create();
+
+		$invite_id = groups_invite_user( array(
+			'user_id'     => $u1,
+			'group_id'    => $this->group_id,
+			'inviter_id'  => $this->user,
+			'send_invite' => 1,
+		) );
+
+		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', $invite_id ) );
+		$request->set_param( 'context', 'view' );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
 	}
 
 	/**

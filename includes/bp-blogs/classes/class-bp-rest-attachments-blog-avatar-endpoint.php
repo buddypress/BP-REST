@@ -14,7 +14,6 @@ defined( 'ABSPATH' ) || exit;
  * @since 6.0.0
  */
 class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
-
 	use BP_REST_Attachments;
 
 	/**
@@ -172,26 +171,24 @@ class BP_REST_Attachments_Blog_Avatar_Endpoint extends WP_REST_Controller {
 			)
 		);
 
-		$this->blog = $this->blogs_endpoint->get_blog_object( $request->get_param( 'id' ) );
+		if ( bp_current_user_can( 'bp_view', array( 'bp_component' => 'blogs' ) ) ) {
+			$this->blog = $this->blogs_endpoint->get_blog_object( $request->get_param( 'id' ) );
 
-		if ( ! is_object( $this->blog ) ) {
-			$retval = new WP_Error(
-				'bp_rest_blog_invalid_id',
-				__( 'Invalid group ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
-			);
-		} elseif ( buddypress()->avatar->show_avatars ) {
-			$retval = true;
-		} else {
-			$retval = new WP_Error(
-				'bp_rest_attachments_blog_avatar_disabled',
-				__( 'Sorry, blog avatar is disabled.', 'buddypress' ),
-				array(
-					'status' => 500,
-				)
-			);
+			if ( ! is_object( $this->blog ) ) {
+				$retval = new WP_Error(
+					'bp_rest_blog_invalid_id',
+					__( 'Invalid group ID.', 'buddypress' ),
+					array( 'status' => 404 )
+				);
+			} elseif ( buddypress()->avatar->show_avatars ) {
+				$retval = true;
+			} else {
+				$retval = new WP_Error(
+					'bp_rest_attachments_blog_avatar_disabled',
+					__( 'Sorry, blog avatar is disabled.', 'buddypress' ),
+					array( 'status' => 500 )
+				);
+			}
 		}
 
 		/**
