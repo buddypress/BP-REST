@@ -7,7 +7,6 @@
  * @group group-cover
  */
 class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Controller_Testcase {
-	protected $bp_factory;
 	protected $endpoint;
 	protected $bp;
 	protected $endpoint_url;
@@ -19,17 +18,16 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	public function set_up() {
 		parent::set_up();
 
-		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Attachments_Group_Cover_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->groups->id . '/';
 		$this->image_file    = __DIR__ . '/assets/test-image.jpg';
 
-		$this->user_id = $this->bp_factory->user->create( array(
+		$this->user_id = $this->bp::factory()->user->create( array(
 			'role' => 'administrator',
 		) );
 
-		$this->group_id = $this->bp_factory->group->create( array(
+		$this->group_id = $this->bp::factory()->group->create( array(
 			'name'        => 'Group Test',
 			'description' => 'Group Description',
 			'creator_id'  => $this->user_id,
@@ -110,7 +108,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 			$this->markTestSkipped();
 		}
 
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 		$reset_files = $_FILES;
 
 		$_FILES['file'] = array(
@@ -123,7 +121,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 
 		$request = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
 		$request->set_file_params( $_FILES );
-		$response = rest_get_server()->dispatch( $request );
+		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_attachments_group_cover_upload_error', $response, 500 );
 
@@ -138,7 +136,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 			$this->markTestSkipped();
 		}
 
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 		$reset_files = $_FILES;
 
 		// Disabling group cover upload.
@@ -165,7 +163,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 * @group create_item
 	 */
 	public function test_create_item_empty_image() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
@@ -185,9 +183,9 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 * @group create_item
 	 */
 	public function test_create_item_unauthorized_user() {
-		$u1 = $this->bp_factory->user->create();
+		$u1 = $this->bp::factory()->user->create();
 
-		$this->bp->set_current_user( $u1 );
+		$this->bp::set_current_user( $u1 );
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
@@ -198,7 +196,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 * @group create_item
 	 */
 	public function test_create_item_invalid_group_id() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -232,9 +230,9 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 * @group delete_item
 	 */
 	public function test_delete_item_unauthorized_user() {
-		$u1 = $this->bp_factory->user->create();
+		$u1 = $this->bp::factory()->user->create();
 
-		$this->bp->set_current_user( $u1 );
+		$this->bp::set_current_user( $u1 );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
@@ -245,7 +243,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 * @group delete_item
 	 */
 	public function test_delete_item_invalid_group_id() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -256,7 +254,7 @@ class BP_Test_REST_Attachments_Group_Cover_Endpoint extends WP_Test_REST_Control
 	 * @group delete_item
 	 */
 	public function test_delete_item_failed() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', $this->group_id ) );
 		$response = $this->server->dispatch( $request );

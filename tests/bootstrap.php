@@ -38,9 +38,6 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugins' );
 echo "Loading WP Testing environment...\n";
 require_once WP_TESTS_DIR . '/includes/bootstrap.php';
 
-echo "Loading REST controllers...\n";
-require_once WP_TESTS_DIR . '/includes/testcase-rest-controller.php';
-
 echo "Loading BuddyPress testcases...\n";
 require_once BP_TESTS_DIR . '/includes/testcase.php';
 require_once BP_TESTS_DIR . '/includes/testcase-emails.php';

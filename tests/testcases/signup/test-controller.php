@@ -7,7 +7,6 @@
  * @group signup
  */
 class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
-	protected $bp_factory;
 	protected $endpoint;
 	protected $bp;
 	protected $endpoint_url;
@@ -27,11 +26,10 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 
 		parent::set_up();
 
-		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Signup_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/signup';
-		$this->user         = $this->factory->user->create(
+		$this->user         = static::factory()->user->create(
 			array(
 				'role'       => 'administrator',
 				'user_email' => 'admin@example.com',
@@ -78,7 +76,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$s1     = $this->create_signup();
 		$signup = $this->endpoint->get_signup_object( $s1 );
@@ -98,7 +96,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_paginated_items() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$s1 = $this->create_signup();
 		$s2 = $this->create_signup();
@@ -139,9 +137,9 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_items
 	 */
 	public function test_get_items_unauthorized_user() {
-		$u = $this->factory->user->create();
+		$u = static::factory()->user->create();
 
-		$this->bp->set_current_user( $u );
+		$this->bp::set_current_user( $u );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -154,7 +152,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$signup = $this->endpoint->get_signup_object( $this->signup_id );
 		$this->assertEquals( $this->signup_id, $signup->id );
@@ -174,7 +172,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item_with_invalid_signup_id() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request  = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -197,9 +195,9 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group get_item
 	 */
 	public function test_get_item_unauthorized_user() {
-		$u = $this->factory->user->create();
+		$u = static::factory()->user->create();
 
-		$this->bp->set_current_user( $u );
+		$this->bp::set_current_user( $u );
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%s', $this->signup_id ) );
 		$request->set_param( 'context', 'view' );
@@ -232,9 +230,9 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item_with_signup_fields() {
-		$g1 = $this->bp_factory->xprofile_group->create();
+		$g1 = $this->bp::factory()->xprofile_group->create();
 
-		$f1 = $this->bp_factory->xprofile_field->create(
+		$f1 = $this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'type'           => 'textbox',
@@ -242,7 +240,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			]
 		);
 
-		$f2 = $this->bp_factory->xprofile_field->create(
+		$f2 = $this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'type'           => 'checkbox',
@@ -253,7 +251,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		bp_xprofile_update_field_meta( $f1, 'signup_position', 2 );
 		bp_xprofile_update_field_meta( $f2, 'signup_position', 3 );
 
-		$this->bp_factory->xprofile_field->create(
+		$this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'parent_id'      => $f2,
@@ -262,7 +260,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			]
 		);
 
-		$this->bp_factory->xprofile_field->create(
+		$this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'parent_id'      => $f2,
@@ -326,9 +324,9 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item_without_the_required_field_name_field() {
-		$g1 = $this->bp_factory->xprofile_group->create();
+		$g1 = $this->bp::factory()->xprofile_group->create();
 
-		$f1 = $this->bp_factory->xprofile_field->create(
+		$f1 = $this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'type'           => 'textbox',
@@ -336,7 +334,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			]
 		);
 
-		$f2 = $this->bp_factory->xprofile_field->create(
+		$f2 = $this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'type'           => 'checkbox',
@@ -347,7 +345,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		bp_xprofile_update_field_meta( $f1, 'signup_position', 2 );
 		bp_xprofile_update_field_meta( $f2, 'signup_position', 3 );
 
-		$this->bp_factory->xprofile_field->create(
+		$this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'parent_id'      => $f2,
@@ -356,7 +354,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			]
 		);
 
-		$this->bp_factory->xprofile_field->create(
+		$this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'parent_id'      => $f2,
@@ -395,9 +393,9 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item_without_a_custom_required_field_name_field() {
-		$g1 = $this->bp_factory->xprofile_group->create();
+		$g1 = $this->bp::factory()->xprofile_group->create();
 
-		$f1 = $this->bp_factory->xprofile_field->create(
+		$f1 = $this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'type'           => 'textbox',
@@ -406,7 +404,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			]
 		);
 
-		$f2 = $this->bp_factory->xprofile_field->create(
+		$f2 = $this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'type'           => 'checkbox',
@@ -417,7 +415,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		bp_xprofile_update_field_meta( $f1, 'signup_position', 2 );
 		bp_xprofile_update_field_meta( $f2, 'signup_position', 3 );
 
-		$this->bp_factory->xprofile_field->create(
+		$this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'parent_id'      => $f2,
@@ -426,7 +424,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			]
 		);
 
-		$this->bp_factory->xprofile_field->create(
+		$this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'parent_id'      => $f2,
@@ -466,9 +464,9 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group create_item
 	 */
 	public function test_create_item_a_custom_required_field_name_field_value_missing() {
-		$g1 = $this->bp_factory->xprofile_group->create();
+		$g1 = $this->bp::factory()->xprofile_group->create();
 
-		$f1 = $this->bp_factory->xprofile_field->create(
+		$f1 = $this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'type'           => 'textbox',
@@ -477,7 +475,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			]
 		);
 
-		$f2 = $this->bp_factory->xprofile_field->create(
+		$f2 = $this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'type'           => 'checkbox',
@@ -488,7 +486,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 		bp_xprofile_update_field_meta( $f1, 'signup_position', 2 );
 		bp_xprofile_update_field_meta( $f2, 'signup_position', 3 );
 
-		$this->bp_factory->xprofile_field->create(
+		$this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'parent_id'      => $f2,
@@ -497,7 +495,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 			]
 		);
 
-		$this->bp_factory->xprofile_field->create(
+		$this->bp::factory()->xprofile_field->create(
 			[
 				'field_group_id' => $g1,
 				'parent_id'      => $f2,
@@ -614,7 +612,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$signup = $this->endpoint->get_signup_object( $this->signup_id );
 		$this->assertEquals( $this->signup_id, $signup->id );
@@ -634,7 +632,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item_invalid_signup_id() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$request->set_param( 'context', 'edit' );
@@ -658,8 +656,8 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	 * @group delete_item
 	 */
 	public function test_delete_item_unauthorized_user() {
-		$u = $this->factory->user->create();
-		$this->bp->set_current_user( $u );
+		$u = static::factory()->user->create();
+		$this->bp::set_current_user( $u );
 
 		$request = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->signup_id ) );
 		$request->set_param( 'context', 'edit' );
@@ -724,7 +722,7 @@ class BP_Test_REST_Signup_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	public function test_prepare_item() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$signup = $this->endpoint->get_signup_object( $this->signup_id );
 		$this->assertEquals( $this->signup_id, $signup->id );

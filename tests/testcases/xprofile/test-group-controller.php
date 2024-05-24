@@ -7,7 +7,6 @@
  * @group xprofile-group
  */
 class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Testcase {
-	protected $bp_factory;
 	protected $endpoint;
 	protected $bp;
 	protected $endpoint_url;
@@ -18,13 +17,12 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	public function set_up() {
 		parent::set_up();
 
-		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_XProfile_Field_Groups_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/' . buddypress()->profile->id . '/groups';
-		$this->group_id     = $this->bp_factory->xprofile_group->create();
+		$this->group_id     = $this->bp::factory()->xprofile_group->create();
 
-		$this->user = $this->factory->user->create( array(
+		$this->user = static::factory()->user->create( array(
 			'role'       => 'administrator',
 			'user_email' => 'admin@example.com',
 		) );
@@ -50,9 +48,9 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group get_items
 	 */
 	public function test_get_items() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
-		$this->bp_factory->xprofile_group->create_many( 5 );
+		$this->bp::factory()->xprofile_group->create_many( 5 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -76,7 +74,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	public function test_get_items_with_support_for_the_community_visibility() {
 		toggle_component_visibility();
 
-		$this->bp_factory->xprofile_group->create_many( 5 );
+		$this->bp::factory()->xprofile_group->create_many( 5 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -89,11 +87,11 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group get_items
 	 */
 	public function test_get_items_include_groups() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
-		$g1 = $this->bp_factory->xprofile_group->create();
-		$g2 = $this->bp_factory->xprofile_group->create();
-		$this->bp_factory->xprofile_group->create_many( 3 );
+		$g1 = $this->bp::factory()->xprofile_group->create();
+		$g2 = $this->bp::factory()->xprofile_group->create();
+		$this->bp::factory()->xprofile_group->create_many( 3 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -120,7 +118,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group get_items
 	 */
 	public function test_get_items_publicly() {
-		$this->bp_factory->xprofile_group->create_many( 5 );
+		$this->bp::factory()->xprofile_group->create_many( 5 );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url );
 		$request->set_param( 'context', 'view' );
@@ -142,7 +140,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$field_group = $this->endpoint->get_xprofile_field_group_object( $this->group_id );
 		$this->assertEquals( $this->group_id, $field_group->id );
@@ -198,7 +196,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group get_item
 	 */
 	public function test_get_item_invalid_id() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'GET', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$request->set_param( 'context', 'view' );
@@ -211,7 +209,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group create_item
 	 */
 	public function test_create_item() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/x-www-form-urlencoded' );
@@ -228,7 +226,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group create_item
 	 */
 	public function test_rest_create_item() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
@@ -258,8 +256,8 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group create_item
 	 */
 	public function test_create_item_user_without_permission() {
-		$u = $this->factory->user->create();
-		$this->bp->set_current_user( $u );
+		$u = static::factory()->user->create();
+		$this->bp::set_current_user( $u );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
 		$request->add_header( 'content-type', 'application/json' );
@@ -276,7 +274,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 */
 	public function test_update_item() {
 		$new_name = 'Updated name';
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
 		$request->add_header( 'content-type', 'application/json' );
@@ -299,7 +297,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group update_item
 	 */
 	public function test_update_item_invalid_id() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -321,8 +319,8 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group update_item
 	 */
 	public function test_update_item_without_permission() {
-		$u = $this->factory->user->create();
-		$this->bp->set_current_user( $u );
+		$u = static::factory()->user->create();
+		$this->bp::set_current_user( $u );
 
 		$request  = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
@@ -334,7 +332,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$field_group = $this->endpoint->get_xprofile_field_group_object( $this->group_id );
 
@@ -355,7 +353,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group delete_item
 	 */
 	public function test_delete_item_invalid_id() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -377,8 +375,8 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group delete_item
 	 */
 	public function test_delete_item_without_permission() {
-		$u = $this->factory->user->create();
-		$this->bp->set_current_user( $u );
+		$u = static::factory()->user->create();
+		$this->bp::set_current_user( $u );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '/%d', $this->group_id ) );
 		$response = $this->server->dispatch( $request );
@@ -390,7 +388,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 	 * @group prepare_item
 	 */
 	public function test_prepare_item() {
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 
 		$group = $this->endpoint->get_xprofile_field_group_object( $this->group_id );
 		$this->assertEquals( $this->group_id, $group->id );
@@ -490,7 +488,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 			),
 		), 'group' );
 
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 		$expected = 'bar_group_value';
 
 		// POST
@@ -531,7 +529,7 @@ class BP_Test_REST_XProfile_Groups_Endpoint extends WP_Test_REST_Controller_Test
 			),
 		), 'group' );
 
-		$this->bp->set_current_user( $this->user );
+		$this->bp::set_current_user( $this->user );
 		$expected = 'foo_group_value';
 
 		// PUT

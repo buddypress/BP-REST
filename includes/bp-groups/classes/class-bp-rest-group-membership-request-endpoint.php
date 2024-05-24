@@ -433,25 +433,19 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			$retval = new WP_Error(
 				'bp_rest_authorization_required',
 				__( 'Sorry, you need to be logged in to create a membership request.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
+				array( 'status' => rest_authorization_required_code() )
 			);
 		} elseif ( ! $user instanceof WP_User ) {
 			$retval = new WP_Error(
 				'bp_rest_group_member_invalid_id',
 				__( 'Invalid member ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
+				array( 'status' => 404 )
 			);
 		} elseif ( ! $group instanceof BP_Groups_Group ) {
 			$retval = new WP_Error(
 				'bp_rest_group_invalid_id',
 				__( 'Invalid group ID.', 'buddypress' ),
-				array(
-					'status' => 404,
-				)
+				array( 'status' => 404 )
 			);
 		} elseif ( bp_current_user_can( 'bp_moderate' ) || $user_id === $user_id_arg ) {
 			$retval = true;
@@ -459,9 +453,7 @@ class BP_REST_Group_Membership_Request_Endpoint extends WP_REST_Controller {
 			$retval = new WP_Error(
 				'bp_rest_group_membership_requests_cannot_create_item',
 				__( 'User may not extend requests on behalf of another user.', 'buddypress' ),
-				array(
-					'status' => rest_authorization_required_code(),
-				)
+				array( 'status' => rest_authorization_required_code() )
 			);
 		}
 

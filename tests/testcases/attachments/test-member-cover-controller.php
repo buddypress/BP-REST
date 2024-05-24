@@ -7,7 +7,6 @@
  * @group member-cover
  */
 class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Controller_Testcase {
-	protected $bp_factory;
 	protected $endpoint;
 	protected $bp;
 	protected $endpoint_url;
@@ -17,12 +16,11 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	public function set_up() {
 		parent::set_up();
 
-		$this->bp_factory   = new BP_UnitTest_Factory();
 		$this->endpoint     = new BP_REST_Attachments_Member_Cover_Endpoint();
 		$this->bp           = new BP_UnitTestCase();
 		$this->endpoint_url = '/' . bp_rest_namespace() . '/' . bp_rest_version() . '/members/';
 
-		$this->user_id = $this->bp_factory->user->create( array(
+		$this->user_id = $this->bp::factory()->user->create( array(
 			'role' => 'administrator',
 		) );
 
@@ -96,7 +94,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item_with_upload_disabled() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		// Disabling cover image upload.
 		add_filter( 'bp_disable_cover_image_uploads', '__return_true' );
@@ -112,7 +110,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item_empty_image() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->user_id ) );
 		$response = $this->server->dispatch( $request );
@@ -132,9 +130,9 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item_unauthorized_user() {
-		$u1 = $this->bp_factory->user->create();
+		$u1 = $this->bp::factory()->user->create();
 
-		$this->bp->set_current_user( $u1 );
+		$this->bp::set_current_user( $u1 );
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', $this->user_id ) );
 		$response = $this->server->dispatch( $request );
@@ -145,7 +143,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	 * @group create_item
 	 */
 	public function test_create_item_invalid_member_id() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'POST', sprintf( $this->endpoint_url . '%d/cover', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -179,9 +177,9 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	 * @group delete_item
 	 */
 	public function test_delete_item_unauthorized_user() {
-		$u1 = $this->bp_factory->user->create();
+		$u1 = $this->bp::factory()->user->create();
 
-		$this->bp->set_current_user( $u1 );
+		$this->bp::set_current_user( $u1 );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', $this->user_id ) );
 		$response = $this->server->dispatch( $request );
@@ -192,7 +190,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	 * @group delete_item
 	 */
 	public function test_delete_item_invalid_member_id() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', REST_TESTS_IMPOSSIBLY_HIGH_NUMBER ) );
 		$response = $this->server->dispatch( $request );
@@ -203,7 +201,7 @@ class BP_Test_REST_Attachments_Member_Cover_Endpoint extends WP_Test_REST_Contro
 	 * @group delete_item
 	 */
 	public function test_delete_item_failed() {
-		$this->bp->set_current_user( $this->user_id );
+		$this->bp::set_current_user( $this->user_id );
 
 		$request  = new WP_REST_Request( 'DELETE', sprintf( $this->endpoint_url . '%d/cover', $this->user_id ) );
 		$response = $this->server->dispatch( $request );
