@@ -390,15 +390,14 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$user         = bp_rest_get_user( $request->get_param( 'user_id' ) );
-		$group        = $this->groups_endpoint->get_group_object( $request->get_param( 'group_id' ) );
-		$action       = $request->get_param( 'action' );
-		$role         = $request->get_param( 'role' );
-		$group_id     = $group->id;
-		$group_member = new BP_Groups_Member( $user->ID, $group_id );
+		$user     = bp_rest_get_user( $request->get_param( 'user_id' ) );
+		$group    = $this->groups_endpoint->get_group_object( $request->get_param( 'group_id' ) );
+		$action   = $request->get_param( 'action' );
+		$role     = $request->get_param( 'role' );
+		$group_id = $group->id;
 
 		if ( 'promote' === $action ) {
-			if ( ! $group_member->promote( $role ) ) {
+			if ( ! groups_promote_member( $user->ID, $group_id, $role, bp_loggedin_user_id() ) ) {
 				return new WP_Error(
 					'bp_rest_group_member_failed_to_promote',
 					__( 'Could not promote member.', 'buddypress' ),
@@ -408,7 +407,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 				);
 			}
 		} elseif ( 'demote' === $action && 'member' !== $role ) {
-			if ( ! $group_member->promote( $role ) ) {
+			if ( ! groups_promote_member( $user->ID, $group_id, $role, bp_loggedin_user_id() ) ) {
 				return new WP_Error(
 					'bp_rest_group_member_failed_to_demote',
 					__( 'Could not demote member.', 'buddypress' ),
@@ -418,7 +417,7 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 				);
 			}
 		} elseif ( in_array( $action, array( 'demote', 'ban', 'unban' ), true ) ) {
-			if ( ! $group_member->$action() ) {
+			if ( ! call_user_func( 'groups_' . $action . '_member', $user->ID, $group_id, bp_loggedin_user_id() ) ) {
 				$messages = array(
 					'demote' => __( 'Could not demote member from the group.', 'buddypress' ),
 					'ban'    => __( 'Could not ban member from the group.', 'buddypress' ),
@@ -434,6 +433,9 @@ class BP_REST_Group_Membership_Endpoint extends WP_REST_Controller {
 				);
 			}
 		}
+
+		// Get updated group member.
+		$group_member = new BP_Groups_Member( $user->ID, $group_id );
 
 		// Setting context.
 		$request->set_param( 'context', 'edit' );
