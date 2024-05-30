@@ -106,7 +106,8 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		// Promote $u2 to a moderator
 		add_filter( 'bp_is_item_admin', '__return_true' );
 
-		groups_promote_member( $u2, $g1, 'mod' );
+		$member_object = new BP_Groups_Member( $u2, $g1 );
+		$member_object->promote( 'mod' );
 
 		remove_filter( 'bp_is_item_admin', '__return_true' );
 
@@ -175,7 +176,6 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			'page'     => 2,
 			'per_page' => 3,
 		) );
-
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -187,13 +187,11 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$all_data = $response->get_data();
 		$this->assertNotEmpty( $all_data );
 
-		// Verify user information.
-		foreach ( $all_data as $data ) {
-			$user = bp_rest_get_user( $data['id'] );
-			$member_object = new BP_Groups_Member( $user->ID, $g1 );
+		$u_ids = wp_list_pluck( $all_data, 'id' );
 
-			$this->check_user_data( $user, $data, $member_object );
-		}
+		// Check results.
+		$this->assertCount( 3, $u_ids );
+		$this->assertEqualSets( [ $u4, $u5, $u6 ], $u_ids );
 	}
 
 	/**
@@ -202,11 +200,12 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	public function test_get_items_no_search_terms() {
 		$u1 = static::factory()->user->create();
 		$u2 = static::factory()->user->create();
-
 		$g1 = $this->bp::factory()->group->create();
 
 		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
-		groups_promote_member( $u1, $g1, 'admin' );
+
+		$member_object = new BP_Groups_Member( $u1, $g1 );
+		$member_object->promote( 'admin' );
 
 		$this->bp::set_current_user( $u1 );
 
@@ -233,19 +232,18 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 			'user_nicename' => 'foo bar',
 		) );
 
-		$g1 = $this->bp::factory()->group->create( array(
-			'status' => 'public',
-		) );
+		$g1 = $this->bp::factory()->group->create();
 
 		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
-		groups_promote_member( $u1, $g1, 'admin' );
+
+		$member_object = new BP_Groups_Member( $u1, $g1 );
+		$member_object->promote( 'admin' );
 
 		$this->bp::set_current_user( $u1 );
 
 		add_filter( 'bp_rest_group_members_get_items_query_args', array( $this, 'group_members_query_args' ) );
 
 		$request = new WP_REST_Request( 'GET', $this->endpoint_url . $g1 . '/members' );
-
 		$request->set_param( 'search', 'bar' );
 		$response = $this->server->dispatch( $request );
 
@@ -256,7 +254,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$all_data = $response->get_data();
 		$results = wp_list_pluck( $all_data, 'id' );
 
-		$this->assertTrue( 1 === count( $results ) );
+		$this->assertCount( 1, $results );
 		$this->assertSame( $u2, $results[0] );
 	}
 
@@ -273,7 +271,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	 * @group get_item
 	 */
 	public function test_get_item() {
-		$this->markTestSkipped();
+		$this->markTestSkipped( 'This endpoint does not have a get_item meethod.' );
 	}
 
 	/**
@@ -286,9 +284,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$this->bp::set_current_user( $u );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $g . '/members' );
-		$request->set_query_params( array(
-			'user_id' => $u,
-		) );
+		$request->set_query_params( array( 'user_id' => $u ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -337,9 +333,8 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		// This usually would be 'edit', but we are testing a public group.
 
-		$request->set_query_params( array(
-			'user_id' => $u,
-		) );
+		$request->set_query_params( array( 'user_id' => $u ) );
+
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -368,9 +363,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$this->bp::set_current_user( $u );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url . $g1 . '/members' );
-		$request->set_query_params( array(
-			'user_id' => $u,
-		) );
+		$request->set_query_params( array( 'user_id' => $u ) );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_group_member_failed_to_join', $response, 500 );
@@ -468,7 +461,34 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$request->set_query_params( array( 'action' => 'ban' ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_ban', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_ban', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group update_item
+	 * @group ban_member
+	 */
+	public function test_group_mod_can_not_ban_random_member() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+		$u4 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array( 'creator_id' => $u2 ) );
+
+		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
+
+		// Promote $u2 to a group mod.
+		$member_object = new BP_Groups_Member( $u1, $g1 );
+		$member_object->promote( 'mod' );
+
+		$this->bp::set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u4 );
+		$request->set_query_params( array( 'action' => 'ban' ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_ban', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -508,8 +528,31 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 	/**
 	 * @group update_item
+	 * @group ban_member
 	 */
-	public function test_site_admin_can_unban_member() {
+	public function test_group_admin_can_not_ban_random_member() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+		$u4 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array( 'creator_id' => $u2 ) );
+
+		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
+
+		$this->bp::set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u4 );
+		$request->set_query_params( array( 'action' => 'ban' ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_not_member', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_site_admin_can_unban_member_from_group() {
 		$u1 = static::factory()->user->create();
 		$u2 = static::factory()->user->create();
 		$u3 = static::factory()->user->create();
@@ -539,6 +582,38 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$member_object = new BP_Groups_Member( $user->ID, $g1 );
 
 		$this->assertTrue( $u1 === $user->ID );
+		$this->assertFalse( (bool) $member_object->is_banned );
+	}
+
+	/**
+	 * @group update_item
+	 */
+	public function test_site_admin_can_not_unban_random_member() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+		$u4 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array( 'creator_id' => $u2 ) );
+
+		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
+
+		$this->bp::set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u4 );
+		$request->set_query_params( array( 'action' => 'unban' ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+		$data     = reset( $all_data );
+
+		$user          = bp_rest_get_user( $data['id'] );
+		$member_object = new BP_Groups_Member( $user->ID, $g1 );
+
+		$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
+		$this->assertTrue( $u4 === $user->ID );
 		$this->assertFalse( (bool) $member_object->is_banned );
 	}
 
@@ -610,7 +685,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$request->set_query_params( array( 'action' => 'unban' ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_unban', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_unban', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -698,7 +773,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_promote', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_promote', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -723,7 +798,30 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_promote', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_promote', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group update_item
+	 * @group promote_member
+	 */
+	public function test_group_mod_can_not_promote_himself() {
+		$u1 = static::factory()->user->create();
+		$g1 = $this->bp::factory()->group->create( array( 'creator_id' => $u1 ) );
+
+		// Promote $u1 to a mod.
+		$this->bp::add_user_to_group( $u1, $g1, array( 'is_mod' => true ) );
+
+		$this->bp::set_current_user( $u1 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u1 );
+		$request->set_query_params( array(
+			'action' => 'promote',
+			'role'   => 'admin',
+		) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_promote', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -735,15 +833,9 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$u2 = static::factory()->user->create();
 		$u3 = static::factory()->user->create();
 
-		$g1 = $this->bp::factory()->group->create(
-			array( 'creator_id' => $u2 )
-		);
+		$g1 = $this->bp::factory()->group->create( array( 'creator_id' => $u2 ) );
 
 		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
-
-		// Promote $u2 to an admin.
-		$member_object = new BP_Groups_Member( $u2, $g1 );
-		$member_object->promote( 'admin' );
 
 		// Promote $u3 to an admin.
 		$member_object = new BP_Groups_Member( $u3, $g1 );
@@ -784,12 +876,6 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
 
-		// Promote $u2 to an admin.
-		$member_object = new BP_Groups_Member( $u2, $g1 );
-		$member_object->promote( 'admin' );
-
-		$this->assertTrue( (bool) $member_object->is_admin );
-
 		// Site admin.
 		$this->bp::set_current_user( $this->user );
 
@@ -797,7 +883,30 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$request->set_query_params( array( 'action' => 'demote' ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group update_item
+	 * @group demote_member
+	 */
+	public function test_site_admin_can_not_demote_himself() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array( 'creator_id' => $u2 ) );
+
+		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
+
+		// Site admin.
+		$this->bp::set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $this->user );
+		$request->set_query_params( array( 'action' => 'demote' ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_demote', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -847,6 +956,74 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	 * @group update_item
 	 * @group demote_member
 	 */
+	public function test_site_admin_can_demote_group_mods() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array( 'creator_id' => $u3 ) );
+
+		$this->populate_group_with_members( [ $u1, $u2, $u3 ], $g1 );
+
+		// Promote $u2 to an admin.
+		$member_object = new BP_Groups_Member( $u2, $g1 );
+		$member_object->promote( 'mod' );
+
+		$this->assertTrue( (bool) $member_object->is_mod );
+
+		// Site admin.
+		$this->bp::set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u2 );
+		$request->set_query_params( array( 'action' => 'demote' ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$user = bp_rest_get_user( $data[0]['id'] );
+
+		$member_object = new BP_Groups_Member( $user->ID, $g1 );
+
+		$this->assertTrue( $u2 === $user->ID );
+		$this->assertFalse( (bool) $member_object->is_mod );
+		$this->assertFalse( (bool) $member_object->is_admin );
+		$this->assertTrue( (bool) groups_is_user_member( $u2, $g1 ) );
+	}
+
+	/**
+	 * @group update_item
+	 * @group demote_member
+	 */
+	public function test_site_admin_can_not_demote_already_group_members() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array( 'creator_id' => $u3 ) );
+
+		$this->populate_group_with_members( [ $u1, $u2, $u3 ], $g1 );
+
+		// Promote $u2 to an admin.
+		$member_object = new BP_Groups_Member( $u2, $g1 );
+		$member_object->promote( 'mod' );
+
+		$this->assertTrue( (bool) $member_object->is_mod );
+
+		// Site admin.
+		$this->bp::set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u1 );
+		$request->set_query_params( array( 'action' => 'demote' ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_failed_to_demote', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 * @group demote_member
+	 */
 	public function test_group_admin_can_demote_another_group_admin_to_mod() {
 		$u1 = static::factory()->user->create();
 		$u2 = static::factory()->user->create();
@@ -856,13 +1033,10 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
 
-		$group_member_1 = new BP_Groups_Member( $u1, $g1 );
-		$group_member_1->promote( 'admin' );
+		$group_member = new BP_Groups_Member( $u2, $g1 );
+		$group_member->promote( 'admin' );
 
-		$group_member_2 = new BP_Groups_Member( $u2, $g1 );
-		$group_member_2->promote( 'admin' );
-
-		$this->bp::set_current_user( $u1 );
+		$this->bp::set_current_user( $u3 );
 
 		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u2 );
 		$request->set_query_params( array(
@@ -887,6 +1061,50 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	 * @group update_item
 	 * @group demote_member
 	 */
+	public function test_group_admin_can_not_demote_himself() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array( 'creator_id' => $u2 ) );
+
+		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
+
+		$this->bp::set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u2 );
+		$request->set_query_params( array( 'action' => 'demote' ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_demote', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group update_item
+	 * @group demote_member
+	 */
+	public function test_group_admin_can_not_demote_already_group_members() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array( 'creator_id' => $u2 ) );
+
+		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
+
+		$this->bp::set_current_user( $u2 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u1 );
+		$request->set_query_params( array( 'action' => 'demote' ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_failed_to_demote', $response, 500 );
+	}
+
+	/**
+	 * @group update_item
+	 * @group demote_member
+	 */
 	public function test_member_can_not_demote_another_member() {
 		$u1 = static::factory()->user->create();
 		$u2 = static::factory()->user->create();
@@ -898,11 +1116,33 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		$this->bp::set_current_user( $u3 );
 
-		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u2 );
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u1 );
 		$request->set_query_params( array( 'action' => 'demote' ) );
 		$response = $this->server->dispatch( $request );
 
-		$this->assertErrorResponse( 'bp_rest_group_member_cannot_demote', $response, 403 );
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_demote', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group update_item
+	 * @group demote_member
+	 */
+	public function test_member_can_not_demote_himself() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array( 'creator_id' => $u2 ) );
+
+		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
+
+		$this->bp::set_current_user( $u3 );
+
+		$request = new WP_REST_Request( 'PUT', $this->endpoint_url . $g1 . '/members/' . $u3 );
+		$request->set_query_params( array( 'action' => 'demote' ) );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_cannot_demote', $response, rest_authorization_required_code() );
 	}
 
 	/**
@@ -961,6 +1201,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 
 		$user = bp_rest_get_user( $all_data['previous']['id'] );
 		$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
+		$this->assertSame( $u1, $user->ID );
 	}
 
 	/**
@@ -995,6 +1236,31 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 	/**
 	 * @group delete_item
 	 */
+	public function test_banned_member_can_not_remove_himself_from_group() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array(
+			'creator_id' => $u3,
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
+
+		$group_member = new BP_Groups_Member( $u1, $g1 );
+		$group_member->ban();
+
+		$this->bp::set_current_user( $u1 );
+
+		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $u1 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group delete_item
+	 */
 	public function test_member_can_not_remove_others_from_group() {
 		$u1 = static::factory()->user->create();
 		$u2 = static::factory()->user->create();
@@ -1023,7 +1289,7 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$u3 = static::factory()->user->create();
 
 		$g1 = $this->bp::factory()->group->create( array(
-			'creator_id' => $u3,
+			'creator_id' => $u3, // <- group admin.
 		) );
 
 		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
@@ -1031,27 +1297,58 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$this->bp::set_current_user( $u3 );
 
 		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $u1 );
-
 		$response = $this->server->dispatch( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
 
 		$all_data = $response->get_data();
-		$this->assertNotEmpty( $all_data );
 
 		$user = bp_rest_get_user( $all_data['previous']['id'] );
 		$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
+		$this->assertSame( $u1, $user->ID );
 	}
 
 	/**
 	 * @group delete_item
 	 */
-	public function test_group_admin_can_not_remove_himself_from_group() {
+	public function test_group_admin_can_remove_himself_from_group() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array(
+			'creator_id' => $u2, // <- group admin.
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u3 ], $g1 );
+
+		// Another group admin.
+		$group_member = new BP_Groups_Member( $u3, $g1 );
+		$group_member->promote( 'admin' );
+
+		$this->bp::set_current_user( $u2 );
+
+		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $u2 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$user = bp_rest_get_user( $all_data['previous']['id'] );
+		$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
+		$this->assertSame( $u2, $user->ID );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_last_group_admin_can_not_remove_himself_from_group() {
 		$u1 = static::factory()->user->create();
 		$u2 = static::factory()->user->create();
 
 		$g1 = $this->bp::factory()->group->create( array(
-			'creator_id' => $u2,
+			'creator_id' => $u2, // <- group admin.
 		) );
 
 		$this->populate_group_with_members( [ $u1 ], $g1 );
@@ -1059,6 +1356,111 @@ class BP_Test_REST_Group_Membership_Endpoint extends WP_Test_REST_Controller_Tes
 		$this->bp::set_current_user( $u2 );
 
 		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $u2 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_group_admin_can_remove_another_group_admin() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array(
+			'creator_id' => $u1, // <- group admin.
+		) );
+
+		$this->populate_group_with_members( [ $u2, $u3 ], $g1 );
+
+		$group_member = new BP_Groups_Member( $u3, $g1 );
+		$group_member->promote( 'admin' );
+
+		$this->bp::set_current_user( $u3 );
+
+		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $u1 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$user = bp_rest_get_user( $all_data['previous']['id'] );
+		$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
+		$this->assertSame( $u1, $user->ID );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_site_admin_can_not_remove_himself_group_admin() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array(
+			'creator_id' => $u1, // <- group admin.
+		) );
+
+		$this->populate_group_with_members( [ $u2, $u3 ], $g1 );
+
+		$this->bp::set_current_user( $this->user );
+
+		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $this->user );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_group_member_failed_to_remove', $response, 500 );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_site_admin_can_remove_group_admin() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array(
+			'creator_id' => $u1, // <- group admin.
+		) );
+
+		$this->populate_group_with_members( [ $u2, $u3 ], $g1 );
+
+		$group_member = new BP_Groups_Member( $u3, $g1 );
+		$group_member->promote( 'admin' );
+
+		$this->bp::set_current_user( $this->user );
+
+		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $u1 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$all_data = $response->get_data();
+
+		$user = bp_rest_get_user( $all_data['previous']['id'] );
+		$this->assertFalse( groups_is_user_member( $user->ID, $g1 ) );
+		$this->assertSame( $u1, $user->ID );
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_site_admin_can_not_remove_last_group_admin() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+
+		$g1 = $this->bp::factory()->group->create( array(
+			'creator_id' => $u1, // <- group admin.
+		) );
+
+		$this->populate_group_with_members( [ $u1, $u2 ], $g1 );
+
+		$this->bp::set_current_user( $this->user );
+
+		$request  = new WP_REST_Request( 'DELETE', $this->endpoint_url . $g1 . '/members/' . $u1 );
 		$response = $this->server->dispatch( $request );
 
 		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
