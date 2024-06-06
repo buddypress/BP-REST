@@ -868,8 +868,9 @@ class BP_REST_Messages_Endpoint extends WP_REST_Controller {
 			$data['is_starred'] = bp_messages_is_message_starred( $data['id'], $user_id );
 		}
 
-		// Add REST Fields (BP Messages meta) data.
-		$data = $this->add_additional_fields_to_object( $data, $request );
+		$context = ! empty( $request->get_param( 'context' ) ) ? $request->get_param( 'context' ) : 'view';
+		$data    = $this->add_additional_fields_to_object( $data, $request );
+		$data    = $this->filter_response_by_context( $data, $context );
 
 		/**
 		 * Filter a message value returned from the API.
