@@ -416,9 +416,12 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @dataProvider provider_create_item_with_empty_content_options
+	 *
+	 * @ticket BP9175
 	 * @group create_item
 	 */
-	public function test_create_item_with_no_content() {
+	public function test_create_item_with_empty_content_options( $content ) {
 		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
@@ -426,7 +429,31 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 			array(
 				'sender_id'  => $this->user,
 				'recipients' => [ static::factory()->user->create() ],
-				'subject'    => 'Foo',
+				'subject'    => 'A new message',
+				'message'    => $content,
+			)
+		);
+
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_messages_create_failed', $response, 500 );
+		$this->assertSame( 'Your message was not sent. Please enter some content.', $response->get_data()['message'] );
+	}
+
+	/**
+	 * @ticket BP9175
+	 * @group create_item
+	 */
+	public function test_create_item_with_null_content() {
+		$this->bp::set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->set_query_params(
+			array(
+				'sender_id'  => $this->user,
+				'recipients' => [ static::factory()->user->create() ],
+				'subject'    => 'A new message',
+				'message'    => null,
 			)
 		);
 
@@ -438,9 +465,61 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @dataProvider provider_create_item_irregular_content_options
+	 *
+	 * @ticket BP9175
 	 * @group create_item
 	 */
-	public function test_create_item_with_no_receipts() {
+	public function test_create_item_with_irregular_content_options( $content ) {
+		$this->bp::set_current_user( $this->user );
+
+		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
+		$request->set_query_params(
+			array(
+				'sender_id' => $this->user,
+				'recipients' => [ static::factory()->user->create() ],
+				'subject' => 'A new message',
+				'message' => $content,
+			)
+		);
+
+		$response = $this->server->dispatch( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	/**
+	 * Provider for the test_create_item_with_empty_content_options() test.
+	 *
+	 * @return array
+	 */
+	public function provider_create_item_with_empty_content_options() {
+		return array(
+			array( '' ),
+			array( "" ),
+			array( false ),
+			array( 0 ), // '0' is a valid message content.
+			array( array() ),
+		);
+	}
+
+	/**
+	 * Provider for the test_create_item_with_irregular_content_options() test.
+	 *
+	 * @return array
+	 */
+	public function provider_create_item_irregular_content_options() {
+		return array(
+			array( '0' ),
+			array( '00' ),
+			array( 'false' ),
+		);
+	}
+
+	/**
+	 * @group create_item
+	 */
+	public function test_create_item_with_no_recipients() {
 		$this->bp::set_current_user( $this->user );
 
 		$request = new WP_REST_Request( 'POST', $this->endpoint_url );
