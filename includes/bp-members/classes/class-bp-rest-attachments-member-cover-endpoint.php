@@ -51,6 +51,8 @@ class BP_REST_Attachments_Member_Cover_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 */
 	public function __construct() {
+		_deprecated_class( __CLASS__, '15.0.0', 'BP_Members_Cover_REST_Controller' );
+
 		$this->namespace           = bp_rest_namespace() . '/' . bp_rest_version();
 		$this->rest_base           = 'members';
 		$this->attachment_instance = new BP_Attachment_Cover_Image();

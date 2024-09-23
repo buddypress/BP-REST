@@ -32,6 +32,8 @@ class BP_REST_XProfile_Data_Endpoint extends WP_REST_Controller {
 	 * @since 0.1.0
 	 */
 	public function __construct() {
+		_deprecated_class( __CLASS__, '15.0.0', 'BP_XProfile_Data_REST_Controller' );
+
 		$this->namespace       = bp_rest_namespace() . '/' . bp_rest_version();
 		$this->rest_base       = buddypress()->profile->id;
 		$this->fields_endpoint = new BP_REST_XProfile_Fields_Endpoint();

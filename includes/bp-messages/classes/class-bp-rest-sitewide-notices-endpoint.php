@@ -21,6 +21,8 @@ class BP_REST_Sitewide_Notices_Endpoint extends WP_REST_Controller {
 	 * @since 9.0.0
 	 */
 	public function __construct() {
+		_deprecated_class( __CLASS__, '15.0.0', 'BP_Messages_Sitewide_Notices_REST_Controller' );
+
 		$this->namespace = bp_rest_namespace() . '/' . bp_rest_version();
 		$this->rest_base = 'sitewide-notices';
 	}
