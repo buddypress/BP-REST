@@ -44,5 +44,29 @@
 		"phpunit": "@test",
 		"phpcs": "@php ./vendor/bin/phpcs . --basepath=.",
 		"phpcbf": "@php ./vendor/bin/phpcbf . --basepath=."
+	},
+	"archive": {
+		"exclude": [
+			"*.xml",
+			"*.dist",
+			"*.cache",
+			"phpcs.xml.dist",
+			"phpunit.xml.dist",
+			"wp-env.json",
+			"composer.json",
+			"composer.lock",
+			".editorconfig",
+			"CHANGELOG.md",
+			"CONTRIBUTING.md",
+			"README.md",
+			".gitignore",
+			".distignore",
+			".deployignore",
+			".github/",
+			".phpcs/",
+			"tests/",
+			"bp-rest-api.zip",
+			"!vendor/"
+		]
 	}
 }
