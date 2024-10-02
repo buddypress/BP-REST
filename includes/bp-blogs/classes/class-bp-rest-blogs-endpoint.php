@@ -24,6 +24,8 @@ class BP_REST_Blogs_Endpoint extends WP_REST_Controller {
 	 * @since 6.0.0
 	 */
 	public function __construct() {
+		_deprecated_class( __CLASS__, '15.0.0', 'BP_Blogs_REST_Controller' );
+
 		$this->namespace = bp_rest_namespace() . '/' . bp_rest_version();
 		$this->rest_base = buddypress()->blogs->id;
 	}

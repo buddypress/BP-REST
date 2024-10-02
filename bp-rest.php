@@ -169,13 +169,33 @@ function bp_rest() {
 add_action( 'bp_rest_api_init', 'bp_rest', 5 );
 
 /**
+ * Set the current BP REST namespace.
+ *
+ * @return string
+ */
+function bp_filter_v1_rest_current_rest_namespace() {
+	return 'buddypress';
+}
+add_filter( 'bp_rest_namespace', 'bp_filter_v1_rest_current_rest_namespace' );
+
+/**
+ * Set the current BP REST version.
+ *
+ * @return string
+ */
+function bp_filter_v1_rest_current_rest_version() {
+	return 'v1';
+}
+add_filter( 'bp_rest_version', 'bp_filter_v1_rest_current_rest_version' );
+
+/**
  * Filter the Blog url in the WP_REST_Request::from_url().
  *
  * @param WP_REST_Request $request Request used to generate the response.
  * @param string          $url     URL being requested.
  * @return WP_REST_Request
  */
-function bp_filter_rest_request_blog_url( $request, $url ) {
+function bp_filter_v1_rest_request_blog_url( $request, $url ) {
 
 	if ( ! bp_is_active( 'blogs' ) || empty( $url ) ) {
 		return $request;
@@ -200,7 +220,7 @@ function bp_filter_rest_request_blog_url( $request, $url ) {
 
 	return $request;
 }
-add_filter( 'rest_request_from_url', 'bp_filter_rest_request_blog_url', 10, 2 );
+add_filter( 'rest_request_from_url', 'bp_filter_v1_rest_request_blog_url', 10, 2 );
 
 /**
  * Output BuddyPress blog response.
@@ -210,7 +230,7 @@ add_filter( 'rest_request_from_url', 'bp_filter_rest_request_blog_url', 10, 2 );
  * @param WP_REST_Request  $request  Request used to generate the response.
  * @return WP_REST_Response
  */
-function bp_rest_post_dispatch( $response, $instance, $request ) {
+function bp_filter_v1_rest_post_dispatch( $response, $instance, $request ) {
 	if (
 		! bp_is_active( 'blogs' )
 		|| 404 !== $response->get_status()
@@ -256,7 +276,7 @@ function bp_rest_post_dispatch( $response, $instance, $request ) {
 
 	restore_current_blog();
 
-	// Return it, regardless if it was successfull or not.
+	// Return it, regardless if it was successful or not.
 	return $response;
 }
-add_filter( 'rest_post_dispatch', 'bp_rest_post_dispatch', 10, 3 );
+add_filter( 'rest_post_dispatch', 'bp_filter_v1_rest_post_dispatch', 10, 3 );

@@ -9,7 +9,7 @@
 const WP_TESTS_PHPUNIT_POLYFILLS_PATH = __DIR__ . '/../vendor/yoast/phpunit-polyfills';
 
 // Define constants.
-require( dirname( __FILE__ ) . '/define-constants.php' );
+require __DIR__ . '/define-constants.php';
 
 if ( ! file_exists( WP_TESTS_DIR . '/includes/functions.php' ) ) {
 	die( "The WordPress PHPUnit test suite could not be found.\n" );
@@ -31,7 +31,7 @@ function _manually_load_plugins() {
 	require_once BP_TESTS_DIR . '/includes/loader.php';
 
 	// Load our plugin.
-	require_once dirname( __FILE__ ) . '/../bp-rest.php';
+	require_once __DIR__ . '/../bp-rest.php';
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugins' );
 
