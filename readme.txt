@@ -2,7 +2,7 @@
 Contributors:      The BuddyPress Community
 Donate link:       https://buddypress.org
 Requires at least: 6.1
-Tested up to:      6.4
+Tested up to:      6.7
 Requires PHP:      5.6
 Stable tag:        0.9.0
 License:           GNU General Public License v2 or later

@@ -26,6 +26,7 @@
 		"wiki": "https://codex.buddypress.org/"
 	},
 	"config": {
+		"archive-format": "zip",
 		"allow-plugins": {
 			"dealerdirect/phpcodesniffer-composer-installer": true,
 			"composer/installers": true
@@ -55,6 +56,8 @@
 			"wp-env.json",
 			"composer.json",
 			"composer.lock",
+			"package.json",
+			"package-lock.json",
 			".editorconfig",
 			"CHANGELOG.md",
 			"CONTRIBUTING.md",

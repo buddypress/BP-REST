@@ -1,15 +1,14 @@
 <?php
 /**
- * Plugin Name:       BuddyPress RESTful API
+ * Plugin Name:       BuddyPress RESTful API (Deprecated)
  * Plugin URI:        https://buddypress.org
  * Description:       Access your BuddyPress site's data through an easy-to-use HTTP REST API.
  * Author:            The BuddyPress Community
- * Author URI:        https: //buddypress.org/
+ * Author URI:        https://buddypress.org/
  * Version:           0.9.0
  * Text Domain:       buddypress
- * Domain Path:       /languages/
  * Requires at least: 6.1
- * Tested up to:      6.4
+ * Tested up to:      6.7
  * Requires PHP:      5.6
  * Requires Plugins:  buddypress
  * License:           GNU General Public License v2 or later
