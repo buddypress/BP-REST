@@ -989,6 +989,49 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 	}
 
 	/**
+	 * Get signup object by specific field with security validation.
+	 *
+	 * @since 14.4.0
+	 *
+	 * @param int|string $identifier Signup identifier.
+	 * @param string $field Signup lookup field ('id', 'email', or 'activation_key').
+	 * @return BP_Signup|false
+	 */
+	public function get_signup_object_by_field( $identifier, $field ) {
+		$signup_args = array();
+
+		if ( 'id' === $field && is_numeric( $identifier ) ) {
+			$signup_args['include'] = array( intval( $identifier ) );
+		} else if ( 'email' === $field && is_email( $identifier ) ) {
+			$signup_args['usersearch'] = $identifier;
+		} else if ( 'activation_key' === $field ) {
+			// The activation key is used when activating a signup.
+
+			// Block numeric IDs to prevent enumeration attacks.
+			if ( is_numeric( $identifier ) ) {
+				return false;
+			}
+
+			// Basic validation: minimum length check.
+			if ( empty( $identifier ) || strlen( $identifier ) < 10 ) {
+				return false;
+			}
+			$signup_args['activation_key'] = $identifier;
+		}
+
+		if ( ! empty( $signup_args ) ) {
+			// Get signups.
+			$signups = \BP_Signup::get( $signup_args );
+
+			if ( ! empty( $signups['signups'] ) ) {
+				return reset( $signups['signups'] );
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Check a user password for the REST API.
 	 *
 	 * @since 6.0.0
