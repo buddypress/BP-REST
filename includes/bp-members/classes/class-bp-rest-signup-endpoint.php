@@ -591,7 +591,7 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		$activation_key = $request->get_param( 'activation_key' );
 
 		// Get the signup to activate thanks to the activation key.
-		$signup    = $this->get_signup_object( $activation_key );
+		$signup    = $this->get_signup_object_by_field( $activation_key, 'activation_key' );
 		$activated = bp_core_activate_signup( $activation_key );
 
 		if ( ! $activated ) {
@@ -646,8 +646,19 @@ class BP_REST_Signup_Endpoint extends WP_REST_Controller {
 		// Get the activation key.
 		$activation_key = $request->get_param( 'activation_key' );
 
+		// Block numeric IDs to prevent enumeration attacks.
+		if ( is_numeric( $activation_key ) ) {
+			return new WP_Error(
+				'bp_rest_invalid_activation_key_format',
+				__( 'Invalid activation key format.', 'buddypress' ),
+				array(
+					'status' => 400,
+				)
+			);
+		}
+
 		// Check the activation key is valid.
-		if ( $this->get_signup_object( $activation_key ) ) {
+		if ( $this->get_signup_object_by_field( $activation_key, 'activation_key' ) ) {
 			$retval = true;
 		}
 
