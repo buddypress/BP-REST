@@ -270,6 +270,30 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	/**
 	 * @group get_item
 	 */
+	public function test_get_item_prevent_counterfeit_user_id() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+		$m  = $this->bp::factory()->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		$this->bp::set_current_user( $u3 );
+
+		$request = new WP_REST_Request( 'GET', $this->endpoint_url . '/' . $m->thread_id );
+		$request->set_param( 'context', 'view' );
+		$request->set_param( 'user_id', $u2 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertSame( 403, $response->get_status() );
+	}
+
+	/**
+	 * @group get_item
+	 */
 	public function test_get_item_with_edit_context() {
 		$u1 = static::factory()->user->create();
 		$u2 = static::factory()->user->create();
@@ -590,6 +614,29 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	}
 
 	/**
+	 * @group update_item
+	 */
+	public function test_update_item_prevent_counterfeit_user_id() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+		$m  = $this->bp::factory()->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		$this->bp::set_current_user( $u3 );
+
+		$request = new WP_REST_Request( 'PUT', sprintf( $this->endpoint_url . '/%d', $m->thread_id ) );
+		$request->set_param( 'user_id', $u2 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertSame( 403, $response->get_status() );
+	}
+
+	/**
 	 * @group delete_item
 	 */
 	public function test_delete_item() {
@@ -674,19 +721,42 @@ class BP_Test_REST_Messages_Endpoint extends WP_Test_REST_Controller_Testcase {
 	public function test_delete_item_user_is_not_logged_in() {
 		$u1 = static::factory()->user->create();
 		$u2 = static::factory()->user->create();
-		$m  = $this->bp::factory()->message->create( array(
+		$m  = $this->bp::factory()->message->create_and_get( array(
 			'sender_id'  => $u1,
 			'recipients' => array( $u2 ),
 			'subject'    => 'Foo',
 		) );
 
-		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $m );
+		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $m->thread_id );
 
 		$this->assertErrorResponse(
 			'bp_rest_authorization_required',
 			$this->server->dispatch( $request ),
 			rest_authorization_required_code()
 		);
+	}
+
+	/**
+	 * @group delete_item
+	 */
+	public function test_delete_item_prevent_counterfeit_user_id() {
+		$u1 = static::factory()->user->create();
+		$u2 = static::factory()->user->create();
+		$u3 = static::factory()->user->create();
+		$m  = $this->bp::factory()->message->create_and_get( array(
+			'sender_id'  => $u1,
+			'recipients' => array( $u2 ),
+			'subject'    => 'Foo',
+		) );
+
+		$this->bp::set_current_user( $u3 );
+
+		$request = new WP_REST_Request( 'DELETE', $this->endpoint_url . '/' . $m->thread_id );
+		$request->set_param( 'user_id', $u2 );
+		$response = $this->server->dispatch( $request );
+
+		$this->assertErrorResponse( 'bp_rest_authorization_required', $response, rest_authorization_required_code() );
+		$this->assertSame( 403, $response->get_status() );
 	}
 
 	/**
