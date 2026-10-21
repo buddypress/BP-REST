@@ -843,7 +843,7 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 						'id'    => $item->id,
 						'value' => array(
 							'raw'          => $item->data->value,
-							'unserialized' => $fields_endpoint->get_profile_field_unserialized_value( $item->data->value ),
+							'unserialized' => $fields_endpoint->get_profile_field_unserialized_value( $item->data->value, $item ),
 							'rendered'     => $fields_endpoint->get_profile_field_rendered_value( $item->data->value, $item ),
 						),
 					);
